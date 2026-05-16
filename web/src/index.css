@@ -1,0 +1,30 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer components {
+  .card {
+    @apply bg-surface-2 rounded-2xl p-4 border border-white/5;
+  }
+  .btn-primary {
+    @apply bg-gradient-brand text-white font-semibold py-3 px-6 rounded-xl 
+           active:scale-95 transition-all duration-150 w-full text-center;
+  }
+  .btn-secondary {
+    @apply bg-surface-3 text-white font-medium py-3 px-6 rounded-xl 
+           active:scale-95 transition-all duration-150 w-full text-center border border-white/10;
+  }
+  .input {
+    @apply bg-surface-3 border border-white/10 rounded-xl px-4 py-3 text-white 
+           placeholder-white/30 focus:outline-none focus:border-accent/50 w-full;
+  }
+  .label {
+    @apply text-white/60 text-sm font-medium mb-1 block;
+  }
+  .page {
+    @apply min-h-screen bg-[#0a0a12] text-white px-4 pb-24 pt-6;
+  }
+  .section-title {
+    @apply text-lg font-bold text-white mb-3;
+  }
+}

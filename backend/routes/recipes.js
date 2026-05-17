@@ -28,7 +28,7 @@ router.post('/generate', requireAuth, async (req, res) => {
     const allergies = (profile.allergies || []).join(', ') || 'ninguna';
 
     const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-opus-4-5',
       max_tokens: 800,
       messages: [{
         role: 'user',

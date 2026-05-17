@@ -1,6 +1,7 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
+import './index.css'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
-  <h1 style={{color:'white'}}>App funcionando</h1>
+  <h1 style={{color:'white'}}>CSS cargado</h1>
 )

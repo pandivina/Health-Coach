@@ -23,7 +23,6 @@ async function request(method, path, body) {
   return data
 }
 
-// ── Coach ──────────────────────────────────────────────────
 export const api = {
   coach: {
     chat: (messages) => request('POST', '/api/coach', { messages }),
@@ -42,5 +41,19 @@ export const api = {
   },
   report: {
     today: () => request('GET', '/api/report/today'),
+  },
+  workouts: {
+    getExercises: (params = {}) => {
+      const q = new URLSearchParams(params).toString()
+      return request('GET', `/api/workouts/exercises${q ? '?' + q : ''}`)
+    },
+    getTemplates: () => request('GET', '/api/workouts/templates'),
+    generate: (data) => request('POST', '/api/workouts/generate', data),
+    start: (data) => request('POST', '/api/workouts/start', data),
+    addExercise: (data) => request('POST', '/api/workouts/add-exercise', data),
+    completeSet: (data) => request('POST', '/api/workouts/complete-set', data),
+    finish: (data) => request('POST', '/api/workouts/finish', data),
+    history: () => request('GET', '/api/workouts/history'),
+    stats: () => request('GET', '/api/workouts/stats'),
   },
 }

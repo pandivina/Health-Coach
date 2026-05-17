@@ -126,6 +126,20 @@ router.post('/start', requireAuth, async (req, res) => {
     res.json({ session, exercises: [] });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
+// POST /api/workouts/add-exercise
+router.post('/add-exercise', requireAuth, async (req, res) => {
+  try {
+    const { session_id, exercise_name, exercise_id, order_index } = req.body;
+    const { data, error } = await supabaseAdmin.from('workout_exercises').insert({
+      session_id,
+      exercise_name,
+      exercise_id: exercise_id || null,
+      order_index: order_index || 0,
+    }).select().single();
+    if (error) throw error;
+    res.json(data);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
 
 // POST /api/workouts/complete-set — registrar serie
 router.post('/complete-set', requireAuth, async (req, res) => {

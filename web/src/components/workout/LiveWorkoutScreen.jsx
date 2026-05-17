@@ -126,7 +126,7 @@ function ExerciseBlock({ workoutExercise, onSetComplete }) {
 
 export default function LiveWorkoutScreen({ session, onFinish }) {
   const { addXP } = useStore()
-  const [exercises, setExercises] = useState(session.exercises || [])
+  const [exercises, setExercises] = useState(Array.isArray(session.exercises) ? session.exercises : [])
   const [elapsed, setElapsed] = useState(0)
   const [showRest, setShowRest] = useState(false)
   const [showPR, setShowPR] = useState(false)

@@ -1,13 +1,12 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Dumbbell, Sparkles, History, BarChart2, Plus } from 'lucide-react'
-import { useStore } from '../../store/useStore'
 import WorkoutDashboard from '../../components/workout/WorkoutDashboard'
-import ExerciseLibrary from '../../components/workout/ExerciseLibrary'
-import RoutineGenerator from '../../components/workout/RoutineGenerator'
-import WorkoutHistory from '../../components/workout/WorkoutHistory'
-import WorkoutStats from '../../components/workout/WorkoutStats'
 import LiveWorkoutScreen from '../../components/workout/LiveWorkoutScreen'
+import { RoutineGenerator } from '../../components/workout/WorkoutComponents'
+import { ExerciseLibrary } from '../../components/workout/WorkoutComponents'
+import { WorkoutHistory } from '../../components/workout/WorkoutComponents'
+import { WorkoutStats } from '../../components/workout/WorkoutComponents'
 
 const TABS = [
   { id: 'dashboard', icon: Dumbbell,  label: 'Inicio' },

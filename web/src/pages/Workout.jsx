@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Dumbbell, Sparkles, History, BarChart2, Plus } from 'lucide-react'
 import WorkoutDashboard from '../../components/workout/WorkoutDashboard'

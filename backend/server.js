@@ -8,6 +8,7 @@ const nutritionRoutes = require('./routes/nutrition');
 const pantryRoutes = require('./routes/pantry');
 const recipesRoutes = require('./routes/recipes');
 const reportsRoutes = require('./routes/reports');
+const workoutsRoutes = require('./routes/workouts');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -32,6 +33,7 @@ app.use('/api/nutrition', nutritionRoutes);
 app.use('/api/pantry',    pantryRoutes);
 app.use('/api/recipes',   recipesRoutes);
 app.use('/api/report',    reportsRoutes);
+app.use('/api/workouts', workoutsRoutes);
 
 // ── Error handler ───────────────────────────────────────────
 app.use((err, req, res, next) => {

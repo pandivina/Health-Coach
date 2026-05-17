@@ -12,7 +12,7 @@ router.post('/analyze-photo', requireAuth, async (req, res) => {
     if (!imageBase64) return res.status(400).json({ error: 'No image provided' });
 
     const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-opus-4-5',
       max_tokens: 500,
       messages: [{
         role: 'user',

@@ -121,7 +121,7 @@ export function ExerciseLibrary() {
 
   useEffect(() => {
     api.workouts.getExercises({ muscle_group: muscle || undefined, search: search || undefined })
-      .then(setExercises).catch(() => {})
+      .then(data => setExercises(Array.isArray(data) ? data : [])).catch(() => {})
   }, [muscle, search])
 
   return (

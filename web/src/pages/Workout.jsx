@@ -1,12 +1,9 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Dumbbell, Sparkles, History, BarChart2, Plus } from 'lucide-react'
-import WorkoutDashboard from '../../components/workout/WorkoutDashboard'
-import LiveWorkoutScreen from '../../components/workout/LiveWorkoutScreen'
-import { RoutineGenerator } from '../../components/workout/WorkoutComponents'
-import { ExerciseLibrary } from '../../components/workout/WorkoutComponents'
-import { WorkoutHistory } from '../../components/workout/WorkoutComponents'
-import { WorkoutStats } from '../../components/workout/WorkoutComponents'
+import WorkoutDashboard from '../components/workout/WorkoutDashboard'
+import LiveWorkoutScreen from '../components/workout/LiveWorkoutScreen'
+import { RoutineGenerator, ExerciseLibrary, WorkoutHistory, WorkoutStats } from '../components/workout/WorkoutComponents'
 
 const TABS = [
   { id: 'dashboard', icon: Dumbbell,  label: 'Inicio' },
@@ -28,7 +25,6 @@ export default function Workout() {
     <div className="page pb-32">
       <h1 className="text-2xl font-extrabold mb-4">Entreno 💪</h1>
 
-      {/* Tabs */}
       <div className="flex gap-1 bg-surface-2 rounded-2xl p-1 mb-5">
         {TABS.map(t => (
           <button key={t.id} onClick={() => setTab(t.id)}
@@ -41,7 +37,6 @@ export default function Workout() {
         ))}
       </div>
 
-      {/* Content */}
       <motion.div key={tab} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
         {tab === 'dashboard' && <WorkoutDashboard onStartSession={setActiveSession} />}
         {tab === 'generate'  && <RoutineGenerator onStartSession={setActiveSession} />}

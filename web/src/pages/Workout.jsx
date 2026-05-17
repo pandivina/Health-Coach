@@ -26,7 +26,7 @@ export default function Workout() {
 
   return (
     <div className="page pb-32">
-      <h1 className="text-2xl font-extrabold mb-4">Entrenamiento 💪</h1>
+      <h1 className="text-2xl font-extrabold mb-4">Entreno 💪</h1>
 
       {/* Tabs */}
       <div className="flex gap-1 bg-surface-2 rounded-2xl p-1 mb-5">

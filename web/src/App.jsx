@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { supabase } from './lib/supabase'
 import { useStore } from './store/useStore'
 import Layout from './components/Layout'
+import Appearance from './pages/Appearance'
 
 // Auth
 import Auth from './pages/Auth'
@@ -107,6 +108,7 @@ export default function App() {
           <Route path="/report" element={<DailyReport />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/premium" element={<Premium />} />
+          <Route path="/appearance" element={<Appearance />} />
 
           {/* Nutrición hub (incluye despensa y recetas) */}
           <Route path="/nutrition" element={<Nutrition />} />

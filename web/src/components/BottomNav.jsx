@@ -1,7 +1,6 @@
 import { NavLink } from 'react-router-dom'
-import { Home, MessageCircle, Apple, Dumbbell, BarChart2, User, TrendingUp } from 'lucide-react'
+import { Home, MessageCircle, Apple, Dumbbell, BarChart2, User, TrendingUp, Sparkles } from 'lucide-react'
 import { useState } from 'react'
-import { ..., Sparkles } from 'lucide-react'
 
 const MAIN_NAV = [
   { to: '/',          icon: Home,          label: 'Inicio' },

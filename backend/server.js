@@ -11,6 +11,7 @@ const reportsRoutes = require('./routes/reports');
 const workoutsRoutes = require('./routes/workouts');
 const healthRoutes  = require('./routes/health');
 const labsRoutes    = require('./routes/labs');
+const achievementsRoutes = require('./routes/achievements');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -38,6 +39,7 @@ app.use('/api/report',    reportsRoutes);
 app.use('/api/workouts', workoutsRoutes);
 app.use('/api/health', healthRoutes);
 app.use('/api/labs',   labsRoutes);
+app.use('/api/achievements', achievementsRoutes);
 
 // ── Error handler ───────────────────────────────────────────
 app.use((err, req, res, next) => {

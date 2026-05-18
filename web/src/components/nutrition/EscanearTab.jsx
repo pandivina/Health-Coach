@@ -10,45 +10,68 @@ const MEAL_LABELS = { breakfast: 'Desayuno', lunch: 'Comida', dinner: 'Cena', sn
 
 function BarcodeScanner({ onDetected, onClose }) {
   const videoRef = useRef(null)
-  const [error, setError] = useState('')
+  const canvasRef = useRef(null)
+  const rafRef = useRef(null)
+  const [status, setStatus] = useState('Iniciando cámara…')
+  const [supported, setSupported] = useState(true)
 
   useEffect(() => {
-    let codeReader = null
-    let stopped = false
+    let stream = null
+    let detector = null
+    let active = true
 
     async function start() {
+      // Check BarcodeDetector support
+      if (!('BarcodeDetector' in window)) {
+        setSupported(false)
+        setStatus('Tu navegador no soporta el escáner nativo. Usa Chrome en Android.')
+        return
+      }
+
       try {
-        const { BrowserMultiFormatReader } = await import('@zxing/browser')
-        codeReader = new BrowserMultiFormatReader()
-
-        const devices = await BrowserMultiFormatReader.listVideoInputDevices()
-        const deviceId = devices.find(d => d.label.toLowerCase().includes('back'))?.deviceId
-          || devices[devices.length - 1]?.deviceId
-
-        if (!deviceId) {
-          setError('No se encontró cámara trasera')
-          return
-        }
-
-        await codeReader.decodeFromVideoDevice(deviceId, videoRef.current, (result, err) => {
-          if (stopped) return
-          if (result) {
-            stopped = true
-            onDetected(result.getText())
-          }
+        detector = new window.BarcodeDetector({
+          formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e', 'code_128', 'code_39', 'qr_code']
         })
+
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
+        })
+
+        if (!active) { stream.getTracks().forEach(t => t.stop()); return }
+
+        videoRef.current.srcObject = stream
+        await videoRef.current.play()
+        setStatus('Apunta al código de barras')
+
+        async function scan() {
+          if (!active || !videoRef.current || videoRef.current.readyState < 2) {
+            rafRef.current = requestAnimationFrame(scan)
+            return
+          }
+          try {
+            const barcodes = await detector.detect(videoRef.current)
+            if (barcodes.length > 0 && active) {
+              active = false
+              stream.getTracks().forEach(t => t.stop())
+              onDetected(barcodes[0].rawValue)
+              return
+            }
+          } catch {}
+          rafRef.current = requestAnimationFrame(scan)
+        }
+        rafRef.current = requestAnimationFrame(scan)
+
       } catch (err) {
-        setError('Error al acceder a la cámara: ' + err.message)
+        setStatus('Error: ' + (err.message || 'No se pudo acceder a la cámara'))
       }
     }
 
     start()
 
     return () => {
-      stopped = true
-      if (codeReader) {
-        BrowserMultiFormatReader.releaseAllStreams()
-      }
+      active = false
+      if (rafRef.current) cancelAnimationFrame(rafRef.current)
+      if (stream) stream.getTracks().forEach(t => t.stop())
     }
   }, [])
 
@@ -56,37 +79,47 @@ function BarcodeScanner({ onDetected, onClose }) {
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
       className="fixed inset-0 bg-black z-50 flex flex-col">
       <div className="flex items-center justify-between p-4">
-        <p className="text-white font-semibold">Escanear código de barras</p>
+        <p className="text-white font-semibold">Escanear código</p>
         <button onClick={onClose}
           className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center">
           <X size={18} className="text-white" />
         </button>
       </div>
 
-      <div className="flex-1 flex flex-col items-center justify-center px-4">
-        {error ? (
-          <div className="text-center">
-            <p className="text-red-400 text-sm mb-4">{error}</p>
-            <button onClick={onClose} className="btn-secondary w-auto px-6">Cerrar</button>
-          </div>
-        ) : (
+      <div className="flex-1 flex flex-col items-center justify-center px-4 gap-4">
+        {supported ? (
           <>
-            <div className="relative w-full max-w-sm">
-              <video ref={videoRef} className="w-full rounded-2xl" autoPlay playsInline muted />
-              {/* Targeting overlay */}
+            <div className="relative w-full max-w-sm rounded-2xl overflow-hidden bg-gray-900">
+              <video
+                ref={videoRef}
+                className="w-full h-64 object-cover"
+                autoPlay playsInline muted
+              />
+              {/* Overlay guide */}
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <div className="w-64 h-24 border-2 border-cyan-400 rounded-lg">
-                  <div className="absolute top-0 left-0 w-4 h-4 border-t-4 border-l-4 border-cyan-400 rounded-tl" />
-                  <div className="absolute top-0 right-0 w-4 h-4 border-t-4 border-r-4 border-cyan-400 rounded-tr" />
-                  <div className="absolute bottom-0 left-0 w-4 h-4 border-b-4 border-l-4 border-cyan-400 rounded-bl" />
-                  <div className="absolute bottom-0 right-0 w-4 h-4 border-b-4 border-r-4 border-cyan-400 rounded-br" />
+                <div className="w-56 h-20 border-2 border-cyan-400 rounded-lg relative">
+                  <div className="absolute -top-1 -left-1 w-5 h-5 border-t-4 border-l-4 border-cyan-400" />
+                  <div className="absolute -top-1 -right-1 w-5 h-5 border-t-4 border-r-4 border-cyan-400" />
+                  <div className="absolute -bottom-1 -left-1 w-5 h-5 border-b-4 border-l-4 border-cyan-400" />
+                  <div className="absolute -bottom-1 -right-1 w-5 h-5 border-b-4 border-r-4 border-cyan-400" />
+                  {/* Scanning line animation */}
+                  <motion.div
+                    animate={{ top: ['0%', '100%', '0%'] }}
+                    transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
+                    className="absolute left-0 right-0 h-0.5 bg-cyan-400/70"
+                  />
                 </div>
               </div>
             </div>
-            <p className="text-white/50 text-sm mt-4 text-center">
-              Centra el código de barras en el recuadro
-            </p>
+            <p className="text-white/60 text-sm text-center">{status}</p>
           </>
+        ) : (
+          <div className="text-center px-4">
+            <p className="text-white/60 text-sm mb-4">{status}</p>
+            <button onClick={onClose} className="bg-white/10 text-white px-6 py-3 rounded-xl">
+              Cerrar y usar teclado
+            </button>
+          </div>
         )}
       </div>
     </motion.div>
@@ -102,28 +135,18 @@ export default function EscanearTab({ onSaved }) {
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
   const [scanning, setScanning] = useState(false)
+  const [nativeSupported] = useState('BarcodeDetector' in window)
 
   async function searchBarcode(code) {
-    const barcodeToSearch = code || barcode.trim()
-    if (!barcodeToSearch) return
-    setLoading(true)
-    setError('')
-    setResult(null)
+    const q = code || barcode.trim()
+    if (!q) return
+    setLoading(true); setError(''); setResult(null)
     try {
-      const data = await api.nutrition.barcode(barcodeToSearch)
-      setResult(data)
-      setBarcode(barcodeToSearch)
+      const data = await api.nutrition.barcode(q)
+      setResult(data); setBarcode(q)
     } catch {
       setError('Producto no encontrado. Prueba con otro código.')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  function handleScanDetected(code) {
-    setScanning(false)
-    setBarcode(code)
-    searchBarcode(code)
+    } finally { setLoading(false) }
   }
 
   async function save() {
@@ -140,38 +163,41 @@ export default function EscanearTab({ onSaved }) {
         carbs_g: result.carbs_g || 0,
         fat_g: result.fat_g || 0,
       })
-      addXP(10)
-      onSaved()
-    } catch (err) {
-      setError('Error guardando: ' + err.message)
-    } finally {
-      setSaving(false)
-    }
+      addXP(10); onSaved()
+    } catch (err) { setError('Error: ' + err.message) }
+    finally { setSaving(false) }
   }
 
   return (
     <>
       {scanning && (
-        <BarcodeScanner onDetected={handleScanDetected} onClose={() => setScanning(false)} />
+        <BarcodeScanner
+          onDetected={(code) => { setScanning(false); searchBarcode(code) }}
+          onClose={() => setScanning(false)}
+        />
       )}
 
       <div className="space-y-4">
         <div className="card bg-gradient-to-r from-blue-500/10 to-cyan-500/5 border-blue-500/15">
           <p className="font-semibold text-sm mb-1">📦 Escáner de código de barras</p>
-          <p className="text-white/50 text-xs leading-relaxed">
-            Escanea el código de barras con la cámara o introdúcelo manualmente.
+          <p className="text-white/50 text-xs">
+            {nativeSupported
+              ? 'Escanea con la cámara o introduce el código manualmente.'
+              : 'Tu navegador no soporta escaneo nativo. Introduce el código manualmente.'}
           </p>
         </div>
 
-        <button onClick={() => setScanning(true)}
-          className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 rounded-2xl py-4 flex items-center justify-center gap-3 active:scale-98 transition-all">
-          <Camera size={22} className="text-white" />
-          <span className="text-white font-semibold">Escanear con cámara</span>
-        </button>
+        {nativeSupported && (
+          <button onClick={() => setScanning(true)}
+            className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 rounded-2xl py-4 flex items-center justify-center gap-3 active:scale-98 transition-all">
+            <Camera size={22} className="text-white" />
+            <span className="text-white font-semibold">Escanear con cámara</span>
+          </button>
+        )}
 
         <div className="flex items-center gap-2">
           <div className="flex-1 h-px bg-white/10" />
-          <span className="text-white/30 text-xs">o introduce manualmente</span>
+          <span className="text-white/30 text-xs">código manual</span>
           <div className="flex-1 h-px bg-white/10" />
         </div>
 
@@ -188,11 +214,7 @@ export default function EscanearTab({ onSaved }) {
           </button>
         </div>
 
-        {error && (
-          <div className="card bg-red-500/10 border-red-500/20">
-            <p className="text-red-400 text-sm">{error}</p>
-          </div>
-        )}
+        {error && <div className="card bg-red-500/10 border-red-500/20"><p className="text-red-400 text-sm">{error}</p></div>}
 
         <AnimatePresence>
           {result && (
@@ -203,8 +225,7 @@ export default function EscanearTab({ onSaved }) {
                 <div className="grid grid-cols-4 gap-2 text-center">
                   {[['🔥',result.calories,'kcal'],['💪',result.protein_g,'g prot'],['🌾',result.carbs_g,'g carbs'],['🫒',result.fat_g,'g grasa']].map(([e,v,u]) => (
                     <div key={u} className="bg-surface-3 rounded-xl py-2">
-                      <p className="text-lg">{e}</p>
-                      <p className="font-bold text-sm">{Math.round(v)}</p>
+                      <p className="text-lg">{e}</p><p className="font-bold text-sm">{Math.round(v)}</p>
                       <p className="text-white/30 text-[9px]">{u}</p>
                     </div>
                   ))}

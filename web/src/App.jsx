@@ -1,4 +1,5 @@
 import HealthTracking from './pages/HealthTracking'
+import HealthTracking from './pages/HealthTracking'
 import { useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { supabase } from './lib/supabase'

@@ -56,4 +56,20 @@ export const api = {
     history: () => request('GET', '/api/workouts/history'),
     stats: () => request('GET', '/api/workouts/stats'),
   },
+  health: {
+    getProfile: () => request('GET', '/api/health/profile'),
+    updateProfile: (data) => request('PUT', '/api/health/profile', data),
+    logWeight: (data) => request('POST', '/api/health/weight', data),
+    getWeightLogs: () => request('GET', '/api/health/weight'),
+    logMeasurements: (data) => request('POST', '/api/health/measurements', data),
+    getMeasurements: () => request('GET', '/api/health/measurements'),
+    getTreatments: () => request('GET', '/api/health/treatments'),
+    addTreatment: (data) => request('POST', '/api/health/treatments', data),
+    deleteTreatment: (id) => request('DELETE', `/api/health/treatments/${id}`),
+  },
+  labs: {
+    analyze: (data) => request('POST', '/api/labs/analyze', data),
+    getReports: () => request('GET', '/api/labs/reports'),
+    deleteReport: (id) => request('DELETE', `/api/labs/reports/${id}`),
+  },
 }

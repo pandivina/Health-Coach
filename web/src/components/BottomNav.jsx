@@ -1,5 +1,6 @@
 import { NavLink } from 'react-router-dom'
 import { Home, MessageCircle, Apple, Dumbbell, BarChart2, User } from 'lucide-react'
+import { ..., TrendingUp } from 'lucide-react'
 
 const NAV_ITEMS = [
   { to: '/',          icon: Home,          label: 'Inicio' },
@@ -8,6 +9,7 @@ const NAV_ITEMS = [
   { to: '/workout',   icon: Dumbbell,      label: 'Entrena' },
   { to: '/report',    icon: BarChart2,     label: 'Tu Día' },
   { to: '/profile',   icon: User,          label: 'Perfil' },
+  { to: '/health',    icon: TrendingUp,    label: 'Salud' }
 ]
 
 export default function BottomNav() {

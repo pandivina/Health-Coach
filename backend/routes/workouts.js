@@ -192,9 +192,13 @@ router.post('/finish', requireAuth, async (req, res) => {
     const userId = req.user.id;
 
     // Calcular volumen total
-    const { data: sets } = await supabaseAdmin.from('workout_sets').select('weight_kg, reps, is_warmup')
-      .in('workout_exercise_id', supabaseAdmin.from('workout_exercises').select('id').eq('session_id', session_id));
-
+    const { data: exercises } = await supabaseAdmin.from('workout_exercises')
+  .select('id').eq('session_id', session_id);
+const exerciseIds = (exercises || []).map(e => e.id);
+const { data: sets } = exerciseIds.length 
+  ? await supabaseAdmin.from('workout_sets').select('weight_kg, reps, is_warmup').in('workout_exercise_id', exerciseIds)
+  : { data: [] };
+    
     const totalVolume = (sets || []).filter(s => !s.is_warmup).reduce((sum, s) => sum + (s.weight_kg * s.reps), 0);
     const totalSets = (sets || []).filter(s => !s.is_warmup).length;
     const caloriesBurned = Math.round(duration_seconds / 60 * 8);

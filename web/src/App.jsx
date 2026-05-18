@@ -1,3 +1,4 @@
+import HealthTracking from './pages/HealthTracking'
 import { useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { supabase } from './lib/supabase'
@@ -57,6 +58,7 @@ export default function App() {
         <Route path="/auth" element={<Auth />} />
         <Route path="/onboarding" element={<Onboarding />} />
         <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+          <Route path="/health" element={<HealthTracking />} />
           <Route path="/" element={<Home />} />
           <Route path="/coach" element={<Coach />} />
           <Route path="/nutrition" element={<Nutrition />} />

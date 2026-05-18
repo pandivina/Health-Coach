@@ -1,14 +1,16 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { LogOut, Edit2, Check, Sparkles } from 'lucide-react'
+import { LogOut, Edit2, Check, Sparkles, Palette } from 'lucide-react'
 import { useStore } from '../store/useStore'
 import { useNavigate, Link } from 'react-router-dom'
+import { useTheme } from '../contexts/ThemeProvider'
 
 const GOAL_LABELS = { lose_fat:'Perder grasa 🔥', gain_muscle:'Ganar músculo 💪', maintain:'Mantener peso ⚖️', recomp:'Recomposición 🔄', health:'Salud general ❤️' }
 const ACTIVITY_LABELS = { sedentary:'Sedentario 🛋️', light:'Ligero 🚶', moderate:'Moderado 🏃', intense:'Intenso ⚡' }
 
 export default function Profile() {
   const { profile, updateProfile, logout } = useStore()
+  const { theme } = useTheme()
   const [editing, setEditing] = useState(false)
   const [form, setForm] = useState({
     name: profile?.name || '',
@@ -44,18 +46,22 @@ export default function Profile() {
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-extrabold">Perfil 👤</h1>
         <button onClick={() => editing ? save() : setEditing(true)}
-          className="flex items-center gap-1.5 bg-surface-2 border border-white/10 rounded-xl px-4 py-2 text-sm font-medium active:scale-95 transition-all">
+          className="flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-medium active:scale-95 transition-all"
+          style={{ background: theme.surface, border: `1px solid ${theme.border}`, color: theme.text }}>
           {editing ? <><Check size={14} /> Guardar</> : <><Edit2 size={14} /> Editar</>}
         </button>
       </div>
 
       {/* Avatar + name */}
       <div className="flex flex-col items-center mb-6">
-        <div className="w-20 h-20 rounded-3xl bg-gradient-brand flex items-center justify-center text-3xl font-bold mb-3">
+        <div className="w-20 h-20 rounded-3xl flex items-center justify-center text-3xl font-bold mb-3"
+          style={{ background: theme.gradientBrand }}>
           {profile?.name?.[0]?.toUpperCase() || '?'}
         </div>
-        <h2 className="text-xl font-bold">{profile?.name}</h2>
-        <p className="text-white/40 text-sm">Nivel {profile?.level || 1} · {profile?.xp || 0} XP</p>
+        <h2 className="text-xl font-bold" style={{ color: theme.text }}>{profile?.name}</h2>
+        <p className="text-sm" style={{ color: theme.textMuted }}>
+          Nivel {profile?.level || 1} · {profile?.xp || 0} XP
+        </p>
       </div>
 
       {/* Stats */}
@@ -67,8 +73,8 @@ export default function Profile() {
         ].map(([e, l, v]) => (
           <div key={l} className="card text-center">
             <p className="text-xl">{e}</p>
-            <p className="font-bold">{v}</p>
-            <p className="text-white/30 text-xs">{l}</p>
+            <p className="font-bold" style={{ color: theme.text }}>{v}</p>
+            <p className="text-xs" style={{ color: theme.textMuted }}>{l}</p>
           </div>
         ))}
       </div>
@@ -104,28 +110,48 @@ export default function Profile() {
             ['🔥', 'Racha actual', `${profile?.streak || 0} días`],
           ].map(([e, l, v]) => (
             <div key={l} className="flex items-center justify-between py-1">
-              <span className="text-white/50 text-sm flex items-center gap-2">{e} {l}</span>
-              <span className="text-sm font-medium">{v}</span>
+              <span className="text-sm flex items-center gap-2" style={{ color: theme.textMuted }}>{e} {l}</span>
+              <span className="text-sm font-medium" style={{ color: theme.text }}>{v}</span>
             </div>
           ))}
         </div>
       )}
 
       {/* Premium banner */}
-<Link to="/premium">
-  <motion.div whileTap={{ scale: 0.97 }}
-    className="w-full flex items-center gap-3 p-4 rounded-2xl bg-gradient-brand mb-4">
-    <Sparkles size={20} className="text-white flex-shrink-0" />
-    <div>
-      <p className="font-bold text-white text-sm">Hazte Premium ⭐</p>
-      <p className="text-white/70 text-xs">7 días gratis · Cancela cuando quieras</p>
-    </div>
-    <span className="ml-auto text-white/70">›</span>
-  </motion.div>
-</Link>
+      <Link to="/premium">
+        <motion.div whileTap={{ scale: 0.97 }}
+          className="w-full flex items-center gap-3 p-4 rounded-2xl mb-3"
+          style={{ background: theme.gradientBrand }}>
+          <Sparkles size={20} className="text-white flex-shrink-0" />
+          <div>
+            <p className="font-bold text-white text-sm">Hazte Premium ⭐</p>
+            <p className="text-xs" style={{ color: 'rgba(255,255,255,0.7)' }}>7 días gratis · Cancela cuando quieras</p>
+          </div>
+          <span className="ml-auto text-white/70">›</span>
+        </motion.div>
+      </Link>
+
+      {/* Apariencia */}
+      <Link to="/appearance">
+        <motion.div whileTap={{ scale: 0.97 }}
+          className="w-full flex items-center gap-3 p-4 rounded-2xl mb-5"
+          style={{ background: theme.surface, border: `1px solid ${theme.border}` }}>
+          <div className="w-9 h-9 rounded-xl flex items-center justify-center"
+            style={{ background: `${theme.primary}20` }}>
+            <Palette size={18} style={{ color: theme.primary }} />
+          </div>
+          <div>
+            <p className="font-semibold text-sm" style={{ color: theme.text }}>Apariencia</p>
+            <p className="text-xs" style={{ color: theme.textMuted }}>Temas y colores de la app</p>
+          </div>
+          <span className="ml-auto" style={{ color: theme.textMuted }}>›</span>
+        </motion.div>
+      </Link>
+
       {/* Logout */}
       <button onClick={handleLogout}
-        className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-accent-red/30 text-accent-red text-sm font-medium active:bg-accent-red/10 transition-all">
+        className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-medium transition-all"
+        style={{ border: `1px solid ${theme.error}50`, color: theme.error }}>
         <LogOut size={14} /> Cerrar sesión
       </button>
     </div>

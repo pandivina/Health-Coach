@@ -113,47 +113,78 @@ export function RoutineGenerator({ onStartSession }) {
 
 // ─── EXERCISE LIBRARY ─────────────────────────────────────────
 export function ExerciseLibrary() {
-  const { user } = useStore()
   const [exercises, setExercises] = useState([])
   const [search, setSearch] = useState('')
   const [muscle, setMuscle] = useState('')
   const MUSCLES = ['','pecho','espalda','hombros','piernas','bíceps','tríceps','core','cardio']
+  const MUSCLE_EMOJIS = { pecho:'🫁', espalda:'🔙', hombros:'💪', piernas:'🦵', bíceps:'💪', tríceps:'💪', core:'🎯', cardio:'🏃' }
 
   useEffect(() => {
-    api.workouts.getExercises({ muscle_group: muscle || undefined, search: search || undefined })
-      .then(data => setExercises(Array.isArray(data) ? data : [])).catch(() => {})
-  }, [muscle, search])
+    api.workouts.getExercises()
+      .then(data => setExercises(Array.isArray(data) ? data : []))
+      .catch(() => {})
+  }, [])
+
+  // Filtrar por búsqueda y categoría
+  const filtered = exercises.filter(ex => {
+    const matchSearch = !search || ex.name.toLowerCase().includes(search.toLowerCase())
+    const matchMuscle = !muscle || ex.muscle_group === muscle
+    return matchSearch && matchMuscle
+  })
+
+  // Agrupar por músculo
+  const grouped = MUSCLES.slice(1).reduce((acc, m) => {
+    const items = filtered.filter(ex => ex.muscle_group === m)
+    if (items.length) acc[m] = items
+    return acc
+  }, {})
 
   return (
     <div className="space-y-4">
-      <input className="input" placeholder="Buscar ejercicio…" value={search} onChange={e => setSearch(e.target.value)} />
+      <input className="input" placeholder="Buscar ejercicio…" value={search}
+        onChange={e => setSearch(e.target.value)} />
       <div className="flex gap-2 overflow-x-auto pb-1">
         {MUSCLES.map(m => (
           <button key={m} onClick={() => setMuscle(m)}
-            className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all capitalize ${muscle === m ? 'bg-accent text-white' : 'bg-surface-2 text-white/50'}`}>
+            className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all capitalize ${
+              muscle === m ? 'bg-accent text-white' : 'bg-surface-2 text-white/50'
+            }`}>
             {m || 'Todos'}
           </button>
         ))}
       </div>
-      <div className="space-y-2">
-        {exercises.map(ex => (
-          <div key={ex.id} className="card">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-accent/10 flex items-center justify-center">
-                <Dumbbell size={16} className="text-accent" />
+
+      {filtered.length === 0 && (
+        <p className="text-white/30 text-center py-8">Sin resultados</p>
+      )}
+
+      {Object.entries(grouped).map(([group, items]) => (
+        <div key={group}>
+          <p className="text-white/50 text-xs uppercase tracking-wider font-semibold mb-2 flex items-center gap-1">
+            <span>{MUSCLE_EMOJIS[group]}</span> {group}
+          </p>
+          <div className="space-y-2">
+            {items.map(ex => (
+              <div key={ex.id} className="card">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-accent/10 flex items-center justify-center">
+                    <Dumbbell size={16} className="text-accent" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-sm">{ex.name}</p>
+                    <p className="text-white/40 text-xs capitalize">{ex.equipment}</p>
+                  </div>
+                </div>
+                {ex.secondary_muscles?.length > 0 && (
+                  <p className="text-white/30 text-xs mt-1 ml-12">
+                    También: {ex.secondary_muscles.join(', ')}
+                  </p>
+                )}
               </div>
-              <div>
-                <p className="font-medium text-sm">{ex.name}</p>
-                <p className="text-white/40 text-xs capitalize">{ex.muscle_group} · {ex.equipment}</p>
-              </div>
-            </div>
-            {ex.secondary_muscles?.length > 0 && (
-              <p className="text-white/30 text-xs mt-2 ml-12">También: {ex.secondary_muscles.join(', ')}</p>
-            )}
+            ))}
           </div>
-        ))}
-        {exercises.length === 0 && <p className="text-white/30 text-center py-8">Sin resultados</p>}
-      </div>
+        </div>
+      ))}
     </div>
   )
 }

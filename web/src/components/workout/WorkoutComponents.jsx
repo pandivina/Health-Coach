@@ -112,6 +112,33 @@ export function RoutineGenerator({ onStartSession }) {
 }
 
 // ─── EXERCISE LIBRARY ─────────────────────────────────────────
+function ExerciseCard({ ex }) {
+  const [open, setOpen] = useState(false)
+  return (
+    <div className="card cursor-pointer" onClick={() => setOpen(o => !o)}>
+      <div className="flex items-center gap-3">
+        <div className="w-9 h-9 rounded-xl bg-accent/10 flex items-center justify-center flex-shrink-0">
+          <Dumbbell size={16} className="text-accent" />
+        </div>
+        <div className="flex-1">
+          <p className="font-medium text-sm">{ex.name}</p>
+          <p className="text-white/40 text-xs capitalize">{ex.equipment}</p>
+        </div>
+        <span className="text-white/30 text-xs">{open ? '▲' : '▼'}</span>
+      </div>
+      {open && ex.instructions && (
+        <p className="text-white/60 text-xs leading-relaxed mt-3 pl-12">
+          {ex.instructions}
+        </p>
+      )}
+      {open && ex.secondary_muscles?.length > 0 && (
+        <p className="text-white/30 text-xs mt-2 pl-12">
+          También trabaja: {ex.secondary_muscles.join(', ')}
+        </p>
+      )}
+    </div>
+  )
+}
 export function ExerciseLibrary() {
   const [exercises, setExercises] = useState([])
   const [search, setSearch] = useState('')
@@ -165,23 +192,8 @@ export function ExerciseLibrary() {
           </p>
           <div className="space-y-2">
             {items.map(ex => (
-              <div key={ex.id} className="card">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-accent/10 flex items-center justify-center">
-                    <Dumbbell size={16} className="text-accent" />
-                  </div>
-                  <div>
-                    <p className="font-medium text-sm">{ex.name}</p>
-                    <p className="text-white/40 text-xs capitalize">{ex.equipment}</p>
-                  </div>
-                </div>
-                {ex.secondary_muscles?.length > 0 && (
-                  <p className="text-white/30 text-xs mt-1 ml-12">
-                    También: {ex.secondary_muscles.join(', ')}
-                  </p>
-                )}
-              </div>
-            ))}
+  <ExerciseCard key={ex.id} ex={ex} />
+))}
           </div>
         </div>
       ))}

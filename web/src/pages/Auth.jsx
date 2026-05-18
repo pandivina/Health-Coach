@@ -2,9 +2,11 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { motion } from 'framer-motion'
+import { useTheme } from '../contexts/ThemeProvider'
 
 export default function Auth() {
-  const [mode, setMode] = useState('login') // 'login' | 'register'
+  const { theme } = useTheme()
+  const [mode, setMode] = useState('login')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [name, setName] = useState('')
@@ -16,12 +18,10 @@ export default function Auth() {
   async function handleSubmit(e) {
     e.preventDefault()
     setError(''); setSuccess(''); setLoading(true)
-
     try {
       if (mode === 'register') {
         const { data, error: err } = await supabase.auth.signUp({
-          email, password,
-          options: { data: { name } },
+          email, password, options: { data: { name } },
         })
         if (err) throw err
         if (data.user) {
@@ -35,46 +35,28 @@ export default function Auth() {
         if (err) throw err
         navigate('/')
       }
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setLoading(false)
-    }
+    } catch (err) { setError(err.message) }
+    finally { setLoading(false) }
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a12] flex flex-col items-center justify-center px-6">
-      {/* Logo */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="text-center mb-10"
-      >
+    <div className="min-h-screen flex flex-col items-center justify-center px-6"
+      style={{ background: theme.bg }}>
+      <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-10">
         <div className="text-5xl mb-3">🐼</div>
-        <h1 className="text-3xl font-extrabold bg-gradient-brand bg-clip-text text-transparent">
+        <h1 className="text-3xl font-extrabold" style={{ background: theme.gradientBrand, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
           Health Coach
         </h1>
-        <p className="text-white/40 text-sm mt-1">Tu mejor versión empieza aquí</p>
+        <p className="text-sm mt-1" style={{ color: theme.textMuted }}>Tu mejor versión empieza aquí</p>
       </motion.div>
 
-      {/* Form */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
-        className="w-full max-w-sm"
-      >
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="w-full max-w-sm">
         <div className="card space-y-4">
-          {/* Toggle */}
-          <div className="flex bg-surface-3 rounded-xl p-1">
+          <div className="flex rounded-xl p-1" style={{ background: theme.surface2 }}>
             {['login','register'].map(m => (
-              <button
-                key={m}
-                onClick={() => setMode(m)}
-                className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-all ${
-                  mode === m ? 'bg-accent text-white' : 'text-white/40'
-                }`}
-              >
+              <button key={m} onClick={() => setMode(m)}
+                className="flex-1 py-2 rounded-lg text-sm font-semibold transition-all"
+                style={{ background: mode === m ? theme.primary : 'transparent', color: mode === m ? '#fff' : theme.textMuted }}>
                 {m === 'login' ? 'Iniciar sesión' : 'Registrarse'}
               </button>
             ))}
@@ -96,8 +78,12 @@ export default function Auth() {
               <input className="input" type="password" placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} required minLength={6} />
             </div>
 
-            {error && <p className="text-accent-red text-sm bg-accent-red/10 rounded-lg px-3 py-2">{error}</p>}
-            {success && <p className="text-accent-green text-sm bg-accent-green/10 rounded-lg px-3 py-2">{success}</p>}
+            {error && (
+              <p className="text-sm rounded-lg px-3 py-2" style={{ color: theme.error, background: `${theme.error}15` }}>{error}</p>
+            )}
+            {success && (
+              <p className="text-sm rounded-lg px-3 py-2" style={{ color: theme.success, background: `${theme.success}15` }}>{success}</p>
+            )}
 
             <button type="submit" disabled={loading} className="btn-primary mt-2">
               {loading ? 'Cargando…' : mode === 'login' ? 'Entrar' : 'Crear cuenta'}

@@ -1,51 +1,43 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Loader, RefreshCw, Apple, Dumbbell, Moon, Droplets, Smile, Scale, Trophy, ChevronRight } from 'lucide-react'
+import { Loader, RefreshCw, Apple, Dumbbell, Moon, Droplets, Smile, TrendingUp, Trophy, ChevronRight } from 'lucide-react'
 import { api } from '../lib/api'
 import { supabase } from '../lib/supabase'
 import { useStore } from '../store/useStore'
-
-function StatBlock({ emoji, label, value, sub, to, color = 'bg-surface-2' }) {
-  const content = (
-    <motion.div whileTap={{ scale: 0.97 }} className={`${color} rounded-2xl p-4 border border-white/5`}>
-      <p className="text-xl mb-1">{emoji}</p>
-      <p className="font-bold text-lg leading-tight">{value}</p>
-      <p className="text-white/40 text-xs">{label}</p>
-      {sub && <p className="text-white/25 text-[10px] mt-0.5">{sub}</p>}
-    </motion.div>
-  )
-  return to ? <Link to={to}>{content}</Link> : content
-}
+import { useTheme } from '../contexts/ThemeProvider'
 
 function ModuleStatus({ icon: Icon, label, value, status, to }) {
-  const colors = { done: 'text-accent-green', partial: 'text-yellow-400', empty: 'text-white/20' }
-  const dots = { done: '●', partial: '◐', empty: '○' }
+  const { theme } = useTheme()
+  const colors = { done: theme.success, partial: theme.warning, empty: theme.border }
+  const dots   = { done: '●', partial: '◐', empty: '○' }
   return (
-    <Link to={to} className="flex items-center gap-3 py-2.5 border-b border-white/5 last:border-0 active:bg-surface-3 rounded-xl px-2 transition-all">
-      <div className="w-8 h-8 rounded-xl bg-surface-3 flex items-center justify-center flex-shrink-0">
-        <Icon size={15} className="text-white/60" />
+    <Link to={to} className="flex items-center gap-3 py-2.5 px-2 rounded-xl transition-all active:scale-99"
+      style={{ borderBottom: `1px solid ${theme.border}` }}>
+      <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
+        style={{ background: theme.surface2 }}>
+        <Icon size={15} style={{ color: theme.textMuted }} />
       </div>
       <div className="flex-1">
-        <p className="text-sm font-medium">{label}</p>
-        <p className="text-white/40 text-xs">{value}</p>
+        <p className="text-sm font-medium" style={{ color: theme.text }}>{label}</p>
+        <p className="text-xs" style={{ color: theme.textMuted }}>{value}</p>
       </div>
-      <span className={`text-lg ${colors[status]}`}>{dots[status]}</span>
-      <ChevronRight size={12} className="text-white/20" />
+      <span style={{ color: colors[status] }}>{dots[status]}</span>
+      <ChevronRight size={12} style={{ color: theme.textLight }} />
     </Link>
   )
 }
 
 function WeeklyBar({ label, value, max, color }) {
+  const { theme } = useTheme()
   const pct = max > 0 ? Math.min((value / max) * 100, 100) : 0
   return (
     <div>
-      <div className="flex justify-between text-xs text-white/40 mb-1">
+      <div className="flex justify-between text-xs mb-1" style={{ color: theme.textMuted }}>
         <span>{label}</span><span>{Math.round(value)}/{max}</span>
       </div>
-      <div className="h-1.5 bg-surface-3 rounded-full overflow-hidden">
-        <motion.div initial={{ width: 0 }} animate={{ width: `${pct}%` }}
-          transition={{ duration: 0.6 }}
+      <div className="h-1.5 rounded-full overflow-hidden" style={{ background: theme.surface2 }}>
+        <motion.div initial={{ width: 0 }} animate={{ width: `${pct}%` }} transition={{ duration: 0.6 }}
           className="h-full rounded-full" style={{ background: color }} />
       </div>
     </div>
@@ -54,6 +46,7 @@ function WeeklyBar({ label, value, max, color }) {
 
 export default function DailyReport() {
   const { user, profile, addXP } = useStore()
+  const { theme } = useTheme()
   const [report, setReport] = useState(null)
   const [loading, setLoading] = useState(false)
   const [dailyData, setDailyData] = useState(null)
@@ -62,12 +55,7 @@ export default function DailyReport() {
   const [weekStats, setWeekStats] = useState(null)
   const today = new Date().toISOString().split('T')[0]
 
-  useEffect(() => {
-    if (!user) return
-    loadDailyData()
-    loadWeekStats()
-    loadAchievements()
-  }, [user])
+  useEffect(() => { if (!user) return; loadDailyData(); loadWeekStats(); loadAchievements() }, [user])
 
   async function loadDailyData() {
     const [mealsRes, workoutRes, sleepRes, moodRes, hydrationRes, goalsRes] = await Promise.all([
@@ -93,21 +81,19 @@ export default function DailyReport() {
   }
 
   async function loadWeekStats() {
-    const days = [...Array(7)].map((_, i) => {
-      const d = new Date(); d.setDate(d.getDate() - (6 - i))
-      return d.toISOString().split('T')[0]
-    })
+    const days = [...Array(7)].map((_, i) => { const d = new Date(); d.setDate(d.getDate() - (6 - i)); return d.toISOString().split('T')[0] })
     const [mealsRes, workoutsRes, sleepRes] = await Promise.all([
       supabase.from('meal_logs').select('date,calories').eq('user_id', user.id).in('date', days),
       supabase.from('workout_sessions').select('date').eq('user_id', user.id).eq('status','completed').in('date', days),
       supabase.from('sleep_logs').select('date,hours').eq('user_id', user.id).in('date', days),
     ])
-    const meals = mealsRes.data || []
-    const workouts = workoutsRes.data || []
-    const sleepLogs = sleepRes.data || []
-    const avgCals = meals.length ? Math.round(meals.reduce((s,m) => s + m.calories, 0) / 7) : 0
-    const avgSleep = sleepLogs.length ? (sleepLogs.reduce((s,l) => s + l.hours, 0) / sleepLogs.length).toFixed(1) : 0
-    setWeekStats({ avgCals, workoutDays: workouts.length, avgSleep, loggedDays: [...new Set(meals.map(m => m.date))].length })
+    const meals = mealsRes.data || []; const workouts = workoutsRes.data || []; const sleepLogs = sleepRes.data || []
+    setWeekStats({
+      avgCals: meals.length ? Math.round(meals.reduce((s,m)=>s+m.calories,0)/7) : 0,
+      workoutDays: workouts.length,
+      avgSleep: sleepLogs.length ? parseFloat((sleepLogs.reduce((s,l)=>s+l.hours,0)/sleepLogs.length).toFixed(1)) : 0,
+      loggedDays: [...new Set(meals.map(m=>m.date))].length,
+    })
   }
 
   async function loadAchievements() {
@@ -117,103 +103,83 @@ export default function DailyReport() {
 
   async function generateReport() {
     setLoading(true)
-    try {
-      const data = await api.report.today()
-      setReport(data)
-      addXP(5)
-    } catch (err) { alert('Error: ' + err.message) }
+    try { const data = await api.report.today(); setReport(data); addXP(5) }
+    catch (err) { alert('Error: ' + err.message) }
     finally { setLoading(false) }
   }
 
   const calPct = dailyData ? Math.round((dailyData.calories / goals.calories) * 100) : 0
-  const MOOD_EMOJI = ['','😩','😞','😐','😊','🤩']
-
-  // Status calculado
   const getStatus = (value, threshold) => value >= threshold ? 'done' : value > 0 ? 'partial' : 'empty'
+  const MOOD_EMOJI = ['','😩','😞','😐','😊','🤩']
 
   return (
     <div className="page">
-      {/* Header */}
       <div className="mb-5">
-        <h1 className="text-2xl font-extrabold">Tu Día 📊</h1>
-        <p className="text-white/40 text-sm">
+        <h1 className="text-2xl font-extrabold" style={{ color: theme.text }}>Tu Día 📊</h1>
+        <p className="text-sm" style={{ color: theme.textMuted }}>
           {new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}
         </p>
       </div>
 
-      {/* Hero — resumen del día */}
+      {/* Hero */}
       {dailyData && (
-        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
-          className="card mb-5 bg-gradient-to-br from-surface-2 to-surface-3 border-white/8">
-
-          {/* Calorías hero */}
+        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="card mb-5">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <p className="text-white/40 text-xs uppercase tracking-wider font-medium">Balance calórico</p>
+              <p className="text-xs uppercase tracking-wider font-medium" style={{ color: theme.textMuted }}>Balance calórico</p>
               <div className="flex items-baseline gap-2 mt-1">
-                <span className="text-3xl font-extrabold">{dailyData.calories}</span>
-                <span className="text-white/40">/ {goals.calories} kcal</span>
+                <span className="text-3xl font-extrabold" style={{ color: theme.text }}>{dailyData.calories}</span>
+                <span style={{ color: theme.textMuted }}>/ {goals.calories} kcal</span>
               </div>
-              <p className={`text-sm font-medium mt-0.5 ${calPct > 110 ? 'text-orange-400' : calPct >= 85 ? 'text-accent-green' : 'text-white/50'}`}>
-                {calPct > 110 ? `+${dailyData.calories - goals.calories} kcal superadas` :
-                 calPct >= 85 ? '✓ En objetivo' :
-                 `${goals.calories - dailyData.calories} kcal restantes`}
+              <p className="text-sm font-medium mt-0.5"
+                style={{ color: calPct > 110 ? theme.error : calPct >= 85 ? theme.success : theme.textMuted }}>
+                {calPct > 110 ? `+${dailyData.calories - goals.calories} kcal superadas` : calPct >= 85 ? '✓ En objetivo' : `${goals.calories - dailyData.calories} kcal restantes`}
               </p>
             </div>
             <div className="relative w-16 h-16">
               <svg viewBox="0 0 64 64" className="-rotate-90 w-full h-full">
-                <circle cx="32" cy="32" r="26" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="6" />
-                <motion.circle cx="32" cy="32" r="26" fill="none"
-                  stroke={calPct > 110 ? '#f97316' : '#22c55e'} strokeWidth="6"
-                  strokeDasharray={2*Math.PI*26}
-                  initial={{ strokeDashoffset: 2*Math.PI*26 }}
-                  animate={{ strokeDashoffset: 2*Math.PI*26 * (1 - Math.min(calPct/100, 1)) }}
-                  transition={{ duration: 0.8 }} strokeLinecap="round" />
+                <circle cx="32" cy="32" r="26" fill="none" stroke={`${theme.primary}20`} strokeWidth="6" />
+                <motion.circle cx="32" cy="32" r="26" fill="none" stroke={calPct > 110 ? theme.error : theme.primary} strokeWidth="6"
+                  strokeDasharray={2*Math.PI*26} initial={{ strokeDashoffset: 2*Math.PI*26 }}
+                  animate={{ strokeDashoffset: 2*Math.PI*26*(1-Math.min(calPct/100,1)) }} strokeLinecap="round" />
               </svg>
               <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-sm font-bold">{calPct}%</span>
+                <span className="text-sm font-bold" style={{ color: theme.text }}>{calPct}%</span>
               </div>
             </div>
           </div>
 
-          {/* Protein + burned */}
           <div className="grid grid-cols-2 gap-2 mb-4">
-            <div className="bg-accent/10 rounded-xl p-3">
-              <p className="text-xs text-white/40">Proteína</p>
-              <p className="font-bold">{dailyData.protein}g <span className="text-white/30 text-xs font-normal">/ {goals.protein_g}g</span></p>
+            <div className="rounded-xl p-3" style={{ background: `${theme.primary}10` }}>
+              <p className="text-xs" style={{ color: theme.textMuted }}>Proteína</p>
+              <p className="font-bold" style={{ color: theme.text }}>{dailyData.protein}g <span className="text-xs font-normal" style={{ color: theme.textMuted }}>/ {goals.protein_g}g</span></p>
             </div>
-            <div className="bg-orange-500/10 rounded-xl p-3">
-              <p className="text-xs text-white/40">Quemadas</p>
-              <p className="font-bold">{dailyData.caloriesBurned} <span className="text-white/30 text-xs font-normal">kcal</span></p>
+            <div className="rounded-xl p-3" style={{ background: `${theme.warning}10` }}>
+              <p className="text-xs" style={{ color: theme.textMuted }}>Quemadas</p>
+              <p className="font-bold" style={{ color: theme.text }}>{dailyData.caloriesBurned} <span className="text-xs font-normal" style={{ color: theme.textMuted }}>kcal</span></p>
             </div>
           </div>
 
-          {/* Módulos del día */}
-          <div className="border-t border-white/5 pt-3">
-            <p className="text-white/30 text-xs uppercase tracking-wider mb-2">Estado de hoy</p>
-            <ModuleStatus icon={Apple}   label="Nutrición"    value={dailyData.mealsCount > 0 ? `${dailyData.mealsCount} comidas · ${dailyData.calories} kcal` : 'Sin registros'} status={getStatus(dailyData.mealsCount, 3)} to="/nutrition" />
+          <div style={{ borderTop: `1px solid ${theme.border}`, paddingTop: '0.75rem' }}>
+            <p className="text-xs uppercase tracking-wider mb-2" style={{ color: theme.textMuted }}>Estado de hoy</p>
+            <ModuleStatus icon={Apple}    label="Nutrición"     value={dailyData.mealsCount > 0 ? `${dailyData.mealsCount} comidas · ${dailyData.calories} kcal` : 'Sin registros'} status={getStatus(dailyData.mealsCount, 3)} to="/nutrition" />
             <ModuleStatus icon={Dumbbell} label="Entrenamiento" value={dailyData.workouts.length > 0 ? dailyData.workouts.map(w=>w.name).join(', ') : 'Sin entreno'} status={getStatus(dailyData.workouts.length, 1)} to="/workout" />
-            <ModuleStatus icon={Moon}    label="Sueño"        value={dailyData.sleep ? `${dailyData.sleep.hours}h · calidad ${dailyData.sleep.quality}/5` : 'No registrado'} status={dailyData.sleep ? 'done' : 'empty'} to="/sleep" />
-            <ModuleStatus icon={Smile}   label="Ánimo"        value={dailyData.mood ? `${MOOD_EMOJI[dailyData.mood.mood]} ${dailyData.mood.mood}/5` : 'No registrado'} status={dailyData.mood ? 'done' : 'empty'} to="/mood" />
-            <ModuleStatus icon={Droplets} label="Hidratación"  value={dailyData.hydration ? `${dailyData.hydration.glasses}/${dailyData.hydration.goal} vasos` : 'No registrado'} status={dailyData.hydration ? getStatus(dailyData.hydration.glasses, dailyData.hydration.goal) : 'empty'} to="/hydration" />
+            <ModuleStatus icon={Moon}     label="Sueño"         value={dailyData.sleep ? `${dailyData.sleep.hours}h` : 'No registrado'} status={dailyData.sleep ? 'done' : 'empty'} to="/sleep" />
+            <ModuleStatus icon={Smile}    label="Ánimo"         value={dailyData.mood ? `${MOOD_EMOJI[dailyData.mood.mood]} ${dailyData.mood.mood}/5` : 'No registrado'} status={dailyData.mood ? 'done' : 'empty'} to="/mood" />
+            <ModuleStatus icon={Droplets} label="Hidratación"   value={dailyData.hydration ? `${dailyData.hydration.glasses}/${dailyData.hydration.goal} vasos` : 'No registrado'} status={dailyData.hydration ? getStatus(dailyData.hydration.glasses, dailyData.hydration.goal) : 'empty'} to="/hydration" />
           </div>
         </motion.div>
       )}
 
-      {/* Informe IA */}
+      {/* Coach insight */}
       <div className="card mb-5">
         <div className="flex items-center justify-between mb-3">
-          <p className="font-semibold">Insight del Coach IA 🤖</p>
-          {report && (
-            <button onClick={generateReport} disabled={loading} className="text-white/30 active:text-accent transition-all">
-              <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
-            </button>
-          )}
+          <p className="font-semibold" style={{ color: theme.text }}>Insight del Coach IA 🤖</p>
+          {report && <button onClick={generateReport} disabled={loading}><RefreshCw size={14} className={loading ? 'animate-spin' : ''} style={{ color: theme.textMuted }} /></button>}
         </div>
-
         {!report ? (
           <div className="text-center py-4">
-            <p className="text-white/40 text-sm mb-3">Genera tu análisis personalizado del día</p>
+            <p className="text-sm mb-3" style={{ color: theme.textMuted }}>Genera tu análisis personalizado del día</p>
             <button onClick={generateReport} disabled={loading}
               className="btn-primary inline-flex items-center justify-center gap-2 w-auto px-6">
               {loading ? <><Loader size={14} className="animate-spin" /> Analizando…</> : '✨ Generar análisis'}
@@ -222,45 +188,46 @@ export default function DailyReport() {
         ) : (
           <AnimatePresence>
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-3">
-              <div className="bg-violet-500/10 rounded-xl p-3 border border-violet-500/15">
-                <p className="text-white/70 text-sm leading-relaxed">{report.coach_insight}</p>
+              <div className="rounded-xl p-3" style={{ background: `${theme.primary}10`, border: `1px solid ${theme.primary}20` }}>
+                <p className="text-sm leading-relaxed" style={{ color: theme.text }}>{report.coach_insight}</p>
               </div>
-              <div className="bg-emerald-500/10 rounded-xl p-3 border border-emerald-500/15">
-                <p className="text-white/50 text-xs font-medium mb-1">💡 Para mañana</p>
-                <p className="text-white/70 text-sm">{report.recommendation}</p>
+              <div className="rounded-xl p-3" style={{ background: `${theme.success}10`, border: `1px solid ${theme.success}20` }}>
+                <p className="text-xs font-medium mb-1" style={{ color: theme.textMuted }}>💡 Para mañana</p>
+                <p className="text-sm" style={{ color: theme.text }}>{report.recommendation}</p>
               </div>
             </motion.div>
           </AnimatePresence>
         )}
       </div>
 
-      {/* Estadísticas semanales */}
+      {/* Weekly stats */}
       {weekStats && (
         <div className="card mb-5">
-          <p className="font-semibold mb-4">Esta semana 📅</p>
+          <p className="font-semibold mb-4" style={{ color: theme.text }}>Esta semana 📅</p>
           <div className="space-y-3">
-            <WeeklyBar label="Calorías media" value={weekStats.avgCals} max={goals.calories} color="#f97316" />
-            <WeeklyBar label="Días con registro" value={weekStats.loggedDays} max={7} color="#6366f1" />
-            <WeeklyBar label="Entrenos" value={weekStats.workoutDays} max={5} color="#22c55e" />
-            <WeeklyBar label="Sueño medio (h)" value={parseFloat(weekStats.avgSleep)} max={8} color="#818cf8" />
+            <WeeklyBar label="Calorías media" value={weekStats.avgCals} max={goals.calories} color={theme.warning} />
+            <WeeklyBar label="Días con registro" value={weekStats.loggedDays} max={7} color={theme.primary} />
+            <WeeklyBar label="Entrenos" value={weekStats.workoutDays} max={5} color={theme.success} />
+            <WeeklyBar label="Sueño medio (h)" value={weekStats.avgSleep} max={8} color="#818cf8" />
           </div>
-          <Link to="/health" className="flex items-center justify-center gap-1 mt-3 text-accent text-xs font-medium">
+          <Link to="/health" className="flex items-center justify-center gap-1 mt-3 text-xs font-medium"
+            style={{ color: theme.primary }}>
             Ver seguimiento completo <ChevronRight size={12} />
           </Link>
         </div>
       )}
 
-      {/* Logros recientes */}
+      {/* Achievements */}
       {achievements.length > 0 && (
         <div className="card mb-5">
-          <p className="font-semibold mb-3">Logros recientes 🏆</p>
+          <p className="font-semibold mb-3" style={{ color: theme.text }}>Logros recientes 🏆</p>
           <div className="space-y-2">
             {achievements.map(a => (
               <div key={a.id} className="flex items-center gap-3">
                 <span className="text-2xl">{a.icon}</span>
                 <div>
-                  <p className="text-sm font-medium">{a.title}</p>
-                  <p className="text-white/30 text-xs">{a.description}</p>
+                  <p className="text-sm font-medium" style={{ color: theme.text }}>{a.title}</p>
+                  <p className="text-xs" style={{ color: theme.textMuted }}>{a.description}</p>
                 </div>
               </div>
             ))}
@@ -268,21 +235,20 @@ export default function DailyReport() {
         </div>
       )}
 
-      {/* XP del día */}
-      <div className="card bg-gradient-to-r from-yellow-500/10 to-orange-500/5 border-yellow-500/15">
+      {/* XP */}
+      <div className="card" style={{ background: `${theme.warning}10`, border: `1px solid ${theme.warning}20` }}>
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-yellow-500/20 flex items-center justify-center">
-            <Trophy size={18} className="text-yellow-400" />
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: `${theme.warning}20` }}>
+            <Trophy size={18} style={{ color: theme.warning }} />
           </div>
           <div className="flex-1">
-            <p className="font-semibold text-sm">Nivel {profile?.level || 1}</p>
+            <p className="font-semibold text-sm" style={{ color: theme.text }}>Nivel {profile?.level || 1}</p>
             <div className="flex items-center gap-2 mt-1">
-              <div className="flex-1 h-1.5 bg-surface-3 rounded-full overflow-hidden">
-                <motion.div initial={{ width: 0 }}
-                  animate={{ width: `${((profile?.xp || 0) % 500) / 5}%` }}
-                  className="h-full bg-gradient-brand rounded-full" />
+              <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background: theme.surface2 }}>
+                <motion.div initial={{ width: 0 }} animate={{ width: `${((profile?.xp || 0) % 500) / 5}%` }}
+                  className="h-full rounded-full" style={{ background: theme.gradientBrand }} />
               </div>
-              <span className="text-white/30 text-xs">{profile?.xp || 0} XP</span>
+              <span className="text-xs" style={{ color: theme.textMuted }}>{profile?.xp || 0} XP</span>
             </div>
           </div>
         </div>

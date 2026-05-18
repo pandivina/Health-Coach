@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Send, Loader } from 'lucide-react'
 import { api } from '../lib/api'
 import { useStore } from '../store/useStore'
+import { useTheme } from '../contexts/ThemeProvider'
 
 const SUGGESTIONS = [
   '¿Cómo voy hoy con mis macros?',
@@ -13,50 +14,44 @@ const SUGGESTIONS = [
 
 export default function Coach() {
   const { profile } = useStore()
-  const [messages, setMessages] = useState([
-    {
-      role: 'assistant',
-      content: `¡Hola${profile?.name ? ` ${profile.name}` : ''}! 👋 Soy tu Coach IA. Estoy aquí para ayudarte con nutrición, entrenamiento, sueño y bienestar. ¿En qué puedo ayudarte hoy?`,
-    },
-  ])
+  const { theme } = useTheme()
+  const [messages, setMessages] = useState([{
+    role: 'assistant',
+    content: `¡Hola${profile?.name ? ` ${profile.name}` : ''}! 👋 Soy tu Coach IA. Estoy aquí para ayudarte con nutrición, entrenamiento, sueño y bienestar. ¿En qué puedo ayudarte hoy?`,
+  }])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const bottomRef = useRef(null)
 
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages, loading])
+  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [messages, loading])
 
   async function send(text) {
     const content = text || input.trim()
     if (!content || loading) return
     setInput('')
-    const userMsg = { role: 'user', content }
-    const newMessages = [...messages, userMsg]
+    const newMessages = [...messages, { role: 'user', content }]
     setMessages(newMessages)
     setLoading(true)
     try {
-      // Solo enviar las últimas 10 mensajes para no exceder contexto
-      const contextMessages = newMessages.slice(-10)
-      const { reply } = await api.coach.chat(contextMessages)
+      const { reply } = await api.coach.chat(newMessages.slice(-10))
       setMessages(m => [...m, { role: 'assistant', content: reply }])
-    } catch (err) {
-      setMessages(m => [...m, { role: 'assistant', content: '❌ Error al conectar con el coach. Verifica tu conexión.' }])
-    } finally {
-      setLoading(false)
-    }
+    } catch {
+      setMessages(m => [...m, { role: 'assistant', content: '❌ Error al conectar. Verifica tu conexión.' }])
+    } finally { setLoading(false) }
   }
 
   return (
-    <div className="flex flex-col h-screen bg-[#0a0a12] max-w-lg mx-auto">
+    <div className="flex flex-col h-screen max-w-lg mx-auto" style={{ background: theme.bg }}>
       {/* Header */}
-      <div className="px-4 pt-6 pb-3 border-b border-white/5">
+      <div className="px-4 pt-6 pb-3" style={{ borderBottom: `1px solid ${theme.border}` }}>
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-violet-500/20 flex items-center justify-center text-xl">🤖</div>
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl"
+            style={{ background: `${theme.primary}20` }}>🤖</div>
           <div>
-            <h1 className="font-bold text-lg">Coach IA</h1>
-            <p className="text-white/40 text-xs flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-accent-green inline-block" /> En línea · Basado en tus datos
+            <h1 className="font-bold text-lg" style={{ color: theme.text }}>Coach IA</h1>
+            <p className="text-xs flex items-center gap-1" style={{ color: theme.textMuted }}>
+              <span className="w-1.5 h-1.5 rounded-full inline-block" style={{ background: theme.success }} />
+              En línea · Basado en tus datos
             </p>
           </div>
         </div>
@@ -69,24 +64,23 @@ export default function Coach() {
             <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
               className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
               {msg.role === 'assistant' && (
-                <div className="w-7 h-7 rounded-xl bg-violet-500/20 flex items-center justify-center text-sm mr-2 flex-shrink-0 mt-1">
-                  🤖
-                </div>
+                <div className="w-7 h-7 rounded-xl flex items-center justify-center text-sm mr-2 flex-shrink-0 mt-1"
+                  style={{ background: `${theme.primary}20` }}>🤖</div>
               )}
-              <div className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
-                msg.role === 'user'
-                  ? 'bg-accent text-white rounded-br-sm'
-                  : 'bg-surface-2 text-white/90 rounded-bl-sm border border-white/5'
-              }`}>
+              <div className="max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed"
+                style={msg.role === 'user'
+                  ? { background: theme.primary, color: '#fff', borderBottomRightRadius: '4px' }
+                  : { background: theme.surface, color: theme.text, border: `1px solid ${theme.border}`, borderBottomLeftRadius: '4px' }}>
                 {msg.content}
               </div>
             </motion.div>
           ))}
           {loading && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-xl bg-violet-500/20 flex items-center justify-center text-sm">🤖</div>
-              <div className="bg-surface-2 rounded-2xl rounded-bl-sm px-4 py-3 border border-white/5">
-                <Loader size={14} className="animate-spin text-white/50" />
+              <div className="w-7 h-7 rounded-xl flex items-center justify-center text-sm"
+                style={{ background: `${theme.primary}20` }}>🤖</div>
+              <div className="rounded-2xl px-4 py-3" style={{ background: theme.surface, border: `1px solid ${theme.border}` }}>
+                <Loader size={14} className="animate-spin" style={{ color: theme.textMuted }} />
               </div>
             </motion.div>
           )}
@@ -94,30 +88,28 @@ export default function Coach() {
         <div ref={bottomRef} />
       </div>
 
-      {/* Suggestions + Input */}
-      <div className="fixed bottom-16 left-0 right-0 max-w-lg mx-auto px-4 pb-3 bg-[#0a0a12]/95 backdrop-blur-xl border-t border-white/5 pt-3">
+      {/* Input */}
+      <div className="fixed bottom-16 left-0 right-0 max-w-lg mx-auto px-4 pb-3 pt-3"
+        style={{ background: `${theme.bg}f5`, backdropFilter: 'blur(20px)', borderTop: `1px solid ${theme.border}` }}>
         {messages.length <= 2 && (
-          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide mb-3">
+          <div className="flex gap-2 overflow-x-auto pb-2 mb-3">
             {SUGGESTIONS.map(s => (
               <button key={s} onClick={() => send(s)}
-                className="flex-shrink-0 text-xs bg-surface-2 border border-white/10 rounded-full px-3 py-1.5 text-white/70 active:bg-accent/20 transition-all">
+                className="flex-shrink-0 text-xs rounded-full px-3 py-1.5 transition-all"
+                style={{ background: theme.surface2, border: `1px solid ${theme.border}`, color: theme.textMuted }}>
                 {s}
               </button>
             ))}
           </div>
         )}
         <div className="flex gap-2">
-          <input
-            className="input flex-1 text-sm"
-            placeholder="Pregunta algo a tu coach…"
-            value={input}
-            onChange={e => setInput(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && send()}
-          />
+          <input className="input flex-1 text-sm" placeholder="Pregunta algo a tu coach…"
+            value={input} onChange={e => setInput(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && send()} />
           <button onClick={() => send()} disabled={!input.trim() || loading}
-            className="w-11 h-11 rounded-xl bg-accent flex items-center justify-center 
-                       disabled:opacity-40 active:scale-90 transition-all flex-shrink-0">
-            <Send size={16} className="text-white" />
+            className="w-11 h-11 rounded-xl flex items-center justify-center active:scale-90 transition-all flex-shrink-0 disabled:opacity-40"
+            style={{ background: theme.primary }}>
+            <Send size={16} color="#fff" />
           </button>
         </div>
       </div>

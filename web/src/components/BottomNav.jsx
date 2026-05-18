@@ -1,6 +1,7 @@
 import { NavLink } from 'react-router-dom'
 import { Home, MessageCircle, Apple, Dumbbell, BarChart2, User, TrendingUp, Sparkles } from 'lucide-react'
 import { useState } from 'react'
+import { useTheme } from '../contexts/ThemeProvider'
 
 const MAIN_NAV = [
   { to: '/',          icon: Home,          label: 'Inicio' },
@@ -12,17 +13,17 @@ const MAIN_NAV = [
 
 const MORE_NAV = [
   { to: '/health',   icon: TrendingUp, label: 'Seguimiento' },
-  { to: '/profile',  icon: User,       label: 'Perfil' },
   { to: '/premium',  icon: Sparkles,   label: 'Premium' },
+  { to: '/profile',  icon: User,       label: 'Perfil' },
 ]
 
 function NavItem({ to, icon: Icon, label, onClick }) {
+  const { theme } = useTheme()
   return (
-    <NavLink to={to} onClick={onClick} className={({ isActive }) =>
-      `flex flex-col items-center gap-0.5 py-2 px-3 rounded-xl transition-all ${
-        isActive ? 'text-accent' : 'text-white/40 hover:text-white/70'
-      }`
-    }>
+    <NavLink to={to} onClick={onClick} className="flex flex-col items-center gap-0.5 py-2 px-3 rounded-xl transition-all"
+      style={({ isActive }) => ({
+        color: isActive ? theme.navActive : theme.navText,
+      })}>
       <Icon size={20} strokeWidth={1.8} />
       <span className="text-[10px] font-medium">{label}</span>
     </NavLink>
@@ -30,16 +31,22 @@ function NavItem({ to, icon: Icon, label, onClick }) {
 }
 
 export default function BottomNav() {
+  const { theme } = useTheme()
   const [showMore, setShowMore] = useState(false)
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 max-w-lg mx-auto
-                    bg-surface-2/95 backdrop-blur-xl border-t border-white/5
-                    safe-area-inset-bottom z-50">
+    <nav className="fixed bottom-0 left-0 right-0 max-w-lg mx-auto z-50"
+      style={{
+        background: theme.navBg,
+        borderTop: `1px solid ${theme.navBorder}`,
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
+      }}>
 
       {/* More menu */}
       {showMore && (
-        <div className="flex justify-around px-2 py-2 border-b border-white/5">
+        <div className="flex justify-around px-2 py-2"
+          style={{ borderBottom: `1px solid ${theme.navBorder}` }}>
           {MORE_NAV.map(item => (
             <NavItem key={item.to} {...item} onClick={() => setShowMore(false)} />
           ))}
@@ -48,14 +55,11 @@ export default function BottomNav() {
 
       {/* Main nav */}
       <div className="flex items-center justify-around px-2 py-1">
-        {MAIN_NAV.map(item => (
-          <NavItem key={item.to} {...item} />
-        ))}
+        {MAIN_NAV.map(item => <NavItem key={item.to} {...item} />)}
         <button
           onClick={() => setShowMore(m => !m)}
-          className={`flex flex-col items-center gap-0.5 py-2 px-3 rounded-xl transition-all ${
-            showMore ? 'text-accent' : 'text-white/40'
-          }`}>
+          className="flex flex-col items-center gap-0.5 py-2 px-3 rounded-xl transition-all"
+          style={{ color: showMore ? theme.navActive : theme.navText }}>
           <User size={20} strokeWidth={1.8} />
           <span className="text-[10px] font-medium">Más</span>
         </button>

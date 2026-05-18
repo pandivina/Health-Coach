@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { LogOut, Edit2, Check } from 'lucide-react'
+import { LogOut, Edit2, Check, Sparkles } from 'lucide-react'
 import { useStore } from '../store/useStore'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 
 const GOAL_LABELS = { lose_fat:'Perder grasa 🔥', gain_muscle:'Ganar músculo 💪', maintain:'Mantener peso ⚖️', recomp:'Recomposición 🔄', health:'Salud general ❤️' }
 const ACTIVITY_LABELS = { sedentary:'Sedentario 🛋️', light:'Ligero 🚶', moderate:'Moderado 🏃', intense:'Intenso ⚡' }
@@ -111,6 +111,18 @@ export default function Profile() {
         </div>
       )}
 
+      {/* Premium banner */}
+<Link to="/premium">
+  <motion.div whileTap={{ scale: 0.97 }}
+    className="w-full flex items-center gap-3 p-4 rounded-2xl bg-gradient-brand mb-4">
+    <Sparkles size={20} className="text-white flex-shrink-0" />
+    <div>
+      <p className="font-bold text-white text-sm">Hazte Premium ⭐</p>
+      <p className="text-white/70 text-xs">7 días gratis · Cancela cuando quieras</p>
+    </div>
+    <span className="ml-auto text-white/70">›</span>
+  </motion.div>
+</Link>
       {/* Logout */}
       <button onClick={handleLogout}
         className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-accent-red/30 text-accent-red text-sm font-medium active:bg-accent-red/10 transition-all">

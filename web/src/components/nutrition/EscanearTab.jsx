@@ -58,8 +58,8 @@ function BarcodeScanner({ onDetected, onClose }) {
       </div>
 
       {/* Scanner */}
-      <div className="flex-1 flex flex-col items-center justify-center px-4">
-        <div id="barcode-reader" ref={scannerRef} className="w-full max-w-sm rounded-2xl overflow-hidden" />
+      <div className="flex-1 flex flex-col items-center justify-center px-4 bg-black">
+        <div id="barcode-reader" ref={scannerRef} style={{ width: '100%', maxWidth: '400px' }} />
         <p className="text-white/50 text-sm mt-4 text-center">
           Apunta la cámara al código de barras del producto
         </p>

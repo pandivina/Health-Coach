@@ -142,7 +142,7 @@ export default function LiveWorkoutScreen({ session, onFinish }) {
   }, [])
 
   useEffect(() => {
-    api.workouts.getExercises().then(setAllExercises).catch(() => {})
+    api.workouts.getExercises().then(data => setAllExercises(Array.isArray(data) ? data : [])).catch(() => {})
   }, [])
 
   const formatTime = (s) => `${Math.floor(s/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}`

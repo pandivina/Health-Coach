@@ -13,6 +13,7 @@ const MAIN_NAV = [
 const MORE_NAV = [
   { to: '/health',   icon: TrendingUp, label: 'Seguimiento' },
   { to: '/profile',  icon: User,       label: 'Perfil' },
+  { to: '/premium',  icon: Sparkles,   label: 'Premium' },
 ]
 
 function NavItem({ to, icon: Icon, label, onClick }) {

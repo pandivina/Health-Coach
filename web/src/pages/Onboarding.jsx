@@ -409,6 +409,7 @@ export default function Onboarding() {
           <button onClick={() => setStep(s => s + 1)} disabled={!canNext()}
             className="btn-primary disabled:opacity-40">Siguiente →</button>
         ) : (
+    <>
       <MedicalDisclaimerText />
           <button onClick={finish} disabled={loading} className="btn-primary">
             {loading ? 'Guardando…' : '🚀 ¡Empezar!'}

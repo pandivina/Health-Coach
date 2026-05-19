@@ -5,6 +5,7 @@ import { useStore } from './store/useStore'
 import Layout from './components/Layout'
 import CookieBanner from './components/legal/CookieBanner'
 import { PrivacyPolicy, TermsOfUse, MedicalDisclaimerPage } from './pages/Legal'
+import UpdateBanner from './components/UpdateBanner'
 
 // Public
 import Landing from './pages/Landing'
@@ -123,6 +124,7 @@ export default function App() {
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       <CookieBanner />
+      <UpdateBanner />
     </BrowserRouter>
   )
 }

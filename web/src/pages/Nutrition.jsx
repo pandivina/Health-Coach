@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { BookOpen, Camera, Hash, ShoppingBag, ChefHat, TrendingUp } from 'lucide-react'
 import { useTheme } from '../contexts/ThemeProvider'
+import { useTour } from '../hooks/useTour'
+import TourHelpButton from '../components/tour/TourHelpButton'
 import DiarioTab from '../components/nutrition/DiarioTab'
 import AnalizarTab from '../components/nutrition/AnalizarTab'
 import EscanearTab from '../components/nutrition/EscanearTab'
@@ -10,17 +12,20 @@ import RecetasTab from '../components/nutrition/RecetasTab'
 import TendenciasTab from '../components/nutrition/TendenciasTab'
 
 const TABS = [
-  { id: 'diario',     icon: BookOpen,    label: 'Diario' },
-  { id: 'analizar',   icon: Camera,      label: 'Foto' },
-  { id: 'escanear',   icon: Hash,        label: 'Código' },
-  { id: 'despensa',   icon: ShoppingBag, label: 'Despensa' },
-  { id: 'recetas',    icon: ChefHat,     label: 'Recetas' },
-  { id: 'tendencias', icon: TrendingUp,  label: 'Tendencias' },
+  { id: 'diario',     icon: BookOpen,    label: 'Diario',      tour: 'nutrition-diary' },
+  { id: 'analizar',   icon: Camera,      label: 'Foto',        tour: 'nutrition-photo' },
+  { id: 'escanear',   icon: Hash,        label: 'Código',      tour: 'nutrition-scan' },
+  { id: 'despensa',   icon: ShoppingBag, label: 'Despensa',    tour: 'nutrition-pantry' },
+  { id: 'recetas',    icon: ChefHat,     label: 'Recetas',     tour: 'nutrition-recipes' },
+  { id: 'tendencias', icon: TrendingUp,  label: 'Tendencias',  tour: null },
 ]
 
 export default function Nutrition() {
   const { theme } = useTheme()
   const [tab, setTab] = useState('diario')
+
+  // Tour guiado
+  useTour('nutrition')
 
   return (
     <div className="min-h-screen pb-24" style={{ background: theme.bg }}>
@@ -31,10 +36,12 @@ export default function Nutrition() {
         </p>
       </div>
 
-      <div className="px-4 mb-4">
+      {/* Tab bar con data-tour */}
+      <div className="px-4 mb-4" data-tour="nutrition-tabs">
         <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
           {TABS.map(t => (
             <button key={t.id} onClick={() => setTab(t.id)}
+              data-tour={t.tour || undefined}
               className="flex-shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-all"
               style={{
                 background: tab === t.id ? theme.primary : theme.surface,
@@ -61,6 +68,8 @@ export default function Nutrition() {
           </motion.div>
         </AnimatePresence>
       </div>
+
+      <TourHelpButton tourKey="nutrition" />
     </div>
   )
 }

@@ -1,4 +1,4 @@
-import { useTheme } from '../../contexts/ThemeProvider'
+import { useTheme } from '../contexts/ThemeProvider'
 
 function LegalPage({ title, children }) {
   const { theme } = useTheme()

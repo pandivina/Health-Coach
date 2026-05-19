@@ -41,7 +41,6 @@ export default function BottomNav() {
         borderTop: `1px solid ${theme.navBorder}`,
         backdropFilter: 'blur(20px)',
         WebkitBackdropFilter: 'blur(20px)',
-        WebkitBackdropFilter: 'blur(20px)',
       }}>
 
       {/* More menu */}

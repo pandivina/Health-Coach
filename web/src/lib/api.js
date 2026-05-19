@@ -79,4 +79,9 @@ export const api = {
   email: {
     welcome: () => request('POST', '/api/email/welcome', {}),
   },
+  stripe: {
+    createCheckout: (priceId) => request('POST', '/api/stripe/create-checkout', { priceId }),
+    portal: () => request('POST', '/api/stripe/portal', {}),
+    getStatus: () => request('GET', '/api/stripe/status'),
+  },
 }

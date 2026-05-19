@@ -5,32 +5,28 @@ import { getTourSteps } from '../lib/tours'
 const TourContext = createContext(null)
 
 export function GuidedTourProvider({ children }) {
-  const [activeTour, setActiveTour]   = useState(null)   // tour key
+  const [activeTour, setActiveTour]   = useState(null)
   const [steps, setSteps]             = useState([])
   const [currentStep, setCurrentStep] = useState(0)
   const [targetRect, setTargetRect]   = useState(null)
   const [completedTours, setCompletedTours] = useState({})
   const [userInfo, setUserInfo]       = useState({})
+  const currentSelector = useRef(null)
   const rafRef = useRef(null)
 
-  // Cargar tours completados + info de usuario
   useEffect(() => {
     async function load() {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) return
-
-      const [toursRes, profileRes, petRes] = await Promise.all([
+      const [toursRes, profileRes] = await Promise.all([
         supabase.from('user_tours').select('*').eq('user_id', session.user.id),
         supabase.from('user_profiles').select('name, pet_type, pet_name').eq('id', session.user.id).single(),
-        supabase.from('user_profiles').select('pet_type, pet_name').eq('id', session.user.id).single(),
       ])
-
       const completed = {}
       for (const t of toursRes.data || []) {
         completed[t.tour_key] = { completed: t.completed, skipped: t.skipped }
       }
       setCompletedTours(completed)
-
       const profile = profileRes.data || {}
       setUserInfo({
         userName: profile.name || 'campeón',
@@ -41,77 +37,97 @@ export function GuidedTourProvider({ children }) {
     load()
   }, [])
 
-  // Actualizar posición del target element
-  const updateTargetRect = useCallback((selector) => {
+  function measureElement(selector) {
     if (!selector) { setTargetRect(null); return }
+    const el = document.querySelector(selector)
+    if (!el) { setTargetRect(null); return }
+    const rect = el.getBoundingClientRect()
+    const padding = 10
+    setTargetRect({
+      top:    rect.top - padding,
+      left:   rect.left - padding,
+      width:  rect.width + padding * 2,
+      height: rect.height + padding * 2,
+      bottom: rect.bottom + padding,
+      right:  rect.right + padding,
+    })
+  }
 
-    function measure() {
-      const el = document.querySelector(selector)
-      if (!el) { setTargetRect(null); return }
-
-      const rect = el.getBoundingClientRect()
-      const padding = 8
-      setTargetRect({
-        top:    rect.top - padding,
-        left:   rect.left - padding,
-        width:  rect.width + padding * 2,
-        height: rect.height + padding * 2,
-        bottom: rect.bottom + padding,
-        right:  rect.right + padding,
-      })
-
-      // Scroll automático si está fuera de la pantalla
-      if (rect.top < 80 || rect.bottom > window.innerHeight - 100) {
-        el.scrollIntoView({ behavior: 'smooth', block: 'center' })
-      }
+  const updateTargetRect = useCallback((selector) => {
+    currentSelector.current = selector
+    if (!selector) { setTargetRect(null); return }
+    const el = document.querySelector(selector)
+    if (!el) { setTargetRect(null); return }
+    const rect = el.getBoundingClientRect()
+    const outOfView = rect.top < 100 || rect.bottom > window.innerHeight - 100
+    if (outOfView) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      setTimeout(() => measureElement(selector), 500)
+    } else {
+      measureElement(selector)
     }
-
-    measure()
-    // Re-measure after scroll
-    setTimeout(measure, 400)
   }, [])
 
-  // Iniciar un tour
+  useEffect(() => {
+    if (!activeTour) return
+    function onScroll() {
+      if (currentSelector.current) {
+        if (rafRef.current) cancelAnimationFrame(rafRef.current)
+        rafRef.current = requestAnimationFrame(() => measureElement(currentSelector.current))
+      }
+    }
+    window.addEventListener('scroll', onScroll, { passive: true })
+    const containers = document.querySelectorAll('.page, main')
+    containers.forEach(c => c.addEventListener('scroll', onScroll, { passive: true }))
+    return () => {
+      window.removeEventListener('scroll', onScroll)
+      containers.forEach(c => c.removeEventListener('scroll', onScroll))
+      if (rafRef.current) cancelAnimationFrame(rafRef.current)
+    }
+  }, [activeTour])
+
+  useEffect(() => {
+    if (!activeTour) return
+    function onResize() {
+      if (currentSelector.current) measureElement(currentSelector.current)
+    }
+    window.addEventListener('resize', onResize)
+    return () => window.removeEventListener('resize', onResize)
+  }, [activeTour])
+
   const startTour = useCallback((tourKey) => {
     const tourSteps = getTourSteps(tourKey, userInfo)
     if (!tourSteps.length) return
-
     setActiveTour(tourKey)
     setSteps(tourSteps)
     setCurrentStep(0)
-    updateTargetRect(tourSteps[0]?.target)
+    setTimeout(() => updateTargetRect(tourSteps[0]?.target), 100)
   }, [userInfo, updateTargetRect])
 
-  // Siguiente paso
   const nextStep = useCallback(() => {
     setCurrentStep(prev => {
       const next = prev + 1
-      if (next >= steps.length) {
-        finishTour(false)
-        return prev
-      }
-      updateTargetRect(steps[next]?.target)
+      if (next >= steps.length) { finishTour(false); return prev }
+      setTimeout(() => updateTargetRect(steps[next]?.target), 50)
       return next
     })
   }, [steps, updateTargetRect])
 
-  // Paso anterior
   const prevStep = useCallback(() => {
     setCurrentStep(prev => {
-      const p = prev - 1
-      if (p < 0) return 0
-      updateTargetRect(steps[p]?.target)
+      const p = Math.max(prev - 1, 0)
+      setTimeout(() => updateTargetRect(steps[p]?.target), 50)
       return p
     })
   }, [steps, updateTargetRect])
 
-  // Finalizar tour
   const finishTour = useCallback(async (skipped = false) => {
     if (!activeTour) return
+    currentSelector.current = null
     const { data: { session } } = await supabase.auth.getSession()
     if (session) {
       await supabase.from('user_tours').upsert({
-        user_id: activeTour ? session.user.id : null,
+        user_id: session.user.id,
         tour_key: activeTour,
         completed: !skipped,
         skipped,
@@ -121,35 +137,19 @@ export function GuidedTourProvider({ children }) {
       }, { onConflict: 'user_id,tour_key' })
       setCompletedTours(prev => ({ ...prev, [activeTour]: { completed: !skipped, skipped } }))
     }
-    setActiveTour(null)
-    setSteps([])
-    setCurrentStep(0)
-    setTargetRect(null)
+    setActiveTour(null); setSteps([]); setCurrentStep(0); setTargetRect(null)
   }, [activeTour, currentStep])
 
-  // Verificar si un tour debe iniciarse automáticamente
   const checkAutoStart = useCallback((tourKey) => {
     const tourInfo = completedTours[tourKey]
-    if (!tourInfo || (!tourInfo.completed && !tourInfo.skipped)) {
-      return true // No ha visto este tour
-    }
-    return false
+    return !tourInfo || (!tourInfo.completed && !tourInfo.skipped)
   }, [completedTours])
 
   return (
     <TourContext.Provider value={{
-      activeTour,
-      steps,
-      currentStep,
-      targetRect,
-      userInfo,
-      completedTours,
-      startTour,
-      nextStep,
-      prevStep,
-      finishTour,
-      checkAutoStart,
-      isActive: !!activeTour,
+      activeTour, steps, currentStep, targetRect, userInfo,
+      completedTours, startTour, nextStep, prevStep, finishTour,
+      checkAutoStart, isActive: !!activeTour,
     }}>
       {children}
     </TourContext.Provider>

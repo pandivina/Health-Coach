@@ -72,4 +72,12 @@ export const api = {
     getReports: () => request('GET', '/api/labs/reports'),
     deleteReport: (id) => request('DELETE', `/api/labs/reports/${id}`),
   },
+  achievements: {
+    check: (trigger) => request('POST', '/api/achievements/check', { trigger }),
+    getAll: () => request('GET', '/api/achievements'),
+  },
+  email: {
+    welcome: () => request('POST', '/api/email/welcome', {}),
+  },
+}
 }

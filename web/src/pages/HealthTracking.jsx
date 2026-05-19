@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase'
 import { api } from '../lib/api'
 import { useStore } from '../store/useStore'
 import { useTheme } from '../contexts/ThemeProvider'
+import { MedicalDisclaimerBanner } from '../components/legal/MedicalDisclaimer'
 
 const TABS = [
   { id: 'weight',     icon: Scale,        label: 'Peso' },
@@ -130,6 +131,7 @@ function MeasuresTab() {
 }
 
 function LabsTab() {
+  <MedicalDisclaimerBanner />
   const { user } = useStore(); const { theme } = useTheme()
   const [reports, setReports] = useState([]); const [analyzing, setAnalyzing] = useState(false); const [expanded, setExpanded] = useState(null)
   const [mode, setMode] = useState('text'); const [rawText, setRawText] = useState(''); const [reportTitle, setReportTitle] = useState('')

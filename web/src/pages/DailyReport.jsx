@@ -6,6 +6,8 @@ import { api } from '../lib/api'
 import { supabase } from '../lib/supabase'
 import { useStore } from '../store/useStore'
 import { useTheme } from '../contexts/ThemeProvider'
+import { useTour } from '../hooks/useTour'
+import TourHelpButton from '../components/tour/TourHelpButton'
 
 function ModuleStatus({ icon: Icon, label, value, status, to }) {
   const { theme } = useTheme()
@@ -54,6 +56,9 @@ export default function DailyReport() {
   const [achievements, setAchievements] = useState([])
   const [weekStats, setWeekStats] = useState(null)
   const today = new Date().toISOString().split('T')[0]
+
+  // Tour guiado
+  useTour('report')
 
   useEffect(() => { if (!user) return; loadDailyData(); loadWeekStats(); loadAchievements() }, [user])
 
@@ -121,9 +126,10 @@ export default function DailyReport() {
         </p>
       </div>
 
-      {/* Hero */}
+      {/* Hero — balance calórico */}
       {dailyData && (
-        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="card mb-5">
+        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
+          className="card mb-5" data-tour="report-calories">
           <div className="flex items-center justify-between mb-4">
             <div>
               <p className="text-xs uppercase tracking-wider font-medium" style={{ color: theme.textMuted }}>Balance calórico</p>
@@ -160,7 +166,9 @@ export default function DailyReport() {
             </div>
           </div>
 
-          <div style={{ borderTop: `1px solid ${theme.border}`, paddingTop: '0.75rem' }}>
+          {/* Estado módulos */}
+          <div style={{ borderTop: `1px solid ${theme.border}`, paddingTop: '0.75rem' }}
+            data-tour="report-modules">
             <p className="text-xs uppercase tracking-wider mb-2" style={{ color: theme.textMuted }}>Estado de hoy</p>
             <ModuleStatus icon={Apple}    label="Nutrición"     value={dailyData.mealsCount > 0 ? `${dailyData.mealsCount} comidas · ${dailyData.calories} kcal` : 'Sin registros'} status={getStatus(dailyData.mealsCount, 3)} to="/nutrition" />
             <ModuleStatus icon={Dumbbell} label="Entrenamiento" value={dailyData.workouts.length > 0 ? dailyData.workouts.map(w=>w.name).join(', ') : 'Sin entreno'} status={getStatus(dailyData.workouts.length, 1)} to="/workout" />
@@ -172,7 +180,7 @@ export default function DailyReport() {
       )}
 
       {/* Coach insight */}
-      <div className="card mb-5">
+      <div className="card mb-5" data-tour="report-coach">
         <div className="flex items-center justify-between mb-3">
           <p className="font-semibold" style={{ color: theme.text }}>Insight del Coach IA 🤖</p>
           {report && <button onClick={generateReport} disabled={loading}><RefreshCw size={14} className={loading ? 'animate-spin' : ''} style={{ color: theme.textMuted }} /></button>}
@@ -202,7 +210,7 @@ export default function DailyReport() {
 
       {/* Weekly stats */}
       {weekStats && (
-        <div className="card mb-5">
+        <div className="card mb-5" data-tour="report-weekly">
           <p className="font-semibold mb-4" style={{ color: theme.text }}>Esta semana 📅</p>
           <div className="space-y-3">
             <WeeklyBar label="Calorías media" value={weekStats.avgCals} max={goals.calories} color={theme.warning} />
@@ -253,6 +261,8 @@ export default function DailyReport() {
           </div>
         </div>
       </div>
+
+      <TourHelpButton tourKey="report" />
     </div>
   )
 }

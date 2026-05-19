@@ -408,11 +408,13 @@ export default function Onboarding() {
         {step < steps.length - 1 ? (
           <button onClick={() => setStep(s => s + 1)} disabled={!canNext()}
             className="btn-primary disabled:opacity-40">Siguiente →</button>
-        ) : (
-    <>
-      <MedicalDisclaimerText />
-          <button onClick={finish} disabled={loading} className="btn-primary">
-            {loading ? 'Guardando…' : '🚀 ¡Empezar!'}
+  ) : (
+  <>
+    <MedicalDisclaimerText />
+    <button onClick={finish} disabled={loading} className="btn-primary">
+      {loading ? 'Guardando…' : '🚀 ¡Empezar!'}
+    </button>
+  </>
           </button>
         )}
       </div>

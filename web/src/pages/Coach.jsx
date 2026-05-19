@@ -40,9 +40,9 @@ export default function Coach() {
       setMessages(m => [...m, { role: 'assistant', content: '❌ Error al conectar. Verifica tu conexión.' }])
     } finally { setLoading(false) }
   }
-<MedicalDisclaimerModal />
   return (
     <div className="flex flex-col h-screen max-w-lg mx-auto" style={{ background: theme.bg }}>
+      <MedicalDisclaimerModal />
       {/* Header */}
       <div className="px-4 pt-6 pb-3" style={{ borderBottom: `1px solid ${theme.border}` }}>
         <div className="flex items-center gap-3">

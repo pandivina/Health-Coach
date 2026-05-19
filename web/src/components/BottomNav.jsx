@@ -35,11 +35,12 @@ export default function BottomNav() {
   const [showMore, setShowMore] = useState(false)
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 max-w-lg mx-auto z-50"
-      style={{
+  <nav data-tour="bottom-nav" className="fixed bottom-0 left-0 right-0 max-w-lg mx-auto z-50"
+    style={{
         background: theme.navBg,
         borderTop: `1px solid ${theme.navBorder}`,
         backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
         WebkitBackdropFilter: 'blur(20px)',
       }}>
 

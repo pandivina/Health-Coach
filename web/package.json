@@ -9,7 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "vite-plugin-pwa": "^0.20.0"
+    "vite-plugin-pwa": "^0.20.0",
     "@supabase/supabase-js": "^2.39.0",
     "framer-motion": "^11.0.0",
     "lucide-react": "^0.383.0",

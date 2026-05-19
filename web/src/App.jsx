@@ -3,6 +3,8 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { supabase } from './lib/supabase'
 import { useStore } from './store/useStore'
 import Layout from './components/Layout'
+import CookieBanner from './components/legal/CookieBanner'
+import { PrivacyPolicy, TermsOfUse, MedicalDisclaimerPage } from './pages/Legal'
 
 // Public
 import Landing from './pages/Landing'
@@ -94,6 +96,9 @@ export default function App() {
         {/* Rutas públicas */}
         <Route path="/auth" element={<Auth />} />
         <Route path="/onboarding" element={<Onboarding />} />
+        <Route path="/privacy"    element={<PrivacyPolicy />} />
+        <Route path="/terms"      element={<TermsOfUse />} />
+        <Route path="/disclaimer" element={<MedicalDisclaimerPage />} />
 
         {/* Rutas protegidas con Layout */}
         <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
@@ -117,6 +122,7 @@ export default function App() {
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      <CookieBanner />
     </BrowserRouter>
   )
 }

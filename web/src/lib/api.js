@@ -80,4 +80,3 @@ export const api = {
     welcome: () => request('POST', '/api/email/welcome', {}),
   },
 }
-}

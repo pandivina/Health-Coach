@@ -4,19 +4,14 @@ import { motion } from 'framer-motion'
 import { useStore } from '../store/useStore'
 import { useTheme } from '../contexts/ThemeProvider'
 import { supabase } from '../lib/supabase'
-import { MessageCircle, Apple, Dumbbell, Moon, Droplets, ChefHat, BarChart2, Smile, TrendingUp, TrendingDown, Minus, Scale } from 'lucide-react'
+import { Moon, Droplets, ChefHat, Smile, TrendingUp, TrendingDown, Minus, Scale } from 'lucide-react'
 
 const QUICK_LINKS = [
-  { to: '/nutrition', icon: Apple,         label: 'Nutrición' },
-  { to: '/workout',   icon: Dumbbell,      label: 'Entrena' },
-  { to: '/sleep',     icon: Moon,          label: 'Sueño' },
-  { to: '/mood',      icon: Smile,         label: 'Ánimo' },
-  { to: '/hydration', icon: Droplets,      label: 'Agua' },
-  { to: '/nutrition', icon: ChefHat,       label: 'Recetas' },
-  { to: '/coach',     icon: MessageCircle, label: 'Coach' },
-  { to: '/report',    icon: BarChart2,     label: 'Tu Día' },
+  { to: '/hydration', icon: Droplets, label: 'Agua' },
+  { to: '/nutrition', icon: ChefHat,  label: 'Recetas' },
+  { to: '/sleep',     icon: Moon,     label: 'Sueño' },
+  { to: '/mood',      icon: Smile,    label: 'Ánimo' },
 ]
-
 function RingProgress({ value, max, color, size = 80, label }) {
   const r = 30, circ = 2 * Math.PI * r
   const pct = Math.min(value / max, 1)

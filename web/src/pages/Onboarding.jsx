@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useStore } from '../store/useStore'
 import { supabase } from '../lib/supabase'
+import { MedicalDisclaimerText } from '../components/legal/MedicalDisclaimer'
 
 const GOALS = [
   { value: 'lose_fat',    emoji: '🔥', label: 'Perder grasa',      desc: 'Reducir % de grasa corporal' },
@@ -408,6 +409,7 @@ export default function Onboarding() {
           <button onClick={() => setStep(s => s + 1)} disabled={!canNext()}
             className="btn-primary disabled:opacity-40">Siguiente →</button>
         ) : (
+      <MedicalDisclaimerText />
           <button onClick={finish} disabled={loading} className="btn-primary">
             {loading ? 'Guardando…' : '🚀 ¡Empezar!'}
           </button>

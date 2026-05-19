@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useStore } from '../store/useStore'
 import { supabase } from '../lib/supabase'
+import { api } from '../lib/api'
 import { MedicalDisclaimerText } from '../components/legal/MedicalDisclaimer'
 
 const GOALS = [
@@ -312,6 +313,7 @@ export default function Onboarding() {
         await supabase.from('weight_logs').insert({ user_id: userId, weight_kg: parseFloat(form.weight_kg), notes: 'Peso inicial' })
       }
       await fetchProfile(userId)
+      try { await api.email.welcome() } catch {}
       navigate('/')
     } catch (err) {
       alert('Error: ' + err.message)

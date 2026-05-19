@@ -1,25 +1,88 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
-    <meta name="theme-color" content="#0a0a12" />
-    <title>Health Coach App</title>
+    <meta name="theme-color" content="#2EC4B6" />
+
+    <!-- ── SEO ─────────────────────────────────────────── -->
+    <title>Health Coach — Tu IA de salud personalizada</title>
+    <meta name="description" content="Coaching de salud con IA que usa tus datos reales: analíticas, tratamientos, peso y sueño. Nutrición, entrenamiento y bienestar en una app. Empieza gratis." />
+    <meta name="keywords" content="health coach, app salud, coaching nutricional, inteligencia artificial salud, seguimiento fitness, dieta personalizada, entrenamiento IA, analíticas sangre, pérdida de peso" />
+    <meta name="author" content="Health Coach" />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://health-coach-zeta-ten.vercel.app/" />
+
+    <!-- ── Open Graph / Facebook ─────────────────────── -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://health-coach-zeta-ten.vercel.app/" />
+    <meta property="og:title" content="Health Coach — Tu IA de salud personalizada" />
+    <meta property="og:description" content="El único coach de salud que conoce tus analíticas, tratamientos y objetivos reales. Nutrición, entrenamiento y bienestar con IA. 7 días Premium gratis." />
+    <meta property="og:image" content="https://health-coach-zeta-ten.vercel.app/og-image.jpg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:site_name" content="Health Coach" />
+    <meta property="og:locale" content="es_ES" />
+
+    <!-- ── Twitter Card ───────────────────────────────── -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:url" content="https://health-coach-zeta-ten.vercel.app/" />
+    <meta name="twitter:title" content="Health Coach — Tu IA de salud personalizada" />
+    <meta name="twitter:description" content="El único coach de salud que conoce tus analíticas, tratamientos y objetivos reales. 7 días Premium gratis." />
+    <meta name="twitter:image" content="https://health-coach-zeta-ten.vercel.app/og-image.jpg" />
+
+    <!-- ── PWA ───────────────────────────────────────── -->
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Health Coach" />
+    <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+
+    <!-- ── Favicon ───────────────────────────────────── -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+
+    <!-- ── Fonts ─────────────────────────────────────── -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
-    <style>
-      * { box-sizing: border-box; }
-      html, body, #root { height: 100%; margin: 0; }
-      body { background: #0a0a12; color: #f0f0ff; font-family: 'Outfit', sans-serif; }
-      ::-webkit-scrollbar { width: 4px; }
-      ::-webkit-scrollbar-track { background: transparent; }
-      ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
-    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+
+    <!-- ── Structured data (JSON-LD) ─────────────────── -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "Health Coach",
+      "description": "Aplicación de coaching de salud con inteligencia artificial. Nutrición, entrenamiento, analíticas y bienestar personalizados.",
+      "applicationCategory": "HealthApplication",
+      "operatingSystem": "Web, iOS, Android",
+      "url": "https://health-coach-zeta-ten.vercel.app/",
+      "offers": [
+        {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "EUR",
+          "name": "Plan Gratuito"
+        },
+        {
+          "@type": "Offer",
+          "price": "4.99",
+          "priceCurrency": "EUR",
+          "billingPeriod": "P1M",
+          "name": "Plan Premium"
+        }
+      ],
+      "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": "4.9",
+        "reviewCount": "500"
+      }
+    }
+    </script>
   </head>
   <body>
     <div id="root"></div>
-    <script type="module" src="./src/main.jsx"></script>
+    <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

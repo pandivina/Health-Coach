@@ -4,8 +4,7 @@ import { motion } from 'framer-motion'
 import { useStore } from '../store/useStore'
 import { useTheme } from '../contexts/ThemeProvider'
 import { supabase } from '../lib/supabase'
-import { Moon, Droplets, ChefHat, Smile, TrendingUp, TrendingDown, Minus, Scale } from 'lucide-react'
-
+import { MessageCircle, Moon, Droplets, ChefHat, Smile, TrendingUp, TrendingDown, Minus, Scale } from 'lucide-react'
 const QUICK_LINKS = [
   { to: '/hydration', icon: Droplets, label: 'Agua' },
   { to: '/nutrition', icon: ChefHat,  label: 'Recetas' },

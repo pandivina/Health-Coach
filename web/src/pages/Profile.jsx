@@ -4,6 +4,8 @@ import { LogOut, Edit2, Check, Sparkles, Palette } from 'lucide-react'
 import { useStore } from '../store/useStore'
 import { useNavigate, Link } from 'react-router-dom'
 import { useTheme } from '../contexts/ThemeProvider'
+import { useTour } from '../hooks/useTour'
+import TourHelpButton from '../components/tour/TourHelpButton'
 
 const GOAL_LABELS = { lose_fat:'Perder grasa 🔥', gain_muscle:'Ganar músculo 💪', maintain:'Mantener peso ⚖️', recomp:'Recomposición 🔄', health:'Salud general ❤️' }
 const ACTIVITY_LABELS = { sedentary:'Sedentario 🛋️', light:'Ligero 🚶', moderate:'Moderado 🏃', intense:'Intenso ⚡' }
@@ -21,6 +23,9 @@ export default function Profile() {
     activity_level: profile?.activity_level || '',
   })
   const navigate = useNavigate()
+
+  // Tour guiado
+  useTour('profile')
 
   async function save() {
     await updateProfile({
@@ -81,7 +86,8 @@ export default function Profile() {
 
       {/* Editable fields */}
       {editing ? (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="card space-y-3 mb-5">
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+          className="card space-y-3 mb-5" data-tour="profile-data">
           {[['name','Nombre','text'],['age','Edad','number'],['weight_kg','Peso (kg)','number'],['height_cm','Altura (cm)','number']].map(([k,p,t]) => (
             <div key={k}>
               <label className="label">{p}</label>
@@ -102,7 +108,7 @@ export default function Profile() {
           </div>
         </motion.div>
       ) : (
-        <div className="card mb-5 space-y-3">
+        <div className="card mb-5 space-y-3" data-tour="profile-data">
           {[
             ['🎯', 'Objetivo', GOAL_LABELS[profile?.goal] || '–'],
             ['🏃', 'Actividad', ACTIVITY_LABELS[profile?.activity_level] || '–'],
@@ -118,7 +124,7 @@ export default function Profile() {
       )}
 
       {/* Premium banner */}
-      <Link to="/premium">
+      <Link to="/premium" data-tour="profile-premium">
         <motion.div whileTap={{ scale: 0.97 }}
           className="w-full flex items-center gap-3 p-4 rounded-2xl mb-3"
           style={{ background: theme.gradientBrand }}>
@@ -132,7 +138,7 @@ export default function Profile() {
       </Link>
 
       {/* Apariencia */}
-      <Link to="/appearance">
+      <Link to="/appearance" data-tour="profile-appearance">
         <motion.div whileTap={{ scale: 0.97 }}
           className="w-full flex items-center gap-3 p-4 rounded-2xl mb-5"
           style={{ background: theme.surface, border: `1px solid ${theme.border}` }}>
@@ -154,6 +160,8 @@ export default function Profile() {
         style={{ border: `1px solid ${theme.error}50`, color: theme.error }}>
         <LogOut size={14} /> Cerrar sesión
       </button>
+
+      <TourHelpButton tourKey="profile" />
     </div>
   )
 }

@@ -4,13 +4,17 @@ import { motion } from 'framer-motion'
 import { useStore } from '../store/useStore'
 import { useTheme } from '../contexts/ThemeProvider'
 import { supabase } from '../lib/supabase'
+import { useTour } from '../hooks/useTour'
+import TourHelpButton from '../components/tour/TourHelpButton'
 import { MessageCircle, Moon, Droplets, ChefHat, Smile, TrendingUp, TrendingDown, Minus, Scale } from 'lucide-react'
+
 const QUICK_LINKS = [
   { to: '/hydration', icon: Droplets, label: 'Agua' },
   { to: '/nutrition', icon: ChefHat,  label: 'Recetas' },
   { to: '/sleep',     icon: Moon,     label: 'Sueño' },
   { to: '/mood',      icon: Smile,    label: 'Ánimo' },
 ]
+
 function RingProgress({ value, max, color, size = 80, label }) {
   const r = 30, circ = 2 * Math.PI * r
   const pct = Math.min(value / max, 1)
@@ -43,6 +47,9 @@ export default function Home() {
   const [goals, setGoals] = useState({ calories: 2000, protein_g: 150 })
   const [healthProfile, setHealthProfile] = useState(null)
   const [weightLogs, setWeightLogs] = useState([])
+
+  // Tour guiado
+  useTour('home')
 
   useEffect(() => {
     if (!user) return
@@ -81,7 +88,7 @@ export default function Home() {
             <p className="text-sm" style={{ color: theme.textMuted }}>{greeting},</p>
             <h1 className="text-2xl font-extrabold" style={{ color: theme.text }}>{profile?.name || 'Campeón'} 👋</h1>
           </div>
-          <Link to="/pet">
+          <Link to="/pet" data-tour="home-pet">
             <motion.div whileTap={{ scale: 0.9 }}
               className="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl"
               style={{ background: theme.surface2, border: `1px solid ${theme.border}` }}>
@@ -90,7 +97,7 @@ export default function Home() {
           </Link>
         </div>
 
-        <div className="flex gap-3 mt-3">
+        <div className="flex gap-3 mt-3" data-tour="home-progress-level">
           {[
             ['⚡', `Nivel ${profile?.level || 1}`, `${profile?.xp || 0} XP`],
             ['🔥', `${profile?.streak || 0} días`, null],
@@ -134,7 +141,8 @@ export default function Home() {
       )}
 
       {/* Rings */}
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }} className="card mb-5">
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }}
+        className="card mb-5" data-tour="home-progress">
         <p className="text-xs mb-3 font-medium uppercase tracking-wider" style={{ color: theme.textMuted }}>Progreso de hoy</p>
         <div className="flex justify-around">
           <RingProgress value={cals}    max={goals.calories}  color={theme.warning}  label="Calorías" />
@@ -152,7 +160,7 @@ export default function Home() {
 
       {/* Quick links */}
       <p className="section-title">Accesos rápidos</p>
-      <div className="grid grid-cols-4 gap-3 mb-4">
+      <div className="grid grid-cols-4 gap-3 mb-4" data-tour="home-quicklinks">
         {QUICK_LINKS.map((item, i) => (
           <motion.div key={i} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.05 * i }}>
             <Link to={item.to}
@@ -181,7 +189,7 @@ export default function Home() {
       </Link>
 
       {/* Coach CTA */}
-      <Link to="/coach">
+      <Link to="/coach" data-tour="home-coach">
         <motion.div whileTap={{ scale: 0.98 }} className="card flex items-center gap-4">
           <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: `${theme.primary}20` }}>
             <MessageCircle size={20} style={{ color: theme.primary }} />
@@ -193,6 +201,9 @@ export default function Home() {
           <span className="ml-auto" style={{ color: theme.textMuted }}>›</span>
         </motion.div>
       </Link>
+
+      {/* Tour help button */}
+      <TourHelpButton tourKey="home" />
     </div>
   )
 }

@@ -12,6 +12,8 @@ const workoutsRoutes = require('./routes/workouts');
 const healthRoutes  = require('./routes/health');
 const labsRoutes    = require('./routes/labs');
 const achievementsRoutes = require('./routes/achievements');
+const emailRoutes = require('./routes/email');
+app.use('/api/email', emailRoutes);
 
 const app = express();
 const PORT = process.env.PORT || 3001;

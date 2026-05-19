@@ -4,6 +4,7 @@ import { Send, Loader } from 'lucide-react'
 import { api } from '../lib/api'
 import { useStore } from '../store/useStore'
 import { useTheme } from '../contexts/ThemeProvider'
+import { MedicalDisclaimerModal } from '../components/legal/MedicalDisclaimer'
 
 const SUGGESTIONS = [
   '¿Cómo voy hoy con mis macros?',
@@ -39,7 +40,7 @@ export default function Coach() {
       setMessages(m => [...m, { role: 'assistant', content: '❌ Error al conectar. Verifica tu conexión.' }])
     } finally { setLoading(false) }
   }
-
+<MedicalDisclaimerModal />
   return (
     <div className="flex flex-col h-screen max-w-lg mx-auto" style={{ background: theme.bg }}>
       {/* Header */}

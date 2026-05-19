@@ -36,13 +36,13 @@ const DIET_TYPES = [
   { value: 'paleo',       label: '🍖 Paleo' },
 ]
 const TREATMENTS = [
-  { value: 'glp1',          label: '💉 Agonista GLP-1 (Ozempic, Wegovy…)' },
-  { value: 'thyroid',       label: '🦋 Tiroides (Levotiroxina…)' },
-  { value: 'insulin',       label: '💊 Insulina' },
-  { value: 'contraceptive', label: '💊 Anticonceptivos hormonales' },
-  { value: 'antidepressant',label: '💊 Antidepresivos / ansiolíticos' },
-  { value: 'corticoid',     label: '💊 Corticoides' },
-  { value: 'other',         label: '💊 Otro tratamiento' },
+  { value: 'glp1',           label: '💉 Agonista GLP-1 (Ozempic, Wegovy…)' },
+  { value: 'thyroid',        label: '🦋 Tiroides (Levotiroxina…)' },
+  { value: 'insulin',        label: '💊 Insulina' },
+  { value: 'contraceptive',  label: '💊 Anticonceptivos hormonales' },
+  { value: 'antidepressant', label: '💊 Antidepresivos / ansiolíticos' },
+  { value: 'corticoid',      label: '💊 Corticoides' },
+  { value: 'other',          label: '💊 Otro tratamiento' },
 ]
 
 function SelectCard({ value, selected, onSelect, children }) {
@@ -76,7 +76,6 @@ export default function Onboarding() {
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
 
-  // Calcular IMC y rango de peso saludable
   const heightM = parseFloat(form.height_cm) / 100
   const currentBMI = heightM > 0 && form.weight_kg
     ? (parseFloat(form.weight_kg) / (heightM * heightM)).toFixed(1)
@@ -95,7 +94,6 @@ export default function Onboarding() {
   const bmiStatus = BMI_STATUS(currentBMI)
 
   const steps = [
-    // 0 — Bienvenida + datos personales
     <div key={0} className="space-y-4">
       <div className="text-center mb-6">
         <div className="text-5xl mb-3">🐼</div>
@@ -116,7 +114,6 @@ export default function Onboarding() {
       </div>
     </div>,
 
-    // 1 — Datos antropométricos + IMC
     <div key={1} className="space-y-4">
       <h2 className="text-2xl font-bold">Tus medidas 📏</h2>
       <div className="flex gap-3">
@@ -125,10 +122,8 @@ export default function Onboarding() {
         <div className="flex-1"><label className="label">Peso actual (kg)</label>
           <input className="input" type="number" step="0.1" placeholder="70" value={form.weight_kg} onChange={e => set('weight_kg', e.target.value)} /></div>
       </div>
-
       {currentBMI && (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-          className="card bg-gradient-to-r from-surface-2 to-surface-3">
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="card bg-gradient-to-r from-surface-2 to-surface-3">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-white/40 text-xs">Tu IMC</p>
@@ -143,26 +138,23 @@ export default function Onboarding() {
           </div>
         </motion.div>
       )}
-
       <div><label className="label">Peso objetivo (kg)</label>
-        <input className="input" type="number" step="0.1" placeholder={healthyMax ? `Sugerido: ${Math.round((healthyMin + healthyMax) / 2)}` : 'Ej: 65'} value={form.target_weight_kg} onChange={e => set('target_weight_kg', e.target.value)} />
-        {healthyMin && <p className="text-white/30 text-xs mt-1">Rango saludable para tu altura: {healthyMin}–{healthyMax} kg</p>}
+        <input className="input" type="number" step="0.1"
+          placeholder={healthyMax ? `Sugerido: ${Math.round((healthyMin + healthyMax) / 2)}` : 'Ej: 65'}
+          value={form.target_weight_kg} onChange={e => set('target_weight_kg', e.target.value)} />
+        {healthyMin && <p className="text-white/30 text-xs mt-1">Rango saludable: {healthyMin}–{healthyMax} kg</p>}
       </div>
     </div>,
 
-    // 2 — Objetivo
     <div key={2} className="space-y-3">
       <h2 className="text-2xl font-bold">¿Cuál es tu objetivo? 🎯</h2>
       {GOALS.map(g => (
         <SelectCard key={g.value} value={g.value} selected={form.goal === g.value} onSelect={v => set('goal', v)}>
           <span className="text-2xl">{g.emoji}</span>
-          <div>
-            <p className="font-semibold">{g.label}</p>
-            <p className="text-white/40 text-xs">{g.desc}</p>
-          </div>
+          <div><p className="font-semibold">{g.label}</p><p className="text-white/40 text-xs">{g.desc}</p></div>
         </SelectCard>
       ))}
-      {form.goal === 'lose_fat' || form.goal === 'define' ? (
+      {(form.goal === 'lose_fat' || form.goal === 'define') && (
         <div>
           <label className="label">Velocidad del progreso</label>
           <div className="flex gap-2">
@@ -174,19 +166,15 @@ export default function Onboarding() {
             ))}
           </div>
         </div>
-      ) : null}
+      )}
     </div>,
 
-    // 3 — Actividad + entrenamiento
     <div key={3} className="space-y-3">
       <h2 className="text-2xl font-bold">Actividad física 🏋️</h2>
       {ACTIVITY.map(a => (
         <SelectCard key={a.value} value={a.value} selected={form.activity_level === a.value} onSelect={v => set('activity_level', v)}>
           <span className="text-2xl">{a.emoji}</span>
-          <div>
-            <p className="font-semibold">{a.label}</p>
-            <p className="text-white/40 text-xs">{a.desc}</p>
-          </div>
+          <div><p className="font-semibold">{a.label}</p><p className="text-white/40 text-xs">{a.desc}</p></div>
         </SelectCard>
       ))}
       <div><label className="label">Días de entrenamiento por semana</label>
@@ -199,7 +187,6 @@ export default function Onboarding() {
       </div>
     </div>,
 
-    // 4 — Profesión + horarios + sueño
     <div key={4} className="space-y-4">
       <h2 className="text-2xl font-bold">Tu día a día 📅</h2>
       <div><label className="label">Profesión</label>
@@ -224,7 +211,6 @@ export default function Onboarding() {
       </div>
     </div>,
 
-    // 5 — Dieta + hábitos
     <div key={5} className="space-y-4">
       <h2 className="text-2xl font-bold">Alimentación y hábitos 🥗</h2>
       <div><label className="label">Tipo de dieta</label>
@@ -241,12 +227,10 @@ export default function Onboarding() {
         <input className="input" placeholder="frutos secos, gluten, marisco…" value={form.allergies} onChange={e => set('allergies', e.target.value)} /></div>
       <div><label className="label">Intolerancias</label>
         <input className="input" placeholder="lactosa, fructosa…" value={form.food_intolerances} onChange={e => set('food_intolerances', e.target.value)} /></div>
-      <div className="flex gap-3">
-        <label className={`flex-1 flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${form.is_smoker ? 'border-accent bg-accent/10' : 'border-white/10 bg-surface-2'}`}>
-          <input type="checkbox" checked={form.is_smoker} onChange={e => set('is_smoker', e.target.checked)} className="w-4 h-4 accent-indigo-500" />
-          <span className="text-sm">Soy fumador/a 🚬</span>
-        </label>
-      </div>
+      <label className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${form.is_smoker ? 'border-accent bg-accent/10' : 'border-white/10 bg-surface-2'}`}>
+        <input type="checkbox" checked={form.is_smoker} onChange={e => set('is_smoker', e.target.checked)} className="w-4 h-4 accent-indigo-500" />
+        <span className="text-sm">Soy fumador/a 🚬</span>
+      </label>
       <div><label className="label">Alcohol</label>
         <div className="flex gap-2">
           {[['never','Nunca'],['occasional','Ocasional'],['weekly','Semanal'],['daily','Diario']].map(([v,l]) => (
@@ -257,11 +241,9 @@ export default function Onboarding() {
       </div>
     </div>,
 
-    // 6 — Tratamientos médicos
     <div key={6} className="space-y-4">
       <h2 className="text-2xl font-bold">Tratamientos médicos 💊</h2>
-      <p className="text-white/50 text-sm">Esta información es confidencial y ayuda al Coach a darte recomendaciones más precisas. Es completamente opcional.</p>
-
+      <p className="text-white/50 text-sm">Información confidencial. Ayuda al Coach a personalizar tus recomendaciones. Completamente opcional.</p>
       <div className="space-y-2">
         {TREATMENTS.map(t => {
           const selected = form.treatments.some(tr => tr.type === t.value)
@@ -278,7 +260,7 @@ export default function Onboarding() {
           )
         })}
       </div>
-      <p className="text-white/30 text-xs text-center">Puedes añadir más tratamientos desde tu perfil más adelante</p>
+      <p className="text-white/30 text-xs text-center">Puedes añadir más desde tu perfil más adelante</p>
     </div>,
   ]
 
@@ -286,87 +268,49 @@ export default function Onboarding() {
     setLoading(true)
     try {
       const userId = user.id
-
-      // Actualizar user_profiles básico
-      await supabase.from('user_profiles').update({
-        name: form.name,
-        onboarding_done: true,
-      }).eq('id', userId)
-
-      // Calcular edad
-      const age = form.birth_date
-        ? Math.floor((new Date() - new Date(form.birth_date)) / (365.25 * 24 * 3600 * 1000))
-        : null
-
-      // Calcular BMR y TDEE
+      await supabase.from('user_profiles').update({ name: form.name, onboarding_done: true }).eq('id', userId)
+      const age = form.birth_date ? Math.floor((new Date() - new Date(form.birth_date)) / (365.25 * 24 * 3600 * 1000)) : null
       const w = parseFloat(form.weight_kg) || 70
       const h = parseFloat(form.height_cm) || 170
-      const bmr = form.sex === 'female'
-        ? 10 * w + 6.25 * h - 5 * (age || 25) - 161
-        : 10 * w + 6.25 * h - 5 * (age || 25) + 5
+      const bmr = form.sex === 'female' ? 10*w + 6.25*h - 5*(age||25) - 161 : 10*w + 6.25*h - 5*(age||25) + 5
       const actMult = { sedentary:1.2, light:1.375, moderate:1.55, intense:1.725, athlete:1.9 }[form.activity_level] || 1.375
       const tdee = Math.round(bmr * actMult)
-      const deficits = { slow: 250, moderate: 500, aggressive: 750 }
-      const deficit = deficits[form.goal_intensity] || 500
-      const targetCals = form.goal === 'lose_fat' || form.goal === 'define' ? tdee - deficit
-        : form.goal === 'gain_muscle' ? tdee + 300 : tdee
+      const deficit = { slow:250, moderate:500, aggressive:750 }[form.goal_intensity] || 500
+      const targetCals = form.goal === 'lose_fat' || form.goal === 'define' ? tdee - deficit : form.goal === 'gain_muscle' ? tdee + 300 : tdee
       const targetProtein = Math.round(w * 2.0)
       const targetFat = Math.round(targetCals * 0.25 / 9)
       const targetCarbs = Math.round((targetCals - targetProtein * 4 - targetFat * 9) / 4)
       const bmi = h > 0 ? Math.round((w / ((h/100) ** 2)) * 10) / 10 : null
 
-      // Guardar health_profile
       await supabase.from('health_profiles').upsert({
-        user_id: userId,
-        height_cm: parseFloat(form.height_cm) || null,
-        weight_kg: parseFloat(form.weight_kg) || null,
-        target_weight_kg: parseFloat(form.target_weight_kg) || null,
-        sex: form.sex,
-        birth_date: form.birth_date || null,
-        goal: form.goal,
-        goal_intensity: form.goal_intensity,
-        activity_level: form.activity_level,
-        training_days_per_week: parseInt(form.training_days_per_week) || 3,
-        profession: form.profession,
-        work_schedule: form.work_schedule,
-        sleep_hours: parseFloat(form.sleep_hours) || 7,
-        wake_time: form.wake_time,
-        sleep_time: form.sleep_time,
-        diet_type: form.diet_type,
-        allergies: form.allergies ? form.allergies.split(',').map(s => s.trim()).filter(Boolean) : [],
-        food_intolerances: form.food_intolerances ? form.food_intolerances.split(',').map(s => s.trim()).filter(Boolean) : [],
-        is_smoker: form.is_smoker,
-        alcohol_frequency: form.alcohol_frequency,
-        bmi, bmr: Math.round(bmr), tdee,
-        target_calories: targetCals,
-        target_protein_g: targetProtein,
-        target_carbs_g: targetCarbs,
-        target_fat_g: targetFat,
-        onboarding_done: true,
-        onboarding_version: 2,
+        user_id: userId, height_cm: parseFloat(form.height_cm)||null, weight_kg: parseFloat(form.weight_kg)||null,
+        target_weight_kg: parseFloat(form.target_weight_kg)||null, sex: form.sex, birth_date: form.birth_date||null,
+        goal: form.goal, goal_intensity: form.goal_intensity, activity_level: form.activity_level,
+        training_days_per_week: parseInt(form.training_days_per_week)||3, profession: form.profession,
+        work_schedule: form.work_schedule, sleep_hours: parseFloat(form.sleep_hours)||7,
+        wake_time: form.wake_time, sleep_time: form.sleep_time, diet_type: form.diet_type,
+        allergies: form.allergies ? form.allergies.split(',').map(s=>s.trim()).filter(Boolean) : [],
+        food_intolerances: form.food_intolerances ? form.food_intolerances.split(',').map(s=>s.trim()).filter(Boolean) : [],
+        is_smoker: form.is_smoker, alcohol_frequency: form.alcohol_frequency,
+        bmi, bmr: Math.round(bmr), tdee, target_calories: targetCals,
+        target_protein_g: targetProtein, target_carbs_g: targetCarbs, target_fat_g: targetFat,
+        onboarding_done: true, onboarding_version: 2,
       }, { onConflict: 'user_id' })
 
-      // Guardar objetivos nutricionales
       await supabase.from('nutrition_goals').upsert({
-        user_id: userId,
-        calories: targetCals,
-        protein_g: targetProtein,
-        carbs_g: targetCarbs,
-        fat_g: targetFat,
+        user_id: userId, calories: targetCals, protein_g: targetProtein, carbs_g: targetCarbs, fat_g: targetFat,
       }, { onConflict: 'user_id' })
 
-      // Guardar tratamientos
       if (form.treatments.length > 0) {
         await supabase.from('medical_treatments').insert(
-          form.treatments.map(t => ({ ...t, user_id: userId, affects_weight: ['glp1','thyroid','insulin','corticoid','contraceptive'].includes(t.type), affects_appetite: ['glp1','antidepressant'].includes(t.type) }))
+          form.treatments.map(t => ({ ...t, user_id: userId,
+            affects_weight: ['glp1','thyroid','insulin','corticoid','contraceptive'].includes(t.type),
+            affects_appetite: ['glp1','antidepressant'].includes(t.type) }))
         )
       }
-
-      // Registrar peso inicial
       if (form.weight_kg) {
         await supabase.from('weight_logs').insert({ user_id: userId, weight_kg: parseFloat(form.weight_kg), notes: 'Peso inicial' })
       }
-
       await fetchProfile(userId)
       navigate('/')
     } catch (err) {
@@ -386,7 +330,6 @@ export default function Onboarding() {
 
   return (
     <div className="min-h-screen bg-[#0a0a12] flex flex-col px-5 py-8 max-w-lg mx-auto">
-      {/* Progress */}
       <div className="flex gap-1.5 mb-6">
         {steps.map((_, i) => (
           <div key={i} className={`h-1 flex-1 rounded-full transition-all duration-300 ${i <= step ? 'bg-gradient-brand' : 'bg-surface-3'}`} />
@@ -401,21 +344,27 @@ export default function Onboarding() {
         </motion.div>
       </AnimatePresence>
 
-      <div className="flex gap-3 mt-6">
-        {step > 0 && (
-          <button onClick={() => setStep(s => s - 1)} className="btn-secondary w-auto px-6">← Atrás</button>
-        )}
+      <div className="flex flex-col gap-3 mt-6">
         {step < steps.length - 1 ? (
-          <button onClick={() => setStep(s => s + 1)} disabled={!canNext()}
-            className="btn-primary disabled:opacity-40">Siguiente →</button>
-  ) : (
-  <>
-    <MedicalDisclaimerText />
-    <button onClick={finish} disabled={loading} className="btn-primary">
-      {loading ? 'Guardando…' : '🚀 ¡Empezar!'}
-    </button>
-  </>
-          </button>
+          <div className="flex gap-3">
+            {step > 0 && (
+              <button onClick={() => setStep(s => s - 1)} className="btn-secondary w-auto px-6">← Atrás</button>
+            )}
+            <button onClick={() => setStep(s => s + 1)} disabled={!canNext()}
+              className="btn-primary disabled:opacity-40">Siguiente →</button>
+          </div>
+        ) : (
+          <>
+            <MedicalDisclaimerText />
+            <div className="flex gap-3">
+              {step > 0 && (
+                <button onClick={() => setStep(s => s - 1)} className="btn-secondary w-auto px-6">← Atrás</button>
+              )}
+              <button onClick={finish} disabled={loading} className="btn-primary">
+                {loading ? 'Guardando…' : '🚀 ¡Empezar!'}
+              </button>
+            </div>
+          </>
         )}
       </div>
     </div>

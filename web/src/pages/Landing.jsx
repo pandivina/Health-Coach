@@ -160,7 +160,7 @@ export default function Landing() {
       <nav className="sticky top-0 z-50" style={{ background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(20px)', borderBottom: `1px solid ${C.border}` }}>
         <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="text-2xl">🐼</span>
+            <img src="/icons/icon-192.png" alt="Pandi" style={{ width: 32, height: 32, borderRadius: 8 }} />
             <span className="font-extrabold text-lg" style={{ color: C.text }}>Health Coach</span>
           </div>
           <div className="hidden md:flex items-center gap-6">

@@ -1,7 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import { useTourContext } from '../../contexts/GuidedTourProvider'
 
-// Usa 4 divs para crear el spotlight — más fiable que SVG mask
 export default function SpotlightOverlay() {
   const { isActive, targetRect } = useTourContext()
 
@@ -9,7 +8,6 @@ export default function SpotlightOverlay() {
 
   const OVERLAY_COLOR = 'rgba(0,0,0,0.68)'
 
-  // Sin target: overlay completo
   if (!targetRect) {
     return (
       <AnimatePresence>
@@ -20,7 +18,7 @@ export default function SpotlightOverlay() {
           style={{
             position: 'fixed', inset: 0, zIndex: 998,
             background: OVERLAY_COLOR,
-            pointerEvents: 'none',
+            pointerEvents: 'all',
           }}
         />
       </AnimatePresence>
@@ -32,6 +30,12 @@ export default function SpotlightOverlay() {
   const bottom = top + height
   const VW = window.innerWidth
   const VH = window.innerHeight
+
+  const block = {
+    position: 'absolute',
+    background: OVERLAY_COLOR,
+    pointerEvents: 'all',
+  }
 
   return (
     <AnimatePresence>
@@ -45,27 +49,27 @@ export default function SpotlightOverlay() {
         <motion.div
           animate={{ height: Math.max(0, top) }}
           transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-          style={{ position: 'absolute', top: 0, left: 0, right: 0, background: OVERLAY_COLOR }}
+          style={{ ...block, top: 0, left: 0, right: 0 }}
         />
         {/* Bottom */}
         <motion.div
           animate={{ top: Math.min(VH, bottom), height: Math.max(0, VH - bottom) }}
           transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-          style={{ position: 'absolute', left: 0, right: 0, background: OVERLAY_COLOR }}
+          style={{ ...block, left: 0, right: 0 }}
         />
         {/* Left */}
         <motion.div
           animate={{ top, width: Math.max(0, left), height }}
           transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-          style={{ position: 'absolute', left: 0, background: OVERLAY_COLOR }}
+          style={{ ...block, left: 0 }}
         />
         {/* Right */}
         <motion.div
           animate={{ top, left: right, width: Math.max(0, VW - right), height }}
           transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-          style={{ position: 'absolute', background: OVERLAY_COLOR }}
+          style={{ ...block }}
         />
-        {/* Borde brillante */}
+        {/* Borde spotlight */}
         <motion.div
           animate={{ top, left, width, height }}
           transition={{ type: 'spring', stiffness: 300, damping: 30 }}
@@ -74,6 +78,7 @@ export default function SpotlightOverlay() {
             borderRadius: 14,
             border: '2px solid rgba(46,196,182,0.9)',
             boxShadow: '0 0 0 4px rgba(46,196,182,0.15), 0 0 24px rgba(46,196,182,0.3)',
+            pointerEvents: 'none',
           }}
         />
       </motion.div>

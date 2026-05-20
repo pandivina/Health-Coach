@@ -372,43 +372,61 @@ function PandaFrame({ running }) {
 
   useEffect(() => {
     if (!running) { setFrame(1); return }
-    const id = setInterval(() => setFrame(f => f === 1 ? 2 : 1), 2500)
-    return () => clearInterval(id)
+    const id = setTimeout(() => setFrame(2), 15000)
+    return () => clearTimeout(id)
   }, [running])
 
   if (imgError) {
     return (
       <motion.span
-        animate={running ? { scale: [1, 1.1, 1] } : {}}
-        transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-        style={{ fontSize: 72 }}>
+        animate={running ? { scale: [1, 1.06, 1] } : {}}
+        transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
+        style={{ fontSize: 100 }}>
         🧘
       </motion.span>
     )
   }
 
   return (
-    <motion.div
-      animate={running ? { scale: [1, 1.11, 1, 1.07, 1] } : { scale: 1 }}
-      transition={running
-        ? { duration: 2.2, repeat: Infinity, ease: 'easeInOut' }
-        : { duration: 0.3 }
-      }
-      style={{ width: '100%', maxWidth: 280, height: 280 }}>
-      <AnimatePresence mode="wait">
-        <motion.img
-          key={frame}
-          src={`/panda/meditate_${frame}.png`}
-          alt="Pandi meditando"
-          initial={{ opacity: 0.5 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0.5 }}
-          transition={{ duration: 0.6 }}
-          style={{ width: '100%', height: '100%', objectFit: 'contain' }}
-          onError={() => setImgError(true)}
-        />
-      </AnimatePresence>
-    </motion.div>
+    <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      {/* Aura violeta detrás */}
+      <motion.div
+        animate={running
+          ? { scale: [1, 1.15, 1], opacity: [0.35, 0.55, 0.35] }
+          : { scale: 1, opacity: 0.2 }}
+        transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
+        style={{
+          position: 'absolute',
+          width: '85%', height: '85%',
+          borderRadius: '50%',
+          background: 'radial-gradient(circle, #c084fc 0%, #a855f7 40%, transparent 75%)',
+          filter: 'blur(28px)',
+          zIndex: 0,
+        }}
+      />
+
+      {/* Panda */}
+      <motion.div
+        animate={running ? { scale: [1, 1.055, 1] } : { scale: 1 }}
+        transition={running
+          ? { duration: 5, repeat: Infinity, ease: 'easeInOut' }
+          : { duration: 0.4 }}
+        style={{ position: 'relative', zIndex: 1, width: '100%', maxWidth: 280, height: 280 }}>
+        <AnimatePresence mode="wait">
+          <motion.img
+            key={frame}
+            src={`/panda/meditate_${frame}.png`}
+            alt="Pandi meditando"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 1.2 }}
+            style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+            onError={() => setImgError(true)}
+          />
+        </AnimatePresence>
+      </motion.div>
+    </div>
   )
 }
 

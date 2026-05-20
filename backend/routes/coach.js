@@ -13,21 +13,22 @@ router.post('/', requireAuth, async (req, res) => {
     const today = new Date().toISOString().split('T')[0];
 
     // Obtener contexto completo del usuario
-    const [
-      profileRes, healthRes, goalsRes, mealsRes, sleepRes,
-      moodRes, workoutRes, weightRes, treatmentsRes, labsRes
-    ] = await Promise.all([
-      supabaseAdmin.from('user_profiles').select('name,xp,level,streak,pet_name').eq('id', userId).single(),
-      supabaseAdmin.from('health_profiles').select('*').eq('user_id', userId).single(),
-      supabaseAdmin.from('nutrition_goals').select('*').eq('user_id', userId).single(),
-      supabaseAdmin.from('meal_logs').select('calories,protein_g,food_name').eq('user_id', userId).eq('date', today),
-      supabaseAdmin.from('sleep_logs').select('hours,quality').eq('user_id', userId).order('date', { ascending: false }).limit(3),
-      supabaseAdmin.from('mood_logs').select('mood').eq('user_id', userId).order('date', { ascending: false }).limit(1).single(),
-      supabaseAdmin.from('workout_sessions').select('name,total_volume_kg,calories_burned').eq('user_id', userId).eq('status','completed').order('created_at', { ascending: false }).limit(3),
-      supabaseAdmin.from('weight_logs').select('weight_kg,date').eq('user_id', userId).order('date', { ascending: false }).limit(5),
-      supabaseAdmin.from('medical_treatments').select('name,type,affects_weight,affects_appetite').eq('user_id', userId).eq('active', true),
-      supabaseAdmin.from('lab_reports').select('ai_recommendations,report_date').eq('user_id', userId).eq('status','analyzed').order('report_date', { ascending: false }).limit(1).single(),
-    ]);
+   const safe = fn => fn.catch(() => ({ data: null }))
+const [
+  profileRes, healthRes, goalsRes, mealsRes, sleepRes,
+  moodRes, workoutRes, weightRes, treatmentsRes, labsRes
+] = await Promise.all([
+  safe(supabaseAdmin.from('user_profiles').select('name,xp,level,streak,pet_name').eq('id', userId).single()),
+  safe(supabaseAdmin.from('health_profiles').select('*').eq('user_id', userId).single()),
+  safe(supabaseAdmin.from('nutrition_goals').select('*').eq('user_id', userId).single()),
+  safe(supabaseAdmin.from('meal_logs').select('calories,protein_g,food_name').eq('user_id', userId).eq('date', today)),
+  safe(supabaseAdmin.from('sleep_logs').select('hours,quality').eq('user_id', userId).order('date', { ascending: false }).limit(3)),
+  safe(supabaseAdmin.from('mood_logs').select('mood').eq('user_id', userId).order('date', { ascending: false }).limit(1).single()),
+  safe(supabaseAdmin.from('workout_sessions').select('name,total_volume_kg,calories_burned').eq('user_id', userId).eq('status','completed').order('created_at', { ascending: false }).limit(3)),
+  safe(supabaseAdmin.from('weight_logs').select('weight_kg,date').eq('user_id', userId).order('date', { ascending: false }).limit(5)),
+  safe(supabaseAdmin.from('medical_treatments').select('name,type,affects_weight,affects_appetite').eq('user_id', userId).eq('active', true)),
+  safe(supabaseAdmin.from('lab_reports').select('ai_recommendations,report_date').eq('user_id', userId).eq('status','analyzed').order('report_date', { ascending: false }).limit(1).single()),
+]);
 
     const profile = profileRes.data || {};
     const health = healthRes.data || {};
@@ -104,7 +105,7 @@ REGLAS DEL COACH
 8. Usa emojis con moderación.`;
 
     const response = await anthropic.messages.create({
-      model: process.env.ANTHROPIC_MODEL || 'claude-opus-4-5',
+      model: process.env.ANTHROPIC_MODEL || 'claude-opus-4-6',
       max_tokens: 800,
       system: systemPrompt,
       messages: messages.map(m => ({ role: m.role, content: m.content })),

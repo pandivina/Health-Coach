@@ -530,7 +530,7 @@ function MeditationTab({ theme }) {
 
   {/* Panda grande — ocupa todo el ancho */}
   <div className="w-full flex items-center justify-center"
-    style={{ minHeight: 260 }}>
+    style={{ minHeight: 600 }}>
     {done ? (
       <motion.span initial={{ scale: 0.5 }} animate={{ scale: 1 }}
         style={{ fontSize: 100 }}>🎉</motion.span>

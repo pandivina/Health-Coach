@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { motion } from 'framer-motion'
 import { useTheme } from '../contexts/ThemeProvider'
+import InstallPWA from '../components/InstallPWA'
 
 export default function Auth() {
   const { theme } = useTheme()
@@ -89,6 +90,11 @@ export default function Auth() {
               {loading ? 'Cargando…' : mode === 'login' ? 'Entrar' : 'Crear cuenta'}
             </button>
           </form>
+        </div>
+
+        {/* Instalar PWA */}
+        <div className="mt-4">
+          <InstallPWA />
         </div>
       </motion.div>
     </div>

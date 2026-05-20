@@ -530,9 +530,9 @@ function MeditationTab({ theme }) {
 
   {/* Panda grande — ocupa todo el ancho */}
   <div className="w-full flex items-center justify-center"
-    style={{ minHeight: 600 }}>
+    style={{ minHeight: 300 }}>
     {done ? (
-      <motion.span initial={{ scale: 0.5 }} animate={{ scale: 1 }}
+      <motion.span initial={{ scale: 1 }} animate={{ scale: 2 }}
         style={{ fontSize: 100 }}>🎉</motion.span>
     ) : (
       <PandaFrame running={running} />
@@ -545,7 +545,7 @@ function MeditationTab({ theme }) {
       <motion.div className="h-full rounded-full"
         style={{ background: 'linear-gradient(90deg,#2EC4B6,#FF8FA3)' }}
         animate={{ width: `${progress * 100}%` }}
-        transition={{ duration: 1, ease: 'linear' }} />
+        transition={{ duration: 2, ease: 'linear' }} />
     </div>
   </div>
 

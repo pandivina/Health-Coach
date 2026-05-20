@@ -367,29 +367,48 @@ function pickSession(mins) {
   const pool = MED_SESSIONS[mins] ?? [1]
   return pool[Math.floor(Math.random() * pool.length)]
 }
-function PandaFrame({ running, theme }) {
-  const [frame, setFrame] = useState(1)
+function PandaFrame({ running }) {
+  const [frame,    setFrame]    = useState(1)
+  const [imgError, setImgError] = useState(false)
 
   useEffect(() => {
     if (!running) { setFrame(1); return }
-    const id = setInterval(() => setFrame(f => f === 1 ? 2 : 1), 3500)
+    const id = setInterval(() => setFrame(f => f === 1 ? 2 : 1), 2500)
     return () => clearInterval(id)
   }, [running])
 
+  if (imgError) {
+    return (
+      <motion.span
+        animate={running ? { scale: [1, 1.1, 1] } : {}}
+        transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+        style={{ fontSize: 72 }}>
+        🧘
+      </motion.span>
+    )
+  }
+
   return (
     <motion.div
-      animate={running ? { scale: [1, 1.06, 1], opacity: [1, 0.85, 1] } : {}}
-      transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}>
-      <img
-        src={`/panda/meditate_${frame}.png`}
-        alt="Pandi meditando"
-        style={{ width: 56, height: 56, objectFit: 'contain' }}
-        onError={e => {
-          e.currentTarget.style.display = 'none'
-          e.currentTarget.nextSibling.style.display = 'block'
-        }}
-      />
-      <span style={{ display: 'none', fontSize: 36 }}>🧘</span>
+      animate={running ? { scale: [1, 1.11, 1, 1.07, 1] } : { scale: 1 }}
+      transition={running
+        ? { duration: 2.2, repeat: Infinity, ease: 'easeInOut' }
+        : { duration: 0.3 }
+      }
+      style={{ width: 110, height: 110 }}>
+      <AnimatePresence mode="wait">
+        <motion.img
+          key={frame}
+          src={`/panda/meditate_${frame}.png`}
+          alt="Pandi meditando"
+          initial={{ opacity: 0.5 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0.5 }}
+          transition={{ duration: 0.6 }}
+          style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+          onError={() => setImgError(true)}
+        />
+      </AnimatePresence>
     </motion.div>
   )
 }

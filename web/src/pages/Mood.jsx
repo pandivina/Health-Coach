@@ -395,7 +395,7 @@ function PandaFrame({ running }) {
         ? { duration: 2.2, repeat: Infinity, ease: 'easeInOut' }
         : { duration: 0.3 }
       }
-      style={{ width: 150, height: 150 }}>
+      style={{ width: 300, height: 300 }}>
       <AnimatePresence mode="wait">
         <motion.img
           key={frame}

@@ -615,8 +615,7 @@ function MeditationTab({ theme }) {
             ✨ ¡{duration} minutos completados!
           </motion.p>
         )}
-      </div>
-    </div>
+     </div>
   )
 }
 

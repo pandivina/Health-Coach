@@ -521,7 +521,8 @@ export default function DiarioTab({ onAnalyze, onScan, onRecipes }) {
         </motion.div>
 
         {/* Quick actions */}
-        <div className="grid grid-cols-4 gap-2">
+        {/* Quick actions */}
+        <div className="grid grid-cols-4 gap-2" data-tour="nutrition-add">
           {[
             { icon: Camera,  label: 'Foto',    action: onAnalyze },
             { icon: Hash,    label: 'Código',  action: onScan    },

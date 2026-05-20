@@ -27,6 +27,10 @@ export const api = {
   coach: {
     chat: (messages) => request('POST', '/api/coach', { messages }),
   },
+  notifications: {
+    subscribe:   (sub) => request('POST',   '/api/notifications/subscribe',   { subscription: sub }),
+    unsubscribe: ()    => request('DELETE',  '/api/notifications/unsubscribe'),
+  },
   nutrition: {
     analyzePhoto: (imageBase64, mediaType) => request('POST', '/api/nutrition/analyze-photo', { imageBase64, mediaType }),
     barcode: (barcode) => request('POST', '/api/nutrition/barcode', { barcode }),

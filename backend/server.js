@@ -14,6 +14,7 @@ const labsRoutes         = require('./routes/labs');
 const achievementsRoutes = require('./routes/achievements');
 const emailRoutes        = require('./routes/email');
 const stripeRoutes       = require('./routes/stripe');
+const notificationsRoutes = require('./routes/notifications');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -57,13 +58,14 @@ app.use('/api/health',       healthRoutes);
 app.use('/api/labs',         labsRoutes);
 app.use('/api/achievements', achievementsRoutes);
 app.use('/api/email',        emailRoutes);
+app.use('/api/notifications', notificationsRoutes);
 
 // Error handler
 app.use((err, req, res, next) => {
   console.error('❌', err.message);
   res.status(err.status || 500).json({ error: err.message || 'Internal server error' });
 });
-
+require('./services/scheduler')
 app.listen(PORT, () => {
   console.log(`🚀 Health Coach API running on port ${PORT}`);
 });

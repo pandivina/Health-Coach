@@ -4,17 +4,32 @@ import { applyTheme, getTheme, PET_THEME_MAP, DEFAULT_THEME } from '../lib/theme
 
 const ThemeContext = createContext(null)
 
-export function ThemeProvider({ children }) {
-  const [themeId, setThemeId] = useState(DEFAULT_THEME)
-  const [followPetTheme, setFollowPetTheme] = useState(true)
-  const [loaded, setLoaded] = useState(false)
+// ── FONT SIZE ────────────────────────────────────────────────
+export const FONT_SIZES = {
+  normal: { id: 'normal', label: 'Normal',    emoji: 'A',  px: '16px' },
+  large:  { id: 'large',  label: 'Grande',    emoji: 'A+', px: '18px' },
+  xlarge: { id: 'xlarge', label: 'Muy grande',emoji: 'A++',px: '20px' },
+}
 
-  // Cargar preferencias desde Supabase al iniciar
+export function applyFontSize(sizeId) {
+  const size = FONT_SIZES[sizeId] || FONT_SIZES.normal
+  document.documentElement.style.fontSize = size.px
+}
+
+export function ThemeProvider({ children }) {
+  const [themeId, setThemeId]           = useState(DEFAULT_THEME)
+  const [followPetTheme, setFollowPetTheme] = useState(true)
+  const [fontSize, setFontSize]         = useState('normal')
+  const [loaded, setLoaded]             = useState(false)
+
   useEffect(() => {
-    // Aplicar tema guardado en localStorage primero (evita flash)
+    // Aplicar tema y fuente guardados en localStorage (evita flash)
     const savedTheme = localStorage.getItem('hc_theme') || DEFAULT_THEME
+    const savedFont  = localStorage.getItem('hc_font')  || 'normal'
     applyTheme(savedTheme)
+    applyFontSize(savedFont)
     setThemeId(savedTheme)
+    setFontSize(savedFont)
 
     async function loadPrefs() {
       const { data: { session } } = await supabase.auth.getSession()
@@ -22,22 +37,26 @@ export function ThemeProvider({ children }) {
 
       const { data } = await supabase
         .from('user_preferences')
-        .select('theme_name, follow_pet_theme')
+        .select('theme_name, follow_pet_theme, font_size')
         .eq('user_id', session.user.id)
         .single()
 
       if (data) {
         const t = data.theme_name || DEFAULT_THEME
+        const f = data.font_size  || 'normal'
         applyTheme(t)
+        applyFontSize(f)
         setThemeId(t)
+        setFontSize(f)
         setFollowPetTheme(data.follow_pet_theme ?? true)
         localStorage.setItem('hc_theme', t)
+        localStorage.setItem('hc_font',  f)
       }
       setLoaded(true)
     }
+
     loadPrefs()
 
-    // Escuchar cambios de auth
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session) loadPrefs()
     })
@@ -49,10 +68,8 @@ export function ThemeProvider({ children }) {
     applyTheme(newThemeId)
     setThemeId(newThemeId)
     localStorage.setItem('hc_theme', newThemeId)
-
     const { data: { session } } = await supabase.auth.getSession()
     if (!session) return
-
     await supabase.from('user_preferences').upsert({
       user_id: session.user.id,
       theme_name: newThemeId,
@@ -61,13 +78,25 @@ export function ThemeProvider({ children }) {
     }, { onConflict: 'user_id' })
   }, [followPetTheme])
 
+  // Cambiar tamaño de fuente
+  const changeFontSize = useCallback(async (newSize) => {
+    applyFontSize(newSize)
+    setFontSize(newSize)
+    localStorage.setItem('hc_font', newSize)
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) return
+    await supabase.from('user_preferences').upsert({
+      user_id: session.user.id,
+      font_size: newSize,
+      updated_at: new Date().toISOString(),
+    }, { onConflict: 'user_id' })
+  }, [])
+
   // Cambiar si sigue tema de mascota
   const toggleFollowPetTheme = useCallback(async (value) => {
     setFollowPetTheme(value)
-
     const { data: { session } } = await supabase.auth.getSession()
     if (!session) return
-
     await supabase.from('user_preferences').upsert({
       user_id: session.user.id,
       theme_name: themeId,
@@ -85,14 +114,14 @@ export function ThemeProvider({ children }) {
     }
   }, [followPetTheme, themeId, changeTheme])
 
-  const currentTheme = getTheme(themeId)
-
   return (
     <ThemeContext.Provider value={{
       themeId,
-      theme: currentTheme,
+      theme: getTheme(themeId),
       followPetTheme,
+      fontSize,
       changeTheme,
+      changeFontSize,
       toggleFollowPetTheme,
       applyPetTheme,
       loaded,

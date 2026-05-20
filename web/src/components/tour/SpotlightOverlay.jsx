@@ -1,89 +1,82 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import { useTourContext } from '../../contexts/GuidedTourProvider'
 
+// Usa 4 divs para crear el spotlight — más fiable que SVG mask
 export default function SpotlightOverlay() {
-  const { isActive, targetRect, finishTour } = useTourContext()
+  const { isActive, targetRect } = useTourContext()
 
   if (!isActive) return null
 
-  const hasTarget = !!targetRect
+  const OVERLAY_COLOR = 'rgba(0,0,0,0.68)'
 
-  return (
-    <AnimatePresence>
-      {isActive && (
+  // Sin target: overlay completo
+  if (!targetRect) {
+    return (
+      <AnimatePresence>
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[998]"
-          style={{ pointerEvents: hasTarget ? 'none' : 'auto' }}
-          onClick={!hasTarget ? undefined : undefined}
-        >
-          {hasTarget ? (
-            // SVG spotlight con hole en el target
-            <svg
-              className="absolute inset-0 w-full h-full"
-              style={{ pointerEvents: 'none' }}
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <defs>
-                <mask id="tour-spotlight-mask">
-                  {/* Fondo blanco = oscuro en la máscara */}
-                  <rect x="0" y="0" width="100%" height="100%" fill="white" />
-                  {/* Hole = transparente (negro en máscara) */}
-                  <motion.rect
-                    key={`${targetRect.left}-${targetRect.top}`}
-                    initial={{ opacity: 0 }}
-                    animate={{
-                      opacity: 1,
-                      x: targetRect.left,
-                      y: targetRect.top,
-                      width: targetRect.width,
-                      height: targetRect.height,
-                    }}
-                    transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                    rx="12"
-                    ry="12"
-                    fill="black"
-                  />
-                </mask>
-              </defs>
-              {/* Overlay oscuro con el hole */}
-              <rect
-                x="0" y="0" width="100%" height="100%"
-                fill="rgba(0,0,0,0.7)"
-                mask="url(#tour-spotlight-mask)"
-              />
-              {/* Borde brillante alrededor del spotlight */}
-              <motion.rect
-                key={`border-${targetRect.left}-${targetRect.top}`}
-                initial={{ opacity: 0 }}
-                animate={{
-                  opacity: 1,
-                  x: targetRect.left,
-                  y: targetRect.top,
-                  width: targetRect.width,
-                  height: targetRect.height,
-                }}
-                transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                rx="12"
-                ry="12"
-                fill="none"
-                stroke="rgba(46,196,182,0.8)"
-                strokeWidth="2"
-              />
-            </svg>
-          ) : (
-            // Sin target: overlay completo semitransparente
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="absolute inset-0"
-              style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(2px)' }}
-            />
-          )}
-        </motion.div>
-      )}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 998,
+            background: OVERLAY_COLOR,
+            pointerEvents: 'none',
+          }}
+        />
+      </AnimatePresence>
+    )
+  }
+
+  const { top, left, width, height } = targetRect
+  const right  = left + width
+  const bottom = top + height
+  const VW = window.innerWidth
+  const VH = window.innerHeight
+
+  return (
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        style={{ position: 'fixed', inset: 0, zIndex: 998, pointerEvents: 'none' }}
+      >
+        {/* Top */}
+        <motion.div
+          animate={{ height: Math.max(0, top) }}
+          transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+          style={{ position: 'absolute', top: 0, left: 0, right: 0, background: OVERLAY_COLOR }}
+        />
+        {/* Bottom */}
+        <motion.div
+          animate={{ top: Math.min(VH, bottom), height: Math.max(0, VH - bottom) }}
+          transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+          style={{ position: 'absolute', left: 0, right: 0, background: OVERLAY_COLOR }}
+        />
+        {/* Left */}
+        <motion.div
+          animate={{ top, width: Math.max(0, left), height }}
+          transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+          style={{ position: 'absolute', left: 0, background: OVERLAY_COLOR }}
+        />
+        {/* Right */}
+        <motion.div
+          animate={{ top, left: right, width: Math.max(0, VW - right), height }}
+          transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+          style={{ position: 'absolute', background: OVERLAY_COLOR }}
+        />
+        {/* Borde brillante */}
+        <motion.div
+          animate={{ top, left, width, height }}
+          transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+          style={{
+            position: 'absolute',
+            borderRadius: 14,
+            border: '2px solid rgba(46,196,182,0.9)',
+            boxShadow: '0 0 0 4px rgba(46,196,182,0.15), 0 0 24px rgba(46,196,182,0.3)',
+          }}
+        />
+      </motion.div>
     </AnimatePresence>
   )
 }

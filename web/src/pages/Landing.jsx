@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import InstallPWA from '../components/InstallPWA'
 import { motion } from 'framer-motion'
 import {
   Brain, Apple, Dumbbell, Moon, FlaskConical, Trophy,
@@ -212,6 +213,12 @@ export default function Landing() {
               <FadeIn delay={0.4}>
                 <p className="text-xs" style={{ color: C.light }}>✓ 7 días Premium gratis &nbsp;·&nbsp; ✓ Sin tarjeta &nbsp;·&nbsp; ✓ Cancela cuando quieras</p>
               </FadeIn>
+              <FadeIn delay={0.5}>
+               <div className="mt-4 max-w-sm mx-auto lg:mx-0">
+                <InstallPWA />
+               </div>
+              </FadeIn>
+              
             </div>
             <FadeIn delay={0.3} y={0}><PhoneMockup /></FadeIn>
           </div>
@@ -473,6 +480,9 @@ export default function Landing() {
               Empezar ahora — es gratis <ArrowRight size={16} />
             </Link>
             <p className="text-xs mt-4" style={{ color: C.light }}>✓ 7 días Premium incluidos · ✓ Sin tarjeta · ✓ Cancela cuando quieras</p>
+          <div className="mt-4 max-w-sm mx-auto">
+            <InstallPWA />
+          </div>
           </motion.div>
         </div>
       </section>

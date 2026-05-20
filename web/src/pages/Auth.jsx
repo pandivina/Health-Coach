@@ -26,14 +26,14 @@ export default function Auth() {
         if (err) throw err
         if (data.user) {
           await supabase.from('user_profiles').update({ name }).eq('id', data.user.id)
-          navigate('/onboarding')
+          navigate('/onboarding', { replace: true })
         } else {
           setSuccess('¡Revisa tu email para confirmar la cuenta!')
         }
       } else {
         const { error: err } = await supabase.auth.signInWithPassword({ email, password })
         if (err) throw err
-        navigate('/')
+        navigate('/home', { replace: true })
       }
     } catch (err) { setError(err.message) }
     finally { setLoading(false) }

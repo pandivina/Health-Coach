@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Check, Lock, RotateCcw, Palette } from 'lucide-react'
-import { useTheme } from '../../contexts/ThemeProvider'
+import { Check, Lock, RotateCcw, Palette, Type } from 'lucide-react'
+import { useTheme, FONT_SIZES } from '../../contexts/ThemeProvider'
 import { THEMES, DEFAULT_THEME } from '../../lib/themes'
 
 // ── THEME PREVIEW CARD ──────────────────────────────────────
@@ -14,16 +14,11 @@ function ThemePreviewCard({ theme, isActive, onSelect, isPremium }) {
       onClick={() => !locked && onSelect(theme.id)}
       className="relative cursor-pointer"
     >
-      {/* Card preview */}
       <div className={`rounded-2xl overflow-hidden border-2 transition-all ${
         isActive ? 'border-[var(--color-primary)]' : 'border-transparent'
       }`}
-        style={{ boxShadow: isActive ? `0 0 0 3px ${theme.primary}30` : 'none' }}
-      >
-        {/* Preview miniatura */}
-        <div className="h-20 relative overflow-hidden"
-          style={{ background: theme.bg }}>
-          {/* Nav bar mini */}
+        style={{ boxShadow: isActive ? `0 0 0 3px ${theme.primary}30` : 'none' }}>
+        <div className="h-20 relative overflow-hidden" style={{ background: theme.bg }}>
           <div className="absolute bottom-0 left-0 right-0 h-5"
             style={{ background: theme.navBg, borderTop: `1px solid ${theme.navBorder}` }}>
             <div className="flex justify-around items-center h-full px-2">
@@ -32,7 +27,6 @@ function ThemePreviewCard({ theme, isActive, onSelect, isPremium }) {
               ))}
             </div>
           </div>
-          {/* Card mini */}
           <div className="absolute top-3 left-3 right-3 h-7 rounded-lg"
             style={{ background: theme.surface, border: `1px solid ${theme.border}` }}>
             <div className="flex items-center gap-1.5 px-2 h-full">
@@ -41,25 +35,17 @@ function ThemePreviewCard({ theme, isActive, onSelect, isPremium }) {
               <div className="w-5 h-3 rounded" style={{ background: theme.gradientBrand }} />
             </div>
           </div>
-          {/* Gradient dots */}
           <div className="absolute top-1 right-2 flex gap-0.5">
             {theme.preview.map((c, i) => (
               <div key={i} className="w-2 h-2 rounded-full border border-white/20" style={{ background: c }} />
             ))}
           </div>
         </div>
-
-        {/* Info */}
-        <div className="px-3 py-2.5"
-          style={{ background: theme.surface, borderTop: `1px solid ${theme.border}` }}>
+        <div className="px-3 py-2.5" style={{ background: theme.surface, borderTop: `1px solid ${theme.border}` }}>
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs font-semibold" style={{ color: theme.text }}>
-                {theme.emoji} {theme.name}
-              </p>
-              <p className="text-[10px]" style={{ color: theme.textMuted }}>
-                {theme.description}
-              </p>
+              <p className="text-xs font-semibold" style={{ color: theme.text }}>{theme.emoji} {theme.name}</p>
+              <p className="text-[10px]" style={{ color: theme.textMuted }}>{theme.description}</p>
             </div>
             {isActive && (
               <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0"
@@ -70,8 +56,6 @@ function ThemePreviewCard({ theme, isActive, onSelect, isPremium }) {
           </div>
         </div>
       </div>
-
-      {/* Lock overlay */}
       {locked && (
         <div className="absolute inset-0 rounded-2xl flex flex-col items-center justify-center gap-1"
           style={{ background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(2px)' }}>
@@ -80,6 +64,63 @@ function ThemePreviewCard({ theme, isActive, onSelect, isPremium }) {
         </div>
       )}
     </motion.div>
+  )
+}
+
+// ── FONT SIZE SELECTOR ──────────────────────────────────────
+function FontSizeSelector() {
+  const { theme, fontSize, changeFontSize } = useTheme()
+
+  return (
+    <div className="rounded-2xl p-4 space-y-3"
+      style={{ background: theme.surface, border: `1px solid ${theme.border}` }}>
+      <div className="flex items-center gap-2 mb-1">
+        <Type size={15} style={{ color: theme.primary }} />
+        <p className="text-sm font-semibold" style={{ color: theme.text }}>Tamaño de fuente</p>
+      </div>
+
+      <div className="grid grid-cols-3 gap-2">
+        {Object.values(FONT_SIZES).map(size => {
+          const isActive = fontSize === size.id
+          return (
+            <motion.button
+              key={size.id}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => changeFontSize(size.id)}
+              className="flex flex-col items-center gap-1.5 py-3 rounded-xl border transition-all"
+              style={{
+                background:   isActive ? `${theme.primary}15` : theme.surface2,
+                borderColor:  isActive ? theme.primary : theme.border,
+                boxShadow:    isActive ? `0 0 0 2px ${theme.primary}25` : 'none',
+              }}
+            >
+              {/* Preview del tamaño */}
+              <span style={{
+                fontSize: size.id === 'normal' ? 18 : size.id === 'large' ? 22 : 26,
+                fontWeight: 800,
+                color: isActive ? theme.primary : theme.textMuted,
+                lineHeight: 1,
+              }}>
+                A
+              </span>
+              <span className="text-[10px] font-medium" style={{ color: isActive ? theme.primary : theme.textMuted }}>
+                {size.label}
+              </span>
+              {isActive && (
+                <div className="w-3 h-3 rounded-full flex items-center justify-center"
+                  style={{ background: theme.primary }}>
+                  <Check size={7} color="#fff" />
+                </div>
+              )}
+            </motion.button>
+          )
+        })}
+      </div>
+
+      <p className="text-xs" style={{ color: theme.textMuted }}>
+        Afecta a todo el texto de la aplicación
+      </p>
+    </div>
   )
 }
 
@@ -98,7 +139,7 @@ export default function AppearanceSettings({ isPremium = false }) {
     await changeTheme(DEFAULT_THEME)
   }
 
-  const freeThemes = Object.values(THEMES).filter(t => t.free)
+  const freeThemes    = Object.values(THEMES).filter(t => t.free)
   const premiumThemes = Object.values(THEMES).filter(t => !t.free)
 
   return (
@@ -122,6 +163,9 @@ export default function AppearanceSettings({ isPremium = false }) {
         </button>
       </div>
 
+      {/* ── TAMAÑO DE FUENTE ── */}
+      <FontSizeSelector />
+
       {/* Follow pet theme toggle */}
       <div className="rounded-2xl p-4 flex items-center justify-between"
         style={{ background: theme.surface, border: `1px solid ${theme.border}` }}>
@@ -143,7 +187,7 @@ export default function AppearanceSettings({ isPremium = false }) {
         </button>
       </div>
 
-      {/* Tema actual */}
+      {/* Confirmación cambio de tema */}
       <AnimatePresence>
         {changed && (
           <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
@@ -172,8 +216,7 @@ export default function AppearanceSettings({ isPremium = false }) {
       {/* Temas premium */}
       <div>
         <div className="flex items-center gap-2 mb-3">
-          <p className="text-xs font-semibold uppercase tracking-wider"
-            style={{ color: theme.textMuted }}>Premium</p>
+          <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: theme.textMuted }}>Premium</p>
           {!isPremium && (
             <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
               style={{ background: `${theme.accent}20`, color: theme.accent }}>

@@ -23,10 +23,20 @@ app.use('/api/stripe/webhook', express.raw({ type: 'application/json' }));
 app.use('/api/stripe', stripeRoutes);
 
 // Middleware
+const allowedOrigins = (process.env.CORS_ORIGIN || 'http://localhost:5173')
+  .split(',')
+  .map(o => o.trim())
+
 app.use(cors({
-  origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true)
+    } else {
+      callback(new Error(`CORS bloqueado: ${origin}`))
+    }
+  },
   credentials: true,
-}));
+}))
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 

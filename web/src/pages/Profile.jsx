@@ -7,6 +7,7 @@ import { useTheme } from '../contexts/ThemeProvider'
 import { useTour } from '../hooks/useTour'
 import TourHelpButton from '../components/tour/TourHelpButton'
 import InstallPWA from '../components/InstallPWA'
+import NotificationSetup from '../components/NotificationSetup'
 
 const GOAL_LABELS = { lose_fat:'Perder grasa 🔥', gain_muscle:'Ganar músculo 💪', maintain:'Mantener peso ⚖️', recomp:'Recomposición 🔄', health:'Salud general ❤️' }
 const ACTIVITY_LABELS = { sedentary:'Sedentario 🛋️', light:'Ligero 🚶', moderate:'Moderado 🏃', intense:'Intenso ⚡' }
@@ -155,12 +156,17 @@ export default function Profile() {
       </Link>
 
       {/* Instalar app */}
-      <div className="mb-5">
-        <InstallPWA />
-      </div>
+<div className="mb-5">
+  <InstallPWA />
+</div>
 
-      {/* Logout */}
-      <button onClick={handleLogout}
+{/* Notificaciones */}
+<div className="mb-5">
+  <NotificationSetup />
+</div>
+
+{/* Logout */}
+<button onClick={handleLogout}
         className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-medium transition-all"
         style={{ border: `1px solid ${theme.error}50`, color: theme.error }}>
         <LogOut size={14} /> Cerrar sesión

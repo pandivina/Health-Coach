@@ -527,62 +527,82 @@ function MeditationTab({ theme }) {
       </div>
 
       {/* Timer */}
-      <div className="card flex flex-col items-center gap-5 py-7">
-        <div className="relative" style={{ width: 158, height: 158 }}>
-          <svg width="158" height="158"
-            style={{ position: 'absolute', top: 0, left: 0, transform: 'rotate(-90deg)' }}>
-            <circle cx="79" cy="79" r="56" fill="none" stroke={theme.surface2} strokeWidth="8" />
-            <motion.circle cx="79" cy="79" r="56" fill="none" stroke="#2EC4B6" strokeWidth="8"
-              strokeLinecap="round" strokeDasharray={circum}
-              animate={{ strokeDashoffset: circum * (1 - progress) }}
-              transition={{ duration: 1, ease: 'linear' }}
-            />
-          </svg>
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-1">
-  {done ? (
-    <span style={{ fontSize: 36 }}>🎉</span>
-  ) : (
-    <PandaFrame running={running} theme={theme} />
-  )}
-  <p className="font-black text-xl leading-none" style={{ color: theme.text }}>
-    {done ? '¡Listo!' : `${mm}:${ss}`}
-  </p>
-</div>
-        </div>
+<div className="card flex flex-col items-center gap-4 pb-6 pt-4 overflow-hidden">
 
-        <div className="flex gap-3 items-center">
-          {!running && !done && (
-            <motion.button whileTap={{ scale: 0.94 }} onClick={start}
-              className="flex items-center gap-2 px-8 py-3 rounded-2xl font-bold text-white"
-              style={{ background: 'linear-gradient(135deg,#2EC4B6,#FF8FA3)' }}>
-              <Play size={16} /> Iniciar
-            </motion.button>
-          )}
-          {running && (
-            <>
-              <motion.button whileTap={{ scale: 0.94 }} onClick={reset}
-                className="flex items-center gap-2 px-6 py-3 rounded-2xl font-bold"
-                style={{ background: theme.surface2, color: theme.text }}>
-                <RotateCcw size={15} /> Reiniciar
-              </motion.button>
-              <button onClick={toggleMute}
-                className="w-11 h-11 rounded-2xl flex items-center justify-center"
-                style={{ background: theme.surface2 }}>
-                {muted
-                  ? <VolumeX size={18} color={theme.textMuted} />
-                  : <Volume2 size={18} color="#2EC4B6" />}
-              </button>
-            </>
-          )}
-          {done && (
-            <motion.button initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
-              whileTap={{ scale: 0.94 }} onClick={reset}
-              className="flex items-center gap-2 px-6 py-3 rounded-2xl font-bold text-white"
-              style={{ background: 'linear-gradient(135deg,#2EC4B6,#FF8FA3)' }}>
-              <RotateCcw size={15} /> Nueva sesión
-            </motion.button>
-          )}
-        </div>
+  {/* Panda grande — ocupa todo el ancho */}
+  <div className="w-full flex items-center justify-center"
+    style={{ minHeight: 260 }}>
+    {done ? (
+      <motion.span initial={{ scale: 0.5 }} animate={{ scale: 1 }}
+        style={{ fontSize: 100 }}>🎉</motion.span>
+    ) : (
+      <PandaFrame running={running} />
+    )}
+  </div>
+
+  {/* Barra de progreso */}
+  <div className="w-full px-2">
+    <div className="h-2 rounded-full overflow-hidden" style={{ background: theme.surface2 }}>
+      <motion.div className="h-full rounded-full"
+        style={{ background: 'linear-gradient(90deg,#2EC4B6,#FF8FA3)' }}
+        animate={{ width: `${progress * 100}%` }}
+        transition={{ duration: 1, ease: 'linear' }} />
+    </div>
+  </div>
+
+  {/* Timer */}
+  <p className="font-black text-4xl tracking-tight" style={{ color: theme.text }}>
+    {done ? '¡Completado!' : `${mm}:${ss}`}
+  </p>
+
+  {/* Controles */}
+  <div className="flex gap-3 items-center">
+    {!running && !done && (
+      <motion.button whileTap={{ scale: 0.94 }} onClick={start}
+        className="flex items-center gap-2 px-8 py-3 rounded-2xl font-bold text-white"
+        style={{ background: 'linear-gradient(135deg,#2EC4B6,#FF8FA3)' }}>
+        <Play size={16} /> Iniciar
+      </motion.button>
+    )}
+    {running && (
+      <>
+        <motion.button whileTap={{ scale: 0.94 }} onClick={reset}
+          className="flex items-center gap-2 px-6 py-3 rounded-2xl font-bold"
+          style={{ background: theme.surface2, color: theme.text }}>
+          <RotateCcw size={15} /> Reiniciar
+        </motion.button>
+        <button onClick={toggleMute}
+          className="w-11 h-11 rounded-2xl flex items-center justify-center"
+          style={{ background: theme.surface2 }}>
+          {muted
+            ? <VolumeX size={18} color={theme.textMuted} />
+            : <Volume2 size={18} color="#2EC4B6" />}
+        </button>
+      </>
+    )}
+    {done && (
+      <motion.button initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
+        whileTap={{ scale: 0.94 }} onClick={reset}
+        className="flex items-center gap-2 px-6 py-3 rounded-2xl font-bold text-white"
+        style={{ background: 'linear-gradient(135deg,#2EC4B6,#FF8FA3)' }}>
+        <RotateCcw size={15} /> Nueva sesión
+      </motion.button>
+    )}
+  </div>
+
+  {running && (
+    <p className="text-[11px]" style={{ color: theme.textMuted }}>
+      {sound ? `${AMBIENT.find(a => a.id === sound)?.emoji} ${AMBIENT.find(a => a.id === sound)?.label} · ` : ''}
+      Sesión en curso
+    </p>
+  )}
+  {done && (
+    <motion.p initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
+      className="text-sm font-semibold" style={{ color: '#2EC4B6' }}>
+      ✨ ¡{duration} minutos completados!
+    </motion.p>
+  )}
+</div>
 
         {running && (
           <p className="text-[11px]" style={{ color: theme.textMuted }}>

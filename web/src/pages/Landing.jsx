@@ -53,7 +53,7 @@ function PhoneMockup() {
               <p style={{ color: C.muted, fontSize: 9 }}>Buenos días,</p>
               <p className="font-bold" style={{ color: C.text, fontSize: 14 }}>María 👋</p>
             </div>
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center text-lg" style={{ background: C.surface2 }}>🐼</div>
+            <img src="/icons/icon-192.png" alt="Pandi" style={{ width: 64, height: 64, borderRadius: 16 }} className="mx-auto mb-4" />
           </div>
           <div className="rounded-2xl p-3" style={{ background: 'linear-gradient(135deg, #f0fffe, #fff5f7)', border: `1px solid ${C.border}` }}>
             <p style={{ color: C.muted, fontSize: 9 }}>Calorías hoy</p>
@@ -80,7 +80,7 @@ function PhoneMockup() {
           </div>
           <div className="rounded-xl p-2.5" style={{ background: `${C.primary}15`, border: `1px solid ${C.primary}30` }}>
             <div className="flex items-center gap-1.5 mb-1">
-              <span style={{ fontSize: 11 }}>🤖</span>
+              <img src="/icons/icon-192.png" alt="Pandi" style={{ width: 64, height: 64, borderRadius: 16 }} className="mx-auto mb-4" />
               <p className="font-semibold" style={{ color: C.text, fontSize: 9 }}>Coach IA</p>
             </div>
             <p style={{ color: C.text, fontSize: 8, lineHeight: 1.4 }}>
@@ -463,7 +463,7 @@ export default function Landing() {
         <div className="max-w-2xl mx-auto text-center">
           <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
             className="rounded-3xl p-10" style={{ background: C.gradSoft, border: `1px solid ${C.primary}30` }}>
-            <div className="text-5xl mb-4">🐼</div>
+            <img src="/icons/icon-192.png" alt="Pandi" style={{ width: 64, height: 64, borderRadius: 16 }} className="mx-auto mb-4" />
             <h2 className="font-extrabold mb-4" style={{ fontSize: 'clamp(1.6rem, 3vw, 2.2rem)', color: C.text }}>
               Tu salud merece<br /><GradText>un coach que te conoce</GradText>
             </h2>
@@ -483,7 +483,7 @@ export default function Landing() {
           <div className="flex flex-col md:flex-row justify-between items-start gap-8 mb-8">
             <div>
               <div className="flex items-center gap-2 mb-3">
-                <span className="text-2xl">🐼</span>
+                <img src="/icons/icon-192.png" alt="Pandi" style={{ width: 64, height: 64, borderRadius: 16 }} className="mx-auto mb-4" />
                 <span className="font-extrabold text-lg text-white">Health Coach</span>
               </div>
               <p className="text-sm max-w-xs" style={{ color: 'rgba(255,255,255,0.5)', lineHeight: 1.6 }}>Coaching de salud con IA personalizado con tus datos reales.</p>

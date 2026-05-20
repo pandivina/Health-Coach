@@ -6,6 +6,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import { useTheme } from '../contexts/ThemeProvider'
 import { useTour } from '../hooks/useTour'
 import TourHelpButton from '../components/tour/TourHelpButton'
+import InstallPWA from '../components/InstallPWA'
 
 const GOAL_LABELS = { lose_fat:'Perder grasa 🔥', gain_muscle:'Ganar músculo 💪', maintain:'Mantener peso ⚖️', recomp:'Recomposición 🔄', health:'Salud general ❤️' }
 const ACTIVITY_LABELS = { sedentary:'Sedentario 🛋️', light:'Ligero 🚶', moderate:'Moderado 🏃', intense:'Intenso ⚡' }
@@ -24,7 +25,6 @@ export default function Profile() {
   })
   const navigate = useNavigate()
 
-  // Tour guiado
   useTour('profile')
 
   async function save() {
@@ -153,6 +153,11 @@ export default function Profile() {
           <span className="ml-auto" style={{ color: theme.textMuted }}>›</span>
         </motion.div>
       </Link>
+
+      {/* Instalar app */}
+      <div className="mb-5">
+        <InstallPWA />
+      </div>
 
       {/* Logout */}
       <button onClick={handleLogout}

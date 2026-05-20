@@ -303,7 +303,6 @@ function BreathingTab({ theme }) {
               boxShadow: `0 4px 24px ${phaseInfo.color}40`,
               display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 42,
             }}>
-            🐼
           </motion.div>
         </div>
 
@@ -395,7 +394,7 @@ function PandaFrame({ running }) {
         ? { duration: 2.2, repeat: Infinity, ease: 'easeInOut' }
         : { duration: 0.3 }
       }
-      style={{ width: 600, height: 600 }}>
+      style={{ width: '100%', maxWidth: 280, height: 280 }}>
       <AnimatePresence mode="wait">
         <motion.img
           key={frame}

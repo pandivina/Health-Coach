@@ -494,16 +494,15 @@ function MeditationTab({ theme }) {
             />
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-1">
-            <motion.span
-              animate={running ? { scale: [1, 1.07, 1], opacity: [1, 0.75, 1] } : {}}
-              transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
-              style={{ fontSize: 36 }}>
-              {done ? '🎉' : '🧘'}
-            </motion.span>
-            <p className="font-black text-xl leading-none" style={{ color: theme.text }}>
-              {done ? '¡Listo!' : `${mm}:${ss}`}
-            </p>
-          </div>
+  {done ? (
+    <span style={{ fontSize: 36 }}>🎉</span>
+  ) : (
+    <PandaFrame running={running} theme={theme} />
+  )}
+  <p className="font-black text-xl leading-none" style={{ color: theme.text }}>
+    {done ? '¡Listo!' : `${mm}:${ss}`}
+  </p>
+</div>
         </div>
 
         <div className="flex gap-3 items-center">

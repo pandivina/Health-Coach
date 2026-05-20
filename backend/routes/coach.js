@@ -13,7 +13,7 @@ router.post('/', requireAuth, async (req, res) => {
     const today = new Date().toISOString().split('T')[0];
 
     // Obtener contexto completo del usuario
-   const safe = fn => fn.catch(() => ({ data: null }))
+   const safe = async fn => { try { return await fn } catch { return { data: null } } }
 const [
   profileRes, healthRes, goalsRes, mealsRes, sleepRes,
   moodRes, workoutRes, weightRes, treatmentsRes, labsRes

@@ -367,6 +367,32 @@ function pickSession(mins) {
   const pool = MED_SESSIONS[mins] ?? [1]
   return pool[Math.floor(Math.random() * pool.length)]
 }
+function PandaFrame({ running, theme }) {
+  const [frame, setFrame] = useState(1)
+
+  useEffect(() => {
+    if (!running) { setFrame(1); return }
+    const id = setInterval(() => setFrame(f => f === 1 ? 2 : 1), 3500)
+    return () => clearInterval(id)
+  }, [running])
+
+  return (
+    <motion.div
+      animate={running ? { scale: [1, 1.06, 1], opacity: [1, 0.85, 1] } : {}}
+      transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}>
+      <img
+        src={`/panda/meditate_${frame}.png`}
+        alt="Pandi meditando"
+        style={{ width: 56, height: 56, objectFit: 'contain' }}
+        onError={e => {
+          e.currentTarget.style.display = 'none'
+          e.currentTarget.nextSibling.style.display = 'block'
+        }}
+      />
+      <span style={{ display: 'none', fontSize: 36 }}>🧘</span>
+    </motion.div>
+  )
+}
 
 function MeditationTab({ theme }) {
   const [duration, setDuration] = useState(5)

@@ -46,8 +46,7 @@ export default function Coach() {
       {/* Header */}
       <div className="px-4 pt-6 pb-3" style={{ borderBottom: `1px solid ${theme.border}` }}>
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl"
-            style={{ background: `${theme.primary}20` }}>🤖</div>
+          <img src="/icons/icon-192.png" alt="Coach" style={{ width: 40, height: 40, borderRadius: 12 }} />
           <div>
             <h1 className="font-bold text-lg" style={{ color: theme.text }}>Coach IA</h1>
             <p className="text-xs flex items-center gap-1" style={{ color: theme.textMuted }}>
@@ -65,8 +64,7 @@ export default function Coach() {
             <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
               className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
               {msg.role === 'assistant' && (
-                <div className="w-7 h-7 rounded-xl flex items-center justify-center text-sm mr-2 flex-shrink-0 mt-1"
-                  style={{ background: `${theme.primary}20` }}>🤖</div>
+                <img src="/icons/icon-192.png" alt="Coach" style={{ width: 40, height: 40, borderRadius: 12 }} />
               )}
               <div className="max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed"
                 style={msg.role === 'user'
@@ -78,8 +76,7 @@ export default function Coach() {
           ))}
           {loading && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-xl flex items-center justify-center text-sm"
-                style={{ background: `${theme.primary}20` }}>🤖</div>
+              <img src="/icons/icon-192.png" alt="Coach" style={{ width: 40, height: 40, borderRadius: 12 }} />
               <div className="rounded-2xl px-4 py-3" style={{ background: theme.surface, border: `1px solid ${theme.border}` }}>
                 <Loader size={14} className="animate-spin" style={{ color: theme.textMuted }} />
               </div>

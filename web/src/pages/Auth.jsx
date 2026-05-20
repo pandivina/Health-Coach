@@ -43,7 +43,7 @@ export default function Auth() {
     <div className="min-h-screen flex flex-col items-center justify-center px-6"
       style={{ background: theme.bg }}>
       <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-10">
-        <img src="/icons/icon-512.png" alt="Coach" style={{ width: 50, height: 50, center, borderRadius: 12 }} />
+        <img src="/icons/icon-512.png" alt="Coach" style={{ width: 50, height: 50, borderRadius: 12, marginBottom: 8 }} />
         <h1 className="text-3xl font-extrabold" style={{ background: theme.gradientBrand, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
           Health Coach
         </h1>

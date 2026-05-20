@@ -1,3 +1,4 @@
+import { useRef, useState, useLayoutEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, ChevronLeft, ChevronRight, SkipForward } from 'lucide-react'
 import { useTourContext } from '../../contexts/GuidedTourProvider'
@@ -11,61 +12,231 @@ const mascotVariants = {
   idle:      { animate: { y: [0, -3, 0],                  transition: { duration: 2,   repeat: Infinity } } },
 }
 
-const BUBBLE_W = 300
-const BUBBLE_H = 220 // altura estimada con todos los botones
-const MARGIN   = 12
+const BUBBLE_W   = 300
+const MARGIN     = 12
+const SAFE_BTM   = 80   // espacio para el BottomNav
 
-function getBubbleStyle(targetRect, position) {
-  const VW = window.innerWidth
-  const VH = window.innerHeight
+// Usa visualViewport si está disponible (más fiable en móvil con teclado/barras del browser)
+function getVP() {
+  const vv = window.visualViewport
+  return {
+    VW: vv ? vv.width  : document.documentElement.clientWidth,
+    VH: vv ? vv.height : document.documentElement.clientHeight,
+  }
+}
 
-  // Centro de pantalla (pasos sin target)
+function computePosition(targetRect, position, bW, bH) {
+  const { VW, VH } = getVP()
+
+  // Sin target o centrado explícito
   if (!targetRect || position === 'center') {
     return {
       position: 'fixed',
-      top: '50%',
-      left: '50%',
-      transform: 'translate(-50%, -50%)',
-      width: Math.min(BUBBLE_W, VW - MARGIN * 2),
-      zIndex: 999,
+      top:  Math.max(MARGIN, Math.round((VH - bH) / 2)),
+      left: Math.max(MARGIN, Math.round((VW - bW) / 2)),
+      width: bW,
     }
   }
 
-  const { top, left, width, height, bottom } = targetRect
+  const { top, left, width, bottom } = targetRect
 
-  // Anchura — nunca mayor que la pantalla menos márgenes
-  const bubbleW = Math.min(BUBBLE_W, VW - MARGIN * 2)
+  // Horizontal: centrado sobre el target, siempre dentro de pantalla
+  let bLeft = Math.round(left + width / 2 - bW / 2)
+  bLeft = Math.max(MARGIN, Math.min(bLeft, VW - bW - MARGIN))
 
-  // Horizontal: centrado sobre el target, clampado a pantalla
-  let bLeft = left + width / 2 - bubbleW / 2
-  bLeft = Math.max(MARGIN, Math.min(bLeft, VW - bubbleW - MARGIN))
-
-  // Vertical: debajo si cabe, arriba si no
-  let bTop
-  const spaceBelow = VH - bottom - MARGIN
+  const spaceBelow = VH - bottom - SAFE_BTM
   const spaceAbove = top - MARGIN
 
-  if (spaceBelow >= BUBBLE_H) {
+  let bTop
+  if (spaceBelow >= bH + MARGIN) {
+    // Debajo del elemento
     bTop = bottom + MARGIN
-  } else if (spaceAbove >= BUBBLE_H) {
-    bTop = top - BUBBLE_H - MARGIN
+  } else if (spaceAbove >= bH + MARGIN) {
+    // Encima del elemento
+    bTop = top - bH - MARGIN
   } else {
-    // No cabe ni arriba ni abajo — centrar verticalmente y desplazar horizontalmente
-    bTop = Math.max(MARGIN, Math.min(VH / 2 - BUBBLE_H / 2, VH - BUBBLE_H - MARGIN))
-    // Si el target está en el centro, poner la burbuja a la derecha o izquierda
-    const targetCenterX = left + width / 2
-    if (targetCenterX < VW / 2) {
-      bLeft = Math.min(targetCenterX + width / 2 + MARGIN, VW - bubbleW - MARGIN)
+    // No cabe ni arriba ni abajo → centrar verticalmente
+    bTop = Math.max(MARGIN, Math.round((VH - bH) / 2))
+    // Desplazar horizontalmente respecto al target
+    const targetCX = left + width / 2
+    if (targetCX < VW / 2) {
+      bLeft = Math.min(left + width + MARGIN, VW - bW - MARGIN)
     } else {
-      bLeft = Math.max(MARGIN, targetCenterX - width / 2 - bubbleW - MARGIN)
+      bLeft = Math.max(MARGIN, left - bW - MARGIN)
     }
   }
 
-  // Clamp final para asegurar que nunca sale del viewport
-  bTop  = Math.max(MARGIN, Math.min(bTop,  VH - BUBBLE_H - MARGIN))
-  bLeft = Math.max(MARGIN, Math.min(bLeft, VW - bubbleW  - MARGIN))
+  // Clamp final absoluto — nunca sale del viewport
+  bTop  = Math.max(MARGIN, Math.min(bTop,  VH - bH - SAFE_BTM))
+  bLeft = Math.max(MARGIN, Math.min(bLeft, VW - bW - MARGIN))
 
-  return { position: 'fixed', top: bTop, left: bLeft, width: bubbleW, zIndex: 999 }
+  return { position: 'fixed', top: bTop, left: bLeft, width: bW }
+}
+
+// Componente interno que mide y se posiciona solo
+function BubbleInner({ step, currentStep, steps, targetRect, petEmoji, userInfo, prevStep, nextStep, finishTour }) {
+  const bubbleRef  = useRef(null)
+  const [pos, setPos] = useState(null)  // null → invisible hasta medir
+
+  const mascotAnim = mascotVariants[step.mascotAnim] || mascotVariants.idle
+  const isFirst    = currentStep === 0
+  const isLast     = currentStep === steps.length - 1
+  const progress   = ((currentStep + 1) / steps.length) * 100
+
+  // Mide la burbuja ANTES de que el browser pinte para evitar flash
+  useLayoutEffect(() => {
+    if (!bubbleRef.current) return
+    const { VW } = getVP()
+    const bW = Math.min(BUBBLE_W, VW - MARGIN * 2)
+    const bH = bubbleRef.current.getBoundingClientRect().height
+    setPos(computePosition(targetRect, step.position, bW, bH))
+  }, [currentStep, targetRect, step.position])
+
+  const { VW } = getVP()
+  const fallbackW = Math.min(BUBBLE_W, VW - MARGIN * 2)
+
+  const wrapperStyle = pos
+    ? { ...pos, zIndex: 9999 }
+    : { position: 'fixed', top: -9999, left: -9999, width: fallbackW, zIndex: 9999 }
+
+  return (
+    <motion.div
+      ref={bubbleRef}
+      style={wrapperStyle}
+      initial={{ opacity: 0, scale: 0.88, y: 12 }}
+      animate={{ opacity: pos ? 1 : 0, scale: 1, y: 0 }}
+      exit={{ opacity: 0, scale: 0.88, y: -8 }}
+      transition={{ type: 'spring', stiffness: 380, damping: 28 }}
+    >
+      <div style={{
+        background: 'var(--color-surface, #ffffff)',
+        borderRadius: 20,
+        border: '2px solid rgba(46,196,182,0.35)',
+        boxShadow: '0 12px 48px rgba(0,0,0,0.22), 0 2px 12px rgba(46,196,182,0.18)',
+        overflow: 'hidden',  // Necesario para que el border-radius recorte la barra de progreso
+      }}>
+
+        {/* Barra de progreso */}
+        <div style={{ height: 3, background: '#F0F4F8' }}>
+          <motion.div
+            animate={{ width: `${progress}%` }}
+            transition={{ duration: 0.3 }}
+            style={{ height: '100%', background: 'linear-gradient(90deg, #2EC4B6, #FF8FA3)' }}
+          />
+        </div>
+
+        {/* Header: mascota + título + cerrar */}
+        <div style={{ padding: '14px 14px 0', display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+          <motion.div
+            {...mascotAnim}
+            style={{
+              fontSize: 36, flexShrink: 0,
+              width: 52, height: 52,
+              borderRadius: 14,
+              background: 'linear-gradient(135deg, #f0fffe, #fff5f7)',
+              border: '1px solid rgba(46,196,182,0.2)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}
+          >
+            {petEmoji}
+          </motion.div>
+
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <p style={{
+              fontWeight: 800, fontSize: 14,
+              color: 'var(--color-text, #1F2937)',
+              margin: 0,
+              overflow: 'hidden',
+              display: '-webkit-box',
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: 'vertical',
+            }}>
+              {step.title}
+            </p>
+            <p style={{ fontSize: 11, color: '#9CA3AF', margin: '2px 0 0' }}>
+              {userInfo?.petName || 'Pandi'} · {currentStep + 1}/{steps.length}
+            </p>
+          </div>
+
+          <button
+            onClick={() => finishTour(true)}
+            style={{
+              flexShrink: 0, width: 26, height: 26, borderRadius: '50%',
+              background: '#F5F7FA', border: 'none', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}
+          >
+            <X size={13} color="#9CA3AF" />
+          </button>
+        </div>
+
+        {/* Mensaje */}
+        <div style={{ padding: '10px 14px' }}>
+          <p style={{
+            fontSize: 13, lineHeight: 1.55,
+            color: 'var(--color-text-secondary, #374151)',
+            margin: 0,
+            wordBreak: 'break-word',
+            overflowWrap: 'break-word',
+          }}>
+            {step.message}
+          </p>
+        </div>
+
+        {/* Controles */}
+        <div style={{
+          padding: '10px 14px 14px',
+          borderTop: '1px solid #F3F4F6',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 8,
+        }}>
+          <button
+            onClick={() => finishTour(true)}
+            style={{
+              fontSize: 11, color: '#9CA3AF', background: 'none', border: 'none',
+              cursor: 'pointer', padding: '4px 6px', borderRadius: 8,
+              display: 'flex', alignItems: 'center', gap: 3, flexShrink: 0,
+            }}
+          >
+            <SkipForward size={11} /> Saltar
+          </button>
+
+          <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+            {!isFirst && (
+              <button
+                onClick={prevStep}
+                style={{
+                  width: 34, height: 34, borderRadius: 10,
+                  background: '#F5F7FA', border: '1px solid #E5E7EB',
+                  cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}
+              >
+                <ChevronLeft size={15} color="#6B7280" />
+              </button>
+            )}
+
+            <motion.button
+              whileTap={{ scale: 0.94 }}
+              onClick={isLast ? () => finishTour(false) : nextStep}
+              style={{
+                height: 34, paddingLeft: 14, paddingRight: 14,
+                borderRadius: 10,
+                background: 'linear-gradient(135deg, #2EC4B6, #FF8FA3)',
+                border: 'none', cursor: 'pointer',
+                display: 'flex', alignItems: 'center', gap: 5,
+                color: '#fff', fontWeight: 700, fontSize: 12,
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {isLast ? '¡Listo! 🎉' : <><span>Siguiente</span><ChevronRight size={13} /></>}
+            </motion.button>
+          </div>
+        </div>
+      </div>
+    </motion.div>
+  )
 }
 
 export default function GuidedTour() {
@@ -76,139 +247,22 @@ export default function GuidedTour() {
   const step = steps[currentStep]
   if (!step) return null
 
-  const petEmoji   = getPetEmoji(userInfo?.petType)
-  const mascotAnim = mascotVariants[step.mascotAnim] || mascotVariants.idle
-  const bubbleStyle = getBubbleStyle(targetRect, step.position)
-  const isFirst    = currentStep === 0
-  const isLast     = currentStep === steps.length - 1
-  const progress   = ((currentStep + 1) / steps.length) * 100
+  const petEmoji = getPetEmoji(userInfo?.petType)
 
   return (
     <AnimatePresence mode="wait">
-      <motion.div
+      <BubbleInner
         key={step.id}
-        style={bubbleStyle}
-        initial={{ opacity: 0, scale: 0.88, y: 12 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.88, y: -8 }}
-        transition={{ type: 'spring', stiffness: 380, damping: 28 }}
-      >
-        <div style={{
-          background: '#ffffff',
-          borderRadius: 20,
-          border: '2px solid rgba(46,196,182,0.35)',
-          boxShadow: '0 12px 48px rgba(0,0,0,0.22), 0 2px 12px rgba(46,196,182,0.18)',
-          overflow: 'visible', // NO hidden — para no cortar botones
-        }}>
-
-          {/* Barra de progreso */}
-          <div style={{ height: 3, background: '#F0F4F8', borderRadius: '20px 20px 0 0', overflow: 'hidden' }}>
-            <motion.div
-              animate={{ width: `${progress}%` }}
-              transition={{ duration: 0.3 }}
-              style={{ height: '100%', background: 'linear-gradient(90deg, #2EC4B6, #FF8FA3)', borderRadius: 20 }}
-            />
-          </div>
-
-          {/* Header: mascota + título + cerrar */}
-          <div style={{ padding: '14px 14px 0', display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-            <motion.div
-              {...mascotAnim}
-              style={{
-                fontSize: 36, flexShrink: 0,
-                width: 52, height: 52,
-                borderRadius: 14,
-                background: 'linear-gradient(135deg, #f0fffe, #fff5f7)',
-                border: '1px solid rgba(46,196,182,0.2)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}
-            >
-              {petEmoji}
-            </motion.div>
-
-            <div style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
-              <p style={{ fontWeight: 800, fontSize: 14, color: '#1F2937', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                {step.title}
-              </p>
-              <p style={{ fontSize: 11, color: '#9CA3AF', margin: '2px 0 0' }}>
-                {userInfo?.petName || 'Pandi'} · {currentStep + 1}/{steps.length}
-              </p>
-            </div>
-
-            <button
-              onClick={() => finishTour(true)}
-              style={{
-                flexShrink: 0, width: 26, height: 26, borderRadius: '50%',
-                background: '#F5F7FA', border: 'none', cursor: 'pointer',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}
-            >
-              <X size={13} color="#9CA3AF" />
-            </button>
-          </div>
-
-          {/* Mensaje */}
-          <div style={{ padding: '10px 14px' }}>
-            <p style={{ fontSize: 13, lineHeight: 1.55, color: '#374151', margin: 0, wordBreak: 'break-word' }}>
-              {step.message}
-            </p>
-          </div>
-
-          {/* Controles */}
-          <div style={{
-            padding: '10px 14px 14px',
-            borderTop: '1px solid #F3F4F6',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: 8,
-          }}>
-            {/* Saltar */}
-            <button
-              onClick={() => finishTour(true)}
-              style={{
-                fontSize: 11, color: '#9CA3AF', background: 'none', border: 'none',
-                cursor: 'pointer', padding: '4px 6px', borderRadius: 8,
-                display: 'flex', alignItems: 'center', gap: 3, flexShrink: 0,
-              }}
-            >
-              <SkipForward size={11} /> Saltar
-            </button>
-
-            {/* Anterior + Siguiente */}
-            <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
-              {!isFirst && (
-                <button
-                  onClick={prevStep}
-                  style={{
-                    width: 34, height: 34, borderRadius: 10,
-                    background: '#F5F7FA', border: '1px solid #E5E7EB',
-                    cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  }}
-                >
-                  <ChevronLeft size={15} color="#6B7280" />
-                </button>
-              )}
-
-              <motion.button
-                whileTap={{ scale: 0.94 }}
-                onClick={isLast ? () => finishTour(false) : nextStep}
-                style={{
-                  height: 34, paddingLeft: 14, paddingRight: 14,
-                  borderRadius: 10,
-                  background: 'linear-gradient(135deg, #2EC4B6, #FF8FA3)',
-                  border: 'none', cursor: 'pointer',
-                  display: 'flex', alignItems: 'center', gap: 5,
-                  color: '#fff', fontWeight: 700, fontSize: 12,
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                {isLast ? '¡Listo! 🎉' : <><span>Siguiente</span><ChevronRight size={13} /></>}
-              </motion.button>
-            </div>
-          </div>
-        </div>
-      </motion.div>
+        step={step}
+        currentStep={currentStep}
+        steps={steps}
+        targetRect={targetRect}
+        petEmoji={petEmoji}
+        userInfo={userInfo}
+        prevStep={prevStep}
+        nextStep={nextStep}
+        finishTour={finishTour}
+      />
     </AnimatePresence>
   )
 }

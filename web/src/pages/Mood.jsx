@@ -367,12 +367,19 @@ function pickSession(mins) {
   return pool[Math.floor(Math.random() * pool.length)]
 }
 function PandaFrame({ running }) {
-  const [frame,    setFrame]    = useState(1)
-  const [imgError, setImgError] = useState(false)
+  const [frame,        setFrame]        = useState(1)
+  const [imgError,     setImgError]     = useState(false)
+  const [transitioning, setTransitioning] = useState(false)
 
   useEffect(() => {
-    if (!running) { setFrame(1); return }
-    const id = setTimeout(() => setFrame(2), 15000)
+    if (!running) { setFrame(1); setTransitioning(false); return }
+    const id = setTimeout(() => {
+      setTransitioning(true)
+      setTimeout(() => {
+        setFrame(2)
+        setTimeout(() => setTransitioning(false), 1800)
+      }, 600)
+    }, 15000)
     return () => clearTimeout(id)
   }, [running])
 
@@ -389,19 +396,29 @@ function PandaFrame({ running }) {
 
   return (
     <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      {/* Aura violeta detrás */}
+
+      {/* Aura violeta — se intensifica durante la transición */}
       <motion.div
-        animate={running
-          ? { scale: [1, 1.15, 1], opacity: [0.35, 0.55, 0.35] }
-          : { scale: 1, opacity: 0.2 }}
-        transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
+        animate={
+          transitioning
+            ? { scale: 1.4, opacity: 0.85 }
+            : running
+              ? { scale: [1, 1.15, 1], opacity: [0.35, 0.55, 0.35] }
+              : { scale: 1, opacity: 0.2 }
+        }
+        transition={
+          transitioning
+            ? { duration: 1.2, ease: 'easeInOut' }
+            : { duration: 5, repeat: Infinity, ease: 'easeInOut' }
+        }
         style={{
           position: 'absolute',
           width: '85%', height: '85%',
           borderRadius: '50%',
-          background: 'radial-gradient(circle, #c084fc 0%, #a855f7 40%, transparent 75%)',
-          filter: 'blur(28px)',
+          background: 'radial-gradient(circle, #e9d5ff 0%, #c084fc 35%, #a855f7 60%, transparent 80%)',
+          filter: transitioning ? 'blur(45px)' : 'blur(28px)',
           zIndex: 0,
+          transition: 'filter 1.2s ease-in-out',
         }}
       />
 
@@ -417,10 +434,10 @@ function PandaFrame({ running }) {
             key={frame}
             src={`/panda/meditate_${frame}.png`}
             alt="Pandi meditando"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 1.2 }}
+            initial={{ opacity: 0, scale: 0.96 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.96 }}
+            transition={{ duration: 1.8, ease: 'easeInOut' }}
             style={{ width: '100%', height: '100%', objectFit: 'contain' }}
             onError={() => setImgError(true)}
           />

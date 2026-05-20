@@ -14,7 +14,6 @@ export function getPetEmoji(petType) {
   return PET_EMOJI[petType] || '🐼'
 }
 
-// Genera los pasos del tour con nombre de usuario y mascota
 export function getTourSteps(tourKey, { userName = 'campeón', petName = 'Pandi', petType = 'panda' } = {}) {
   const pet = getPetEmoji(petType)
 
@@ -24,7 +23,7 @@ export function getTourSteps(tourKey, { userName = 'campeón', petName = 'Pandi'
     home: [
       {
         id: 'home-welcome',
-        target: null, // Centro de pantalla
+        target: null,
         position: 'center',
         mascotAnim: 'wave',
         title: `¡Hola, ${userName}! 👋`,
@@ -96,7 +95,7 @@ export function getTourSteps(tourKey, { userName = 'campeón', petName = 'Pandi'
         position: 'bottom',
         mascotAnim: 'point',
         title: 'Pestañas de nutrición',
-        message: `Aquí tienes: Diario, Foto, Código de barras, Despensa, Recetas y Tendencias. Vamos a ver cada una.`,
+        message: `Aquí tienes: Diario, Foto, Código de barras, Despensa, Recetas y Tendencias. Vamos a ver las más importantes.`,
       },
       {
         id: 'nutrition-diary',
@@ -104,7 +103,15 @@ export function getTourSteps(tourKey, { userName = 'campeón', petName = 'Pandi'
         position: 'bottom',
         mascotAnim: 'happy',
         title: 'Diario nutricional 📖',
-        message: `Registra cada comida del día. Verás tus calorías, proteína, carbos y grasa en tiempo real. El anillo muestra tu progreso.`,
+        message: `Registra cada comida del día y ve tus calorías, proteína, carbos y grasa en tiempo real. El anillo muestra tu progreso.`,
+      },
+      {
+        id: 'nutrition-library',
+        target: '[data-tour="nutrition-add"]',
+        position: 'bottom',
+        mascotAnim: 'point',
+        title: 'Biblioteca de alimentos 🔍',
+        message: `Toca el botón + o "Añadir" para buscar en más de 3 millones de alimentos. Busca por nombre, elige la cantidad en gramos y los macros se calculan solos. Los alimentos que uses más aparecerán como recientes.`,
       },
       {
         id: 'nutrition-photo',
@@ -120,7 +127,7 @@ export function getTourSteps(tourKey, { userName = 'campeón', petName = 'Pandi'
         position: 'bottom',
         mascotAnim: 'point',
         title: 'Escáner de código 📦',
-        message: `Escanea el código de barras de cualquier producto y obtendrás su información nutricional al instante.`,
+        message: `Escanea el código de barras de cualquier producto. Consulta directamente la base de datos de Open Food Facts, elige la cantidad en gramos y listo.`,
       },
       {
         id: 'nutrition-pantry',
@@ -276,8 +283,7 @@ export function getTourSteps(tourKey, { userName = 'campeón', petName = 'Pandi'
   return tours[tourKey] || []
 }
 
-export const TOUR_KEYS = ['home', 'nutrition', 'workout', 'report', 'profile']
-
+export const TOUR_KEYS   = ['home', 'nutrition', 'workout', 'report', 'profile']
 export const TOUR_LABELS = {
   home:      'Home',
   nutrition: 'Nutrición',

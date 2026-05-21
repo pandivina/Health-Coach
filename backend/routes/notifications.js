@@ -30,4 +30,22 @@ router.delete('/unsubscribe', requireAuth, async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }) }
 })
 
+// POST /api/notifications/send — envía push al usuario actual
+router.post('/send', requireAuth, async (req, res) => {
+  try {
+    const { title, body, url, tag } = req.body
+    const { data } = await supabaseAdmin
+      .from('push_subscriptions')
+      .select('subscription')
+      .eq('user_id', req.user.id)
+      .single()
+    if (!data) return res.json({ ok: false, reason: 'no_subscription' })
+    await webpush.sendNotification(
+      data.subscription,
+      JSON.stringify({ title, body, url, tag })
+    )
+    res.json({ ok: true })
+  } catch (err) { res.status(500).json({ error: err.message }) }
+})
+
 module.exports = router

@@ -42,6 +42,24 @@ const ACHIEVEMENTS = [
   { id: 'no_smoking_30',    title: 'Un mes libre',          icon: '🏅', description: 'Un mes sin fumar',                         xp: 1000 },
 ]
 
+const ACCESSORIES = [
+  { id: 'birrete',    icon: '🎓', name: 'Birrete',       trigger: 'onboarding_done',    desc: 'Completaste el onboarding'         },
+  { id: 'mancuerna',  icon: '🏋️', name: 'Mancuerna',     trigger: 'workout_10',         desc: '10 entrenamientos completados'     },
+  { id: 'delantal',   icon: '🥗', name: 'Delantal',      trigger: 'nutrition_30',       desc: '30 días de nutrición registrada'   },
+  { id: 'cojin',      icon: '🧘', name: 'Cojín zen',     trigger: 'meditation_20',      desc: '20 sesiones de meditación'         },
+  { id: 'botella',    icon: '💧', name: 'Botella',       trigger: 'hydration_7',        desc: 'Meta de agua 7 días seguidos'      },
+  { id: 'luna',       icon: '🌙', name: 'Gorro de luna', trigger: 'sleep_14',           desc: 'Sueño registrado 14 días seguidos' },
+  { id: 'collar',     icon: '❤️', name: 'Collar',        trigger: 'streak_60',          desc: '60 días de racha'                  },
+  { id: 'corona',     icon: '👑', name: 'Corona',        trigger: 'level_10',           desc: 'Alcanzaste el nivel 10'            },
+]
+
+async function unlockAccessory(userId, accessoryId) {
+  try {
+    await supabaseAdmin.from('panda_accessories')
+      .upsert({ user_id: userId, accessory_id: accessoryId }, { onConflict: 'user_id,accessory_id' })
+  } catch {}
+}
+
 // POST /api/achievements/check — verificar y otorgar logros
 router.post('/check', requireAuth, async (req, res) => {
   try {

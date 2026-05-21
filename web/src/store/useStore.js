@@ -96,6 +96,17 @@ export const useStore = create((set, get) => ({
     .eq('id', user.id)
 
   set({ profile: { ...profile, streak: newStreak, streak_shields: newShields, last_active: today } })
+    if (shieldUsed) {
+  // Importar api aquí para evitar dependencia circular
+  import('../lib/api').then(({ api }) => {
+    api.notifications.send({
+      title: '🛡️ ¡Escudo activado!',
+      body:  `Tu racha de ${newStreak} días está a salvo. Vuelve mañana.`,
+      url:   '/home',
+      tag:   'shield',
+    }).catch(() => {})
+  })
+}
   return { shieldUsed, newStreak, newShields }
 },
 

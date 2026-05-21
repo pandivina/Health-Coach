@@ -8,6 +8,8 @@
     "dev": "nodemon server.js"
   },
   "dependencies": {
+    "node-cron": "^3.0.3",
+    "web-push": "^3.6.7",
     "@anthropic-ai/sdk": "^0.20.0",
     "@supabase/supabase-js": "^2.39.0",
     "cors": "^2.8.5",

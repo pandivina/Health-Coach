@@ -48,6 +48,11 @@ export const api = {
   today:  () => request('GET', '/api/report/today'),
   weekly: () => request('GET', '/api/report/weekly'),
 },
+insights: {
+  get:      ()   => request('GET',   '/api/insights'),
+  generate: ()   => request('POST',  '/api/insights/generate'),
+  markSeen: (id) => request('PATCH', `/api/insights/${id}/seen`),
+},
   workouts: {
     getExercises: (params = {}) => {
       const q = new URLSearchParams(params).toString()

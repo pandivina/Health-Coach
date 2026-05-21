@@ -44,9 +44,10 @@ export const api = {
     generate: () => request('POST', '/api/recipes/generate', {}),
     cook: (id) => request('POST', `/api/recipes/cook/${id}`, {}),
   },
-  report: {
-    today: () => request('GET', '/api/report/today'),
-  },
+ report: {
+  today:  () => request('GET', '/api/report/today'),
+  weekly: () => request('GET', '/api/report/weekly'),
+},
   workouts: {
     getExercises: (params = {}) => {
       const q = new URLSearchParams(params).toString()

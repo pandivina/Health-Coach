@@ -7,6 +7,7 @@ import { supabase } from '../lib/supabase'
 import { useTour } from '../hooks/useTour'
 import TourHelpButton from '../components/tour/TourHelpButton'
 import { MessageCircle, Moon, Droplets, ChefHat, Smile, TrendingUp, TrendingDown, Minus, Scale, Plus, Minus as MinusIcon } from 'lucide-react'
+import WeeklySummary from '../components/WeeklySummary'
 
 const QUICK_LINKS = [
   { to: '/hydration', icon: Droplets, label: 'Agua'    },

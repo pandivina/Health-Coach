@@ -294,7 +294,7 @@ export default function Home() {
         <div className="flex gap-3 mt-3" data-tour="home-progress-level">
           {[
             ['⚡', `Nivel ${profile?.level || 1}`, `${profile?.xp || 0} XP`],
-            ['🔥', `${profile?.streak || 0} días`, null],
+            ['🔥', `${profile?.streak || 0} días`, profile?.streak_shields > 0 ? `🛡️ ×${profile.streak_shields}` : null],
           ].map(([e, label, sub]) => (
             <div key={label} className="flex-1 card py-2 flex items-center justify-center gap-2">
               <span>{e}</span>

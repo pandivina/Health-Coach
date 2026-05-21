@@ -59,23 +59,45 @@ export const useStore = create((set, get) => ({
 
   // ── Actualizar racha ────────────────────────────────────
   updateStreak: async () => {
-    const { profile, user } = get()
-    if (!profile || !user) return
-    const today = new Date().toISOString().split('T')[0]
-    const lastActive = profile.last_active
-    if (lastActive === today) return // ya contado hoy
+  const { profile, user } = get()
+  if (!profile || !user) return
 
-    const yesterday = new Date()
-    yesterday.setDate(yesterday.getDate() - 1)
-    const yesterdayStr = yesterday.toISOString().split('T')[0]
+  const today      = new Date().toISOString().split('T')[0]
+  const lastActive = profile.last_active
+  if (lastActive === today) return // ya contado hoy
 
-    const newStreak = lastActive === yesterdayStr ? (profile.streak || 0) + 1 : 1
-    await supabase
-      .from('user_profiles')
-      .update({ streak: newStreak, last_active: today })
-      .eq('id', user.id)
-    set({ profile: { ...profile, streak: newStreak, last_active: today } })
-  },
+  const yesterday    = new Date()
+  yesterday.setDate(yesterday.getDate() - 1)
+  const yesterdayStr = yesterday.toISOString().split('T')[0]
+
+  let newStreak  = profile.streak  || 0
+  let newShields = profile.streak_shields || 0
+  let shieldUsed = false
+
+  if (lastActive === yesterdayStr) {
+    // Día consecutivo — sumar racha
+    newStreak += 1
+    // Ganar escudo cada 7 días (máximo 2)
+    if (newStreak % 7 === 0 && newShields < 2) newShields += 1
+  } else {
+    // Racha rota — ¿hay escudo disponible?
+    if (newShields > 0) {
+      newShields -= 1
+      shieldUsed  = true
+      // La racha continúa — no se reinicia
+    } else {
+      newStreak = 1
+    }
+  }
+
+  await supabase
+    .from('user_profiles')
+    .update({ streak: newStreak, streak_shields: newShields, last_active: today })
+    .eq('id', user.id)
+
+  set({ profile: { ...profile, streak: newStreak, streak_shields: newShields, last_active: today } })
+  return { shieldUsed, newStreak, newShields }
+},
 
   // ── Logout ──────────────────────────────────────────────
   logout: async () => {

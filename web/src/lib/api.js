@@ -30,6 +30,7 @@ export const api = {
   notifications: {
     subscribe:   (sub) => request('POST',   '/api/notifications/subscribe',   { subscription: sub }),
     unsubscribe: ()    => request('DELETE',  '/api/notifications/unsubscribe'),
+    send: (payload) => request('POST', '/api/notifications/send', payload),
   },
   nutrition: {
     analyzePhoto: (imageBase64, mediaType) => request('POST', '/api/nutrition/analyze-photo', { imageBase64, mediaType }),

@@ -141,7 +141,42 @@ router.post('/check', requireAuth, async (req, res) => {
       await supabaseAdmin.from('user_profiles').update({ xp: newXP, level: newLevel }).eq('id', userId)
       earned.push({ ...achievement })
     }
-
+// ─── Accesorios ───────────────────────────────────────────────────────────────
+if (trigger === 'onboarding_done') {
+  await unlockAccessory(userId, 'birrete')
+}
+if (trigger === 'workout_completed') {
+  const { count: wCount } = await supabaseAdmin.from('workout_sessions')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', userId).eq('status', 'completed')
+  if (wCount >= 10) await unlockAccessory(userId, 'mancuerna')
+}
+if (trigger === 'hydration_goal') {
+  // Contar días consecutivos con meta de agua
+  const days = []
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(); d.setDate(d.getDate() - i)
+    days.push(d.toISOString().split('T')[0])
+  }
+  const { data: hLogs } = await supabaseAdmin.from('hydration_logs')
+    .select('date,glasses,goal').eq('user_id', userId).in('date', days)
+  const streak = days.filter(day => {
+    const l = hLogs?.find(h => h.date === day)
+    return l && l.glasses >= l.goal
+  }).length
+  if (streak >= 7) await unlockAccessory(userId, 'botella')
+}
+if (trigger === 'sleep_logged') {
+  const { count: sCount } = await supabaseAdmin.from('sleep_logs')
+    .select('*', { count: 'exact', head: true }).eq('user_id', userId)
+  if (sCount >= 14) await unlockAccessory(userId, 'luna')
+}
+if (trigger === 'streak_check') {
+  const { data: prof } = await supabaseAdmin.from('user_profiles')
+    .select('streak,level').eq('id', userId).single()
+  if (prof?.streak >= 60) await unlockAccessory(userId, 'collar')
+  if (prof?.level >= 10) await unlockAccessory(userId, 'corona')
+}
     res.json({ earned, count: earned.length })
   } catch (err) {
     res.status(500).json({ error: err.message })

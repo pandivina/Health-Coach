@@ -56,6 +56,20 @@ export const useStore = create((set, get) => ({
     set({ profile: { ...profile, xp: newXP, level: newLevel } })
     return newXP
   },
+  addBondXP: async (amount) => {
+  const { profile, user } = get()
+  if (!profile || !user) return
+  const newBondXP    = (profile.bond_xp || 0) + amount
+  const newBondLevel = newBondXP >= 1000 ? 5
+    : newBondXP >= 600 ? 4
+    : newBondXP >= 300 ? 3
+    : newBondXP >= 100 ? 2 : 1
+  await supabase.from('user_profiles')
+    .update({ bond_xp: newBondXP, bond_level: newBondLevel })
+    .eq('id', user.id)
+  set({ profile: { ...profile, bond_xp: newBondXP, bond_level: newBondLevel } })
+  return { newBondXP, newBondLevel }
+},
 
   // ── Actualizar racha ────────────────────────────────────
   updateStreak: async () => {

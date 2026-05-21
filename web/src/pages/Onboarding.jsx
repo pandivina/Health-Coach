@@ -171,6 +171,53 @@ export default function Onboarding() {
       )}
     </div>,
 
+    <div key={2.5} className="space-y-4">
+  <div className="text-center mb-4">
+    <motion.div animate={{ rotate: [0,10,-10,10,0] }}
+      transition={{ duration:1.5, repeat:Infinity, repeatDelay:3 }}
+      className="text-5xl mb-3">🐼</motion.div>
+    <h2 className="text-2xl font-bold">¿Por qué quieres mejorar tu salud?</h2>
+    <p className="text-white/50 text-sm mt-2">
+      Pandi lo guardará para recordártelo cuando lo necesites
+    </p>
+  </div>
+
+  <div className="space-y-2">
+    {[
+      { value: 'family',    emoji: '👨‍👩‍👧', label: 'Tener energía para mi familia'       },
+      { value: 'body',      emoji: '💪',    label: 'Sentirme bien en mi propio cuerpo' },
+      { value: 'health',    emoji: '🏥',    label: 'Controlar una condición de salud'  },
+      { value: 'energy',    emoji: '⚡',    label: 'Tener más energía y foco'          },
+      { value: 'habits',    emoji: '🌱',    label: 'Recuperar hábitos que perdí'       },
+      { value: 'wellbeing', emoji: '🧘',    label: 'Sentirme bien, no solo verme bien' },
+    ].map(opt => (
+      <button key={opt.value}
+        onClick={() => set('motivation_why',
+          form.motivation_why === opt.value ? '' : opt.value)}
+        className={`w-full flex items-center gap-3 p-4 rounded-2xl border transition-all text-left ${
+          form.motivation_why === opt.value
+            ? 'border-accent bg-accent/20'
+            : 'border-white/10 bg-surface-2'
+        }`}>
+        <span className="text-2xl">{opt.emoji}</span>
+        <span className="font-medium">{opt.label}</span>
+      </button>
+    ))}
+  </div>
+
+  <div>
+    <label className="label">O escríbelo tú mismo (opcional)</label>
+    <input className="input" placeholder="Mi razón personal…"
+      value={['family','body','health','energy','habits','wellbeing']
+        .includes(form.motivation_why) ? '' : form.motivation_why}
+      onChange={e => set('motivation_why', e.target.value)} />
+  </div>
+
+  <p className="text-white/30 text-xs text-center">
+    Paso opcional — puedes continuar sin rellenar
+  </p>
+</div>,
+    
     <div key={3} className="space-y-3">
       <h2 className="text-2xl font-bold">Actividad física 🏋️</h2>
       {ACTIVITY.map(a => (

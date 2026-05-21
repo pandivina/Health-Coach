@@ -36,6 +36,7 @@ export default function Coach() {
     try {
       const { reply } = await api.coach.chat(newMessages.slice(-10))
       setMessages(m => [...m, { role: 'assistant', content: reply }])
+useStore.getState().addBondXP?.(5)
     } catch {
       setMessages(m => [...m, { role: 'assistant', content: '❌ Error al conectar. Verifica tu conexión.' }])
     } finally { setLoading(false) }

@@ -310,6 +310,8 @@ export default function Home() {
         <MorningCard petEmoji={petEmoji} petName={petName} theme={theme} />
       )}
 
+      <WeeklySummary />
+
       {/* Widget de agua */}
       <WaterWidget userId={user?.id} theme={theme} />
 

@@ -70,6 +70,7 @@ export default function Onboarding() {
     is_smoker: false, alcohol_frequency: 'never',
     treatments: [],
     treatment_name: '', treatment_type: '',
+    motivation_why: '',
   })
   const [loading, setLoading] = useState(false)
   const { user, fetchProfile } = useStore()

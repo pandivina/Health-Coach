@@ -317,7 +317,7 @@ export default function Onboarding() {
     setLoading(true)
     try {
       const userId = user.id
-      await supabase.from('user_profiles').update({ name: form.name, onboarding_done: true }).eq('id', userId)
+      await supabase.from('user_profiles').update({ name: form.name, onboarding_done: true, motivation_why: form.motivation_why || null }).eq('id', userId)
       const age = form.birth_date ? Math.floor((new Date() - new Date(form.birth_date)) / (365.25 * 24 * 3600 * 1000)) : null
       const w = parseFloat(form.weight_kg) || 70
       const h = parseFloat(form.height_cm) || 170

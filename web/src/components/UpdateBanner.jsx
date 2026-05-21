@@ -9,24 +9,18 @@ export default function UpdateBanner() {
 
   useEffect(() => {
     if (!('serviceWorker' in navigator)) return
-
-    // Escuchar cuando el service worker detecta una nueva versión
     navigator.serviceWorker.ready.then(reg => {
       reg.addEventListener('updatefound', () => {
         const newWorker = reg.installing
         if (!newWorker) return
-
         newWorker.addEventListener('statechange', () => {
           if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-            // Hay una nueva versión lista
             setNeedsUpdate(true)
             setWorker(newWorker)
           }
         })
       })
     })
-
-    // También escuchar el evento custom de vite-plugin-pwa
     const handler = (e) => {
       setNeedsUpdate(true)
       setWorker(e.detail?.waiting)
@@ -35,11 +29,19 @@ export default function UpdateBanner() {
     return () => window.removeEventListener('sw-update-available', handler)
   }, [])
 
+  useEffect(() => {
+    if (!('serviceWorker' in navigator)) return
+    const handleControllerChange = () => window.location.reload()
+    navigator.serviceWorker.addEventListener('controllerchange', handleControllerChange)
+    return () => navigator.serviceWorker.removeEventListener('controllerchange', handleControllerChange)
+  }, [])
+
   function update() {
     if (worker) {
       worker.postMessage({ type: 'SKIP_WAITING' })
+    } else {
+      window.location.reload()
     }
-    window.location.reload()
   }
 
   return (
@@ -50,10 +52,9 @@ export default function UpdateBanner() {
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: 100, opacity: 0 }}
           transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-          className="fixed bottom-20 left-0 right-0 z-50 px-4 max-w-lg mx-auto"
-        >
+          className="fixed bottom-20 left-0 right-0 z-50 px-4 max-w-lg mx-auto">
           <div className="rounded-2xl p-4 flex items-center gap-3 shadow-xl"
-            style={{ background: theme.text, border: `1px solid rgba(255,255,255,0.1)` }}>
+            style={{ background: theme.text, border: '1px solid rgba(255,255,255,0.1)' }}>
             <span className="text-2xl flex-shrink-0">🐼</span>
             <div className="flex-1">
               <p className="font-bold text-sm text-white">Nueva versión disponible</p>
@@ -61,11 +62,9 @@ export default function UpdateBanner() {
                 Actualiza para disfrutar de las últimas mejoras
               </p>
             </div>
-            <button
-              onClick={update}
+            <button onClick={update}
               className="flex-shrink-0 px-4 py-2 rounded-xl text-sm font-bold text-white transition-all active:scale-95"
-              style={{ background: theme.gradientBrand }}
-            >
+              style={{ background: theme.gradientBrand }}>
               Actualizar
             </button>
           </div>

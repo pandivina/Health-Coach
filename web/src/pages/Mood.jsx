@@ -212,7 +212,7 @@ function CheckinTab({ theme, userId, addXP, onTabChange }) {
       { user_id: userId, date: today, mood, notes },
       { onConflict: 'user_id,date' }
     )
-    await addXP(10); setSaved(true); load()
+    await addXP(10); await addBondXP(5), setSaved(true); load()
   }
 
   // Detectar 3 días consecutivos con mood bajo (≤2)
@@ -582,6 +582,8 @@ function MeditationTab({ theme }) {
         if (e + 1 >= total) {
           clearInterval(intervalRef.current)
           setRunning(false); setDone(true); stopAll()
+useStore.getState().addBondXP?.(10)
+return total
           return total
         }
         return e + 1
@@ -590,7 +592,7 @@ function MeditationTab({ theme }) {
   }
 
   function reset() {
-    stopAll(); setRunning(false); setElapsed(0); setDone(false); setMuted(false)
+    stopAll(); setRunning(false); setElapsed(0); setDone(true); setMuted(false)
   }
 
   function toggleMute() {
@@ -743,6 +745,9 @@ function HabitsTab({ theme, userId }) {
     // Celebrar cuando completan todos
     if (active.every(h => (h.id === id ? !checked[id] : checked[h.id]))) {
       setCelebrated(true)
+      import('../store/useStore').then(({ useStore }) => {
+  useStore.getState().addBondXP?.(5)
+})
       setTimeout(() => setCelebrated(false), 3000)
     }
   }

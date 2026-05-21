@@ -108,6 +108,59 @@ export default function Pet() {
         <span className="text-yellow-400 text-sm font-bold">⚡</span>
       </div>
 
+      {/* Vínculo con Pandi */}
+{(() => {
+  const BOND = [
+    { level:1, name:'Conocidos',     xp:0,    next:100,  msg:'Hola, me alegra conocerte 🐼' },
+    { level:2, name:'Amigos',        xp:100,  next:300,  msg:'Ya me sé tu nombre de memoria 🐾' },
+    { level:3, name:'Buenos amigos', xp:300,  next:600,  msg:'Empiezo a conocer tus patrones' },
+    { level:4, name:'Inseparables',  xp:600,  next:1000, msg:'Llevas mucho tiempo cuidándome 🐼' },
+    { level:5, name:'Familia',       xp:1000, next:1000, msg:'No me imagino sin ti ya 🐼❤️' },
+  ]
+  const bondXP  = profile?.bond_xp    || 0
+  const current = BOND.find(b => b.level === (profile?.bond_level || 1)) || BOND[0]
+  const next    = BOND.find(b => b.level === current.level + 1)
+  const pct     = next
+    ? Math.min(((bondXP - current.xp) / (next.xp - current.xp)) * 100, 100)
+    : 100
+
+  return (
+    <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }}
+      className="card mb-6 text-left"
+      style={{ background: `${theme.primary}10`, border: `1px solid ${theme.primary}20` }}>
+      <div className="flex items-center justify-between mb-2">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-wide"
+            style={{ color: theme.primary }}>Vínculo con {profile?.pet_name || 'Pandi'}</p>
+          <p className="font-extrabold text-base" style={{ color: theme.text }}>{current.name}</p>
+        </div>
+        <div className="text-right">
+          <p className="text-2xl font-black" style={{ color: theme.primary }}>{current.level}</p>
+          <p className="text-[10px]" style={{ color: theme.textMuted }}>/ 5</p>
+        </div>
+      </div>
+
+      <div className="h-1.5 rounded-full overflow-hidden mb-2" style={{ background: theme.surface2 }}>
+        <motion.div className="h-full rounded-full"
+          style={{ background: theme.gradientBrand }}
+          initial={{ width: 0 }}
+          animate={{ width: `${pct}%` }}
+          transition={{ duration: 0.8 }} />
+      </div>
+
+      <p className="text-xs italic mb-2" style={{ color: theme.textMuted }}>
+        "{current.msg}"
+      </p>
+
+      {next && (
+        <p className="text-[10px]" style={{ color: theme.textLight }}>
+          {next.xp - bondXP} puntos para "{next.name}"
+        </p>
+      )}
+    </motion.div>
+  )
+})()}
+
       {/* Accessories */}
       <div className="text-left mb-5">
         <p className="section-title">Sombreros</p>

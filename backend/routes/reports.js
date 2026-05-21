@@ -32,7 +32,7 @@ router.get('/today', requireAuth, async (req, res) => {
 
     // Insight IA
     const aiRes = await anthropic.messages.create({
-      model: 'claude-opus-4-5',
+      model: 'claude-sonnet-4-6'',
       max_tokens: 300,
       messages: [{
         role: 'user',
@@ -83,5 +83,94 @@ Devuelve JSON: {"insight": "...", "recommendation": "..."}`,
     res.status(500).json({ error: err.message });
   }
 });
+// ─── Añadir al final de routes/reports.js, antes de module.exports ────────────
+// También corrige el modelo en /today: cambia 'claude-opus-4-5' → 'claude-sonnet-4-6'
 
+// GET /api/report/weekly
+router.get('/weekly', requireAuth, async (req, res) => {
+  try {
+    const userId = req.user.id
+    const days   = Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(); d.setDate(d.getDate() - i)
+      return d.toISOString().split('T')[0]
+    })
+    const safe = fn => fn.catch(() => ({ data: null }))
+
+    const [mealsR, sleepR, moodR, waterR, workoutR, profileR] = await Promise.all([
+      safe(supabaseAdmin.from('meal_logs').select('date,calories').eq('user_id', userId).in('date', days)),
+      safe(supabaseAdmin.from('sleep_logs').select('date,hours,quality').eq('user_id', userId).in('date', days)),
+      safe(supabaseAdmin.from('mood_logs').select('date,mood').eq('user_id', userId).in('date', days)),
+      safe(supabaseAdmin.from('hydration_logs').select('date,glasses,goal').eq('user_id', userId).in('date', days)),
+      safe(supabaseAdmin.from('workout_sessions').select('id').eq('user_id', userId).eq('status','completed').gte('created_at', days[days.length-1]+'T00:00:00')),
+      safe(supabaseAdmin.from('user_profiles').select('name,streak,xp,level,pet_name,motivation_why').eq('id', userId).single()),
+    ])
+
+    const meals    = mealsR.data    || []
+    const sleepLog = sleepR.data    || []
+    const moodLogs = moodR.data     || []
+    const waterLog = waterR.data    || []
+    const workouts = workoutR.data  || []
+    const profile  = profileR.data  || {}
+
+    // Calcular stats
+    const activeDays = [...new Set([
+      ...meals.map(m => m.date),
+      ...sleepLog.map(s => s.date),
+      ...moodLogs.map(m => m.date),
+      ...waterLog.map(w => w.date),
+    ])].length
+
+    const avgMood   = moodLogs.length
+      ? (moodLogs.reduce((s, m) => s + m.mood, 0) / moodLogs.length).toFixed(1)
+      : null
+    const bestWater = waterLog.length
+      ? Math.max(...waterLog.map(w => w.glasses || 0))
+      : 0
+    const bestSleep = sleepLog.length
+      ? Math.max(...sleepLog.map(s => s.hours || 0))
+      : null
+
+    // Generar mensaje de Pandi con IA
+    const aiRes = await anthropic.messages.create({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 300,
+      messages: [{
+        role: 'user',
+        content: `Eres Pandi, la mascota de una app de salud. Genera un resumen semanal cálido y personal.
+Datos de ${profile.name || 'el usuario'} esta semana:
+- Días activos: ${activeDays}/7
+- Ánimo medio: ${avgMood || 'no registrado'}/5
+- Mejor día de agua: ${bestWater} vasos
+- Mejor noche de sueño: ${bestSleep || 'no registrado'} h
+- Entrenamientos: ${workouts.length}
+- Racha actual: ${profile.streak || 0} días
+- Su motivación: ${profile.motivation_why || 'mejorar su salud'}
+Devuelve SOLO JSON sin markdown:
+{"pandi_message":"mensaje cálido de 2 frases max, menciona algo específico de sus datos","highlight":"el mejor logro de la semana en una frase corta","suggestion":"una sugerencia concreta para la próxima semana"}`,
+      }],
+    })
+
+    const raw  = aiRes.content[0].text.trim().replace(/```json|```/g, '').trim()
+    const match = raw.match(/\{[\s\S]*\}/)
+    const aiData = match ? JSON.parse(match[0]) : {
+      pandi_message: `Llevas ${activeDays} días activos esta semana. ¡Eso cuenta! 🐼`,
+      highlight:     activeDays >= 5 ? 'Gran consistencia esta semana' : null,
+      suggestion:    'Intenta registrar al menos un hábito cada día',
+    }
+
+    res.json({
+      active_days:   activeDays,
+      avg_mood:      avgMood,
+      best_water:    bestWater,
+      best_sleep:    bestSleep,
+      workouts:      workouts.length,
+      streak:        profile.streak || 0,
+      pandi_message: aiData.pandi_message,
+      highlight:     aiData.highlight,
+      suggestion:    aiData.suggestion,
+    })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
 module.exports = router;

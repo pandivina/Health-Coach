@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom'
 import { useStore } from '../store/useStore'
 import { useTheme } from '../contexts/ThemeProvider'
 import { PET_THEME_MAP, THEMES } from '../lib/themes'
+import { supabase } from '../lib/supabase'
 
 const PETS = [
   { type: 'panda',  emoji: '🐼', name: 'Panda',        free: true,  desc: 'Tu compañero por defecto' },
@@ -195,7 +196,58 @@ export default function Pet() {
           ))}
         </div>
       </div>
+{/* Accesorios desbloqueados */}
+{(() => {
+  const [accessories, setAccessories] = useState([])
+  useEffect(() => {
+    if (!profile) return
+    supabase.from('panda_accessories').select('accessory_id')
+      .eq('user_id', profile.id)
+      .then(({ data }) => setAccessories((data || []).map(a => a.accessory_id)))
+  }, [profile])
 
+  const ALL = [
+    { id: 'birrete',   icon: '🎓', name: 'Birrete'       },
+    { id: 'mancuerna', icon: '🏋️', name: 'Mancuerna'     },
+    { id: 'delantal',  icon: '🥗', name: 'Delantal'      },
+    { id: 'cojin',     icon: '🧘', name: 'Cojín zen'     },
+    { id: 'botella',   icon: '💧', name: 'Botella'       },
+    { id: 'luna',      icon: '🌙', name: 'Gorro de luna' },
+    { id: 'collar',    icon: '❤️', name: 'Collar'        },
+    { id: 'corona',    icon: '👑', name: 'Corona'        },
+  ]
+
+  return (
+    <div className="text-left mb-5">
+      <p className="section-title">
+        Accesorios — {accessories.length}/{ALL.length} desbloqueados
+      </p>
+      <div className="grid grid-cols-4 gap-2">
+        {ALL.map(a => {
+          const unlocked = accessories.includes(a.id)
+          return (
+            <motion.div key={a.id} whileTap={unlocked ? { scale: 0.9 } : {}}
+              className="flex flex-col items-center gap-1 p-3 rounded-2xl"
+              style={{
+                background: unlocked ? `${theme.primary}15` : theme.surface2,
+                border: `2px solid ${unlocked ? theme.primary + '50' : 'transparent'}`,
+                opacity: unlocked ? 1 : 0.4,
+              }}>
+              <span className="text-2xl" style={{ filter: unlocked ? 'none' : 'grayscale(1)' }}>
+                {a.icon}
+              </span>
+              <span className="text-[9px] font-semibold text-center"
+                style={{ color: unlocked ? theme.text : theme.textMuted }}>
+                {unlocked ? a.name : '???'}
+              </span>
+            </motion.div>
+          )
+        })}
+      </div>
+    </div>
+  )
+})()}
+      
       {/* Cambiar tema */}
       <Link to="/appearance" className="card flex items-center gap-3 mb-5 text-left">
         <div className="w-10 h-10 rounded-xl flex items-center justify-center"

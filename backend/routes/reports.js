@@ -32,7 +32,7 @@ router.get('/today', requireAuth, async (req, res) => {
 
     // Insight IA
     const aiRes = await anthropic.messages.create({
-      model: 'claude-sonnet-4-6'',
+      model: 'claude-sonnet-4-6',
       max_tokens: 300,
       messages: [{
         role: 'user',

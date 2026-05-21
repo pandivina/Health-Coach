@@ -11,6 +11,7 @@ export default defineConfig({
       filename: 'sw.js',
       registerType: 'prompt',
       injectRegister: 'auto',
+      manifestFilename: 'manifest.json',
       includeAssets: ['favicon.svg', 'favicon.png', 'icons/*.png'],
       manifest: {
         name: 'Health Coach — Tu IA de salud',

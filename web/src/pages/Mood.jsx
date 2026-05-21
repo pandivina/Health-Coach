@@ -1,13 +1,15 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Play, Pause, RotateCcw, Volume2, VolumeX } from 'lucide-react'
+import { Play, Pause, RotateCcw, Volume2, VolumeX, Check } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useStore } from '../store/useStore'
 import { useTheme } from '../contexts/ThemeProvider'
+import {
+  PANDI_MOOD_MESSAGES, PANDI_ACTIONS, PANDI_MOOD_FRAME,
+  PANDI_GREETINGS, DEFAULT_HABITS,
+} from '../lib/pandiMessages'
 
-// ─── RUTAS DE AUDIO ──────────────────────────────────────────────────────────
-// Pon todos los archivos en web/public/audio/
-// Los nombres coinciden exactamente con los archivos que tienes.
+// ─── AUDIO ───────────────────────────────────────────────────────────────────
 
 const A = {
   ambient: {
@@ -21,7 +23,7 @@ const A = {
     inhale:  '/audio/breath-inhale.mp3',
     hold:    '/audio/breath-hold.mp3',
     exhale:  '/audio/breath-exhale.mp3',
-    holdOut: '/audio/breath-hold.mp3',   // reutiliza hold para la pausa
+    holdOut: '/audio/breath-hold.mp3',
   },
   med: (n) => `/audio/med-${String(n).padStart(2, '0')}.mp3`,
 }
@@ -29,24 +31,24 @@ const A = {
 // ─── CONSTANTES ──────────────────────────────────────────────────────────────
 
 const MOODS = [
-  { v: 1, emoji: '😩', label: 'Muy mal', color: '#EF4444' },
-  { v: 2, emoji: '😞', label: 'Mal',     color: '#F97316' },
-  { v: 3, emoji: '😐', label: 'Regular', color: '#EAB308' },
-  { v: 4, emoji: '😊', label: 'Bien',    color: '#22C55E' },
-  { v: 5, emoji: '🤩', label: 'Genial',  color: '#2EC4B6' },
+  { v: 1, emoji: '😩', label: 'Hundido',  color: '#EF4444' },
+  { v: 2, emoji: '😞', label: 'Bajo',     color: '#F97316' },
+  { v: 3, emoji: '😐', label: 'Normal',   color: '#EAB308' },
+  { v: 4, emoji: '😊', label: 'Bien',     color: '#22C55E' },
+  { v: 5, emoji: '🤩', label: 'Genial',   color: '#2EC4B6' },
 ]
 
 const TECHNIQUES = {
-  '478':    { name: '4-7-8',  inhale: 4, hold: 7, exhale: 8, holdOut: 0, desc: 'Para ansiedad y estrés' },
-  'box':    { name: 'Box',    inhale: 4, hold: 4, exhale: 4, holdOut: 4, desc: 'Para equilibrio mental' },
-  'simple': { name: 'Simple', inhale: 4, hold: 0, exhale: 4, holdOut: 0, desc: 'Para principiantes'    },
+  '478':    { name: '4-7-8',  inhale: 4, hold: 7, exhale: 8, holdOut: 0, desc: 'Para ansiedad' },
+  'box':    { name: 'Box',    inhale: 4, hold: 4, exhale: 4, holdOut: 4, desc: 'Para equilibrio' },
+  'simple': { name: 'Simple', inhale: 4, hold: 0, exhale: 4, holdOut: 0, desc: 'Para empezar' },
 }
 
 const PHASES = {
-  inhale:  { label: 'Inhala', color: '#2EC4B6', scale: 1.4 },
-  hold:    { label: 'Mantén', color: '#A78BFA', scale: 1.4 },
-  exhale:  { label: 'Exhala', color: '#FF8FA3', scale: 1.0 },
-  holdOut: { label: 'Pausa',  color: '#FCD34D', scale: 1.0 },
+  inhale:  { label: 'Inhala', color: '#2EC4B6', scale: 1.4, breathFrame: 2 },
+  hold:    { label: 'Mantén', color: '#A78BFA', scale: 1.4, breathFrame: 3 },
+  exhale:  { label: 'Exhala', color: '#FF8FA3', scale: 1.0, breathFrame: 4 },
+  holdOut: { label: 'Pausa',  color: '#FCD34D', scale: 1.0, breathFrame: 1 },
 }
 
 const AMBIENT = [
@@ -57,22 +59,18 @@ const AMBIENT = [
   { id: 'space',  emoji: '🌌', label: 'Espacio' },
 ]
 
-const MOOD_REC = {
-  1: { tab: 'breathe',  tech: '478', msg: '🤍 La respiración 4-7-8 calma la ansiedad'         },
-  2: { tab: 'breathe',  tech: 'box', msg: '💙 La respiración en caja te ayudará a centrarte'  },
-  3: { tab: 'meditate', mins: 2,     msg: '🌿 2 minutos de meditación pueden cambiarlo todo'   },
-  4: { tab: 'meditate', mins: 5,     msg: '✨ Mantén esta energía con una meditación de 5 min' },
-  5: { tab: 'meditate', mins: 5,     msg: '🌟 ¡Estás brillando! Celebra con un momento de calma' },
-}
+const MED_SESSIONS = { 2: [1,2,3], 5: [4,5,6,7], 10: [8,9,10] }
+const pickSession = (m) => { const p = MED_SESSIONS[m] ?? [1]; return p[Math.floor(Math.random()*p.length)] }
 
 const TABS = [
-  { id: 'checkin',  icon: '😊', label: 'Ánimo'     },
-  { id: 'breathe',  icon: '🫁', label: 'Respirar'  },
-  { id: 'meditate', icon: '🧘', label: 'Meditar'   },
-  { id: 'history',  icon: '📊', label: 'Historial' },
+  { id: 'checkin',  icon: '🐼', label: 'Check-in'   },
+  { id: 'breathe',  icon: '🫁', label: 'Respirar'   },
+  { id: 'meditate', icon: '🧘', label: 'Meditar'    },
+  { id: 'habits',   icon: '✅', label: 'Hábitos'    },
+  { id: 'history',  icon: '📊', label: 'Mi historia'},
 ]
 
-// ─── HELPERS DE AUDIO ────────────────────────────────────────────────────────
+// ─── AUDIO HELPERS ────────────────────────────────────────────────────────────
 
 function fadeIn(audio, targetVol = 0.45, step = 0.03) {
   audio.volume = 0
@@ -87,33 +85,112 @@ function fadeOut(audio, onDone, step = 0.04) {
   const id = setInterval(() => {
     const v = Math.max(audio.volume - step, 0)
     audio.volume = v
-    if (v <= 0) {
-      clearInterval(id)
-      audio.pause()
-      onDone?.()
-    }
+    if (v <= 0) { clearInterval(id); audio.pause(); onDone?.() }
   }, 80)
 }
 
 function playAmbient(soundId, ref) {
   stopAmbient(ref)
   const audio = new Audio(A.ambient[soundId])
-  audio.loop = true
-  ref.current = audio
-  audio.play().catch(() => {})
-  fadeIn(audio)
+  audio.loop = true; ref.current = audio
+  audio.play().catch(() => {}); fadeIn(audio)
 }
 
 function stopAmbient(ref) {
   const audio = ref.current
   if (!audio) return
-  ref.current = null
-  fadeOut(audio)
+  ref.current = null; fadeOut(audio)
+}
+
+// ─── UTILIDAD: IMAGEN DEL PANDA ───────────────────────────────────────────────
+// Frame temporal: emoji | Frame definitivo: /panda/<name>.png
+// Para sustituir: poner el PNG en web/public/panda/<name>.png
+
+function PandaImg({ name, size = 48, fallback = '🐼', className = '', style = {} }) {
+  const [err, setErr] = useState(false)
+  if (err) {
+    return (
+      <span style={{ fontSize: size * 0.65, lineHeight: 1, display: 'flex',
+        alignItems: 'center', justifyContent: 'center', width: size, height: size, ...style }}
+        className={className}>
+        {fallback}
+      </span>
+    )
+  }
+  return (
+    <img src={`/panda/${name}.png`} alt="Pandi"
+      style={{ width: size, height: size, objectFit: 'contain', ...style }}
+      className={className}
+      onError={() => setErr(true)} />
+  )
+}
+
+// ─── SALUDO DE ENTRADA ────────────────────────────────────────────────────────
+
+function PandiGreeting({ profile, theme }) {
+  const hour = new Date().getHours()
+  const name = profile?.name?.split(' ')[0] || ''
+  const greetings = PANDI_GREETINGS(name, hour)
+  const msg = greetings[Math.floor((Date.now() / 60000) % greetings.length)]
+
+  return (
+    <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }}
+      className="flex items-center gap-3 mb-5 p-4 rounded-2xl"
+      style={{ background: theme.surface, border: `1px solid ${theme.border}` }}>
+      {/* Frame temporal: 🐼 animado | Definitivo: /panda/talk_1.png */}
+      <motion.div
+        animate={{ rotate: [0, 8, -8, 8, 0] }}
+        transition={{ duration: 1.5, repeat: Infinity, repeatDelay: 4 }}>
+        <PandaImg name="talk_1" size={52} fallback="🐼" />
+      </motion.div>
+      <div className="flex-1 min-w-0">
+        <p className="font-extrabold text-base" style={{ color: theme.text }}>Mi Bienestar</p>
+        <p className="text-xs mt-0.5 leading-relaxed" style={{ color: theme.textMuted }}>{msg}</p>
+      </div>
+    </motion.div>
+  )
+}
+
+// ─── RESPUESTA DE PANDI TRAS SELECCIONAR MOOD ─────────────────────────────────
+
+function PandiResponse({ mood, message, action, onAction, theme }) {
+  const moodData  = MOODS.find(m => m.v === mood)
+  const frameInfo = PANDI_MOOD_FRAME[mood] || { file: 'talk_1', fallback: '🐼' }
+
+  return (
+    <motion.div key={mood} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0 }} className="card"
+      style={{ borderLeft: `4px solid ${moodData?.color}` }}>
+
+      <div className="flex items-start gap-3 mb-3">
+        {/* Frame temporal: emoji | Definitivo: /panda/<frameInfo.file>.png */}
+        <motion.div
+          animate={{ scale: [1, 1.06, 1] }}
+          transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}>
+          <PandaImg name={frameInfo.file} size={48} fallback={frameInfo.fallback}
+            style={{ borderRadius: 12 }} />
+        </motion.div>
+        <div className="flex-1">
+          <p className="text-[10px] font-bold uppercase tracking-wide mb-1"
+            style={{ color: theme.primary }}>Pandi</p>
+          <p className="text-sm leading-relaxed" style={{ color: theme.text }}>{message}</p>
+        </div>
+      </div>
+
+      {action && (
+        <motion.button whileTap={{ scale: 0.96 }} onClick={() => onAction(action)}
+          className="w-full py-2.5 rounded-xl text-sm font-bold text-white"
+          style={{ background: `linear-gradient(135deg, ${moodData?.color}, #FF8FA3)` }}>
+          {action.label}
+        </motion.button>
+      )}
+    </motion.div>
+  )
 }
 
 // ─── TAB: CHECK-IN ────────────────────────────────────────────────────────────
 
-function CheckinTab({ theme, userId, addXP }) {
+function CheckinTab({ theme, userId, addXP, onTabChange }) {
   const [logs,  setLogs]  = useState([])
   const [mood,  setMood]  = useState(null)
   const [notes, setNotes] = useState('')
@@ -138,13 +215,35 @@ function CheckinTab({ theme, userId, addXP }) {
     await addXP(10); setSaved(true); load()
   }
 
-  const moodData = MOODS.find(m => m.v === mood)
-  const rec      = mood ? MOOD_REC[mood] : null
+  // Detectar 3 días consecutivos con mood bajo (≤2)
+  const consecutiveLow = (() => {
+    if (logs.length < 3) return false
+    return [0, 1, 2].every(i => {
+      const d = new Date(); d.setDate(d.getDate() - i)
+      const ds = d.toISOString().split('T')[0]
+      const l  = logs.find(x => x.date === ds)
+      return l && l.mood <= 2
+    })
+  })()
+
+  const message = consecutiveLow
+    ? PANDI_MOOD_MESSAGES.consecutive_low
+    : saved
+      ? PANDI_MOOD_MESSAGES.already_saved[mood] ?? ''
+      : PANDI_MOOD_MESSAGES.first[mood] ?? ''
+
+  const action = (!saved && mood) ? PANDI_ACTIONS[mood] : null
+
+  function handleAction(action) {
+    if (action.tab) onTabChange(action.tab)
+  }
 
   return (
     <div className="space-y-4">
       <div className="card">
-        <p className="font-bold text-center mb-5" style={{ color: theme.text }}>¿Cómo te sientes hoy?</p>
+        <p className="font-bold text-center mb-5" style={{ color: theme.text }}>
+          ¿Cómo llegamos hoy?
+        </p>
         <div className="flex justify-around mb-4">
           {MOODS.map(m => (
             <motion.button key={m.v} whileTap={{ scale: 0.85 }}
@@ -156,7 +255,8 @@ function CheckinTab({ theme, userId, addXP }) {
                 opacity:    mood && mood !== m.v ? 0.35 : 1,
               }}>
               <span className="text-3xl">{m.emoji}</span>
-              <span className="text-[10px] font-semibold" style={{ color: mood === m.v ? m.color : theme.textMuted }}>
+              <span className="text-[10px] font-semibold"
+                style={{ color: mood === m.v ? m.color : theme.textMuted }}>
                 {m.label}
               </span>
             </motion.button>
@@ -164,18 +264,36 @@ function CheckinTab({ theme, userId, addXP }) {
         </div>
         <input className="input mb-3" placeholder="¿Qué ha influido? (opcional)…"
           value={notes} onChange={e => setNotes(e.target.value)} />
-        <button onClick={save} disabled={!mood} className="btn-primary w-full disabled:opacity-40">
+        <button onClick={save} disabled={!mood || saved}
+          className="btn-primary w-full disabled:opacity-40">
           {saved ? '✅ Guardado hoy' : '💾 Guardar (+10 XP)'}
         </button>
       </div>
 
+      {/* Respuesta de Pandi */}
       <AnimatePresence>
-        {mood && rec && (
-          <motion.div key={mood} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-            className="card" style={{ borderLeft: `4px solid ${moodData?.color}` }}>
-            <p className="text-sm font-semibold" style={{ color: theme.text }}>{rec.msg}</p>
-            <p className="text-xs mt-1" style={{ color: theme.textMuted }}>
-              👆 Ve a la pestaña {rec.tab === 'breathe' ? 'Respirar' : 'Meditar'}
+        {mood && message && (
+          <PandiResponse
+            mood={mood}
+            message={message}
+            action={action}
+            onAction={handleAction}
+            theme={theme}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Alerta 3 días bajos */}
+      <AnimatePresence>
+        {consecutiveLow && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="card text-center py-4"
+            style={{ background: '#FEF3C7', border: '1px solid #FCD34D' }}>
+            <p className="text-sm font-semibold" style={{ color: '#92400E' }}>
+              Llevas varios días difíciles 🤍
+            </p>
+            <p className="text-xs mt-1" style={{ color: '#78350F' }}>
+              Si lo necesitas, hablar con alguien de confianza siempre ayuda.
             </p>
           </motion.div>
         )}
@@ -194,24 +312,21 @@ function BreathingTab({ theme }) {
   const [rounds,  setRounds]  = useState(0)
   const timerRef    = useRef(null)
   const intervalRef = useRef(null)
-  // Reutiliza los objetos Audio — no los recrea en cada fase
   const breathAudio = useRef({
-    inhale:  new Audio(A.breath.inhale),
-    hold:    new Audio(A.breath.hold),
-    exhale:  new Audio(A.breath.exhale),
+    inhale: new Audio(A.breath.inhale),
+    hold:   new Audio(A.breath.hold),
+    exhale: new Audio(A.breath.exhale),
   })
 
-  function playCue(phaseKey) {
-    const key   = phaseKey === 'holdOut' ? 'hold' : phaseKey
-    const audio = breathAudio.current[key]
-    if (!audio) return
-    audio.currentTime = 0
-    audio.volume = 0.8
-    audio.play().catch(() => {})
+  function playCue(k) {
+    const key = k === 'holdOut' ? 'hold' : k
+    const a   = breathAudio.current[key]
+    if (!a) return
+    a.currentTime = 0; a.volume = 0.8; a.play().catch(() => {})
   }
 
-  function buildSeq(techKey) {
-    const t = TECHNIQUES[techKey]
+  function buildSeq(tk) {
+    const t = TECHNIQUES[tk]
     return [
       { key: 'inhale',  dur: t.inhale },
       ...(t.hold    > 0 ? [{ key: 'hold',    dur: t.hold    }] : []),
@@ -221,51 +336,43 @@ function BreathingTab({ theme }) {
   }
 
   function stop() {
-    clearTimeout(timerRef.current)
-    clearInterval(intervalRef.current)
+    clearTimeout(timerRef.current); clearInterval(intervalRef.current)
     setRunning(false); setPhase('inhale'); setCount(0)
   }
 
-  function runPhase(seq, idx, roundCount) {
+  function runPhase(seq, idx, rc) {
     const p = seq[idx]
-    setPhase(p.key)
-    setCount(p.dur)
-    playCue(p.key)
-
+    setPhase(p.key); setCount(p.dur); playCue(p.key)
     let c = p.dur
     intervalRef.current = setInterval(() => {
       c--; setCount(c)
       if (c <= 0) {
         clearInterval(intervalRef.current)
-        const nextIdx   = (idx + 1) % seq.length
-        const nextRound = nextIdx === 0 ? roundCount + 1 : roundCount
-        if (nextIdx === 0) setRounds(nextRound)
-        timerRef.current = setTimeout(() => runPhase(seq, nextIdx, nextRound), 300)
+        const ni = (idx + 1) % seq.length
+        const nr = ni === 0 ? rc + 1 : rc
+        if (ni === 0) setRounds(nr)
+        timerRef.current = setTimeout(() => runPhase(seq, ni, nr), 300)
       }
     }, 1000)
   }
 
   function start() {
-    stop()
-    const seq = buildSeq(tech)
-    setRunning(true); setRounds(0)
-    runPhase(seq, 0, 0)
+    stop(); const seq = buildSeq(tech)
+    setRunning(true); setRounds(0); runPhase(seq, 0, 0)
   }
 
   useEffect(() => () => stop(), [])
 
   const t         = TECHNIQUES[tech]
   const phaseInfo = PHASES[phase]
-  const animDur   = phase === 'inhale' ? t.inhale
-                  : phase === 'exhale' ? t.exhale
-                  : phase === 'hold'   ? t.hold
-                  : t.holdOut
+  const animDur   = phase === 'inhale' ? t.inhale : phase === 'exhale' ? t.exhale
+                  : phase === 'hold'   ? t.hold   : t.holdOut
+  const breathFrame = phaseInfo.breathFrame || 1
 
   return (
     <div className="space-y-4">
-      {/* Técnica */}
       <div className="card">
-        <p className="text-sm font-bold mb-3" style={{ color: theme.text }}>Técnica de respiración</p>
+        <p className="text-sm font-bold mb-3" style={{ color: theme.text }}>Técnica</p>
         <div className="grid grid-cols-3 gap-2">
           {Object.entries(TECHNIQUES).map(([k, v]) => (
             <button key={k} onClick={() => { if (running) stop(); setTech(k) }}
@@ -275,13 +382,12 @@ function BreathingTab({ theme }) {
                 color:      tech === k ? '#fff' : theme.textMuted,
               }}>
               <p className="font-bold text-sm">{v.name}</p>
-              <p className="text-[10px] mt-0.5 leading-tight">{v.desc}</p>
+              <p className="text-[10px] mt-0.5">{v.desc}</p>
             </button>
           ))}
         </div>
       </div>
 
-      {/* Animación */}
       <div className="card flex flex-col items-center gap-5 py-7">
         <div className="relative flex items-center justify-center" style={{ width: 170, height: 170 }}>
           <motion.div
@@ -294,6 +400,7 @@ function BreathingTab({ theme }) {
             transition={{ duration: animDur, ease: 'easeInOut' }}
             style={{ position: 'absolute', width: 170, height: 170, borderRadius: '50%', background: phaseInfo.color }}
           />
+          {/* Panda: frame temporal emoji | definitivo: /panda/breath_1-4.png */}
           <motion.div
             animate={{ scale: running ? (phase === 'inhale' || phase === 'hold' ? 1.13 : 0.9) : 1 }}
             transition={{ duration: animDur, ease: 'easeInOut' }}
@@ -301,8 +408,20 @@ function BreathingTab({ theme }) {
               position: 'relative', zIndex: 2,
               width: 78, height: 78, borderRadius: '50%', background: '#fff',
               boxShadow: `0 4px 24px ${phaseInfo.color}40`,
-              display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 42,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>
+            <AnimatePresence mode="wait">
+              <motion.div key={breathFrame}
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                transition={{ duration: 0.4 }}>
+                <PandaImg
+                  name={`breath_${breathFrame}`}
+                  size={62}
+                  fallback="🐼"
+                  style={{ borderRadius: '50%' }}
+                />
+              </motion.div>
+            </AnimatePresence>
           </motion.div>
         </div>
 
@@ -352,23 +471,11 @@ function BreathingTab({ theme }) {
   )
 }
 
-// ─── TAB: MEDITACIÓN ─────────────────────────────────────────────────────────
+// ─── PANDA FRAME MEDITACIÓN ───────────────────────────────────────────────────
 
-// Sesiones agrupadas por duración estimada.
-// Ajusta los arrays si sabes qué duración tiene cada archivo.
-const MED_SESSIONS = {
-  2:  [1, 2, 3],
-  5:  [4, 5, 6, 7],
-  10: [8, 9, 10],
-}
-
-function pickSession(mins) {
-  const pool = MED_SESSIONS[mins] ?? [1]
-  return pool[Math.floor(Math.random() * pool.length)]
-}
 function PandaFrame({ running }) {
-  const [frame,        setFrame]        = useState(1)
-  const [imgError,     setImgError]     = useState(false)
+  const [frame,         setFrame]         = useState(1)
+  const [imgError,      setImgError]      = useState(false)
   const [transitioning, setTransitioning] = useState(false)
 
   useEffect(() => {
@@ -396,38 +503,27 @@ function PandaFrame({ running }) {
 
   return (
     <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-
-      {/* Aura violeta — se intensifica durante la transición */}
       <motion.div
         animate={
           transitioning
             ? { scale: 1.4, opacity: 0.85 }
-            : running
-              ? { scale: [1, 1.15, 1], opacity: [0.35, 0.55, 0.35] }
-              : { scale: 1, opacity: 0.2 }
+            : running && frame === 2
+              ? { scale: [1.1, 1.28, 1.1], opacity: [0.6, 0.78, 0.6] }
+              : running
+                ? { scale: [1, 1.15, 1], opacity: [0.35, 0.55, 0.35] }
+                : { scale: 1, opacity: 0.2 }
         }
-        transition={
-          transitioning
-            ? { duration: 1.2, ease: 'easeInOut' }
-            : { duration: 5, repeat: Infinity, ease: 'easeInOut' }
-        }
+        transition={transitioning ? { duration: 1.2 } : { duration: 5, repeat: Infinity, ease: 'easeInOut' }}
         style={{
-          position: 'absolute',
-          width: '85%', height: '85%',
-          borderRadius: '50%',
+          position: 'absolute', width: '85%', height: '85%', borderRadius: '50%',
           background: 'radial-gradient(circle, #e9d5ff 0%, #c084fc 35%, #a855f7 60%, transparent 80%)',
-          filter: transitioning ? 'blur(45px)' : 'blur(28px)',
-          zIndex: 0,
-          transition: 'filter 1.2s ease-in-out',
+          filter:     transitioning ? 'blur(45px)' : frame === 2 ? 'blur(38px)' : 'blur(28px)',
+          zIndex: 0, transition: 'filter 2s ease-in-out',
         }}
       />
-
-      {/* Panda */}
       <motion.div
         animate={running ? { scale: [1, 1.055, 1] } : { scale: 1 }}
-        transition={running
-          ? { duration: 5, repeat: Infinity, ease: 'easeInOut' }
-          : { duration: 0.4 }}
+        transition={running ? { duration: 5, repeat: Infinity, ease: 'easeInOut' } : { duration: 0.4 }}
         style={{ position: 'relative', zIndex: 1, width: '100%', maxWidth: 280, height: 280 }}>
         <AnimatePresence mode="wait">
           <motion.img
@@ -447,6 +543,8 @@ function PandaFrame({ running }) {
   )
 }
 
+// ─── TAB: MEDITACIÓN ─────────────────────────────────────────────────────────
+
 function MeditationTab({ theme }) {
   const [duration, setDuration] = useState(5)
   const [sound,    setSound]    = useState(null)
@@ -463,7 +561,6 @@ function MeditationTab({ theme }) {
   const mm       = String(Math.floor(left / 60)).padStart(2, '0')
   const ss       = String(left % 60).padStart(2, '0')
   const progress = total > 0 ? elapsed / total : 0
-  const circum   = 2 * Math.PI * 56
 
   function stopAll() {
     clearInterval(intervalRef.current)
@@ -474,23 +571,17 @@ function MeditationTab({ theme }) {
 
   function start() {
     stopAll()
-    // Sonido ambiental
     if (sound) playAmbient(sound, ambientRef)
-    // Audio de meditación guiada
     const session = pickSession(duration)
     const med = new Audio(A.med(session))
-    med.volume = 0.75
-    med.play().catch(() => {})
+    med.volume = 0.75; med.play().catch(() => {})
     medAudioRef.current = med
-
     setElapsed(0); setRunning(true); setDone(false)
-
     intervalRef.current = setInterval(() => {
       setElapsed(e => {
         if (e + 1 >= total) {
           clearInterval(intervalRef.current)
-          setRunning(false); setDone(true)
-          stopAll()
+          setRunning(false); setDone(true); stopAll()
           return total
         }
         return e + 1
@@ -503,20 +594,18 @@ function MeditationTab({ theme }) {
   }
 
   function toggleMute() {
-    const amb = ambientRef.current
-    const med = medAudioRef.current
+    const amb = ambientRef.current; const med = medAudioRef.current
     if (!amb && !med) return
-    const newMuted = !muted
-    if (amb) amb.volume = newMuted ? 0 : 0.45
-    if (med) med.volume = newMuted ? 0 : 0.75
-    setMuted(newMuted)
+    const nm = !muted
+    if (amb) amb.volume = nm ? 0 : 0.45
+    if (med) med.volume = nm ? 0 : 0.75
+    setMuted(nm)
   }
 
   useEffect(() => () => stopAll(), [])
 
   return (
     <div className="space-y-4">
-      {/* Duración */}
       <div className="card">
         <p className="text-sm font-bold mb-3" style={{ color: theme.text }}>Duración</p>
         <div className="grid grid-cols-3 gap-2">
@@ -533,7 +622,6 @@ function MeditationTab({ theme }) {
         </div>
       </div>
 
-      {/* Sonido ambiental */}
       <div className="card">
         <p className="text-sm font-bold mb-3" style={{ color: theme.text }}>Sonido ambiental</p>
         <div className="grid grid-cols-5 gap-2">
@@ -547,96 +635,67 @@ function MeditationTab({ theme }) {
               }}>
               <span className="text-xl">{a.emoji}</span>
               <span className="text-[9px] font-semibold"
-                style={{ color: sound === a.id ? '#2EC4B6' : theme.textMuted }}>
-                {a.label}
-              </span>
+                style={{ color: sound === a.id ? '#2EC4B6' : theme.textMuted }}>{a.label}</span>
             </button>
           ))}
         </div>
-        {!sound && (
-          <p className="text-[11px] mt-2 text-center" style={{ color: theme.textMuted }}>
-            Sin sonido ambiental
-          </p>
-        )}
+        {!sound && <p className="text-[11px] mt-2 text-center" style={{ color: theme.textMuted }}>Sin sonido ambiental</p>}
       </div>
 
-      {/* Timer */}
-<div className="card flex flex-col items-center gap-4 pb-6 pt-4 overflow-hidden">
+      {/* Timer card — sin duplicados */}
+      <div className="card flex flex-col items-center gap-4 pb-6 pt-4 overflow-hidden">
+        <div className="w-full flex items-center justify-center" style={{ minHeight: 300 }}>
+          {done
+            ? <motion.span initial={{ scale: 1 }} animate={{ scale: [1, 1.3, 1] }}
+                transition={{ duration: 0.6 }} style={{ fontSize: 100 }}>🎉</motion.span>
+            : <PandaFrame running={running} />
+          }
+        </div>
 
-  {/* Panda grande — ocupa todo el ancho */}
-  <div className="w-full flex items-center justify-center"
-    style={{ minHeight: 300 }}>
-    {done ? (
-      <motion.span initial={{ scale: 1 }} animate={{ scale: 2 }}
-        style={{ fontSize: 100 }}>🎉</motion.span>
-    ) : (
-      <PandaFrame running={running} />
-    )}
-  </div>
+        <div className="w-full px-2">
+          <div className="h-2 rounded-full overflow-hidden" style={{ background: theme.surface2 }}>
+            <motion.div className="h-full rounded-full"
+              style={{ background: 'linear-gradient(90deg,#2EC4B6,#FF8FA3)' }}
+              animate={{ width: `${progress * 100}%` }}
+              transition={{ duration: 1, ease: 'linear' }} />
+          </div>
+        </div>
 
-  {/* Barra de progreso */}
-  <div className="w-full px-2">
-    <div className="h-2 rounded-full overflow-hidden" style={{ background: theme.surface2 }}>
-      <motion.div className="h-full rounded-full"
-        style={{ background: 'linear-gradient(90deg,#2EC4B6,#FF8FA3)' }}
-        animate={{ width: `${progress * 100}%` }}
-        transition={{ duration: 2, ease: 'linear' }} />
-    </div>
-  </div>
+        <p className="font-black text-4xl tracking-tight" style={{ color: theme.text }}>
+          {done ? '¡Completado!' : `${mm}:${ss}`}
+        </p>
 
-  {/* Timer */}
-  <p className="font-black text-4xl tracking-tight" style={{ color: theme.text }}>
-    {done ? '¡Completado!' : `${mm}:${ss}`}
-  </p>
-
-  {/* Controles */}
-  <div className="flex gap-3 items-center">
-    {!running && !done && (
-      <motion.button whileTap={{ scale: 0.94 }} onClick={start}
-        className="flex items-center gap-2 px-8 py-3 rounded-2xl font-bold text-white"
-        style={{ background: 'linear-gradient(135deg,#2EC4B6,#FF8FA3)' }}>
-        <Play size={16} /> Iniciar
-      </motion.button>
-    )}
-    {running && (
-      <>
-        <motion.button whileTap={{ scale: 0.94 }} onClick={reset}
-          className="flex items-center gap-2 px-6 py-3 rounded-2xl font-bold"
-          style={{ background: theme.surface2, color: theme.text }}>
-          <RotateCcw size={15} /> Reiniciar
-        </motion.button>
-        <button onClick={toggleMute}
-          className="w-11 h-11 rounded-2xl flex items-center justify-center"
-          style={{ background: theme.surface2 }}>
-          {muted
-            ? <VolumeX size={18} color={theme.textMuted} />
-            : <Volume2 size={18} color="#2EC4B6" />}
-        </button>
-      </>
-    )}
-    {done && (
-      <motion.button initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
-        whileTap={{ scale: 0.94 }} onClick={reset}
-        className="flex items-center gap-2 px-6 py-3 rounded-2xl font-bold text-white"
-        style={{ background: 'linear-gradient(135deg,#2EC4B6,#FF8FA3)' }}>
-        <RotateCcw size={15} /> Nueva sesión
-      </motion.button>
-    )}
-  </div>
-
-  {running && (
-    <p className="text-[11px]" style={{ color: theme.textMuted }}>
-      {sound ? `${AMBIENT.find(a => a.id === sound)?.emoji} ${AMBIENT.find(a => a.id === sound)?.label} · ` : ''}
-      Sesión en curso
-    </p>
-  )}
-  {done && (
-    <motion.p initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
-      className="text-sm font-semibold" style={{ color: '#2EC4B6' }}>
-      ✨ ¡{duration} minutos completados!
-    </motion.p>
-  )}
-</div>
+        <div className="flex gap-3 items-center">
+          {!running && !done && (
+            <motion.button whileTap={{ scale: 0.94 }} onClick={start}
+              className="flex items-center gap-2 px-8 py-3 rounded-2xl font-bold text-white"
+              style={{ background: 'linear-gradient(135deg,#2EC4B6,#FF8FA3)' }}>
+              <Play size={16} /> Iniciar
+            </motion.button>
+          )}
+          {running && (
+            <>
+              <motion.button whileTap={{ scale: 0.94 }} onClick={reset}
+                className="flex items-center gap-2 px-6 py-3 rounded-2xl font-bold"
+                style={{ background: theme.surface2, color: theme.text }}>
+                <RotateCcw size={15} /> Reiniciar
+              </motion.button>
+              <button onClick={toggleMute}
+                className="w-11 h-11 rounded-2xl flex items-center justify-center"
+                style={{ background: theme.surface2 }}>
+                {muted ? <VolumeX size={18} color={theme.textMuted} /> : <Volume2 size={18} color="#2EC4B6" />}
+              </button>
+            </>
+          )}
+          {done && (
+            <motion.button initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
+              whileTap={{ scale: 0.94 }} onClick={reset}
+              className="flex items-center gap-2 px-6 py-3 rounded-2xl font-bold text-white"
+              style={{ background: 'linear-gradient(135deg,#2EC4B6,#FF8FA3)' }}>
+              <RotateCcw size={15} /> Nueva sesión
+            </motion.button>
+          )}
+        </div>
 
         {running && (
           <p className="text-[11px]" style={{ color: theme.textMuted }}>
@@ -646,15 +705,167 @@ function MeditationTab({ theme }) {
         )}
         {done && (
           <motion.p initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
-            className="text-sm font-semibold text-center" style={{ color: '#2EC4B6' }}>
+            className="text-sm font-semibold" style={{ color: '#2EC4B6' }}>
             ✨ ¡{duration} minutos completados!
           </motion.p>
         )}
-     </div>
+      </div>
+    </div>
   )
 }
 
-// ─── TAB: HISTORIAL ──────────────────────────────────────────────────────────
+// ─── TAB: HÁBITOS ─────────────────────────────────────────────────────────────
+// Almacena en localStorage — fácil migrar a Supabase en el Bloque 3
+
+function HabitsTab({ theme, userId }) {
+  const today        = new Date().toISOString().split('T')[0]
+  const storageKey   = `pandi_habits_${today}`
+  const configKey    = 'pandi_habit_config'
+
+  const [habits,  setHabits]  = useState(() => {
+    const saved = localStorage.getItem(configKey)
+    return saved ? JSON.parse(saved) : DEFAULT_HABITS.map(h => ({ ...h, enabled: true }))
+  })
+  const [checked, setChecked] = useState(() => {
+    const saved = localStorage.getItem(storageKey)
+    return saved ? JSON.parse(saved) : {}
+  })
+  const [celebrated, setCelebrated] = useState(false)
+
+  const active    = habits.filter(h => h.enabled)
+  const doneCount = active.filter(h => checked[h.id]).length
+  const allDone   = active.length > 0 && doneCount === active.length
+
+  function toggle(id) {
+    const next = { ...checked, [id]: !checked[id] }
+    setChecked(next)
+    localStorage.setItem(storageKey, JSON.stringify(next))
+    // Celebrar cuando completan todos
+    if (active.every(h => (h.id === id ? !checked[id] : checked[h.id]))) {
+      setCelebrated(true)
+      setTimeout(() => setCelebrated(false), 3000)
+    }
+  }
+
+  function toggleEnabled(id) {
+    const next = habits.map(h => h.id === id ? { ...h, enabled: !h.enabled } : h)
+    setHabits(next)
+    localStorage.setItem(configKey, JSON.stringify(next))
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* Header Pandi */}
+      <div className="card flex items-center gap-3"
+        style={{ background: `${theme.primary}10`, border: `1px solid ${theme.primary}20` }}>
+        {/* Frame temporal: 🐼 | Definitivo: /panda/encourage_1.png */}
+        <AnimatePresence mode="wait">
+          {allDone ? (
+            <motion.div key="celebrate" initial={{ scale: 0.5 }} animate={{ scale: 1 }}>
+              <PandaImg name="celebrate_1" size={48} fallback="🎉" />
+            </motion.div>
+          ) : (
+            <motion.div key="normal">
+              <PandaImg name="encourage_1" size={48} fallback="🐼" />
+            </motion.div>
+          )}
+        </AnimatePresence>
+        <div className="flex-1">
+          <p className="font-bold text-sm" style={{ color: theme.text }}>
+            {allDone ? '¡Todo listo hoy! 🎉' : `${doneCount} de ${active.length} hábitos`}
+          </p>
+          <p className="text-xs" style={{ color: theme.textMuted }}>
+            {allDone
+              ? 'Pandi está orgulloso de ti 🐾'
+              : 'Cada hábito cuenta. Uno a la vez.'}
+          </p>
+        </div>
+        {active.length > 0 && (
+          <div className="text-right">
+            <p className="font-extrabold text-xl" style={{ color: theme.primary }}>
+              {Math.round((doneCount / active.length) * 100)}%
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* Celebración */}
+      <AnimatePresence>
+        {celebrated && (
+          <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0 }} className="card text-center py-4"
+            style={{ background: 'linear-gradient(135deg,#f0fffe,#fff5f7)' }}>
+            <p className="text-2xl mb-1">🎊</p>
+            <p className="font-bold" style={{ color: theme.text }}>¡Todos los hábitos completados!</p>
+            <p className="text-xs mt-1" style={{ color: theme.textMuted }}>Pandi está muy orgulloso 🐼</p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Lista de hábitos */}
+      <div className="card space-y-2">
+        <p className="text-sm font-bold mb-2" style={{ color: theme.text }}>Hoy</p>
+        {habits.filter(h => h.enabled).map(h => (
+          <motion.button key={h.id} whileTap={{ scale: 0.97 }}
+            onClick={() => toggle(h.id)}
+            className="w-full flex items-center gap-3 p-3 rounded-2xl transition-all text-left"
+            style={{
+              background: checked[h.id] ? `${theme.primary}12` : theme.surface2,
+              border:     `2px solid ${checked[h.id] ? theme.primary + '60' : 'transparent'}`,
+            }}>
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 text-xl"
+              style={{ background: checked[h.id] ? `${theme.primary}20` : theme.surface }}>
+              {h.icon}
+            </div>
+            <p className="flex-1 text-sm font-semibold"
+              style={{
+                color:          checked[h.id] ? theme.primary : theme.text,
+                textDecoration: checked[h.id] ? 'line-through' : 'none',
+                opacity:        checked[h.id] ? 0.7 : 1,
+              }}>
+              {h.label}
+            </p>
+            <motion.div
+              animate={{ scale: checked[h.id] ? 1 : 0.6, opacity: checked[h.id] ? 1 : 0.3 }}
+              className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0"
+              style={{ background: checked[h.id] ? theme.primary : theme.surface2 }}>
+              <Check size={12} color={checked[h.id] ? '#fff' : theme.textMuted} />
+            </motion.div>
+          </motion.button>
+        ))}
+      </div>
+
+      {/* Configurar hábitos */}
+      <div className="card">
+        <p className="text-sm font-bold mb-3" style={{ color: theme.text }}>Configurar seguimiento</p>
+        <div className="space-y-2">
+          {habits.map(h => (
+            <div key={h.id} className="flex items-center justify-between py-1">
+              <div className="flex items-center gap-2">
+                <span className="text-lg">{h.icon}</span>
+                <p className="text-sm" style={{ color: theme.text }}>{h.label}</p>
+                <span className="text-[10px] px-1.5 py-0.5 rounded"
+                  style={{ background: theme.surface2, color: theme.textMuted }}>
+                  {h.time}
+                </span>
+              </div>
+              <button onClick={() => toggleEnabled(h.id)}
+                className="w-10 h-6 rounded-full relative transition-all"
+                style={{ background: h.enabled ? theme.primary : theme.surface2 }}>
+                <motion.div
+                  animate={{ x: h.enabled ? 16 : 2 }}
+                  transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                  className="absolute top-1 w-4 h-4 rounded-full bg-white shadow-sm" />
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── TAB: MI HISTORIA (antes Historial) ──────────────────────────────────────
 
 function HistoryTab({ theme, userId }) {
   const [logs, setLogs] = useState([])
@@ -666,11 +877,10 @@ function HistoryTab({ theme, userId }) {
       .then(({ data }) => setLogs(data || []))
   }, [userId])
 
-  const avg  = logs.length ? (logs.reduce((s, l) => s + l.mood, 0) / logs.length).toFixed(1) : null
-  const avgM = MOODS.find(m => m.v === Math.round(parseFloat(avg)))
+  const avg    = logs.length ? (logs.reduce((s, l) => s + l.mood, 0) / logs.length).toFixed(1) : null
+  const avgM   = MOODS.find(m => m.v === Math.round(parseFloat(avg)))
   const streak = (() => {
-    let s = 0
-    const today = new Date()
+    let s = 0; const today = new Date()
     for (let i = 0; i < 30; i++) {
       const d = new Date(today); d.setDate(d.getDate() - i)
       if (logs.find(l => l.date === d.toISOString().split('T')[0])) s++; else break
@@ -682,8 +892,8 @@ function HistoryTab({ theme, userId }) {
     <div className="space-y-4">
       <div className="grid grid-cols-3 gap-2">
         {[
-          { val: avg ?? '-', sub: 'Media 30d',  icon: avgM?.emoji || '😐' },
-          { val: logs.length, sub: 'Registros', icon: '📅' },
+          { val: avg ?? '-', sub: 'Media 30d',   icon: avgM?.emoji || '😐' },
+          { val: logs.length, sub: 'Registros',  icon: '📅' },
           { val: streak,      sub: 'Racha días', icon: '🔥' },
         ].map((s, i) => (
           <div key={i} className="card text-center py-4">
@@ -733,9 +943,7 @@ function HistoryTab({ theme, userId }) {
             return (
               <div key={l.id} className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-xl flex items-center justify-center text-xl flex-shrink-0"
-                  style={{ background: `${m?.color}18` }}>
-                  {m?.emoji}
-                </div>
+                  style={{ background: `${m?.color}18` }}>{m?.emoji}</div>
                 <div className="flex-1 min-w-0">
                   <p className="text-xs font-semibold" style={{ color: theme.text }}>{m?.label}</p>
                   {l.notes && <p className="text-[10px] truncate" style={{ color: theme.textMuted }}>{l.notes}</p>}
@@ -755,24 +963,25 @@ function HistoryTab({ theme, userId }) {
 // ─── PÁGINA PRINCIPAL ─────────────────────────────────────────────────────────
 
 export default function Mood() {
-  const { user, addXP } = useStore()
-  const { theme }       = useTheme()
+  const { user, addXP, profile } = useStore()
+  const { theme }                = useTheme()
   const [activeTab, setActiveTab] = useState('checkin')
 
   return (
     <div className="page">
-      <h1 className="text-2xl font-extrabold mb-4" style={{ color: theme.text }}>
-        Estado emocional 💛
-      </h1>
+      {/* Saludo de Pandi — reemplaza el título estático */}
+      <PandiGreeting profile={profile} theme={theme} />
 
-      <div className="flex gap-1 mb-5 p-1 rounded-2xl" style={{ background: theme.surface2 }}>
+      {/* Tabs */}
+      <div className="flex gap-1 mb-5 p-1 rounded-2xl overflow-x-auto" style={{ background: theme.surface2 }}>
         {TABS.map(t => (
           <button key={t.id} onClick={() => setActiveTab(t.id)}
-            className="flex-1 flex flex-col items-center gap-0.5 py-2 rounded-xl transition-all"
+            className="flex-1 flex-shrink-0 flex flex-col items-center gap-0.5 py-2 rounded-xl transition-all"
             style={{
               background: activeTab === t.id ? theme.surface : 'transparent',
               color:      activeTab === t.id ? theme.primary : theme.textMuted,
               boxShadow:  activeTab === t.id ? '0 1px 8px rgba(0,0,0,0.08)' : 'none',
+              minWidth: 52,
             }}>
             <span className="text-base">{t.icon}</span>
             <span className="text-[9px] font-bold">{t.label}</span>
@@ -784,9 +993,10 @@ export default function Mood() {
         <motion.div key={activeTab}
           initial={{ opacity: 0, x: 14 }} animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: -14 }} transition={{ duration: 0.16 }}>
-          {activeTab === 'checkin'  && <CheckinTab  theme={theme} userId={user?.id} addXP={addXP} />}
+          {activeTab === 'checkin'  && <CheckinTab  theme={theme} userId={user?.id} addXP={addXP} onTabChange={setActiveTab} />}
           {activeTab === 'breathe'  && <BreathingTab theme={theme} />}
           {activeTab === 'meditate' && <MeditationTab theme={theme} />}
+          {activeTab === 'habits'   && <HabitsTab   theme={theme} userId={user?.id} />}
           {activeTab === 'history'  && <HistoryTab  theme={theme} userId={user?.id} />}
         </motion.div>
       </AnimatePresence>

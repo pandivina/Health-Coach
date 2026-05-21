@@ -8,6 +8,7 @@ import { useTour } from '../hooks/useTour'
 import TourHelpButton from '../components/tour/TourHelpButton'
 import { MessageCircle, Moon, Droplets, ChefHat, Smile, TrendingUp, TrendingDown, Minus, Scale, Plus, Minus as MinusIcon } from 'lucide-react'
 import WeeklySummary from '../components/WeeklySummary'
+import PandiInsights from '../components/PandiInsights'
 
 const QUICK_LINKS = [
   { to: '/hydration', icon: Droplets, label: 'Agua'    },
@@ -403,7 +404,8 @@ export default function Home() {
           <span className="ml-auto" style={{ color: theme.textMuted }}>›</span>
         </motion.div>
       </Link>
-
+<PandiInsights />
+      
       {/* Coach */}
       <Link to="/coach" data-tour="home-coach">
         <motion.div whileTap={{ scale: 0.98 }} className="card flex items-center gap-4">

@@ -1,3 +1,4 @@
+import CycleTab from '../components/mood/CycleTab'
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Play, Pause, RotateCcw, Volume2, VolumeX, Check } from 'lucide-react'
@@ -68,6 +69,8 @@ const TABS = [
   { id: 'meditate', icon: '🧘', label: 'Meditar'    },
   { id: 'habits',   icon: '✅', label: 'Hábitos'    },
   { id: 'history',  icon: '📊', label: 'Mi historia'},
+  { id: 'cycle',    icon: '🩸', label: 'Ciclo' },
+  {activeTab === 'cycle' && profile?.sex === 'female' && <CycleTab theme={theme} />}
 ]
 
 // ─── AUDIO HELPERS ────────────────────────────────────────────────────────────

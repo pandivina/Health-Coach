@@ -462,38 +462,26 @@ Promise.all([
       {/* Widget agua */}
       <WaterWidget userId={user?.id} theme={theme} />
 
-      {/* Calorías resumen compacto */}
-      {cals > 0 && (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-          className="card mb-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="flex flex-col items-center">
-              <span className="text-[10px] font-medium" style={{ color: theme.textMuted }}>Consumidas</span>
-              <span className="font-extrabold text-lg" style={{ color: theme.warning }}>
-                {Math.round(cals)}
-              </span>
-            </div>
-            <span style={{ color: theme.textLight }}>−</span>
-            <div className="flex flex-col items-center">
-              <span className="text-[10px] font-medium" style={{ color: theme.textMuted }}>Quemadas</span>
-              <span className="font-extrabold text-lg" style={{ color: theme.success }}>
-                {Math.round(burned)}
-              </span>
-            </div>
-            <span style={{ color: theme.textLight }}>=</span>
-            <div className="flex flex-col items-center">
-              <span className="text-[10px] font-medium" style={{ color: theme.textMuted }}>Balance</span>
-              <span className="font-extrabold text-lg"
-                style={{ color: cals - burned > goals.calories ? theme.error : theme.primary }}>
-                {Math.round(cals - burned)}
-              </span>
-            </div>
-          </div>
-          <Link to="/nutrition">
-            <ChevronRight size={18} style={{ color: theme.textLight }} />
-          </Link>
-        </motion.div>
-      )}
+     {/* Rings */}
+<motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }}
+  className="card mb-4" data-tour="home-progress">
+  <p className="text-xs mb-3 font-medium uppercase tracking-wider" style={{ color: theme.textMuted }}>
+    Progreso de hoy
+  </p>
+  <div className="flex justify-around">
+    <RingProgress value={cals}    max={goals.calories}  color={theme.warning} label="Calorías" />
+    <RingProgress value={protein} max={goals.protein_g} color={theme.primary} label="Proteína" />
+    <RingProgress value={burned}  max={400}             color={theme.success} label="Quemadas" />
+  </div>
+  <div className="mt-3 pt-3 flex justify-center" style={{ borderTop: `1px solid ${theme.border}` }}>
+    <span className="text-xs" style={{ color: theme.textMuted }}>
+      Balance:{' '}
+      <span style={{ color: cals - burned > goals.calories ? theme.error : theme.success }}>
+        {Math.round(cals - burned)} kcal
+      </span>
+    </span>
+  </div>
+</motion.div>
 
       {/* Pandi Insights */}
       <PandiInsights />

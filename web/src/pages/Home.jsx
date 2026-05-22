@@ -424,24 +424,46 @@ Promise.all([
       {profile?.level || 1}
     </span>
   </div>
-  <div className="flex flex-col items-center px-3 py-1.5 rounded-2xl"
+  <div className="flex items-center gap-1.5">
+  <div className="flex flex-col items-center px-2.5 py-1.5 rounded-2xl"
     style={{ background: theme.surface2 }}>
-    <span className="text-[10px]" style={{ color: theme.textMuted }}>Racha</span>
+    <span className="text-[9px]" style={{ color: theme.textMuted }}>Nivel</span>
+    <span className="font-extrabold text-sm" style={{ color: theme.primary }}>
+      {profile?.level || 1}
+    </span>
+  </div>
+  <div className="flex flex-col items-center px-2.5 py-1.5 rounded-2xl"
+    style={{ background: theme.surface2 }}>
+    <span className="text-[9px]" style={{ color: theme.textMuted }}>Racha</span>
     <span className="font-extrabold text-sm" style={{ color: '#F97316' }}>
       🔥{profile?.streak || 0}
       {profile?.streak_shields > 0 && (
-        <span style={{ fontSize: 10, color: theme.textMuted }}> 🛡️</span>
+        <span style={{ fontSize: 9, color: theme.textMuted }}> 🛡️</span>
       )}
     </span>
   </div>
-  <Link to="/profile">
-    <div className="flex flex-col items-center px-3 py-1.5 rounded-2xl"
+  <Link to="/health">
+    <div className="flex flex-col items-center px-2.5 py-1.5 rounded-2xl"
       style={{ background: theme.surface2 }}>
-      <span className="text-[10px]" style={{ color: theme.textMuted }}>Más</span>
+      <span className="text-[9px]" style={{ color: theme.textMuted }}>Salud</span>
+      <span className="font-extrabold text-sm" style={{ color: '#EC4899' }}>📊</span>
+    </div>
+  </Link>
+  <Link to="/premium">
+    <div className="flex flex-col items-center px-2.5 py-1.5 rounded-2xl"
+      style={{ background: theme.surface2 }}>
+      <span className="text-[9px]" style={{ color: theme.textMuted }}>Premium</span>
+      <span className="font-extrabold text-sm">⭐</span>
+    </div>
+  </Link>
+  <Link to="/profile">
+    <div className="flex flex-col items-center px-2.5 py-1.5 rounded-2xl"
+      style={{ background: theme.surface2 }}>
+      <span className="text-[9px]" style={{ color: theme.textMuted }}>Perfil</span>
       <span className="font-extrabold text-sm" style={{ color: theme.textMuted }}>☰</span>
     </div>
   </Link>
-        </div>
+</div>
         </div>
 
         {/* Barra XP */}

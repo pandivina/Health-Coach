@@ -52,7 +52,7 @@ export default function UpdateBanner() {
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: 100, opacity: 0 }}
           transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-          className="fixed bottom-20 left-0 right-0 z-50 px-4 max-w-lg mx-auto">
+          className="fixed top-4 left-0 right-0 z-50 px-4 max-w-lg mx-auto"
           <div className="rounded-2xl p-4 flex items-center gap-3 shadow-xl"
             style={{ background: theme.text, border: '1px solid rgba(255,255,255,0.1)' }}>
             <span className="text-2xl flex-shrink-0">🐼</span>

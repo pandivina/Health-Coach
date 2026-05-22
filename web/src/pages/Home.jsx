@@ -202,8 +202,8 @@ function WaterWidget({ userId, theme }) {
   useEffect(() => {
     if (!userId) return
     supabase.from('hydration_logs').select('glasses,goal')
-      .eq('user_id', userId).eq('date', today).single()
-      .then(({ data }) => {
+  .eq('user_id', userId).eq('date', today).maybeSingle()
+  .then(({ data }) => {
         if (data) { setGlasses(data.glasses || 0); setGoal(data.goal || 8) }
       })
   }, [userId])

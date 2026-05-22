@@ -53,14 +53,113 @@ function ModuleCard({ to, icon, label, value, sublabel, color, done, theme }) {
   )
 }
 
-// ─── PANDI GREETING ───────────────────────────────────────────────────────────
+// ─── RUTINA MATUTINA ──────────────────────────────────────────────────────────
 
+const MORNING_STEPS = [
+  { emoji: '💧', text: 'Bebe un vaso de agua al levantarte' },
+  { emoji: '🌤️', text: 'Abre las persianas — la luz regula tu ritmo circadiano' },
+  { emoji: '🧘', text: '5 respiraciones profundas antes de mirar el móvil' },
+  { emoji: '🍳', text: 'Desayuno con proteína — empieza el día con energía' },
+]
+function MorningCard({ petEmoji, petName, theme }) {
+  const { addXP } = useStore()
+  const [dismissed, setDismissed] = useState(false)
+  const todayKey = `pandi_morning_${new Date().toISOString().split('T')[0]}`
+  const [checked, setChecked] = useState(() => {
+    const saved = localStorage.getItem(todayKey)
+    return saved ? JSON.parse(saved) : {}
+  })
+
+  if (dismissed) return null
+
+  async function toggle(i) {
+    if (checked[i]) return // no desmarcar
+    const next = { ...checked, [i]: true }
+    setChecked(next)
+    localStorage.setItem(todayKey, JSON.stringify(next))
+    await addXP(5)
+  }
+
+  const doneCount = Object.keys(checked).length
+
+  return (
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -8 }}
+        className="card mb-4"
+        style={{ background: 'linear-gradient(135deg,#f0fffe,#fff5f7)', border:'1px solid rgba(46,196,182,0.2)' }}>
+
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <motion.span
+              animate={{ rotate: [0,10,-10,10,0] }}
+              transition={{ duration:1.5, repeat:Infinity, repeatDelay:3 }}
+              style={{ fontSize: 26 }}>
+              {petEmoji}
+            </motion.span>
+            <div>
+              <p className="font-extrabold text-sm" style={{ color:'#1F2937' }}>
+                ¡Buenos días! 🌅
+              </p>
+              <p className="text-xs" style={{ color:'#6B7280' }}>
+                {doneCount}/{MORNING_STEPS.length} · +{doneCount * 5} XP ganados
+              </p>
+            </div>
+          </div>
+          <button onClick={() => setDismissed(true)}
+            className="text-xs px-2 py-1 rounded-lg"
+            style={{ color:'#9CA3AF', background:'rgba(0,0,0,0.04)' }}>
+            ✕
+          </button>
+        </div>
+
+        <div className="space-y-2">
+          {MORNING_STEPS.map((s, i) => (
+            <motion.button key={i} onClick={() => toggle(i)}
+              whileTap={!checked[i] ? { scale: 0.97 } : {}}
+              className="w-full flex items-center gap-3 px-2 py-2 rounded-xl text-left transition-all"
+              style={{ background: checked[i] ? 'rgba(46,196,182,0.1)' : 'rgba(255,255,255,0.7)' }}>
+              <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0"
+                style={{
+                  background: checked[i] ? '#2EC4B6' : 'rgba(0,0,0,0.06)',
+                  border: checked[i] ? 'none' : '1.5px solid rgba(0,0,0,0.12)',
+                }}>
+                {checked[i] && <span style={{ fontSize: 10, color:'#fff' }}>✓</span>}
+              </div>
+              <span style={{ fontSize: 16, flexShrink: 0 }}>{s.emoji}</span>
+              <p className="text-xs font-medium flex-1"
+                style={{
+                  color: checked[i] ? '#2EC4B6' : '#374151',
+                  textDecoration: checked[i] ? 'line-through' : 'none',
+                  opacity: checked[i] ? 0.7 : 1,
+                }}>
+                {s.text}
+              </p>
+              {!checked[i] && (
+                <span className="text-[10px] font-bold flex-shrink-0" style={{ color:'#9CA3AF' }}>
+                  +5 XP
+                </span>
+              )}
+            </motion.button>
+          ))}
+        </div>
+
+        {doneCount === MORNING_STEPS.length && (
+          <motion.p initial={{ opacity:0 }} animate={{ opacity:1 }}
+            className="text-xs text-center mt-3 font-semibold" style={{ color:'#2EC4B6' }}>
+            🎉 ¡Rutina matutina completada! +{doneCount * 5} XP
+          </motion.p>
+        )}
+      </motion.div>
+    </AnimatePresence>
+  )
+}
 function PandiGreeting({ profile, theme }) {
   const hour    = new Date().getHours()
   const name    = profile?.name?.split(' ')[0] || ''
   const petName = profile?.pet_name || 'Pandi'
   const petEmoji = PET_EMOJI[profile?.pet_type] || '🐼'
-
   const messages = [
     hour < 12
       ? `¡Buenos días, ${name}! 🌅 ¿Cómo llegamos hoy?`

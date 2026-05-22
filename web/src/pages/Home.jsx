@@ -389,7 +389,7 @@ Promise.all([
               {hour < 12 ? '¡Buenos días' : hour < 20 ? '¡Buenas tardes' : '¡Buenas noches'},
             </p>
             <h1 className="text-2xl font-extrabold" style={{ color: theme.text }}>
-              {profile?.name?.split(' ')[0] || 'Campeón'} 👋
+              {profile?.name?.split(' ')[0] || 'Compi'} 👋
             </h1>
           </div>
 

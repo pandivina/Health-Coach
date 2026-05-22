@@ -169,6 +169,9 @@ function PandiGreeting({ profile, theme }) {
   ]
 
   return (
+   return (
+    return (
+    <Link to="/pet">
     <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }}
       className="flex items-center gap-3 p-4 rounded-2xl mb-4"
       style={{ background: theme.surface, border: `1px solid ${theme.border}` }}>
@@ -185,9 +188,9 @@ function PandiGreeting({ profile, theme }) {
         </p>
       </div>
       <Link to="/pet">
-        <ChevronRight size={16} style={{ color: theme.textLight }} />
-      </Link>
+       <ChevronRight size={16} style={{ color: theme.textLight }} />
     </motion.div>
+  </Link>
   )
 }
 

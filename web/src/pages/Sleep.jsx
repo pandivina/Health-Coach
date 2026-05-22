@@ -30,11 +30,8 @@ export default function Sleep() {
   if (error) { console.error('Sleep save error:', error); return }
   await addXP(15)
   setSaved(true); load()
-}
-    await addXP(15)
-    setSaved(true); load()
   }
-
+} 
   const avgHours = logs.length ? (logs.reduce((s, l) => s + l.hours, 0) / logs.length).toFixed(1) : '–'
 
   return (

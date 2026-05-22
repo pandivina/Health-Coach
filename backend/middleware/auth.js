@@ -1,5 +1,4 @@
 const { createClient } = require('@supabase/supabase-js');
-
 const supabaseAdmin = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -11,14 +10,11 @@ async function requireAuth(req, res, next) {
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return res.status(401).json({ error: 'No token provided' });
     }
-
     const token = authHeader.replace('Bearer ', '');
     const { data: { user }, error } = await supabaseAdmin.auth.getUser(token);
-
     if (error || !user) {
       return res.status(401).json({ error: 'Invalid or expired token' });
     }
-
     req.user = user;
     req.supabase = supabaseAdmin;
     next();
@@ -27,4 +23,19 @@ async function requireAuth(req, res, next) {
   }
 }
 
-module.exports = { requireAuth, supabaseAdmin };
+async function requirePremium(req, res, next) {
+  try {
+    const { data } = await supabaseAdmin
+      .from('user_profiles')
+      .select('is_premium')
+      .eq('id', req.user.id)
+      .single()
+    if (data?.is_premium) return next()
+    return res.status(403).json({
+      error: 'premium_required',
+      message: 'Esta función requiere Premium.',
+    })
+  } catch { return next() }
+}
+
+module.exports = { requireAuth, requirePremium, supabaseAdmin };

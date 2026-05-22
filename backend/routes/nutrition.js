@@ -46,7 +46,7 @@ Si no puedes identificar comida, devuelve: {"food_name":"No identificado","calor
 })
 
 // POST /api/nutrition/barcode  (mantenido por compatibilidad)
-router.post('/barcode', requireAuth, async (req, res) => {
+router.post('/analyze-photo', requireAuth, requirePremium, async (req, res) => {
   try {
     const { barcode } = req.body
     if (!barcode) return res.status(400).json({ error: 'No barcode provided' })

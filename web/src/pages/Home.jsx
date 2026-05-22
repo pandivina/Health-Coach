@@ -299,8 +299,8 @@ function RingProgress({ value, max, color, size = 80, label }) {
             transition={{ duration: 0.8 }} strokeLinecap="round" />
         </svg>
         <div className="absolute inset-0 flex items-center justify-center">
-          <span className="text-xs font-bold" style={{ color: theme.text }}>{Math.round(value)}</span>
-        </div>
+  <span className="text-xs font-bold" style={{ color: color }}>{Math.round(value)}</span>
+</div>
       </div>
       <p className="text-[11px]" style={{ color: theme.textMuted }}>{label}</p>
       <p className="text-[10px]" style={{ color: theme.textLight }}>/ {max}</p>

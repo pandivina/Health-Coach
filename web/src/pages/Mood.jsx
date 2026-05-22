@@ -973,8 +973,9 @@ function HistoryTab({ theme, userId }) {
         </div>
       </div>
     </div>
-  )
-}
+    )
+  }
+}  
 
 // ─── PÁGINA PRINCIPAL ─────────────────────────────────────────────────────────
 

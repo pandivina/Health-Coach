@@ -31,7 +31,6 @@ export default function Sleep() {
   await addXP(15)
   setSaved(true); load()
   }
-} 
   const avgHours = logs.length ? (logs.reduce((s, l) => s + l.hours, 0) / logs.length).toFixed(1) : '–'
 
   return (

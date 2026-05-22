@@ -515,8 +515,8 @@ Promise.all([
       {todayMood ? ['😩','😞','😐','😊','🤩'][todayMood.mood - 1] : '🐼'}
     </motion.span>
     <div className="flex-1">
-      <p className="font-extrabold text-sm" style={{ color: '#1F2937' }}>Mi Bienestar</p>
-      <p className="text-xs" style={{ color: '#6B7280' }}>
+      <p className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>{label}</p>
+      <p className="text-[10px]" style={{ color: 'var(--color-text-light)' }}>/ {max}</p>
         {todayMood
           ? `Hoy te sientes ${['muy mal','mal','regular','bien','genial'][todayMood.mood - 1]} · Respiración, meditación y más`
           : 'Check-in de ánimo · Respiración · Meditación'}

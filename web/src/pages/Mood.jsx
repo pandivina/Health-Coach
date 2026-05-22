@@ -70,7 +70,6 @@ const TABS = [
   { id: 'habits',   icon: '✅', label: 'Hábitos'    },
   { id: 'history',  icon: '📊', label: 'Mi historia'},
   { id: 'cycle',    icon: '🩸', label: 'Ciclo' },
-  {activeTab === 'cycle' && profile?.sex === 'female' && <CycleTab theme={theme} />}
 ]
 
 // ─── AUDIO HELPERS ────────────────────────────────────────────────────────────
@@ -1006,6 +1005,7 @@ export default function Mood() {
           {activeTab === 'meditate' && <MeditationTab theme={theme} />}
           {activeTab === 'habits'   && <HabitsTab   theme={theme} userId={user?.id} />}
           {activeTab === 'history'  && <HistoryTab  theme={theme} userId={user?.id} />}
+          {activeTab === 'cycle' && profile?.sex === 'female' && <CycleTab theme={theme} />}
         </motion.div>
       </AnimatePresence>
     </div>

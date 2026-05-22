@@ -399,26 +399,6 @@ Promise.all([
       {/* Pandi Insights */}
       <PandiInsights />
 
-      {/* Coach CTA */}
-      <Link to="/coach" data-tour="home-coach">
-        <motion.div whileTap={{ scale: 0.98 }} className="card flex items-center gap-4 mb-3"
-          style={{ background: `${theme.primary}10`, border: `1px solid ${theme.primary}20` }}>
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center"
-            style={{ background: `${theme.primary}20` }}>
-            <MessageCircle size={20} style={{ color: theme.primary }} />
-          </div>
-          <div className="flex-1">
-            <p className="font-semibold text-sm" style={{ color: theme.text }}>
-              Habla con tu Coach IA
-            </p>
-            <p className="text-xs" style={{ color: theme.textMuted }}>
-              Contextualizado con tu perfil clínico
-            </p>
-          </div>
-          <ChevronRight size={16} style={{ color: theme.textMuted }} />
-        </motion.div>
-      </Link>
-
       <TourHelpButton tourKey="home" />
     </div>
   )

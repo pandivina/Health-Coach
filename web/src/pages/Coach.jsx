@@ -27,20 +27,29 @@ export default function Coach() {
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [messages, loading])
 
   async function send(text) {
-    const content = text || input.trim()
-    if (!content || loading) return
-    setInput('')
-    const newMessages = [...messages, { role: 'user', content }]
-    setMessages(newMessages)
-    setLoading(true)
-    try {
-      const { reply } = await api.coach.chat(newMessages.slice(-10))
-      setMessages(m => [...m, { role: 'assistant', content: reply }])
-useStore.getState().addBondXP?.(5)
-    } catch {
+  const content = text || input.trim()
+  if (!content || loading) return
+  setInput('')
+  const newMessages = [...messages, { role: 'user', content }]
+  setMessages(newMessages)
+  setLoading(true)
+  try {
+    const { reply } = await api.coach.chat(newMessages.slice(-10))
+    setMessages(m => [...m, { role: 'assistant', content: reply }])
+    useStore.getState().addBondXP?.(5)
+  } catch (err) {
+    const isLimit = err.message?.includes('limit_reached') || err.message?.includes('límite')
+    if (isLimit) {
+      setMessages(m => [...m, {
+        role: 'assistant',
+        content: `⚠️ Has alcanzado el límite de 10 mensajes diarios del plan gratuito.\n\n✨ Actualiza a **Premium** para conversaciones ilimitadas con contexto clínico completo.`,
+      }])
+      setShowUpgrade(true)
+    } else {
       setMessages(m => [...m, { role: 'assistant', content: '❌ Error al conectar. Verifica tu conexión.' }])
-    } finally { setLoading(false) }
-  }
+    }
+  } finally { setLoading(false) }
+}
   return (
     <div className="flex flex-col h-screen max-w-lg mx-auto" style={{ background: theme.bg }}>
       <MedicalDisclaimerModal />

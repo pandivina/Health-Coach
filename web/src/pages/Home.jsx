@@ -302,8 +302,8 @@ function RingProgress({ value, max, color, size = 80, label }) {
   <span className="text-xs font-bold" style={{ color: color }}>{Math.round(value)}</span>
 </div>
       </div>
-      <p className="text-[11px]" style={{ color: theme.textMuted }}>{label}</p>
-      <p className="text-[10px]" style={{ color: theme.textLight }}>/ {max}</p>
+      <p className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>{label}</p>
+      <p className="text-[10px]" style={{ color: 'var(--color-text-light)' }}>/ {max}</p>
     </div>
   )
 }

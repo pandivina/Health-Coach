@@ -169,25 +169,25 @@ function PandiGreeting({ profile, theme }) {
   ]
   
     return (
+  <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }}
+    className="flex items-center gap-3 p-4 rounded-2xl mb-4"
+    style={{ background: theme.surface, border: `1px solid ${theme.border}` }}>
+    <motion.span
+      animate={{ rotate: [0, 10, -10, 10, 0] }}
+      transition={{ duration: 1.5, repeat: Infinity, repeatDelay: 4 }}
+      style={{ fontSize: 36, flexShrink: 0 }}>
+      {petEmoji}
+    </motion.span>
+    <div className="flex-1 min-w-0">
+      <p className="font-extrabold text-sm" style={{ color: theme.text }}>{petName}</p>
+      <p className="text-xs leading-relaxed mt-0.5" style={{ color: theme.textMuted }}>
+        {messages[0]}
+      </p>
+    </div>
     <Link to="/pet">
-      <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }}
-        className="flex items-center gap-3 p-4 rounded-2xl mb-4"
-        style={{ background: theme.surface, border: `1px solid ${theme.border}` }}>
-        <motion.span
-          animate={{ rotate: [0, 10, -10, 10, 0] }}
-          transition={{ duration: 1.5, repeat: Infinity, repeatDelay: 4 }}
-          style={{ fontSize: 36, flexShrink: 0 }}>
-          {petEmoji}
-        </motion.span>
-        <div className="flex-1 min-w-0">
-          <p className="font-extrabold text-sm" style={{ color: theme.text }}>{petName}</p>
-          <p className="text-xs leading-relaxed mt-0.5" style={{ color: theme.textMuted }}>
-            {messages[0]}
-          </p>
-        </div>
-        <ChevronRight size={16} style={{ color: theme.textLight }} />
-      </motion.div>
+      <ChevronRight size={16} style={{ color: theme.textLight }} />
     </Link>
+  </motion.div>
   )
 }
 

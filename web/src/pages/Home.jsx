@@ -504,7 +504,7 @@ Promise.all([
     </span>
   </div>
 </motion.div>
-      {/* Banner Mi Bienestar */}
+  {/* Banner Mi Bienestar */}
 <Link to="/mood">
   <motion.div whileTap={{ scale: 0.98 }} className="card mb-4 flex items-center gap-3"
     style={{ background: 'linear-gradient(135deg,#f0fffe,#fff5f7)', border: '1px solid rgba(46,196,182,0.2)' }}>
@@ -515,8 +515,8 @@ Promise.all([
       {todayMood ? ['😩','😞','😐','😊','🤩'][todayMood.mood - 1] : '🐼'}
     </motion.span>
     <div className="flex-1">
-      <p className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>{label}</p>
-      <p className="text-[10px]" style={{ color: 'var(--color-text-light)' }}>/ {max}</p>
+      <p className="font-extrabold text-sm" style={{ color: '#1F2937' }}>Mi Bienestar</p>
+      <p className="text-xs" style={{ color: '#6B7280' }}>
         {todayMood
           ? `Hoy te sientes ${['muy mal','mal','regular','bien','genial'][todayMood.mood - 1]} · Respiración, meditación y más`
           : 'Check-in de ánimo · Respiración · Meditación'}

@@ -284,7 +284,29 @@ function WaterWidget({ userId, theme }) {
 }
 
 // ─── HOME ─────────────────────────────────────────────────────────────────────
-
+function RingProgress({ value, max, color, size = 80, label }) {
+  const r = 30, circ = 2 * Math.PI * r
+  const pct = Math.min(value / max, 1)
+  return (
+    <div className="flex flex-col items-center gap-1">
+      <div className="relative" style={{ width: size, height: size }}>
+        <svg width={size} height={size} className="-rotate-90">
+          <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="rgba(0,0,0,0.06)" strokeWidth={8} />
+          <motion.circle cx={size/2} cy={size/2} r={r} fill="none" stroke={color} strokeWidth={8}
+            strokeDasharray={circ}
+            initial={{ strokeDashoffset: circ }}
+            animate={{ strokeDashoffset: circ * (1 - pct) }}
+            transition={{ duration: 0.8 }} strokeLinecap="round" />
+        </svg>
+        <div className="absolute inset-0 flex items-center justify-center">
+          <span className="text-xs font-bold" style={{ color: theme.text }}>{Math.round(value)}</span>
+        </div>
+      </div>
+      <p className="text-[11px]" style={{ color: theme.textMuted }}>{label}</p>
+      <p className="text-[10px]" style={{ color: theme.textLight }}>/ {max}</p>
+    </div>
+  )
+}
 export default function Home() {
   const { profile, user } = useStore()
   const { theme }         = useTheme()
@@ -482,6 +504,27 @@ Promise.all([
     </span>
   </div>
 </motion.div>
+      {/* Banner Mi Bienestar */}
+<Link to="/mood">
+  <motion.div whileTap={{ scale: 0.98 }} className="card mb-4 flex items-center gap-3"
+    style={{ background: 'linear-gradient(135deg,#f0fffe,#fff5f7)', border: '1px solid rgba(46,196,182,0.2)' }}>
+    <motion.span
+      animate={{ rotate: [0, 10, -10, 10, 0] }}
+      transition={{ duration: 1.5, repeat: Infinity, repeatDelay: 4 }}
+      style={{ fontSize: 32, flexShrink: 0 }}>
+      {todayMood ? ['😩','😞','😐','😊','🤩'][todayMood.mood - 1] : '🐼'}
+    </motion.span>
+    <div className="flex-1">
+      <p className="font-extrabold text-sm" style={{ color: '#1F2937' }}>Mi Bienestar</p>
+      <p className="text-xs" style={{ color: '#6B7280' }}>
+        {todayMood
+          ? `Hoy te sientes ${['muy mal','mal','regular','bien','genial'][todayMood.mood - 1]} · Respiración, meditación y más`
+          : 'Check-in de ánimo · Respiración · Meditación'}
+      </p>
+    </div>
+    <ChevronRight size={16} style={{ color: '#9CA3AF' }} />
+  </motion.div>
+</Link>
 
       {/* Pandi Insights */}
       <PandiInsights />

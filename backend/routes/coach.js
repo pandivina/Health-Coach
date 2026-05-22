@@ -4,9 +4,55 @@ const Anthropic = require('@anthropic-ai/sdk');
 const { requireAuth, supabaseAdmin } = require('../middleware/auth');
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+const FREE_DAILY_LIMIT = 10
+
+async function checkCoachLimit(req, res, next) {
+  try {
+    const userId = req.user.id
+    const today  = new Date().toISOString().split('T')[0]
+
+    // Ver si es premium
+    const { data: profile } = await supabaseAdmin
+      .from('user_profiles')
+      .select('is_premium')
+      .eq('id', userId)
+      .single()
+
+    if (profile?.is_premium) return next()
+
+    // Contar mensajes de hoy
+    const { data: usage } = await supabaseAdmin
+      .from('coach_usage')
+      .select('count')
+      .eq('user_id', userId)
+      .eq('date', today)
+      .single()
+
+    const count = usage?.count || 0
+
+    if (count >= FREE_DAILY_LIMIT) {
+      return res.status(429).json({
+        error: 'limit_reached',
+        message: `Has alcanzado el límite de ${FREE_DAILY_LIMIT} mensajes diarios del plan gratuito.`,
+        limit: FREE_DAILY_LIMIT,
+        used: count,
+      })
+    }
+
+    // Incrementar contador
+    await supabaseAdmin.from('coach_usage').upsert(
+      { user_id: userId, date: today, count: count + 1 },
+      { onConflict: 'user_id,date' }
+    )
+
+    next()
+  } catch (err) {
+    next() // Si falla el check, dejamos pasar para no bloquear
+  }
+}
 
 // POST /api/coach
-router.post('/', requireAuth, async (req, res) => {
+router.post('/', requireAuth, checkCoachLimit, async (req, res) => {
   try {
     const { messages } = req.body;
     const userId = req.user.id;

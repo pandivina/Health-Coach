@@ -167,9 +167,7 @@ function PandiGreeting({ profile, theme }) {
         ? `¡Buenas tardes, ${name}! ¿Qué tal el día?`
         : `¡Buenas noches, ${name}! 🌙 ¿Todo bien?`,
   ]
-
-  return (
-   return (
+  
     return (
     <Link to="/pet">
     <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }}

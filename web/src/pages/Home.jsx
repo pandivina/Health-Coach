@@ -484,7 +484,7 @@ Promise.all([
       {/* Widget agua */}
       <WaterWidget userId={user?.id} theme={theme} />
 
-     {/* Rings */}
+    {/* Rings */}
 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }}
   className="card mb-4" data-tour="home-progress">
   <p className="text-xs mb-3 font-medium uppercase tracking-wider" style={{ color: theme.textMuted }}>

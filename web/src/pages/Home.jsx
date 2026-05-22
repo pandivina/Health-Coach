@@ -162,7 +162,7 @@ function PandiGreeting({ profile, theme }) {
   const petEmoji = PET_EMOJI[profile?.pet_type] || '🐼'
   const messages = [
     hour < 12
-      ? `¡Buenos días, ${name}! 🌅 ¿Cómo llegamos hoy?`
+      ? `¡Buenos días, ${name}! 🌅 ¿Cómo estamos hoy?`
       : hour < 20
         ? `¡Buenas tardes, ${name}! ¿Qué tal el día?`
         : `¡Buenas noches, ${name}! 🌙 ¿Todo bien?`,
@@ -415,27 +415,33 @@ Promise.all([
             </h1>
           </div>
 
-          {/* Nivel + racha */}
-          <div className="flex items-center gap-2">
-            <div className="flex flex-col items-center px-3 py-1.5 rounded-2xl"
-              style={{ background: theme.surface2 }}>
-              <span className="text-[10px]" style={{ color: theme.textMuted }}>Nivel</span>
-              <span className="font-extrabold text-sm" style={{ color: theme.primary }}>
-                {profile?.level || 1}
-              </span>
-            </div>
-            <div className="flex flex-col items-center px-3 py-1.5 rounded-2xl"
-              style={{ background: theme.surface2 }}>
-              <span className="text-[10px]" style={{ color: theme.textMuted }}>Racha</span>
-              <span className="font-extrabold text-sm" style={{ color: '#F97316' }}>
-                🔥{profile?.streak || 0}
-                {profile?.streak_shields > 0 && (
-                  <span style={{ fontSize: 10, color: theme.textMuted }}> 🛡️</span>
-                )}
-              </span>
-            </div>
-          </div>
-        </div>
+        {/* Nivel + racha */}
+<div className="flex items-center gap-2">
+  <div className="flex flex-col items-center px-3 py-1.5 rounded-2xl"
+    style={{ background: theme.surface2 }}>
+    <span className="text-[10px]" style={{ color: theme.textMuted }}>Nivel</span>
+    <span className="font-extrabold text-sm" style={{ color: theme.primary }}>
+      {profile?.level || 1}
+    </span>
+  </div>
+  <div className="flex flex-col items-center px-3 py-1.5 rounded-2xl"
+    style={{ background: theme.surface2 }}>
+    <span className="text-[10px]" style={{ color: theme.textMuted }}>Racha</span>
+    <span className="font-extrabold text-sm" style={{ color: '#F97316' }}>
+      🔥{profile?.streak || 0}
+      {profile?.streak_shields > 0 && (
+        <span style={{ fontSize: 10, color: theme.textMuted }}> 🛡️</span>
+      )}
+    </span>
+  </div>
+  <Link to="/profile">
+    <div className="flex flex-col items-center px-3 py-1.5 rounded-2xl"
+      style={{ background: theme.surface2 }}>
+      <span className="text-[10px]" style={{ color: theme.textMuted }}>Más</span>
+      <span className="font-extrabold text-sm" style={{ color: theme.textMuted }}>☰</span>
+    </div>
+  </Link>
+</div>
 
         {/* Barra XP */}
         <div className="mt-3">

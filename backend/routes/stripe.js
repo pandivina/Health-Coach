@@ -21,13 +21,23 @@ router.post('/create-checkout', requireAuth, async (req, res) => {
     let customerId = sub?.stripe_customer_id
 
     if (!customerId) {
-      const { data: { user } } = await supabaseAdmin.auth.admin.getUserById(userId)
-      const customer = await stripe.customers.create({
-        email: user.email,
-        metadata: { supabase_user_id: userId },
-      })
-      customerId = customer.id
-    }
+  let email = req.user.email
+  if (!email) {
+    const { data } = await supabaseAdmin.auth.admin.getUserById(userId)
+    email = data?.user?.email
+  }
+  const customer = await stripe.customers.create({
+    email: email || '',
+    metadata: { supabase_user_id: userId },
+  })
+  customerId = customer.id
+
+  // Guardar el customer id para futuras compras
+  await supabaseAdmin.from('subscriptions').upsert({
+    user_id: userId,
+    stripe_customer_id: customerId,
+  }, { onConflict: 'user_id' })
+}
 
     const session = await stripe.checkout.sessions.create({
       customer: customerId,

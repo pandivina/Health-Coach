@@ -64,6 +64,16 @@ const AMBIENT = [
 const MED_SESSIONS = { 2: [1,2,3], 5: [4,5,6,7], 10: [8,9,10] }
 const pickSession = (m) => { const p = MED_SESSIONS[m] ?? [1]; return p[Math.floor(Math.random()*p.length)] }
 
+export default function Mood() {
+  const { user, addXP, profile } = useStore()
+  const { theme }                = useTheme()
+  const [activeTab, setActiveTab] = useState('checkin')
+
+  // ← AQUÍ va TABS
+  const TABS = [
+    ...
+  ]
+
 const TABS = [
   { id: 'checkin',  icon: '🐼', label: 'Check-in'   },
   { id: 'breathe',  icon: '🫁', label: 'Respirar'   },

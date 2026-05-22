@@ -30,19 +30,21 @@ export default function UpdateBanner() {
   }, [])
 
   useEffect(() => {
-    if (!('serviceWorker' in navigator)) return
-    const handleControllerChange = () => window.location.reload()
-    navigator.serviceWorker.addEventListener('controllerchange', handleControllerChange)
-    return () => navigator.serviceWorker.removeEventListener('controllerchange', handleControllerChange)
-  }, [])
+  if (!('serviceWorker' in navigator)) return
+  const handleControllerChange = () => window.location.reload()
+  navigator.serviceWorker.addEventListener('controllerchange', handleControllerChange)
+  return () => navigator.serviceWorker.removeEventListener('controllerchange', handleControllerChange)
+}, [])
 
   function update() {
-    if (worker) {
-      worker.postMessage({ type: 'SKIP_WAITING' })
-    } else {
-      window.location.reload()
-    }
+  if (worker) {
+    worker.postMessage({ type: 'SKIP_WAITING' })
+    // Esperar 1s y recargar si controllerchange no se dispara
+    setTimeout(() => window.location.reload(), 1000)
+  } else {
+    window.location.reload()
   }
+}
 
   return (
     <AnimatePresence>

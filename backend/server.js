@@ -20,11 +20,7 @@ const insightsRoutes = require('./routes/insights')
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// STRIPE WEBHOOK — debe ir antes de express.json()
-app.use('/api/stripe/webhook', express.raw({ type: 'application/json' }));
-app.use('/api/stripe', stripeRoutes);
-
-// Middleware
+// STRIPE WEBHOOK — antes de express.json() pero DESPUÉS de cors
 const allowedOrigins = (process.env.CORS_ORIGIN || 'http://localhost:5173')
   .split(',')
   .map(o => o.trim())
@@ -39,6 +35,10 @@ app.use(cors({
   },
   credentials: true,
 }))
+
+// Webhook de Stripe — raw body, antes de express.json()
+app.use('/api/stripe/webhook', express.raw({ type: 'application/json' }));
+
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
@@ -48,6 +48,7 @@ app.get('/health', (req, res) => {
 });
 
 // Rutas
+app.use('/api/stripe',       stripeRoutes);
 app.use('/api/auth',         authRoutes);
 app.use('/api/coach',        coachRoutes);
 app.use('/api/nutrition',    nutritionRoutes);

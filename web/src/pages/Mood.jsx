@@ -71,16 +71,14 @@ export default function Mood() {
 
   // ← AQUÍ va TABS
   const TABS = [
-    ...
-  ]
-
-const TABS = [
-  { id: 'checkin',  icon: '🐼', label: 'Check-in'   },
-  { id: 'breathe',  icon: '🫁', label: 'Respirar'   },
-  { id: 'meditate', icon: '🧘', label: 'Meditar'    },
-  { id: 'habits',   icon: '✅', label: 'Hábitos'    },
-  { id: 'history',  icon: '📊', label: 'Mi historia'},
-  { id: 'cycle',    icon: '🩸', label: 'Ciclo' },
+  { id: 'checkin',  icon: '🐼', label: 'Check-in'    },
+  { id: 'breathe',  icon: '🫁', label: 'Respirar'    },
+  { id: 'meditate', icon: '🧘', label: 'Meditar'     },
+  { id: 'habits',   icon: '✅', label: 'Hábitos'     },
+  { id: 'history',  icon: '📊', label: 'Mi historia' },
+  profile?.sex === 'female'
+    ? { id: 'cycle',    icon: '🩸', label: 'Ciclo'      }
+    : { id: 'calendar', icon: '📅', label: 'Calendario' },
 ]
 
 // ─── AUDIO HELPERS ────────────────────────────────────────────────────────────

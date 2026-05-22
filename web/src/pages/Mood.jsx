@@ -892,9 +892,9 @@ export default function Mood() {
     { id: 'meditate', icon: '🧘', label: 'Meditar'     },
     { id: 'habits',   icon: '✅', label: 'Hábitos'     },
     { id: 'history',  icon: '📊', label: 'Mi historia' },
-    profile?.sex === 'female'
-      ? { id: 'cycle',    icon: '🩸', label: 'Ciclo'      }
-      : { id: 'calendar', icon: '📅', label: 'Calendario' },
+    profile?.menstrual_tracking_enabled
+  ? { id: 'cycle',    icon: '🩸', label: 'Ciclo'      }
+  : { id: 'calendar', icon: '📅', label: 'Calendario' },
   ]
 
   return (

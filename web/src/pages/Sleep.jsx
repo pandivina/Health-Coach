@@ -23,7 +23,14 @@ export default function Sleep() {
   useEffect(() => { if (user) load() }, [user])
 
   async function save() {
-    await supabase.from('sleep_logs').upsert({ user_id: user.id, date: today, hours: parseFloat(form.hours), quality: form.quality, notes: form.notes }, { onConflict: 'user_id,date' })
+  const { error } = await supabase.from('sleep_logs').upsert(
+    { user_id: user.id, date: today, hours: parseFloat(form.hours), quality: form.quality, notes: form.notes },
+    { onConflict: 'user_id,date' }
+  )
+  if (error) { console.error('Sleep save error:', error); return }
+  await addXP(15)
+  setSaved(true); load()
+}
     await addXP(15)
     setSaved(true); load()
   }

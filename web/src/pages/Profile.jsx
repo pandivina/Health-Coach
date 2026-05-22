@@ -137,6 +137,7 @@ export default function Profile() {
           <span className="ml-auto text-white/70">›</span>
         </motion.div>
       </Link>
+      
 {/* Seguimiento menstrual — solo si sexo femenino o no especificado */}
 {(profile?.sex === 'female' || !profile?.sex) && (
   <div className="card mb-5 flex items-center justify-between"
@@ -168,6 +169,8 @@ export default function Profile() {
         className="absolute top-1.5 w-4 h-4 rounded-full bg-white shadow-sm" />
     </button>
   </div>
+  )
+}
       {/* Apariencia */}
       <Link to="/appearance" data-tour="profile-appearance">
         <motion.div whileTap={{ scale: 0.97 }}

@@ -1,12 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const Anthropic = require('@anthropic-ai/sdk');
-const { requireAuth, supabaseAdmin } = require('../middleware/auth');
-
+const { requireAuth, requirePremium, supabaseAdmin } = require('../middleware/auth');
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 // POST /api/labs/analyze — subir analítica (texto o imagen) y analizar con IA
-router.post('/analyze', requireAuth, async (req, res) => {
+router.post('/analyze', requireAuth, requirePremium, async (req, res) => {
   try {
     const { rawText, imageBase64, mediaType, reportDate, title } = req.body;
     const userId = req.user.id;
@@ -60,7 +59,7 @@ Sin texto extra, solo JSON.`
     })
 
     const response = await anthropic.messages.create({
-      model: process.env.ANTHROPIC_MODEL || 'claude-opus-4-5',
+      model: process.env.ANTHROPIC_MODEL || 'claude-opus-4-6',
       max_tokens: 2000,
       messages: [{ role: 'user', content: userContent }],
     });

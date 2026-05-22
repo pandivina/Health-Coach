@@ -306,10 +306,10 @@ export default function Home() {
 Promise.all([
   safe(supabase.from('meal_logs').select('calories,protein_g').eq('user_id', user.id).eq('date', today)),
   safe(supabase.from('workout_sessions').select('calories_burned').eq('user_id', user.id).eq('status','completed').gte('created_at', today+'T00:00:00').limit(1)),
-  safe(supabase.from('nutrition_goals').select('*').eq('user_id', user.id).single()),
+  safe(supabase.from('nutrition_goals').select('*').eq('user_id', user.id).maybeSingle()),
   safe(supabase.from('weight_logs').select('weight_kg,date').eq('user_id', user.id).order('date',{ascending:false}).limit(5)),
-  safe(supabase.from('sleep_logs').select('hours,quality').eq('user_id', user.id).eq('date', today).single()),
-  safe(supabase.from('mood_logs').select('mood').eq('user_id', user.id).eq('date', today).single()),
+  safe(supabase.from('sleep_logs').select('hours,quality').eq('user_id', user.id).eq('date', today).maybeSingle()),
+  safe(supabase.from('mood_logs').select('mood').eq('user_id', user.id).eq('date', today).maybeSingle()),
 ]).then(([mealsR, workoutR, goalsR, weightR, sleepR, moodR]) => {
       setTodayMeals(mealsR.data  || [])
       setTodayWorkout(workoutR.data?.[0] || null)

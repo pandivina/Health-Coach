@@ -202,16 +202,16 @@ export default function Home() {
   useEffect(() => {
     if (!user) return
     const today = new Date().toISOString().split('T')[0]
-    const safe  = fn => fn.catch(() => ({ data: null }))
+    const safe = (promise) => Promise.resolve(promise).catch(() => ({ data: null }))
 
-    Promise.all([
-      safe(supabase.from('meal_logs').select('calories,protein_g').eq('user_id', user.id).eq('date', today)),
-      safe(supabase.from('workout_sessions').select('calories_burned').eq('user_id', user.id).eq('status','completed').gte('created_at', today+'T00:00:00').limit(1)),
-      safe(supabase.from('nutrition_goals').select('*').eq('user_id', user.id).single()),
-      safe(supabase.from('weight_logs').select('weight_kg,date').eq('user_id', user.id).order('date',{ascending:false}).limit(5)),
-      safe(supabase.from('sleep_logs').select('hours,quality').eq('user_id', user.id).eq('date', today).single()),
-      safe(supabase.from('mood_logs').select('mood').eq('user_id', user.id).eq('date', today).single()),
-    ]).then(([mealsR, workoutR, goalsR, weightR, sleepR, moodR]) => {
+Promise.all([
+  safe(supabase.from('meal_logs').select('calories,protein_g').eq('user_id', user.id).eq('date', today)),
+  safe(supabase.from('workout_sessions').select('calories_burned').eq('user_id', user.id).eq('status','completed').gte('created_at', today+'T00:00:00').limit(1)),
+  safe(supabase.from('nutrition_goals').select('*').eq('user_id', user.id).single()),
+  safe(supabase.from('weight_logs').select('weight_kg,date').eq('user_id', user.id).order('date',{ascending:false}).limit(5)),
+  safe(supabase.from('sleep_logs').select('hours,quality').eq('user_id', user.id).eq('date', today).single()),
+  safe(supabase.from('mood_logs').select('mood').eq('user_id', user.id).eq('date', today).single()),
+]).then(([mealsR, workoutR, goalsR, weightR, sleepR, moodR]) => {
       setTodayMeals(mealsR.data  || [])
       setTodayWorkout(workoutR.data?.[0] || null)
       if (goalsR.data)  setGoals(goalsR.data)

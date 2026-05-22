@@ -137,7 +137,69 @@ export default function Profile() {
           <span className="ml-auto text-white/70">›</span>
         </motion.div>
       </Link>
-
+{/* Seguimiento menstrual — solo si sexo femenino o no especificado */}
+{(profile?.sex === 'female' || !profile?.sex) && (
+  <div className="card mb-5 flex items-center justify-between"
+    style={{ border: `1px solid ${theme.border}` }}>
+    <div className="flex items-center gap-3">
+      <div className="w-9 h-9 rounded-xl flex items-center justify-center text-xl"
+        style={{ background: '#FEE2E2' }}>
+        🩸
+      </div>
+      <div>
+        <p className="font-semibold text-sm" style={{ color: theme.text }}>
+          Seguimiento del ciclo
+        </p>
+        <p className="text-xs" style={{ color: theme.textMuted }}>
+          Calendario menstrual en Mi Bienestar
+        </p>
+      </div>
+    </div>
+    <button
+      onClick={async () => {
+        const next = !profile?.menstrual_tracking_enabled
+        await updateProfile({ menstrual_tracking_enabled: next })
+      }}
+      className="w-12 h-7 rounded-full relative transition-all flex-shrink-0"
+      style={{ background: profile?.menstrual_tracking_enabled ? theme.primary : theme.surface2 }}>
+      <motion.div
+        animate={{ x: profile?.menstrual_tracking_enabled ? 20 : 2 }}
+        transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+        className="absolute top-1.5 w-4 h-4 rounded-full bg-white shadow-sm" />
+    </button>
+  </div>
+)}{/* Seguimiento menstrual — solo si sexo femenino o no especificado */}
+{(profile?.sex === 'female' || !profile?.sex) && (
+  <div className="card mb-5 flex items-center justify-between"
+    style={{ border: `1px solid ${theme.border}` }}>
+    <div className="flex items-center gap-3">
+      <div className="w-9 h-9 rounded-xl flex items-center justify-center text-xl"
+        style={{ background: '#FEE2E2' }}>
+        🩸
+      </div>
+      <div>
+        <p className="font-semibold text-sm" style={{ color: theme.text }}>
+          Seguimiento del ciclo
+        </p>
+        <p className="text-xs" style={{ color: theme.textMuted }}>
+          Calendario menstrual en Mi Bienestar
+        </p>
+      </div>
+    </div>
+    <button
+      onClick={async () => {
+        const next = !profile?.menstrual_tracking_enabled
+        await updateProfile({ menstrual_tracking_enabled: next })
+      }}
+      className="w-12 h-7 rounded-full relative transition-all flex-shrink-0"
+      style={{ background: profile?.menstrual_tracking_enabled ? theme.primary : theme.surface2 }}>
+      <motion.div
+        animate={{ x: profile?.menstrual_tracking_enabled ? 20 : 2 }}
+        transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+        className="absolute top-1.5 w-4 h-4 rounded-full bg-white shadow-sm" />
+    </button>
+  </div>
+)}
       {/* Apariencia */}
       <Link to="/appearance" data-tour="profile-appearance">
         <motion.div whileTap={{ scale: 0.97 }}

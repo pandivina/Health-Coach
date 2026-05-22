@@ -4,10 +4,6 @@ import { Play, Pause, RotateCcw, Volume2, VolumeX, Check } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useStore } from '../store/useStore'
 import { useTheme } from '../contexts/ThemeProvider'
-import {
-  PANDI_MOOD_MESSAGES, PANDI_ACTIONS, PANDI_MOOD_FRAME,
-  PANDI_GREETINGS, DEFAULT_HABITS,
-} from '../lib/pandiMessages'
 import CycleTab from '../components/mood/CycleTab'
 import WellnessCalendar from '../components/mood/WellnessCalendar'
 
@@ -110,30 +106,6 @@ function PandaImg({ name, size = 48, fallback = '🐼', className = '', style = 
       style={{ width: size, height: size, objectFit: 'contain', ...style }}
       className={className}
       onError={() => setErr(true)} />
-  )
-}
-
-// ─── PANDI GREETING ───────────────────────────────────────────────────────────
-
-function PandiGreeting({ profile, theme }) {
-  const hour = new Date().getHours()
-  const name = profile?.name?.split(' ')[0] || ''
-  const greetings = PANDI_GREETINGS(name, hour)
-  const msg = greetings[Math.floor((Date.now() / 60000) % greetings.length)]
-
-  return (
-    <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }}
-      className="flex items-center gap-3 mb-5 p-4 rounded-2xl"
-      style={{ background: theme.surface, border: `1px solid ${theme.border}` }}>
-      <motion.div animate={{ rotate: [0, 8, -8, 8, 0] }}
-        transition={{ duration: 1.5, repeat: Infinity, repeatDelay: 4 }}>
-        <PandaImg name="talk_1" size={52} fallback="🐼" />
-      </motion.div>
-      <div className="flex-1 min-w-0">
-        <p className="font-extrabold text-base" style={{ color: theme.text }}>Mi Bienestar</p>
-        <p className="text-xs mt-0.5 leading-relaxed" style={{ color: theme.textMuted }}>{msg}</p>
-      </div>
-    </motion.div>
   )
 }
 

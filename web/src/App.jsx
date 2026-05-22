@@ -1,3 +1,4 @@
+import Calendar from './pages/Calendar'
 import { useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { supabase } from './lib/supabase'
@@ -103,6 +104,7 @@ export default function App() {
 
         {/* Rutas protegidas con Layout */}
         <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+          <Route path="/calendar" element={<Calendar />} />
           <Route path="/home" element={<Home />} />
           <Route path="/coach" element={<Coach />} />
           <Route path="/report" element={<DailyReport />} />

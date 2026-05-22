@@ -1,12 +1,12 @@
 const express = require('express');
 const router = express.Router();
 const Anthropic = require('@anthropic-ai/sdk');
-const { requireAuth, supabaseAdmin } = require('../middleware/auth');
+const { requireAuth, requirePremium, supabaseAdmin } = require('../middleware/auth');
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 // POST /api/recipes/generate
-router.post('/generate', requireAuth, async (req, res) => {
+router.post('/generate', requireAuth, requirePremium, async (req, res) => {
   try {
     const userId = req.user.id;
 
@@ -28,7 +28,7 @@ router.post('/generate', requireAuth, async (req, res) => {
     const allergies = (profile.allergies || []).join(', ') || 'ninguna';
 
     const response = await anthropic.messages.create({
-      model: 'claude-opus-4-5',
+      model: 'claude-opus-4-6',
       max_tokens: 800,
       messages: [{
         role: 'user',

@@ -525,7 +525,8 @@ Promise.all([
     <ChevronRight size={16} style={{ color: '#9CA3AF' }} />
   </motion.div>
 </Link>
-
+)
+}
       {/* Pandi Insights */}
       <PandiInsights />
 

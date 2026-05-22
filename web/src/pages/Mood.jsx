@@ -1,4 +1,5 @@
 import CycleTab from '../components/mood/CycleTab'
+import WellnessCalendar from '../components/mood/WellnessCalendar'
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Play, Pause, RotateCcw, Volume2, VolumeX, Check } from 'lucide-react'

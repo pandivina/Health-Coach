@@ -441,7 +441,8 @@ Promise.all([
       <span className="font-extrabold text-sm" style={{ color: theme.textMuted }}>☰</span>
     </div>
   </Link>
-</div>
+        </div>
+        </div>
 
         {/* Barra XP */}
         <div className="mt-3">

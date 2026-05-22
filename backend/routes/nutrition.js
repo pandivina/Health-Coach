@@ -1,7 +1,7 @@
 const express  = require('express')
 const router   = express.Router()
 const Anthropic = require('@anthropic-ai/sdk')
-const { requireAuth } = require('../middleware/auth')
+const { requireAuth, requirePremium } = require('../middleware/auth')
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useStore } from '../store/useStore'
 import { useTheme } from '../contexts/ThemeProvider'
@@ -8,14 +8,11 @@ import { useTour } from '../hooks/useTour'
 import TourHelpButton from '../components/tour/TourHelpButton'
 import WeeklySummary from '../components/WeeklySummary'
 import PandiInsights from '../components/PandiInsights'
-import {
-  MessageCircle, TrendingUp, TrendingDown, Minus,
-  ChevronRight, Plus, Minus as MinusIcon, Droplets
-} from 'lucide-react'
+import { ChevronRight, Plus, Minus as MinusIcon, Droplets } from 'lucide-react'
 
 const PET_EMOJI = { panda:'🐼', cat:'🐱', dog:'🐶', fox:'🦊', rabbit:'🐰' }
 
-// ─── TARJETA DE MÓDULO ────────────────────────────────────────────────────────
+// ─── MODULE CARD ──────────────────────────────────────────────────────────────
 
 function ModuleCard({ to, icon, label, value, sublabel, color, done, theme }) {
   return (
@@ -53,7 +50,7 @@ function ModuleCard({ to, icon, label, value, sublabel, color, done, theme }) {
   )
 }
 
-// ─── RUTINA MATUTINA ──────────────────────────────────────────────────────────
+// ─── MORNING CARD ─────────────────────────────────────────────────────────────
 
 const MORNING_STEPS = [
   { emoji: '💧', text: 'Bebe un vaso de agua al levantarte' },
@@ -61,7 +58,8 @@ const MORNING_STEPS = [
   { emoji: '🧘', text: '5 respiraciones profundas antes de mirar el móvil' },
   { emoji: '🍳', text: 'Desayuno con proteína — empieza el día con energía' },
 ]
-function MorningCard({ petEmoji, petName, theme }) {
+
+function MorningCard({ petEmoji, theme }) {
   const { addXP } = useStore()
   const [dismissed, setDismissed] = useState(false)
   const todayKey = `pandi_morning_${new Date().toISOString().split('T')[0]}`
@@ -73,7 +71,7 @@ function MorningCard({ petEmoji, petName, theme }) {
   if (dismissed) return null
 
   async function toggle(i) {
-    if (checked[i]) return // no desmarcar
+    if (checked[i]) return
     const next = { ...checked, [i]: true }
     setChecked(next)
     localStorage.setItem(todayKey, JSON.stringify(next))
@@ -84,24 +82,16 @@ function MorningCard({ petEmoji, petName, theme }) {
 
   return (
     <AnimatePresence>
-      <motion.div
-        initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -8 }}
-        className="card mb-4"
+      <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -8 }} className="card mb-4"
         style={{ background: 'linear-gradient(135deg,#f0fffe,#fff5f7)', border:'1px solid rgba(46,196,182,0.2)' }}>
-
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
-            <motion.span
-              animate={{ rotate: [0,10,-10,10,0] }}
+            <motion.span animate={{ rotate: [0,10,-10,10,0] }}
               transition={{ duration:1.5, repeat:Infinity, repeatDelay:3 }}
-              style={{ fontSize: 26 }}>
-              {petEmoji}
-            </motion.span>
+              style={{ fontSize: 26 }}>{petEmoji}</motion.span>
             <div>
-              <p className="font-extrabold text-sm" style={{ color:'#1F2937' }}>
-                ¡Buenos días! 🌅
-              </p>
+              <p className="font-extrabold text-sm" style={{ color:'#1F2937' }}>¡Buenos días! 🌅</p>
               <p className="text-xs" style={{ color:'#6B7280' }}>
                 {doneCount}/{MORNING_STEPS.length} · +{doneCount * 5} XP ganados
               </p>
@@ -109,11 +99,8 @@ function MorningCard({ petEmoji, petName, theme }) {
           </div>
           <button onClick={() => setDismissed(true)}
             className="text-xs px-2 py-1 rounded-lg"
-            style={{ color:'#9CA3AF', background:'rgba(0,0,0,0.04)' }}>
-            ✕
-          </button>
+            style={{ color:'#9CA3AF', background:'rgba(0,0,0,0.04)' }}>✕</button>
         </div>
-
         <div className="space-y-2">
           {MORNING_STEPS.map((s, i) => (
             <motion.button key={i} onClick={() => toggle(i)}
@@ -133,18 +120,13 @@ function MorningCard({ petEmoji, petName, theme }) {
                   color: checked[i] ? '#2EC4B6' : '#374151',
                   textDecoration: checked[i] ? 'line-through' : 'none',
                   opacity: checked[i] ? 0.7 : 1,
-                }}>
-                {s.text}
-              </p>
+                }}>{s.text}</p>
               {!checked[i] && (
-                <span className="text-[10px] font-bold flex-shrink-0" style={{ color:'#9CA3AF' }}>
-                  +5 XP
-                </span>
+                <span className="text-[10px] font-bold flex-shrink-0" style={{ color:'#9CA3AF' }}>+5 XP</span>
               )}
             </motion.button>
           ))}
         </div>
-
         {doneCount === MORNING_STEPS.length && (
           <motion.p initial={{ opacity:0 }} animate={{ opacity:1 }}
             className="text-xs text-center mt-3 font-semibold" style={{ color:'#2EC4B6' }}>
@@ -155,43 +137,39 @@ function MorningCard({ petEmoji, petName, theme }) {
     </AnimatePresence>
   )
 }
+
+// ─── PANDI GREETING ──────────────────────────────────────────────────────────
+
 function PandiGreeting({ profile, theme }) {
-  const hour    = new Date().getHours()
-  const name    = profile?.name?.split(' ')[0] || ''
-  const petName = profile?.pet_name || 'Pandi'
+  const hour     = new Date().getHours()
+  const name     = profile?.name?.split(' ')[0] || ''
+  const petName  = profile?.pet_name || 'Pandi'
   const petEmoji = PET_EMOJI[profile?.pet_type] || '🐼'
-  const messages = [
-    hour < 12
-      ? `¡Buenos días, ${name}! 🌅 ¿Cómo estamos hoy?`
-      : hour < 20
-        ? `¡Buenas tardes, ${name}! ¿Qué tal el día?`
-        : `¡Buenas noches, ${name}! 🌙 ¿Todo bien?`,
-  ]
-  
-    return (
-  <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }}
-    className="flex items-center gap-3 p-4 rounded-2xl mb-4"
-    style={{ background: theme.surface, border: `1px solid ${theme.border}` }}>
-    <motion.span
-      animate={{ rotate: [0, 10, -10, 10, 0] }}
-      transition={{ duration: 1.5, repeat: Infinity, repeatDelay: 4 }}
-      style={{ fontSize: 36, flexShrink: 0 }}>
-      {petEmoji}
-    </motion.span>
-    <div className="flex-1 min-w-0">
-      <p className="font-extrabold text-sm" style={{ color: theme.text }}>{petName}</p>
-      <p className="text-xs leading-relaxed mt-0.5" style={{ color: theme.textMuted }}>
-        {messages[0]}
-      </p>
-    </div>
-    <Link to="/pet">
-      <ChevronRight size={16} style={{ color: theme.textLight }} />
-    </Link>
-  </motion.div>
+  const msg = hour < 12
+    ? `¡Buenos días, ${name}! 🌅 ¿Cómo estamos hoy?`
+    : hour < 20
+      ? `¡Buenas tardes, ${name}! ¿Qué tal el día?`
+      : `¡Buenas noches, ${name}! 🌙 ¿Todo bien?`
+
+  return (
+    <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }}
+      className="flex items-center gap-3 p-4 rounded-2xl mb-4"
+      style={{ background: theme.surface, border: `1px solid ${theme.border}` }}>
+      <motion.span animate={{ rotate: [0, 10, -10, 10, 0] }}
+        transition={{ duration: 1.5, repeat: Infinity, repeatDelay: 4 }}
+        style={{ fontSize: 36, flexShrink: 0 }}>{petEmoji}</motion.span>
+      <div className="flex-1 min-w-0">
+        <p className="font-extrabold text-sm" style={{ color: theme.text }}>{petName}</p>
+        <p className="text-xs leading-relaxed mt-0.5" style={{ color: theme.textMuted }}>{msg}</p>
+      </div>
+      <Link to="/pet">
+        <ChevronRight size={16} style={{ color: theme.textLight }} />
+      </Link>
+    </motion.div>
   )
 }
 
-// ─── WIDGET AGUA COMPACTO ─────────────────────────────────────────────────────
+// ─── WATER WIDGET ─────────────────────────────────────────────────────────────
 
 function WaterWidget({ userId, theme }) {
   const [glasses, setGlasses] = useState(0)
@@ -202,16 +180,15 @@ function WaterWidget({ userId, theme }) {
   useEffect(() => {
     if (!userId) return
     supabase.from('hydration_logs').select('glasses,goal')
-  .eq('user_id', userId).eq('date', today).maybeSingle()
-  .then(({ data }) => {
+      .eq('user_id', userId).eq('date', today).maybeSingle()
+      .then(({ data }) => {
         if (data) { setGlasses(data.glasses || 0); setGoal(data.goal || 8) }
       })
   }, [userId])
 
   async function update(delta) {
     const next = Math.max(0, Math.min(glasses + delta, goal + 4))
-    setGlasses(next)
-    setLoading(true)
+    setGlasses(next); setLoading(true)
     await supabase.from('hydration_logs').upsert(
       { user_id: userId, date: today, glasses: next, goal },
       { onConflict: 'user_id,date' }
@@ -226,33 +203,26 @@ function WaterWidget({ userId, theme }) {
     <div className="card mb-4" data-tour="home-water">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-xl flex items-center justify-center"
-            style={{ background: '#EFF6FF' }}>
+          <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: '#EFF6FF' }}>
             <Droplets size={16} style={{ color: '#3B82F6' }} />
           </div>
           <div>
             <p className="font-bold text-sm" style={{ color: theme.text }}>Hidratación</p>
-            <p className="text-xs" style={{ color: theme.textMuted }}>
-              {glasses * 250} ml · {glasses}/{goal} vasos
-            </p>
+            <p className="text-xs" style={{ color: theme.textMuted }}>{glasses * 250} ml · {glasses}/{goal} vasos</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
           {done && (
             <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }}
               className="text-xs font-bold px-2 py-0.5 rounded-full"
-              style={{ background: '#DBEAFE', color: '#1D4ED8' }}>
-              ¡Meta! 🎉
-            </motion.span>
+              style={{ background: '#DBEAFE', color: '#1D4ED8' }}>¡Meta! 🎉</motion.span>
           )}
           <button onClick={() => update(-1)} disabled={glasses === 0 || loading}
             className="w-8 h-8 rounded-xl flex items-center justify-center disabled:opacity-30"
             style={{ background: theme.surface2 }}>
             <MinusIcon size={14} style={{ color: theme.textMuted }} />
           </button>
-          <p className="font-extrabold text-lg w-6 text-center" style={{ color: '#3B82F6' }}>
-            {glasses}
-          </p>
+          <p className="font-extrabold text-lg w-6 text-center" style={{ color: '#3B82F6' }}>{glasses}</p>
           <motion.button whileTap={{ scale: 0.9 }} onClick={() => update(1)} disabled={loading}
             className="w-8 h-8 rounded-xl flex items-center justify-center"
             style={{ background: '#3B82F6' }}>
@@ -260,8 +230,6 @@ function WaterWidget({ userId, theme }) {
           </motion.button>
         </div>
       </div>
-
-      {/* Vasos visuales */}
       <div className="flex gap-1 mb-2">
         {Array.from({ length: goal }).map((_, i) => (
           <motion.button key={i} whileTap={{ scale: 0.85 }}
@@ -273,7 +241,6 @@ function WaterWidget({ userId, theme }) {
             }} />
         ))}
       </div>
-
       <div className="h-1.5 rounded-full overflow-hidden" style={{ background: theme.surface2 }}>
         <motion.div className="h-full rounded-full"
           style={{ background: 'linear-gradient(90deg,#60A5FA,#3B82F6)' }}
@@ -283,7 +250,8 @@ function WaterWidget({ userId, theme }) {
   )
 }
 
-// ─── HOME ─────────────────────────────────────────────────────────────────────
+// ─── RING PROGRESS ────────────────────────────────────────────────────────────
+
 function RingProgress({ value, max, color, size = 80, label }) {
   const r = 30, circ = 2 * Math.PI * r
   const pct = Math.min(value / max, 1)
@@ -299,14 +267,17 @@ function RingProgress({ value, max, color, size = 80, label }) {
             transition={{ duration: 0.8 }} strokeLinecap="round" />
         </svg>
         <div className="absolute inset-0 flex items-center justify-center">
-  <span className="text-xs font-bold" style={{ color: color }}>{Math.round(value)}</span>
-</div>
+          <span className="text-xs font-bold" style={{ color }}>{Math.round(value)}</span>
+        </div>
       </div>
       <p className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>{label}</p>
       <p className="text-[10px]" style={{ color: 'var(--color-text-light)' }}>/ {max}</p>
     </div>
   )
 }
+
+// ─── HOME ─────────────────────────────────────────────────────────────────────
+
 export default function Home() {
   const { profile, user } = useStore()
   const { theme }         = useTheme()
@@ -323,19 +294,18 @@ export default function Home() {
   useEffect(() => {
     if (!user) return
     const today = new Date().toISOString().split('T')[0]
-    const safe = (promise) => Promise.resolve(promise).catch(() => ({ data: null }))
-
-Promise.all([
-  safe(supabase.from('meal_logs').select('calories,protein_g').eq('user_id', user.id).eq('date', today)),
-  safe(supabase.from('workout_sessions').select('calories_burned').eq('user_id', user.id).eq('status','completed').gte('created_at', today+'T00:00:00').limit(1)),
-  safe(supabase.from('nutrition_goals').select('*').eq('user_id', user.id).maybeSingle()),
-  safe(supabase.from('weight_logs').select('weight_kg,date').eq('user_id', user.id).order('date',{ascending:false}).limit(5)),
-  safe(supabase.from('sleep_logs').select('hours,quality').eq('user_id', user.id).eq('date', today).maybeSingle()),
-  safe(supabase.from('mood_logs').select('mood').eq('user_id', user.id).eq('date', today).maybeSingle()),
-]).then(([mealsR, workoutR, goalsR, weightR, sleepR, moodR]) => {
+    const safe  = (p) => Promise.resolve(p).catch(() => ({ data: null }))
+    Promise.all([
+      safe(supabase.from('meal_logs').select('calories,protein_g').eq('user_id', user.id).eq('date', today)),
+      safe(supabase.from('workout_sessions').select('calories_burned').eq('user_id', user.id).eq('status','completed').gte('created_at', today+'T00:00:00').limit(1)),
+      safe(supabase.from('nutrition_goals').select('*').eq('user_id', user.id).maybeSingle()),
+      safe(supabase.from('weight_logs').select('weight_kg,date').eq('user_id', user.id).order('date',{ascending:false}).limit(5)),
+      safe(supabase.from('sleep_logs').select('hours,quality').eq('user_id', user.id).eq('date', today).maybeSingle()),
+      safe(supabase.from('mood_logs').select('mood').eq('user_id', user.id).eq('date', today).maybeSingle()),
+    ]).then(([mealsR, workoutR, goalsR, weightR, sleepR, moodR]) => {
       setTodayMeals(mealsR.data  || [])
       setTodayWorkout(workoutR.data?.[0] || null)
-      if (goalsR.data)  setGoals(goalsR.data)
+      if (goalsR.data) setGoals(goalsR.data)
       setWeightLogs(weightR.data || [])
       setTodaySleep(sleepR.data  || null)
       setTodayMood(moodR.data    || null)
@@ -346,7 +316,7 @@ Promise.all([
   const protein = todayMeals.reduce((s, m) => s + (m.protein_g || 0), 0)
   const burned  = todayWorkout?.calories_burned || 0
 
-  const MOODS = { 1:'😩', 2:'😞', 3:'😐', 4:'😊', 5:'🤩' }
+  const MOODS      = { 1:'😩', 2:'😞', 3:'😐', 4:'😊', 5:'🤩' }
   const MOOD_LABELS = { 1:'Muy mal', 2:'Mal', 3:'Regular', 4:'Bien', 5:'Genial' }
 
   const currentWeight  = weightLogs[0]?.weight_kg
@@ -354,48 +324,34 @@ Promise.all([
   const weightDiff     = currentWeight && previousWeight
     ? (currentWeight - previousWeight).toFixed(1) : null
 
-  const hour = new Date().getHours()
+  const hour      = new Date().getHours()
+  const isMorning = hour >= 5 && hour < 12
+  const petEmoji  = PET_EMOJI[profile?.pet_type] || '🐼'
 
-  // Módulos del día
   const modules = [
-    {
-      to: '/nutrition', icon: '🍎', label: 'Nutrición',
+    { to: '/nutrition', icon: '🍎', label: 'Nutrición',
       value: cals > 0 ? `${Math.round(cals)} kcal` : 'Registrar',
       sublabel: cals > 0 ? `/ ${goals.calories} kcal` : 'Sin registro hoy',
-      color: '#F97316', done: cals > 0,
-    },
-    {
-      to: '/workout', icon: '💪', label: 'Entreno',
+      color: '#F97316', done: cals > 0 },
+    { to: '/workout', icon: '💪', label: 'Entreno',
       value: todayWorkout ? '¡Hecho!' : 'Pendiente',
       sublabel: todayWorkout ? `${burned} kcal quemadas` : 'Sin entreno hoy',
-      color: '#6366F1', done: !!todayWorkout,
-    },
-    {
-      to: '/sleep', icon: '😴', label: 'Sueño',
+      color: '#6366F1', done: !!todayWorkout },
+    { to: '/sleep', icon: '😴', label: 'Sueño',
       value: todaySleep ? `${todaySleep.hours}h` : 'Registrar',
       sublabel: todaySleep ? `Calidad: ${todaySleep.quality}/5` : 'Sin registro',
-      color: '#818CF8', done: !!todaySleep,
-    },
-    {
-      to: '/mood', icon: todayMood ? MOODS[todayMood.mood] : '🌡️', label: 'Bienestar',
+      color: '#818CF8', done: !!todaySleep },
+    { to: '/mood', icon: todayMood ? MOODS[todayMood.mood] : '🌡️', label: 'Bienestar',
       value: todayMood ? MOOD_LABELS[todayMood.mood] : 'Check-in',
       sublabel: todayMood ? 'Registrado hoy' : 'Sin registro',
-      color: '#2EC4B6', done: !!todayMood,
-    },
-    {
-      to: '/health', icon: '⚖️', label: 'Seguimiento',
+      color: '#2EC4B6', done: !!todayMood },
+    { to: '/health', icon: '⚖️', label: 'Seguimiento',
       value: currentWeight ? `${currentWeight} kg` : 'Ver datos',
-      sublabel: weightDiff
-        ? `${weightDiff > 0 ? '+' : ''}${weightDiff} kg`
-        : 'Peso y medidas',
-      color: '#EC4899', done: !!currentWeight,
-    },
-    {
-      to: '/report', icon: '📊', label: 'Mi día',
-      value: 'Ver informe',
-      sublabel: 'Resumen completo',
-      color: '#F59E0B', done: false,
-    },
+      sublabel: weightDiff ? `${weightDiff > 0 ? '+' : ''}${weightDiff} kg` : 'Peso y medidas',
+      color: '#EC4899', done: !!currentWeight },
+    { to: '/report', icon: '📊', label: 'Mi día',
+      value: 'Ver informe', sublabel: 'Resumen completo',
+      color: '#F59E0B', done: false },
   ]
 
   const doneTodayCount = modules.filter(m => m.done).length
@@ -403,9 +359,11 @@ Promise.all([
   return (
     <div className="page">
 
-      {/* Header compacto */}
+      {/* ── HEADER ─────────────────────────────────────────────────────────── */}
       <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-4">
+
         <div className="flex items-center justify-between">
+          {/* Saludo + nombre */}
           <div>
             <p className="text-xs" style={{ color: theme.textMuted }}>
               {hour < 12 ? '¡Buenos días' : hour < 20 ? '¡Buenas tardes' : '¡Buenas noches'},
@@ -415,62 +373,58 @@ Promise.all([
             </h1>
           </div>
 
-        {/* Nivel + racha */}
-<div className="flex items-center gap-2">
-  <div className="flex flex-col items-center px-3 py-1.5 rounded-2xl"
-    style={{ background: theme.surface2 }}>
-    <span className="text-[10px]" style={{ color: theme.textMuted }}>Nivel</span>
-    <span className="font-extrabold text-sm" style={{ color: theme.primary }}>
-      {profile?.level || 1}
-    </span>
-  </div>
-  <div className="flex items-center gap-1.5">
-  <div className="flex flex-col items-center px-2.5 py-1.5 rounded-2xl"
-    style={{ background: theme.surface2 }}>
-    <span className="text-[9px]" style={{ color: theme.textMuted }}>Nivel</span>
-    <span className="font-extrabold text-sm" style={{ color: theme.primary }}>
-      {profile?.level || 1}
-    </span>
-  </div>
-  <div className="flex flex-col items-center px-2.5 py-1.5 rounded-2xl"
-    style={{ background: theme.surface2 }}>
-    <span className="text-[9px]" style={{ color: theme.textMuted }}>Racha</span>
-    <span className="font-extrabold text-sm" style={{ color: '#F97316' }}>
-      🔥{profile?.streak || 0}
-      {profile?.streak_shields > 0 && (
-        <span style={{ fontSize: 9, color: theme.textMuted }}> 🛡️</span>
-      )}
-    </span>
-  </div>
-  <Link to="/health">
-    <div className="flex flex-col items-center px-2.5 py-1.5 rounded-2xl"
-      style={{ background: theme.surface2 }}>
-      <span className="text-[9px]" style={{ color: theme.textMuted }}>Salud</span>
-      <span className="font-extrabold text-sm" style={{ color: '#EC4899' }}>📊</span>
-    </div>
-  </Link>
-  <Link to="/premium">
-    <div className="flex flex-col items-center px-2.5 py-1.5 rounded-2xl"
-      style={{ background: theme.surface2 }}>
-      <span className="text-[9px]" style={{ color: theme.textMuted }}>Premium</span>
-      <span className="font-extrabold text-sm">⭐</span>
-    </div>
-  </Link>
-  <Link to="/profile">
-    <div className="flex flex-col items-center px-2.5 py-1.5 rounded-2xl"
-      style={{ background: theme.surface2 }}>
-      <span className="text-[9px]" style={{ color: theme.textMuted }}>Perfil</span>
-      <span className="font-extrabold text-sm" style={{ color: theme.textMuted }}>☰</span>
-    </div>
-  </Link>
-</div>
+          {/* Badges: Nivel · Racha · Salud · Premium · Perfil */}
+          <div className="flex items-center gap-1.5">
+            <div className="flex flex-col items-center px-2.5 py-1.5 rounded-2xl"
+              style={{ background: theme.surface2 }}>
+              <span className="text-[9px]" style={{ color: theme.textMuted }}>Nivel</span>
+              <span className="font-extrabold text-sm" style={{ color: theme.primary }}>
+                {profile?.level || 1}
+              </span>
+            </div>
+
+            <div className="flex flex-col items-center px-2.5 py-1.5 rounded-2xl"
+              style={{ background: theme.surface2 }}>
+              <span className="text-[9px]" style={{ color: theme.textMuted }}>Racha</span>
+              <span className="font-extrabold text-sm" style={{ color: '#F97316' }}>
+                🔥{profile?.streak || 0}
+                {profile?.streak_shields > 0 && (
+                  <span style={{ fontSize: 9, color: theme.textMuted }}> 🛡️</span>
+                )}
+              </span>
+            </div>
+
+            <Link to="/health">
+              <div className="flex flex-col items-center px-2.5 py-1.5 rounded-2xl"
+                style={{ background: theme.surface2 }}>
+                <span className="text-[9px]" style={{ color: theme.textMuted }}>Salud</span>
+                <span className="font-extrabold text-sm" style={{ color: '#EC4899' }}>📊</span>
+              </div>
+            </Link>
+
+            <Link to="/premium">
+              <div className="flex flex-col items-center px-2.5 py-1.5 rounded-2xl"
+                style={{ background: theme.surface2 }}>
+                <span className="text-[9px]" style={{ color: theme.textMuted }}>Premium</span>
+                <span className="font-extrabold text-sm">⭐</span>
+              </div>
+            </Link>
+
+            <Link to="/profile">
+              <div className="flex flex-col items-center px-2.5 py-1.5 rounded-2xl"
+                style={{ background: theme.surface2 }}>
+                <span className="text-[9px]" style={{ color: theme.textMuted }}>Perfil</span>
+                <span className="font-extrabold text-sm" style={{ color: theme.textMuted }}>☰</span>
+              </div>
+            </Link>
+          </div>
         </div>
 
         {/* Barra XP */}
         <div className="mt-3">
           <div className="flex justify-between text-[10px] mb-1" style={{ color: theme.textMuted }}>
             <span>{profile?.xp || 0} XP</span>
-            <span>Nivel {(profile?.level || 1) + 1} → {((profile?.level || 1)) * 500} XP</span>
+            <span>Nivel {(profile?.level || 1) + 1} → {(profile?.level || 1) * 500} XP</span>
           </div>
           <div className="h-1.5 rounded-full overflow-hidden" style={{ background: theme.surface2 }}>
             <motion.div className="h-full rounded-full"
@@ -485,15 +439,16 @@ Promise.all([
       {/* Pandi saludo */}
       <PandiGreeting profile={profile} theme={theme} />
 
+      {/* Rutina matutina */}
+      {isMorning && <MorningCard petEmoji={petEmoji} theme={theme} />}
+
       {/* Resumen semanal */}
       <WeeklySummary />
 
-      {/* Progreso de hoy */}
+      {/* Grid módulos */}
       <div className="card mb-4" data-tour="home-progress">
         <div className="flex items-center justify-between mb-3">
-          <p className="text-xs font-bold uppercase tracking-wider" style={{ color: theme.textMuted }}>
-            Hoy
-          </p>
+          <p className="text-xs font-bold uppercase tracking-wider" style={{ color: theme.textMuted }}>Hoy</p>
           <span className="text-xs font-semibold px-2 py-0.5 rounded-full"
             style={{
               background: doneTodayCount >= 4 ? `${theme.success}20` : theme.surface2,
@@ -502,59 +457,57 @@ Promise.all([
             {doneTodayCount}/{modules.length} completados
           </span>
         </div>
-
         <div className="grid grid-cols-3 gap-2">
-          {modules.map((m, i) => (
-            <ModuleCard key={i} {...m} theme={theme} />
-          ))}
+          {modules.map((m, i) => <ModuleCard key={i} {...m} theme={theme} />)}
         </div>
       </div>
 
-      {/* Widget agua */}
+      {/* Agua */}
       <WaterWidget userId={user?.id} theme={theme} />
 
-    {/* Rings */}
-<motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }}
-  className="card mb-4" data-tour="home-progress">
-  <p className="text-xs mb-3 font-medium uppercase tracking-wider" style={{ color: theme.textMuted }}>
-    Progreso de hoy
-  </p>
-  <div className="flex justify-around">
-    <RingProgress value={cals}    max={goals.calories}  color={theme.warning} label="Calorías" />
-    <RingProgress value={protein} max={goals.protein_g} color={theme.primary} label="Proteína" />
-    <RingProgress value={burned}  max={400}             color={theme.success} label="Quemadas" />
-  </div>
-  <div className="mt-3 pt-3 flex justify-center" style={{ borderTop: `1px solid ${theme.border}` }}>
-    <span className="text-xs" style={{ color: theme.textMuted }}>
-      Balance:{' '}
-      <span style={{ color: cals - burned > goals.calories ? theme.error : theme.success }}>
-        {Math.round(cals - burned)} kcal
-      </span>
-    </span>
-  </div>
-</motion.div>
-  {/* Banner Mi Bienestar */}
-<Link to="/mood">
-  <motion.div whileTap={{ scale: 0.98 }} className="card mb-4 flex items-center gap-3"
-    style={{ background: 'linear-gradient(135deg,#f0fffe,#fff5f7)', border: '1px solid rgba(46,196,182,0.2)' }}>
-    <motion.span
-      animate={{ rotate: [0, 10, -10, 10, 0] }}
-      transition={{ duration: 1.5, repeat: Infinity, repeatDelay: 4 }}
-      style={{ fontSize: 32, flexShrink: 0 }}>
-      {todayMood ? ['😩','😞','😐','😊','🤩'][todayMood.mood - 1] : '🐼'}
-    </motion.span>
-    <div className="flex-1">
-      <p className="font-extrabold text-sm" style={{ color: '#1F2937' }}>Mi Bienestar</p>
-      <p className="text-xs" style={{ color: '#6B7280' }}>
-        {todayMood
-          ? `Hoy te sientes ${['muy mal','mal','regular','bien','genial'][todayMood.mood - 1]} · Respiración, meditación y más`
-          : 'Check-in de ánimo · Respiración · Meditación'}
-      </p>
-    </div>
-    <ChevronRight size={16} style={{ color: '#9CA3AF' }} />
-  </motion.div>
-</Link>
-      {/* Pandi Insights */}
+      {/* Rings */}
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }}
+        className="card mb-4">
+        <p className="text-xs mb-3 font-medium uppercase tracking-wider" style={{ color: theme.textMuted }}>
+          Progreso de hoy
+        </p>
+        <div className="flex justify-around">
+          <RingProgress value={cals}    max={goals.calories}  color={theme.warning} label="Calorías" />
+          <RingProgress value={protein} max={goals.protein_g} color={theme.primary} label="Proteína" />
+          <RingProgress value={burned}  max={400}             color={theme.success} label="Quemadas" />
+        </div>
+        <div className="mt-3 pt-3 flex justify-center" style={{ borderTop: `1px solid ${theme.border}` }}>
+          <span className="text-xs" style={{ color: theme.textMuted }}>
+            Balance:{' '}
+            <span style={{ color: cals - burned > goals.calories ? theme.error : theme.success }}>
+              {Math.round(cals - burned)} kcal
+            </span>
+          </span>
+        </div>
+      </motion.div>
+
+      {/* Banner Mi Bienestar */}
+      <Link to="/mood">
+        <motion.div whileTap={{ scale: 0.98 }} className="card mb-4 flex items-center gap-3"
+          style={{ background: 'linear-gradient(135deg,#f0fffe,#fff5f7)', border: '1px solid rgba(46,196,182,0.2)' }}>
+          <motion.span animate={{ rotate: [0, 10, -10, 10, 0] }}
+            transition={{ duration: 1.5, repeat: Infinity, repeatDelay: 4 }}
+            style={{ fontSize: 32, flexShrink: 0 }}>
+            {todayMood ? ['😩','😞','😐','😊','🤩'][todayMood.mood - 1] : '🐼'}
+          </motion.span>
+          <div className="flex-1">
+            <p className="font-extrabold text-sm" style={{ color: '#1F2937' }}>Mi Bienestar</p>
+            <p className="text-xs" style={{ color: '#6B7280' }}>
+              {todayMood
+                ? `Hoy te sientes ${['muy mal','mal','regular','bien','genial'][todayMood.mood - 1]} · Respiración, meditación y más`
+                : 'Check-in de ánimo · Respiración · Meditación'}
+            </p>
+          </div>
+          <ChevronRight size={16} style={{ color: '#9CA3AF' }} />
+        </motion.div>
+      </Link>
+
+      {/* Insights */}
       <PandiInsights />
 
       <TourHelpButton tourKey="home" />

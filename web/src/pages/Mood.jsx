@@ -854,6 +854,30 @@ function HistoryTab({ theme, userId }) {
   )
 }
 
+function PandiGreeting({ profile, theme }) {
+  const hour     = new Date().getHours()
+  const name     = profile?.name?.split(' ')[0] || ''
+  const petName  = profile?.pet_name || 'Pandi'
+  const petEmoji = { panda:'🐼', cat:'🐱', dog:'🐶', fox:'🦊', rabbit:'🐰' }[profile?.pet_type] || '🐼'
+  const msg = hour < 12
+    ? `¡Buenos días, ${name}! 🌅 ¿Cómo estamos hoy?`
+    : hour < 20 ? `¡Buenas tardes, ${name}! ¿Qué tal el día?`
+    : `¡Buenas noches, ${name}! 🌙 ¿Todo bien?`
+  return (
+    <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }}
+      className="flex items-center gap-3 mb-5 p-4 rounded-2xl"
+      style={{ background: theme.surface, border: `1px solid ${theme.border}` }}>
+      <motion.span animate={{ rotate: [0, 8, -8, 8, 0] }}
+        transition={{ duration: 1.5, repeat: Infinity, repeatDelay: 4 }}
+        style={{ fontSize: 38, flexShrink: 0 }}>{petEmoji}</motion.span>
+      <div className="flex-1 min-w-0">
+        <p className="font-extrabold text-base" style={{ color: theme.text }}>Mi Bienestar</p>
+        <p className="text-xs mt-0.5 leading-relaxed" style={{ color: theme.textMuted }}>{msg}</p>
+      </div>
+    </motion.div>
+  )
+}
+
 // ─── PÁGINA PRINCIPAL ─────────────────────────────────────────────────────────
 
 export default function Mood() {

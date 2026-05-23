@@ -1,3 +1,4 @@
+import QuickMealWidget from '../components/QuickMealWidget'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -490,6 +491,8 @@ export default function Home() {
           <ChevronRight size={16} style={{ color: '#9CA3AF' }} />
         </motion.div>
       </Link>
+      {/* Widget comida rápida */}
+<QuickMealWidget userId={user?.id} theme={theme} />
 
       {/* Insights */}
       <PandiInsights />

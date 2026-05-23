@@ -1,6 +1,3 @@
-El problema es que pegaste el `style` del botón dentro del `style` del `<nav>`. Reemplaza el archivo completo:
-
-```jsx
 import { NavLink, useLocation } from 'react-router-dom'
 import { Home, MessageCircle, Apple, Dumbbell, CalendarDays } from 'lucide-react'
 import { motion } from 'framer-motion'
@@ -68,4 +65,3 @@ export default function BottomNav() {
     </nav>
   )
 }
-```

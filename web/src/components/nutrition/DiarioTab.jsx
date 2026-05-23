@@ -1,30 +1,9 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Camera, Hash, Plus, Trash2, ChefHat, Flame, Search, X, Clock, Star, ChevronRight, Loader2 } from 'lucide-react'
+import { Camera, Hash, Plus, Trash2, ChefHat, Flame, Search, X, Clock, ChevronRight, Loader2 } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { useStore } from '../../store/useStore'
 import { useTheme } from '../../contexts/ThemeProvider'
-
-// ─── SUPABASE: crear tabla food_history ──────────────────────────────────────
-// Ejecuta este SQL en el editor de Supabase una sola vez:
-//
-// create table food_history (
-//   id uuid default gen_random_uuid() primary key,
-//   user_id uuid references auth.users(id) on delete cascade not null,
-//   food_name text not null,
-//   calories_per_100g float default 0,
-//   protein_per_100g  float default 0,
-//   carbs_per_100g    float default 0,
-//   fat_per_100g      float default 0,
-//   off_id text,
-//   is_custom boolean default false,
-//   use_count int default 1,
-//   last_used_at timestamptz default now(),
-//   created_at   timestamptz default now()
-// );
-// alter table food_history enable row level security;
-// create policy "own" on food_history for all using (auth.uid() = user_id);
-// ─────────────────────────────────────────────────────────────────────────────
 
 const MEAL_TYPES  = ['breakfast', 'lunch', 'dinner', 'snack']
 const MEAL_LABELS = { breakfast: '🌅 Desayuno', lunch: '☀️ Comida', dinner: '🌙 Cena', snack: '🍎 Snack' }
@@ -49,10 +28,10 @@ function parseOFF(product) {
   return {
     food_name:         (product.product_name || product.brands || 'Producto').trim(),
     calories_per_100g: n['energy-kcal_100g'] ?? n['energy-kcal'] ?? 0,
-    protein_per_100g:  n.proteins_100g    ?? 0,
-    carbs_per_100g:    n.carbohydrates_100g ?? 0,
-    fat_per_100g:      n.fat_100g         ?? 0,
-    off_id:            product.code       ?? null,
+    protein_per_100g:  n.proteins_100g       ?? 0,
+    carbs_per_100g:    n.carbohydrates_100g  ?? 0,
+    fat_per_100g:      n.fat_100g            ?? 0,
+    off_id:            product.code          ?? null,
     image:             product.image_small_url ?? null,
   }
 }
@@ -95,7 +74,6 @@ function PortionPicker({ food, onConfirm, onBack, theme }) {
 
   return (
     <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-4">
-      {/* Food header */}
       <div className="flex items-center gap-3 p-3 rounded-2xl" style={{ background: theme.surface2 }}>
         <span style={{ fontSize: 28 }}>🍽️</span>
         <div className="flex-1 min-w-0">
@@ -106,15 +84,11 @@ function PortionPicker({ food, onConfirm, onBack, theme }) {
         </div>
       </div>
 
-      {/* Cantidad */}
       <div>
         <p className="text-xs font-semibold mb-2" style={{ color: theme.textMuted }}>CANTIDAD (gramos)</p>
         <div className="flex items-center gap-3 mb-3">
-          <input
-            type="number" value={grams} onChange={e => setGrams(e.target.value)}
-            className="input text-center font-bold text-lg flex-1"
-            style={{ maxWidth: 110 }}
-          />
+          <input type="number" value={grams} onChange={e => setGrams(e.target.value)}
+            className="input text-center font-bold text-lg flex-1" style={{ maxWidth: 110 }} />
           <span className="text-sm font-medium" style={{ color: theme.textMuted }}>g</span>
         </div>
         <div className="flex gap-2">
@@ -124,20 +98,17 @@ function PortionPicker({ food, onConfirm, onBack, theme }) {
               style={{
                 background: grams === String(q) ? theme.primary : theme.surface2,
                 color:      grams === String(q) ? '#fff' : theme.textMuted,
-              }}>
-              {q}g
-            </button>
+              }}>{q}g</button>
           ))}
         </div>
       </div>
 
-      {/* Preview macros */}
       <div className="grid grid-cols-4 gap-2 p-3 rounded-2xl" style={{ background: `${theme.primary}10` }}>
         {[
-          { l: 'Kcal',    v: entry.calories,  unit: '' },
-          { l: 'Prot',    v: entry.protein_g, unit: 'g' },
-          { l: 'Carbos',  v: entry.carbs_g,   unit: 'g' },
-          { l: 'Grasa',   v: entry.fat_g,     unit: 'g' },
+          { l: 'Kcal',   v: entry.calories,  unit: '' },
+          { l: 'Prot',   v: entry.protein_g, unit: 'g' },
+          { l: 'Carbos', v: entry.carbs_g,   unit: 'g' },
+          { l: 'Grasa',  v: entry.fat_g,     unit: 'g' },
         ].map(({ l, v, unit }) => (
           <div key={l} className="text-center">
             <p className="font-extrabold text-sm" style={{ color: theme.primary }}>{v}{unit}</p>
@@ -146,13 +117,9 @@ function PortionPicker({ food, onConfirm, onBack, theme }) {
         ))}
       </div>
 
-      {/* Botones */}
       <div className="flex gap-2">
-        <button onClick={onBack}
-          className="flex-1 py-3 rounded-2xl text-sm font-semibold"
-          style={{ background: theme.surface2, color: theme.textMuted }}>
-          ← Volver
-        </button>
+        <button onClick={onBack} className="flex-1 py-3 rounded-2xl text-sm font-semibold"
+          style={{ background: theme.surface2, color: theme.textMuted }}>← Volver</button>
         <motion.button whileTap={{ scale: 0.96 }} onClick={() => onConfirm(entry)}
           disabled={g === 0}
           className="flex-2 px-8 py-3 rounded-2xl text-sm font-bold text-white disabled:opacity-40"
@@ -193,16 +160,15 @@ function ManualForm({ onAdd, theme }) {
 // ─── MODAL BIBLIOTECA ─────────────────────────────────────────────────────────
 
 function FoodModal({ mealType, userId, theme, onAdd, onClose }) {
-  const [tab,       setTab]       = useState('search')  // 'search' | 'manual'
-  const [query,     setQuery]     = useState('')
-  const [results,   setResults]   = useState([])
-  const [recent,    setRecent]    = useState([])
-  const [loading,   setLoading]   = useState(false)
-  const [selected,  setSelected]  = useState(null)
+  const [tab,      setTab]      = useState('search')
+  const [query,    setQuery]    = useState('')
+  const [results,  setResults]  = useState([])
+  const [recent,   setRecent]   = useState([])
+  const [loading,  setLoading]  = useState(false)
+  const [selected, setSelected] = useState(null)
   const debounceRef = useRef(null)
   const inputRef    = useRef(null)
 
-  // Cargar recientes
   useEffect(() => {
     if (!userId) return
     supabase.from('food_history').select('*')
@@ -212,10 +178,8 @@ function FoodModal({ mealType, userId, theme, onAdd, onClose }) {
       .then(({ data }) => setRecent(data || []))
   }, [userId])
 
-  // Foco automático
   useEffect(() => { setTimeout(() => inputRef.current?.focus(), 200) }, [])
 
-  // Búsqueda con debounce
   useEffect(() => {
     if (query.length < 2) { setResults([]); return }
     clearTimeout(debounceRef.current)
@@ -245,10 +209,6 @@ function FoodModal({ mealType, userId, theme, onAdd, onClose }) {
     }
   }
 
-  function selectFood(food) {
-    setSelected({ ...food, _mealType: mealType })
-  }
-
   async function handleConfirm(entry) {
     await saveToHistory(selected)
     onAdd(entry)
@@ -268,12 +228,9 @@ function FoodModal({ mealType, userId, theme, onAdd, onClose }) {
   const showResults = query.length >= 2
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex flex-col"
-      style={{ background: theme.bg }}>
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 flex flex-col" style={{ background: theme.bg }}>
 
-      {/* Header */}
       <div className="flex items-center gap-3 px-4 pt-4 pb-3"
         style={{ borderBottom: `1px solid ${theme.border}` }}>
         <button onClick={selected ? () => setSelected(null) : onClose}
@@ -286,19 +243,17 @@ function FoodModal({ mealType, userId, theme, onAdd, onClose }) {
             {selected ? 'Cantidad' : `Añadir a ${MEAL_LABELS[mealType]}`}
           </p>
           {!selected && (
-            <p className="text-xs" style={{ color: theme.textMuted }}>
-              Busca en millones de alimentos
-            </p>
+            <p className="text-xs" style={{ color: theme.textMuted }}>Busca en millones de alimentos</p>
           )}
         </div>
       </div>
 
       <div className="flex-1 overflow-y-auto px-4 py-4">
         {selected ? (
-          <PortionPicker food={selected} onConfirm={handleConfirm} onBack={() => setSelected(null)} theme={theme} />
+          <PortionPicker food={selected} onConfirm={handleConfirm}
+            onBack={() => setSelected(null)} theme={theme} />
         ) : (
           <div className="space-y-4">
-            {/* Tabs */}
             <div className="flex gap-1 p-1 rounded-2xl" style={{ background: theme.surface2 }}>
               {[['search','🔍 Buscar'],['manual','✏️ Manual']].map(([id, label]) => (
                 <button key={id} onClick={() => setTab(id)}
@@ -307,9 +262,7 @@ function FoodModal({ mealType, userId, theme, onAdd, onClose }) {
                     background: tab === id ? theme.surface : 'transparent',
                     color:      tab === id ? theme.primary : theme.textMuted,
                     boxShadow:  tab === id ? '0 1px 6px rgba(0,0,0,0.08)' : 'none',
-                  }}>
-                  {label}
-                </button>
+                  }}>{label}</button>
               ))}
             </div>
 
@@ -317,17 +270,12 @@ function FoodModal({ mealType, userId, theme, onAdd, onClose }) {
               <ManualForm onAdd={handleManualAdd} theme={theme} />
             ) : (
               <>
-                {/* Search input */}
                 <div className="relative">
                   <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2"
                     style={{ color: theme.textMuted }} />
-                  <input
-                    ref={inputRef}
-                    className="input pl-9 pr-9"
+                  <input ref={inputRef} className="input pl-9 pr-9"
                     placeholder="Ej: pollo a la plancha, manzana…"
-                    value={query}
-                    onChange={e => setQuery(e.target.value)}
-                  />
+                    value={query} onChange={e => setQuery(e.target.value)} />
                   {query && (
                     <button onClick={() => setQuery('')}
                       className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -336,7 +284,6 @@ function FoodModal({ mealType, userId, theme, onAdd, onClose }) {
                   )}
                 </div>
 
-                {/* Loading */}
                 {loading && (
                   <div className="flex items-center justify-center py-8 gap-2">
                     <Loader2 size={18} className="animate-spin" style={{ color: theme.primary }} />
@@ -344,7 +291,6 @@ function FoodModal({ mealType, userId, theme, onAdd, onClose }) {
                   </div>
                 )}
 
-                {/* Recientes */}
                 {showRecent && !loading && (
                   <div>
                     <div className="flex items-center gap-2 mb-2">
@@ -355,13 +301,13 @@ function FoodModal({ mealType, userId, theme, onAdd, onClose }) {
                     </div>
                     <div className="space-y-1">
                       {recent.map((food, i) => (
-                        <FoodRow key={i} food={food} theme={theme} onSelect={() => selectFood(food)} />
+                        <FoodRow key={i} food={food} theme={theme}
+                          onSelect={() => setSelected({ ...food, _mealType: mealType })} />
                       ))}
                     </div>
                   </div>
                 )}
 
-                {/* Resultados OFF */}
                 {showResults && !loading && (
                   <div>
                     <div className="flex items-center gap-2 mb-2">
@@ -382,14 +328,14 @@ function FoodModal({ mealType, userId, theme, onAdd, onClose }) {
                       <div className="space-y-1">
                         {results.map((product, i) => {
                           const food = parseOFF(product)
-                          return <FoodRow key={i} food={food} theme={theme} onSelect={() => selectFood(food)} />
+                          return <FoodRow key={i} food={food} theme={theme}
+                            onSelect={() => setSelected({ ...food, _mealType: mealType })} />
                         })}
                       </div>
                     )}
                   </div>
                 )}
 
-                {/* Empty state inicial */}
                 {!showRecent && !showResults && !loading && (
                   <div className="text-center py-12">
                     <p style={{ fontSize: 48 }}>🔍</p>
@@ -416,9 +362,7 @@ function FoodRow({ food, theme, onSelect }) {
       className="w-full flex items-center gap-3 p-3 rounded-2xl text-left transition-all"
       style={{ background: theme.surface, border: `1px solid ${theme.border}` }}>
       <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 text-xl"
-        style={{ background: theme.surface2 }}>
-        🍽️
-      </div>
+        style={{ background: theme.surface2 }}>🍽️</div>
       <div className="flex-1 min-w-0">
         <p className="text-sm font-semibold truncate" style={{ color: theme.text }}>{food.food_name}</p>
         <p className="text-xs" style={{ color: theme.textMuted }}>
@@ -432,21 +376,21 @@ function FoodRow({ food, theme, onSelect }) {
   )
 }
 
-// ─── DIARIO TAB (PRINCIPAL) ───────────────────────────────────────────────────
+// ─── DIARIO TAB ───────────────────────────────────────────────────────────────
 
 export default function DiarioTab({ onAnalyze, onScan, onRecipes }) {
   const { user, addXP } = useStore()
   const { theme }       = useTheme()
-  const [meals,    setMeals]    = useState([])
-  const [goals,    setGoals]    = useState({ calories: 2000, protein_g: 150, carbs_g: 200, fat_g: 65 })
-  const [modal,    setModal]    = useState(null)   // mealType o null
+  const [meals,  setMeals]  = useState([])
+  const [goals,  setGoals]  = useState({ calories: 2000, protein_g: 150, carbs_g: 200, fat_g: 65 })
+  const [modal,  setModal]  = useState(null)
   const today = new Date().toISOString().split('T')[0]
 
   async function load() {
     if (!user) return
     const [mealsRes, goalsRes] = await Promise.all([
       supabase.from('meal_logs').select('*').eq('user_id', user.id).eq('date', today).order('created_at'),
-      supabase.from('nutrition_goals').select('*').eq('user_id', user.id).single(),
+      supabase.from('nutrition_goals').select('*').eq('user_id', user.id).maybeSingle(),
     ])
     setMeals(mealsRes.data || [])
     if (goalsRes.data) setGoals(goalsRes.data)
@@ -455,9 +399,7 @@ export default function DiarioTab({ onAnalyze, onScan, onRecipes }) {
 
   async function addMeal(mealType, entry) {
     await supabase.from('meal_logs').insert({
-      user_id:   user.id,
-      date:      today,
-      meal_type: mealType,
+      user_id:   user.id, date: today, meal_type: mealType,
       food_name: entry.food_name,
       calories:  entry.calories  || 0,
       protein_g: entry.protein_g || 0,
@@ -470,27 +412,33 @@ export default function DiarioTab({ onAnalyze, onScan, onRecipes }) {
   }
 
   async function deleteMeal(id) {
-    await supabase.from('meal_logs').delete().eq('id', id); load()
+    await supabase.from('meal_logs').delete().eq('id', id)
+    load()
   }
 
-  const totalCals    = meals.reduce((s, m) => s + (m.calories   || 0), 0)
-  const totalProtein = meals.reduce((s, m) => s + (m.protein_g  || 0), 0)
-  const totalCarbs   = meals.reduce((s, m) => s + (m.carbs_g    || 0), 0)
-  const totalFat     = meals.reduce((s, m) => s + (m.fat_g      || 0), 0)
+  const totalCals    = meals.reduce((s, m) => s + (m.calories  || 0), 0)
+  const totalProtein = meals.reduce((s, m) => s + (m.protein_g || 0), 0)
+  const totalCarbs   = meals.reduce((s, m) => s + (m.carbs_g   || 0), 0)
+  const totalFat     = meals.reduce((s, m) => s + (m.fat_g     || 0), 0)
   const remaining    = Math.max(goals.calories - totalCals, 0)
   const calPct       = Math.min((totalCals / goals.calories) * 100, 100)
 
   return (
     <>
       <div className="space-y-4">
-        {/* Hero card calorías */}
+
+        {/* Hero calorías */}
         <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
           className="rounded-3xl p-5" style={{ background: theme.surface, border: `1px solid ${theme.border}` }}>
           <div className="flex items-start justify-between mb-4">
             <div>
-              <p className="text-xs font-medium uppercase tracking-wider" style={{ color: theme.textMuted }}>Calorías hoy</p>
+              <p className="text-xs font-medium uppercase tracking-wider" style={{ color: theme.textMuted }}>
+                Calorías hoy
+              </p>
               <div className="flex items-baseline gap-2 mt-1">
-                <span className="text-4xl font-extrabold" style={{ color: theme.text }}>{Math.round(totalCals)}</span>
+                <span className="text-4xl font-extrabold" style={{ color: theme.text }}>
+                  {Math.round(totalCals)}
+                </span>
                 <span className="text-sm" style={{ color: theme.textMuted }}>/ {goals.calories} kcal</span>
               </div>
               <p className="text-sm mt-1 font-medium"
@@ -521,7 +469,6 @@ export default function DiarioTab({ onAnalyze, onScan, onRecipes }) {
         </motion.div>
 
         {/* Quick actions */}
-        {/* Quick actions */}
         <div className="grid grid-cols-4 gap-2" data-tour="nutrition-add">
           {[
             { icon: Camera,  label: 'Foto',    action: onAnalyze },
@@ -537,10 +484,7 @@ export default function DiarioTab({ onAnalyze, onScan, onRecipes }) {
             </button>
           ))}
         </div>
-        
-{/* Tendencias */}
-<TendenciasTab collapsed />
-        
+
         {/* Comidas por tipo */}
         {MEAL_TYPES.map(type => {
           const typeMeals = meals.filter(m => m.meal_type === type)
@@ -584,7 +528,7 @@ export default function DiarioTab({ onAnalyze, onScan, onRecipes }) {
         })}
       </div>
 
-      {/* Modal biblioteca de alimentos */}
+      {/* Modal biblioteca */}
       <AnimatePresence>
         {modal && (
           <FoodModal

@@ -13,11 +13,8 @@ import TendenciasTab from '../components/nutrition/TendenciasTab'
 
 const TABS = [
   { id: 'diario',     icon: BookOpen,    label: 'Diario',      tour: 'nutrition-diary' },
-  { id: 'analizar',   icon: Camera,      label: 'Foto',        tour: 'nutrition-photo' },
-  { id: 'escanear',   icon: Hash,        label: 'Código',      tour: 'nutrition-scan' },
   { id: 'despensa',   icon: ShoppingBag, label: 'Despensa',    tour: 'nutrition-pantry' },
   { id: 'recetas',    icon: ChefHat,     label: 'Recetas',     tour: 'nutrition-recipes' },
-  { id: 'tendencias', icon: TrendingUp,  label: 'Tendencias',  tour: null },
 ]
 
 export default function Nutrition() {

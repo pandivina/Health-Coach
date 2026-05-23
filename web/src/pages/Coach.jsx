@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Send, Loader, BookmarkPlus, X, Check, Inbox } from 'lucide-react'
+import { Send, BookmarkPlus, X, Check, Inbox, Loader } from 'lucide-react'
 import { api } from '../lib/api'
 import { useStore } from '../store/useStore'
 import { useTheme } from '../contexts/ThemeProvider'
@@ -345,12 +345,25 @@ export default function Coach() {
             </motion.div>
           ))}
           {loading && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center gap-2">
-              <img src="/icons/icon-192.png" alt="Coach"
-                style={{ width: 32, height: 32, borderRadius: 10 }} />
-              <div className="rounded-2xl px-4 py-3"
+            <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
+              className="flex items-end gap-2">
+              <motion.img src="/icons/icon-192.png" alt="Coach"
+                animate={{ scale: [1, 1.08, 1] }}
+                transition={{ duration: 1.2, repeat: Infinity, ease: 'easeInOut' }}
+                style={{ width: 32, height: 32, borderRadius: 10, flexShrink: 0 }} />
+              <div className="rounded-2xl px-4 py-3 flex flex-col gap-1"
                 style={{ background: theme.surface, border: `1px solid ${theme.border}` }}>
-                <Loader size={14} className="animate-spin" style={{ color: theme.textMuted }} />
+                <p className="text-xs font-medium" style={{ color: theme.primary }}>
+                  Pandi está pensando...
+                </p>
+                <div className="flex items-center gap-1">
+                  {[0, 1, 2].map(i => (
+                    <motion.div key={i}
+                      animate={{ y: [0, -4, 0] }}
+                      transition={{ duration: 0.6, repeat: Infinity, delay: i * 0.15, ease: 'easeInOut' }}
+                      style={{ width: 6, height: 6, borderRadius: '50%', background: theme.primary }} />
+                  ))}
+                </div>
               </div>
             </motion.div>
           )}

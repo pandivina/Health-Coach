@@ -423,7 +423,8 @@ export default function Home() {
 
       {/* Pandi saludo */}
       <PandiGreeting profile={profile} theme={theme} />
-
+{/* Widget comida rápida */}
+<QuickMealWidget userId={user?.id} theme={theme} />
       {/* Rutina matutina */}
       {isMorning && <MorningCard petEmoji={petEmoji} theme={theme} />}
 
@@ -490,8 +491,6 @@ export default function Home() {
   </motion.div>
 </Link>
       
-      {/* Widget comida rápida */}
-<QuickMealWidget userId={user?.id} theme={theme} />
 
       {/* Insights */}
       <PandiInsights />

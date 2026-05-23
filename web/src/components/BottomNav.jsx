@@ -42,7 +42,7 @@ export default function BottomNav() {
         {LEFT_NAV.map(item => <NavItem key={item.to} {...item} />)}
 
         {/* Centro — Organizador */}
-        <NavLink to="/calendar" className="flex flex-col items-center -mt-5">
+        <NavLink to="/calendar" className="flex flex-col items-center justify-center -mt-5">
           <motion.div whileTap={{ scale: 0.92 }}
             style={{
               width: 58, height: 58, borderRadius: '50%',

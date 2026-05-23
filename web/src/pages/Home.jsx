@@ -373,7 +373,7 @@ export default function Home() {
             </h1>
           </div>
 
-          {/* Badges: Nivel · Racha · Salud · Premium · Perfil */}
+          {/* Badges: Nivel · Racha · Perfil */}
           <div className="flex items-center gap-1.5">
             <div className="flex flex-col items-center px-2.5 py-1.5 rounded-2xl"
               style={{ background: theme.surface2 }}>
@@ -394,26 +394,10 @@ export default function Home() {
               </span>
             </div>
 
-            <Link to="/health">
-              <div className="flex flex-col items-center px-2.5 py-1.5 rounded-2xl"
-                style={{ background: theme.surface2 }}>
-                <span className="text-[9px]" style={{ color: theme.textMuted }}>Salud</span>
-                <span className="font-extrabold text-sm" style={{ color: '#EC4899' }}>📊</span>
-              </div>
-            </Link>
-
-            <Link to="/premium">
-              <div className="flex flex-col items-center px-2.5 py-1.5 rounded-2xl"
-                style={{ background: theme.surface2 }}>
-                <span className="text-[9px]" style={{ color: theme.textMuted }}>Premium</span>
-                <span className="font-extrabold text-sm">⭐</span>
-              </div>
-            </Link>
-
             <Link to="/profile">
               <div className="flex flex-col items-center px-2.5 py-1.5 rounded-2xl"
                 style={{ background: theme.surface2 }}>
-                <span className="text-[9px]" style={{ color: theme.textMuted }}>Perfil</span>
+                <span className="text-[9px]" style={{ color: theme.textMuted }}>Menú</span>
                 <span className="font-extrabold text-sm" style={{ color: theme.textMuted }}>☰</span>
               </div>
             </Link>

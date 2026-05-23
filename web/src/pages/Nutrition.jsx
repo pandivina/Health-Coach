@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { BookOpen, Camera, Hash, ShoppingBag, ChefHat, TrendingUp } from 'lucide-react'
 import { useTheme } from '../contexts/ThemeProvider'
 import { useTour } from '../hooks/useTour'
 import TourHelpButton from '../components/tour/TourHelpButton'
@@ -9,7 +8,6 @@ import AnalizarTab from '../components/nutrition/AnalizarTab'
 import EscanearTab from '../components/nutrition/EscanearTab'
 import DespensaTab from '../components/nutrition/DespensaTab'
 import RecetasTab from '../components/nutrition/RecetasTab'
-import TendenciasTab from '../components/nutrition/TendenciasTab'
 
 const TABS = [
   { id: 'diario',     icon: BookOpen,    label: 'Diario',      tour: 'nutrition-diary' },

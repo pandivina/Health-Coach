@@ -342,7 +342,7 @@ export default function Home() {
       value: todaySleep ? `${todaySleep.hours}h` : 'Registrar',
       sublabel: todaySleep ? `Calidad: ${todaySleep.quality}/5` : 'Sin registro',
       color: '#818CF8', done: !!todaySleep },
-    { to: '/mood', icon: todayMood ? MOODS[todayMood.mood] : '🌡️', label: 'Bienestar',
+    { to: '/mood', icon: todayMood ? MOODS[todayMood.mood] : '🧘', label: 'Bienestar',
       value: todayMood ? MOOD_LABELS[todayMood.mood] : 'Check-in',
       sublabel: todayMood ? 'Registrado hoy' : 'Sin registro',
       color: '#2EC4B6', done: !!todayMood },

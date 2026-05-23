@@ -30,7 +30,7 @@ export default function BottomNav() {
   const isCalendar = location.pathname === '/calendar'
 
   return (
-    <nav data-tour="bottom-nav" className="fixed bottom-0 left-0 right-0 max-w-lg mx-auto z-75"
+    <nav data-tour="bottom-nav" className="fixed bottom-0 left-0 right-0 max-w-lg mx-auto z-50"
   style={{
     background: theme.navBg,
     borderTop: `1px solid ${theme.navBorder}`,

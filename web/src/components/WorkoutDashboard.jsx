@@ -61,7 +61,7 @@ export default function WorkoutDashboard({ onStartSession }) {
             <div key={s.label} className="card text-center py-3">
               <s.icon size={16} style={{ color: s.color }} className="mx-auto mb-1" />
               <p className="font-bold text-sm" style={{ color: theme.text }}>{s.value}</p>
-              <p className="text-[10px]" style={{ color: theme.textMuted }}>{s.label}</p>
+              <p className="text-[10px]" style={{ color: theme.text }}>{s.label}</p>
             </div>
           ))}
         </div>
@@ -119,7 +119,7 @@ export default function WorkoutDashboard({ onStartSession }) {
                       </span>
                     )}
                   </div>
-                  <p className="text-xs mt-0.5" style={{ color: theme.textMuted }}>
+                  <p className="text-xs mt-0.5" style={{ color: theme.text }}>
                     {t.estimated_duration} min · {t.difficulty} · {(t.exercises||[]).length} ejercicios
                   </p>
                 </div>
@@ -133,7 +133,7 @@ export default function WorkoutDashboard({ onStartSession }) {
       {templates.length === 0 && (
         <div className="text-center py-6">
           <p className="text-3xl mb-2">🤖</p>
-          <p className="text-sm" style={{ color: theme.textMuted }}>
+          <p className="text-sm" style={{ color: theme.text }}>
             Usa la pestaña IA para generar tu primera rutina
           </p>
         </div>

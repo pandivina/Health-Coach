@@ -1,3 +1,6 @@
+El problema es que pegaste el `style` del botón dentro del `style` del `<nav>`. Reemplaza el archivo completo:
+
+```jsx
 import { NavLink, useLocation } from 'react-router-dom'
 import { Home, MessageCircle, Apple, Dumbbell, CalendarDays } from 'lucide-react'
 import { motion } from 'framer-motion'
@@ -32,18 +35,15 @@ export default function BottomNav() {
   return (
     <nav data-tour="bottom-nav" className="fixed bottom-0 left-0 right-0 max-w-lg mx-auto z-50"
       style={{
-  width: 58, height: 58, borderRadius: '50%',
-  background: `linear-gradient(135deg, ${theme.primary}, #FF8FA3)`,
-  boxShadow: `0 4px 20px ${theme.primary}60`,
-  display: 'flex', alignItems: 'center', justifyContent: 'center',
-  border: '3px solid white',
-  margin: '0 auto',
-}}>
+        background: theme.navBg,
+        borderTop: `1px solid ${theme.navBorder}`,
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
+      }}>
       <div className="flex items-center justify-around px-2 py-1">
 
         {LEFT_NAV.map(item => <NavItem key={item.to} {...item} />)}
 
-        {/* Centro — Organizador */}
         <NavLink to="/calendar" className="flex flex-col items-center justify-center -mt-5">
           <motion.div whileTap={{ scale: 0.92 }}
             style={{
@@ -52,6 +52,7 @@ export default function BottomNav() {
               boxShadow: `0 4px 20px ${theme.primary}60`,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               border: '3px solid white',
+              margin: '0 auto',
             }}>
             <CalendarDays size={26} color="#fff" strokeWidth={1.8} />
           </motion.div>
@@ -67,3 +68,4 @@ export default function BottomNav() {
     </nav>
   )
 }
+```

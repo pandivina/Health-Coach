@@ -56,12 +56,11 @@ export default function Nutrition() {
         <AnimatePresence mode="wait">
           <motion.div key={tab} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
-            {tab === 'diario'     && <DiarioTab onAnalyze={() => setTab('analizar')} onScan={() => setTab('escanear')} onRecipes={() => setTab('recetas')} />}
-            {tab === 'analizar'   && <AnalizarTab onSaved={() => setTab('diario')} />}
-            {tab === 'escanear'   && <EscanearTab onSaved={() => setTab('diario')} />}
-            {tab === 'despensa'   && <DespensaTab />}
-            {tab === 'recetas'    && <RecetasTab />}
-            {tab === 'tendencias' && <TendenciasTab />}
+            {tab === 'diario'   && <DiarioTab onAnalyze={() => setTab('analizar')} onScan={() => setTab('escanear')} onRecipes={() => setTab('recetas')} />}
+            {tab === 'analizar' && <AnalizarTab onSaved={() => setTab('diario')} />}
+            {tab === 'escanear' && <EscanearTab onSaved={() => setTab('diario')} />}
+            {tab === 'despensa' && <DespensaTab />}
+            {tab === 'recetas'  && <RecetasTab />}
           </motion.div>
         </AnimatePresence>
       </div>

@@ -32,11 +32,13 @@ export default function BottomNav() {
   return (
     <nav data-tour="bottom-nav" className="fixed bottom-0 left-0 right-0 max-w-lg mx-auto z-50"
       style={{
-        background: theme.navBg,
-        borderTop: `1px solid ${theme.navBorder}`,
-        backdropFilter: 'blur(20px)',
-        WebkitBackdropFilter: 'blur(20px)',
-      }}>
+  width: 58, height: 58, borderRadius: '50%',
+  background: `linear-gradient(135deg, ${theme.primary}, #FF8FA3)`,
+  boxShadow: `0 4px 20px ${theme.primary}60`,
+  display: 'flex', alignItems: 'center', justifyContent: 'center',
+  border: '3px solid white',
+  margin: '0 auto',
+}}>
       <div className="flex items-center justify-around px-2 py-1">
 
         {LEFT_NAV.map(item => <NavItem key={item.to} {...item} />)}

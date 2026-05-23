@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { BookOpen, ShoppingBag, ChefHat } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useTheme } from '../contexts/ThemeProvider'
 import { useTour } from '../hooks/useTour'

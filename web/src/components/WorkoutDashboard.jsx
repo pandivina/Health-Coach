@@ -75,7 +75,7 @@ export default function WorkoutDashboard({ onStartSession }) {
         }}>
           <p className="text-xs mb-1" style={{ color: theme.textMuted }}>Último entreno</p>
           <p className="font-semibold" style={{ color: theme.text }}>{recentSession.name}</p>
-          <div className="flex gap-3 mt-1 text-xs" style={{ color: theme.textMuted }}>
+          <div className="flex gap-3 mt-1 text-xs" style={{ color: theme.text }}>
             <span className="flex items-center gap-1">
               <Clock size={10} /> {Math.round((recentSession.duration_seconds||0)/60)} min
             </span>

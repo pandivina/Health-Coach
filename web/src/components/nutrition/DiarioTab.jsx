@@ -537,7 +537,10 @@ export default function DiarioTab({ onAnalyze, onScan, onRecipes }) {
             </button>
           ))}
         </div>
-
+        
+{/* Tendencias */}
+<TendenciasTab collapsed />
+        
         {/* Comidas por tipo */}
         {MEAL_TYPES.map(type => {
           const typeMeals = meals.filter(m => m.meal_type === type)

@@ -12,7 +12,7 @@ router.post('/upload-receipt', requireAuth, async (req, res) => {
     if (!imageBase64) return res.status(400).json({ error: 'No image provided' });
 
     const response = await anthropic.messages.create({
-      model: 'claude-opus-4-5',
+      model: 'claude-opus-4-6',
       max_tokens: 1000,
       messages: [{
         role: 'user',
@@ -32,8 +32,11 @@ Solo alimentos/ingredientes, ignora productos de limpieza, etc. Sin texto adicio
       }],
     });
 
-    const raw = response.content[0].text.trim().replace(/```json|```/g, '').trim();
-    const { items } = JSON.parse(raw);
+    const raw   = response.content[0].text.trim().replace(/```json|```/g, '').trim();
+const match = raw.match(/\{[\s\S]*\}/)
+if (!match) throw new Error('No JSON in response')
+const { items } = JSON.parse(match[0]);
+if (!items || !Array.isArray(items)) throw new Error('Invalid items array')
 
     // Insertar en BD
     const rows = items.map(item => ({ ...item, user_id: req.user.id }));

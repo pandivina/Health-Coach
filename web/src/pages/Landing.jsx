@@ -170,7 +170,7 @@ export default function Landing() {
             ))}
           </div>
           <div className="flex items-center gap-3">
-            <Link to="/auth" className="text-sm font-bold px-4 py-2 rounded-xl text-white" style={{ background: C.grad }}>Iniciar sesión</Link>
+            <Link to="/auth" className="text-sm font-medium hidden md:block" style={{ color: C.muted }}>Iniciar sesión</Link>
           </div>
         </div>
       </nav>

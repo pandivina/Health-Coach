@@ -1,4 +1,3 @@
-import QuickMealWidget from '../components/QuickMealWidget'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -141,31 +140,95 @@ function MorningCard({ petEmoji, theme }) {
 
 // ─── PANDI GREETING ──────────────────────────────────────────────────────────
 
-function PandiGreeting({ profile, theme }) {
-  const hour     = new Date().getHours()
-  const name     = profile?.name?.split(' ')[0] || ''
-  const petName  = profile?.pet_name || 'Pandi'
-  const petEmoji = PET_EMOJI[profile?.pet_type] || '🐼'
-  const msg = hour < 12
-    ? `¡Buenos días, ${name}! 🌅 ¿Cómo estamos hoy?`
-    : hour < 20
-      ? `¡Buenas tardes, ${name}! ¿Qué tal el día?`
-      : `¡Buenas noches, ${name}! 🌙 ¿Todo bien?`
+function PandiGreeting({ profile, theme, todayData }) {
+  const hour    = new Date().getHours()
+  const name    = profile?.name?.split(' ')[0] || ''
+  const petName = profile?.pet_name || 'Pandi'
+  const [imgErr, setImgErr] = useState(false)
+  const [msgIdx, setMsgIdx] = useState(0)
+
+  // Calcular prioridades del día
+  const priorities = []
+  if (!todayData?.hasMood)     priorities.push({ text: `¿Cómo estás hoy, ${name}? Cuéntamelo 🧘`, to: '/mood',      color: '#2EC4B6' })
+  if (!todayData?.hasMeals)    priorities.push({ text: 'Registra tu primera comida del día 🍎',      to: '/nutrition', color: '#F97316' })
+  if (!todayData?.hasWater)    priorities.push({ text: 'No te olvides del agua hoy 💧',              to: '/hydration', color: '#3B82F6' })
+  if (!todayData?.hasSleep)    priorities.push({ text: '¿Cómo dormiste anoche? Registra tu sueño 😴', to: '/sleep',     color: '#818CF8' })
+  if (!todayData?.hasWorkout)  priorities.push({ text: '¿Toca entrenar hoy? ¡Vamos! 💪',             to: '/workout',   color: '#6366F1' })
+
+  // Saludo base si todo completado
+  const greetings = [
+    hour < 12 ? `¡Buenos días, ${name}! 🌅 ¿Lista para hoy?` : hour < 20 ? `¡Buenas tardes, ${name}! ¿Qué tal va?` : `¡Buenas noches, ${name}! 🌙`,
+    `Estoy aquí para ayudarte, ${name} 🐼`,
+  ]
+
+  const messages = priorities.length > 0 ? priorities.slice(0, 3) : greetings.map(t => ({ text: t, to: '/pet', color: theme.primary }))
+
+  // Rotar mensaje cada 4 segundos
+  useEffect(() => {
+    if (messages.length <= 1) return
+    const t = setInterval(() => setMsgIdx(i => (i + 1) % messages.length), 4000)
+    return () => clearInterval(t)
+  }, [messages.length])
+
+  const current = messages[msgIdx]
 
   return (
     <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }}
-      className="flex items-center gap-3 p-4 rounded-2xl mb-4"
-      style={{ background: theme.surface, border: `1px solid ${theme.border}` }}>
-      <motion.span animate={{ rotate: [0, 10, -10, 10, 0] }}
-        transition={{ duration: 1.5, repeat: Infinity, repeatDelay: 4 }}
-        style={{ fontSize: 36, flexShrink: 0 }}>{petEmoji}</motion.span>
-      <div className="flex-1 min-w-0">
-        <p className="font-extrabold text-sm" style={{ color: theme.text }}>{petName}</p>
-        <p className="text-xs leading-relaxed mt-0.5" style={{ color: theme.textMuted }}>{msg}</p>
-      </div>
-      <Link to="/pet">
-        <ChevronRight size={16} style={{ color: theme.textLight }} />
+      className="flex items-end gap-3 mb-4">
+
+      {/* Imagen busto Pandi */}
+      <Link to="/pet" className="flex-shrink-0">
+        <motion.div
+          animate={{ y: [0, -3, 0] }}
+          transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}>
+          {imgErr ? (
+            <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl"
+              style={{ background: theme.surface2 }}>🐼</div>
+          ) : (
+            <img src="/panda/talk_1.png" alt={petName}
+              onError={() => setImgErr(true)}
+              style={{ width: 64, height: 64, objectFit: 'contain' }} />
+          )}
+        </motion.div>
       </Link>
+
+      {/* Bocadillo */}
+      <div className="flex-1 relative">
+        {/* Cola del bocadillo */}
+        <div style={{
+          position: 'absolute', left: -8, bottom: 12,
+          width: 0, height: 0,
+          borderTop: '8px solid transparent',
+          borderBottom: '8px solid transparent',
+          borderRight: `8px solid ${theme.surface}`,
+        }} />
+        <AnimatePresence mode="wait">
+          <motion.div key={msgIdx}
+            initial={{ opacity: 0, x: 6 }} animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -6 }} transition={{ duration: 0.25 }}
+            className="rounded-2xl rounded-bl-sm p-3"
+            style={{ background: theme.surface, border: `1px solid ${theme.border}` }}>
+            <p className="text-[10px] font-bold mb-0.5" style={{ color: current.color }}>
+              {petName}
+            </p>
+            <p className="text-xs leading-relaxed" style={{ color: theme.text }}>
+              {current.text}
+            </p>
+            {/* Dots indicador */}
+            {messages.length > 1 && (
+              <div className="flex gap-1 mt-2">
+                {messages.map((_, i) => (
+                  <div key={i} style={{
+                    width: i === msgIdx ? 12 : 4, height: 4, borderRadius: 2,
+                    background: i === msgIdx ? current.color : theme.surface2,
+                    transition: 'all 0.3s',
+                  }} />
+                ))}
+              </div>
+            )}
+          </motion.div>
+        </AnimatePresence>
+      </div>
     </motion.div>
   )
 }
@@ -342,7 +405,7 @@ export default function Home() {
       value: todaySleep ? `${todaySleep.hours}h` : 'Registrar',
       sublabel: todaySleep ? `Calidad: ${todaySleep.quality}/5` : 'Sin registro',
       color: '#818CF8', done: !!todaySleep },
-    { to: '/mood', icon: todayMood ? MOODS[todayMood.mood] : '🧘', label: 'Bienestar',
+    { to: '/mood', icon: todayMood ? MOODS[todayMood.mood] : '🌡️', label: 'Bienestar',
       value: todayMood ? MOOD_LABELS[todayMood.mood] : 'Check-in',
       sublabel: todayMood ? 'Registrado hoy' : 'Sin registro',
       color: '#2EC4B6', done: !!todayMood },
@@ -421,10 +484,15 @@ export default function Home() {
         </div>
       </motion.div>
 
-      {/* Pandi saludo */}
-      <PandiGreeting profile={profile} theme={theme} />
-{/* Widget comida rápida */}
-<QuickMealWidget userId={user?.id} theme={theme} />
+      {/* Pandi saludo con prioridades */}
+      <PandiGreeting profile={profile} theme={theme} todayData={{
+        hasMood:    !!todayMood,
+        hasMeals:   cals > 0,
+        hasWater:   false, // WaterWidget lo maneja internamente
+        hasSleep:   !!todaySleep,
+        hasWorkout: !!todayWorkout,
+      }} />
+
       {/* Rutina matutina */}
       {isMorning && <MorningCard petEmoji={petEmoji} theme={theme} />}
 
@@ -472,25 +540,26 @@ export default function Home() {
         </div>
       </motion.div>
 
-     {/* Banner Mi Bienestar */}
-<Link to="/mood">
-  <motion.div whileTap={{ scale: 0.98 }} className="card mb-4 flex items-center gap-3"
-    style={{ background: 'linear-gradient(135deg,#f0fffe,#fff5f7)', border: '1px solid rgba(46,196,182,0.2)' }}>
-    <span style={{ fontSize: 32, flexShrink: 0 }}>
-      {todayMood ? ['😩','😞','😐','😊','🤩'][todayMood.mood - 1] : '🐼'}
-    </span>
-    <div className="flex-1">
-      <p className="font-extrabold text-sm" style={{ color: '#1F2937' }}>Mi Bienestar</p>
-      <p className="text-xs" style={{ color: '#6B7280' }}>
-        {todayMood
-          ? `Hoy te sientes ${['muy mal','mal','regular','bien','genial'][todayMood.mood - 1]} · Respiración, meditación y más`
-          : 'Check-in de ánimo · Respiración · Meditación'}
-      </p>
-    </div>
-    <ChevronRight size={16} style={{ color: '#9CA3AF' }} />
-  </motion.div>
-</Link>
-      
+      {/* Banner Mi Bienestar */}
+      <Link to="/mood">
+        <motion.div whileTap={{ scale: 0.98 }} className="card mb-4 flex items-center gap-3"
+          style={{ background: 'linear-gradient(135deg,#f0fffe,#fff5f7)', border: '1px solid rgba(46,196,182,0.2)' }}>
+          <motion.span animate={{ rotate: [0, 10, -10, 10, 0] }}
+            transition={{ duration: 1.5, repeat: Infinity, repeatDelay: 4 }}
+            style={{ fontSize: 32, flexShrink: 0 }}>
+            {todayMood ? ['😩','😞','😐','😊','🤩'][todayMood.mood - 1] : '🐼'}
+          </motion.span>
+          <div className="flex-1">
+            <p className="font-extrabold text-sm" style={{ color: '#1F2937' }}>Mi Bienestar</p>
+            <p className="text-xs" style={{ color: '#6B7280' }}>
+              {todayMood
+                ? `Hoy te sientes ${['muy mal','mal','regular','bien','genial'][todayMood.mood - 1]} · Respiración, meditación y más`
+                : 'Check-in de ánimo · Respiración · Meditación'}
+            </p>
+          </div>
+          <ChevronRight size={16} style={{ color: '#9CA3AF' }} />
+        </motion.div>
+      </Link>
 
       {/* Insights */}
       <PandiInsights />

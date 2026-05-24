@@ -12,7 +12,7 @@ router.post('/upload-receipt', requireAuth, async (req, res) => {
     if (!imageBase64) return res.status(400).json({ error: 'No image provided' });
 
     const response = await anthropic.messages.create({
-      model: 'claude-opus-4-6',
+      model: 'claude-sonnet-4-6',
       max_tokens: 1000,
       messages: [{
         role: 'user',

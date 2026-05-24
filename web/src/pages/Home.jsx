@@ -340,6 +340,69 @@ function RingProgress({ value, max, color, size = 80, label }) {
   )
 }
 
+// ─── NOTIFICATION CARD ───────────────────────────────────────────────────────
+
+function NotificationCard({ theme }) {
+  const [status,    setStatus]    = useState(null) // null | 'default' | 'granted' | 'denied'
+  const [dismissed, setDismissed] = useState(false)
+
+  useEffect(() => {
+    if (!('Notification' in window)) { setStatus('denied'); return }
+    setStatus(Notification.permission)
+    const key = 'pandi_notif_dismissed'
+    if (localStorage.getItem(key)) setDismissed(true)
+  }, [])
+
+  async function requestPermission() {
+    const result = await Notification.requestPermission()
+    setStatus(result)
+    if (result !== 'default') {
+      localStorage.setItem('pandi_notif_dismissed', '1')
+      setDismissed(true)
+    }
+  }
+
+  function dismiss() {
+    localStorage.setItem('pandi_notif_dismissed', '1')
+    setDismissed(true)
+  }
+
+  if (dismissed || status !== 'default') return null
+
+  return (
+    <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -8 }}
+      className="card mb-4 flex items-start gap-3"
+      style={{ background: `${theme.primary}08`, border: `1px solid ${theme.primary}25` }}>
+      <motion.img src="/panda/talk_1.png" alt="Pandi"
+        animate={{ y: [0, -3, 0] }}
+        transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
+        style={{ width: 48, height: 48, objectFit: 'contain', flexShrink: 0 }}
+        onError={e => { e.target.style.display = 'none' }} />
+      <div className="flex-1 min-w-0">
+        <p className="font-extrabold text-sm mb-0.5" style={{ color: theme.text }}>
+          ¿Te aviso cuando sea importante? 🔔
+        </p>
+        <p className="text-xs leading-relaxed mb-3" style={{ color: theme.textMuted }}>
+          Puedo recordarte el agua, las comidas y tus hábitos. Solo cuando de verdad lo necesites, lo prometo 🐼
+        </p>
+        <div className="flex gap-2">
+          <motion.button whileTap={{ scale: 0.95 }} onClick={requestPermission}
+            className="flex-1 py-2 rounded-xl text-xs font-bold text-white"
+            style={{ background: `linear-gradient(135deg, ${theme.primary}, #FF8FA3)` }}>
+            Sí, activa alertas
+          </motion.button>
+          <button onClick={dismiss}
+            className="px-3 py-2 rounded-xl text-xs font-semibold"
+            style={{ background: theme.surface2, color: theme.textMuted }}>
+            Ahora no
+          </button>
+        </div>
+      </div>
+    </motion.div>
+  )
+}
+
 // ─── HOME ─────────────────────────────────────────────────────────────────────
 
 export default function Home() {
@@ -492,6 +555,9 @@ export default function Home() {
         hasSleep:   !!todaySleep,
         hasWorkout: !!todayWorkout,
       }} />
+
+      {/* Card notificaciones */}
+      <NotificationCard theme={theme} />
 
       {/* Rutina matutina */}
       {isMorning && <MorningCard petEmoji={petEmoji} theme={theme} />}

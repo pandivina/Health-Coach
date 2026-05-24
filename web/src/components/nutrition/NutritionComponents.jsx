@@ -36,19 +36,27 @@ export function DespensaTab() {
   }
 
   async function scanReceipt(e) {
-    const file = e.target.files[0]; if (!file) return
-    setScanning(true)
-    try {
+  const file = e.target.files[0]
+  if (!file) return
+  setScanning(true)
+  try {
+    const base64 = await new Promise((resolve, reject) => {
       const reader = new FileReader()
-      reader.onload = async (ev) => {
-        const base64 = ev.target.result.split(',')[1]
-        const result = await api.pantry.uploadReceipt(base64, file.type)
-        alert(`✅ Se añadieron ${result.inserted} ingredientes`); load()
-      }
+      reader.onload  = ev => resolve(ev.target.result.split(',')[1])
+      reader.onerror = reject
       reader.readAsDataURL(file)
-    } catch { alert('No se pudo procesar el ticket') }
-    finally { setScanning(false) }
+    })
+    const result = await api.pantry.uploadReceipt(base64, file.type)
+    alert(`✅ Se añadieron ${result.inserted} ingredientes`)
+    load()
+  } catch (err) {
+    console.error('Despensa foto error:', err)
+    alert('No se pudo procesar la foto. Inténtalo de nuevo.')
+  } finally {
+    setScanning(false)
+    if (fileRef.current) fileRef.current.value = ''
   }
+}
 
   const grouped = CATEGORIES.reduce((acc, cat) => {
     const catItems = items.filter(i => i.category === cat)

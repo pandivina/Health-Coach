@@ -1,3 +1,5 @@
+import { AchievementToastProvider } from './components/AchievementPopup'
+import Achievements from './pages/Achievements'
 import Calendar from './pages/Calendar'
 import { useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
@@ -90,6 +92,7 @@ export default function App() {
   }, [])
 
   return (
+    <AchievementToastProvider>
     <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <Routes>
         {/* Raíz inteligente */}
@@ -101,6 +104,7 @@ export default function App() {
         <Route path="/privacy"    element={<PrivacyPolicy />} />
         <Route path="/terms"      element={<TermsOfUse />} />
         <Route path="/disclaimer" element={<MedicalDisclaimerPage />} />
+        <Route path="/achievements" element={<Achievements />} />
 
         {/* Rutas protegidas con Layout */}
         <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
@@ -128,5 +132,6 @@ export default function App() {
       <CookieBanner />
       <UpdateBanner />
     </BrowserRouter>
+  </AchievementToastProvider>
   )
 }

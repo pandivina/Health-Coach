@@ -29,7 +29,7 @@ router.post('/generate', requireAuth, async (req, res) => {
       return d.toISOString().split('T')[0]
     })
 
-    const safe = fn => fn.catch(() => ({ data: null }))
+    const safe = fn => Promise.resolve(fn).catch(() => ({ data: null }))
     const [moodR, sleepR, waterR, workoutR, profileR] = await Promise.all([
       safe(supabaseAdmin.from('mood_logs').select('date,mood').eq('user_id', userId).in('date', days)),
       safe(supabaseAdmin.from('sleep_logs').select('date,hours,quality').eq('user_id', userId).in('date', days)),

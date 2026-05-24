@@ -59,17 +59,6 @@ function addDays(dateStr, n) {
   return d.toISOString().split('T')[0]
 }
 
-function formatDate(dateStr) {
-  if (!dateStr) return ''
-  return new Date(dateStr + 'T12:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'long' })
-}
-
-function getDaysInMonth(year, month) { return new Date(year, month + 1, 0).getDate() }
-function getFirstDayOfMonth(year, month) {
-  let d = new Date(year, month, 1).getDay()
-  return d === 0 ? 6 : d - 1
-}
-
 // ─── COMPONENTE PRINCIPAL ────────────────────────────────────────────────────
 
 export default function CycleTab({ theme }) {

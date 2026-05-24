@@ -187,7 +187,7 @@ function PandiGreeting({ profile, theme, todayData }) {
           ) : (
             <img src="/panda/talk_1.png" alt={petName}
               onError={() => setImgErr(true)}
-              style={{ width: 75, height: 75, objectFit: 'contain' }} />
+              style={{ width: 100, height: 100, objectFit: 'contain' }} />
           )}
         </motion.div>
       </Link>

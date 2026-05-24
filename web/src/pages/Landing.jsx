@@ -389,7 +389,7 @@ export default function Landing() {
               <p className="text-3xl font-extrabold mb-1" style={{ color: C.text }}>0€</p>
               <p className="text-sm mb-6" style={{ color: C.muted }}>Para siempre</p>
               <div className="space-y-2.5 mb-6">
-                {['Diario nutricional manual','Coach IA (10 mensajes/día)','Entrenamiento básico','Sueño, ánimo e hidratación','Mascota Panda','Informe diario básico'].map(f => (
+                {['Diario nutricional manual','Coach IA (10 mensajes/día)','Entrenamiento básico','Sueño, ánimo e hidratación','Mascota Pandi','Informe diario básico'].map(f => (
                   <div key={f} className="flex items-center gap-2"><Check size={14} style={{ color: C.primary, flexShrink: 0 }} /><p className="text-sm" style={{ color: C.text }}>{f}</p></div>
                 ))}
               </div>

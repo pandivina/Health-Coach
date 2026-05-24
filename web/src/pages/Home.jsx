@@ -163,10 +163,10 @@ function PandiGreeting({ profile, theme, todayData }) {
 
   const messages = priorities.length > 0 ? priorities.slice(0, 3) : greetings.map(t => ({ text: t, to: '/pet', color: theme.primary }))
 
-  // Rotar mensaje cada 4 segundos
+  // Rotar mensaje cada 10 segundos
   useEffect(() => {
     if (messages.length <= 1) return
-    const t = setInterval(() => setMsgIdx(i => (i + 1) % messages.length), 4000)
+    const t = setInterval(() => setMsgIdx(i => (i + 1) % messages.length), 10000)
     return () => clearInterval(t)
   }, [messages.length])
 
@@ -180,14 +180,14 @@ function PandiGreeting({ profile, theme, todayData }) {
       <Link to="/pet" className="flex-shrink-0">
         <motion.div
           animate={{ y: [0, -3, 0] }}
-          transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}>
+          transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}>
           {imgErr ? (
             <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl"
               style={{ background: theme.surface2 }}>🐼</div>
           ) : (
             <img src="/panda/talk_1.png" alt={petName}
               onError={() => setImgErr(true)}
-              style={{ width: 64, height: 64, objectFit: 'contain' }} />
+              style={{ width: 75, height: 75, objectFit: 'contain' }} />
           )}
         </motion.div>
       </Link>

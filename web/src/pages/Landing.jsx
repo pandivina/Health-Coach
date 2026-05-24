@@ -399,7 +399,7 @@ export default function Landing() {
               <div className="absolute -top-3 left-1/2 -translate-x-1/2 text-white text-xs font-bold px-4 py-1 rounded-full" style={{ background: C.grad }}>MÁS POPULAR</div>
               <p className="font-bold text-lg mb-1 text-white">Premium</p>
               <div className="flex items-baseline gap-2 mb-1">
-                <p className="text-3xl font-extrabold text-white">4,99€</p>
+                <p className="text-3xl font-extrabold text-white">9,99€</p>
                 <p className="text-sm" style={{ color: 'rgba(255,255,255,0.6)' }}>/mes</p>
               </div>
               <p className="text-sm mb-6" style={{ color: 'rgba(255,255,255,0.5)' }}>59,99€/año · Ahorra 60%</p>

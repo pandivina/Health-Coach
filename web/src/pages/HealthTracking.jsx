@@ -38,6 +38,7 @@ function WeightTab() {
   const toGoal = current && health?.target_weight_kg ? Math.abs(current - health.target_weight_kg).toFixed(1) : null
   return (
     <div className="space-y-4">
+      <PandiContextualBubble section="health" data={{ weight: currentWeight, target: targetWeight, diff: weightDiff }} />
       {health && (
         <div className="card" style={{ background: `${theme.primary}10`, border: `1px solid ${theme.primary}20` }}>
           <div className="grid grid-cols-3 gap-3 text-center">

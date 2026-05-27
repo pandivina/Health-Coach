@@ -1,7 +1,8 @@
+import { useTheme } from '../../contexts/ThemeProvider'
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { api } from '../lib/api'
-import { useTheme } from '../contexts/ThemeProvider'
+
 
 // Muestra el resumen semanal de Pandi.
 // Se oculta cuando el usuario lo cierra — vuelve la semana siguiente.

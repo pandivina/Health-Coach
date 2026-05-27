@@ -32,14 +32,17 @@ export default function Profile() {
   useTour('profile')
 
   async function save() {
-    await updateProfile({
-      ...form,
-      age: parseInt(form.age) || null,
-      weight_kg: parseFloat(form.weight_kg) || null,
-      height_cm: parseFloat(form.height_cm) || null,
-    })
-    setEditing(false)
-  }
+  await updateProfile({
+    ...form,
+    age: parseInt(form.age) || null,
+    weight_kg: parseFloat(form.weight_kg) || null,
+    height_cm: parseFloat(form.height_cm) || null,
+    physical_limitations: form.physical_limitations || null,
+    specific_goals: form.specific_goals || null,
+    dietary_restrictions: form.dietary_restrictions || null,
+  })
+  setEditing(false)
+}
 
   async function handleLogout() {
     await logout()

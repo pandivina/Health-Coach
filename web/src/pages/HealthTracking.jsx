@@ -6,6 +6,8 @@ import { api } from '../lib/api'
 import { useStore } from '../store/useStore'
 import { useTheme } from '../contexts/ThemeProvider'
 import { MedicalDisclaimerBanner } from '../components/legal/MedicalDisclaimer'
+import PandiContextualBubble from '../components/PandiContextualBubble'
+import PandiTips from '../components/PandiTips'
 
 const TABS = [
   { id: 'weight',     icon: Scale,        label: 'Peso' },

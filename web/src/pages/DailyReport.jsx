@@ -8,6 +8,8 @@ import { useStore } from '../store/useStore'
 import { useTheme } from '../contexts/ThemeProvider'
 import { useTour } from '../hooks/useTour'
 import TourHelpButton from '../components/tour/TourHelpButton'
+import PandiContextualBubble from '../components/PandiContextualBubble'
+import PandiTips from '../components/PandiTips'
 
 function ModuleStatus({ icon: Icon, label, value, status, to }) {
   const { theme } = useTheme()

@@ -43,11 +43,11 @@ function getMealWindows(wakeTime, workSchedule) {
   const norm = (m) => ((m % 1440) + 1440) % 1440
 
   return [
-    { name: 'Desayuno', emoji: '🍳', start: norm(breakfast - 15), end: norm(breakfast + 90)  },
-    { name: 'Comida',   emoji: '🥗', start: norm(lunch    - 30),  end: norm(lunch    + 120) },
-    { name: 'Snack',    emoji: '🍎', start: norm(snack    - 15),  end: norm(snack    + 60)  },
-    { name: 'Cena',     emoji: '🍽️', start: norm(dinner   - 30),  end: norm(dinner   + 120) },
-  ]
+  { name: 'Desayuno', emoji: '🍳', start: norm(breakfast - 15), end: norm(breakfast + (workSchedule === 'rotating' ? 120 : 90)) },
+  { name: 'Comida',   emoji: '🥗', start: norm(lunch    - 45),  end: norm(lunch    + (workSchedule === 'rotating' ? 150 : 120)) },
+  { name: 'Snack',    emoji: '🍎', start: norm(snack    - 15),  end: norm(snack    + 75)  },
+  { name: 'Cena',     emoji: '🍽️', start: norm(dinner   - 45),  end: norm(dinner   + (workSchedule === 'rotating' ? 150 : 120)) },
+]
 }
 
 function getCurrentMeal(windows) {

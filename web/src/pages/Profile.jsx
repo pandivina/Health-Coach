@@ -17,13 +17,16 @@ export default function Profile() {
   const { theme } = useTheme()
   const [editing, setEditing] = useState(false)
   const [form, setForm] = useState({
-    name: profile?.name || '',
-    age: String(profile?.age || ''),
-    weight_kg: String(profile?.weight_kg || ''),
-    height_cm: String(profile?.height_cm || ''),
-    goal: profile?.goal || '',
-    activity_level: profile?.activity_level || '',
-  })
+  name: profile?.name || '',
+  age: String(profile?.age || ''),
+  weight_kg: String(profile?.weight_kg || ''),
+  height_cm: String(profile?.height_cm || ''),
+  goal: profile?.goal || '',
+  activity_level: profile?.activity_level || '',
+  physical_limitations: profile?.physical_limitations || '',
+  specific_goals: profile?.specific_goals || '',
+  dietary_restrictions: profile?.dietary_restrictions || '',
+})
   const navigate = useNavigate()
 
   useTour('profile')
@@ -185,6 +188,29 @@ export default function Profile() {
             <p className="text-xs" style={{ color: theme.textMuted }}>Temas y colores de la app</p>
           </div>
           <span className="ml-auto" style={{ color: theme.textMuted }}>›</span>
+          <div style={{ borderTop: `1px solid ${theme.border}`, paddingTop: 12, marginTop: 4 }}>
+  <p className="text-xs font-bold mb-3 uppercase tracking-wide" style={{ color: theme.textMuted }}>
+    Salud avanzada (opcional)
+  </p>
+  <div>
+    <label className="label">Lesiones o limitaciones físicas</label>
+    <input className="input" placeholder="Ej: rodilla derecha, lumbar…"
+      value={form.physical_limitations}
+      onChange={e => setForm(f => ({ ...f, physical_limitations: e.target.value }))} />
+  </div>
+  <div className="mt-3">
+    <label className="label">Objetivo específico</label>
+    <input className="input" placeholder="Ej: correr 10km, hacer sentadilla con peso…"
+      value={form.specific_goals}
+      onChange={e => setForm(f => ({ ...f, specific_goals: e.target.value }))} />
+  </div>
+  <div className="mt-3">
+    <label className="label">Restricciones alimentarias</label>
+    <input className="input" placeholder="Ej: sin gluten, sin lactosa, halal…"
+      value={form.dietary_restrictions}
+      onChange={e => setForm(f => ({ ...f, dietary_restrictions: e.target.value }))} />
+  </div>
+</div>
         </motion.div>
       </Link>
 

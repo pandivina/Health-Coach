@@ -7,6 +7,7 @@ import LiveWorkoutScreen from '../components/workout/LiveWorkoutScreen'
 import { RoutineGenerator, ExerciseLibrary, WorkoutHistory, WorkoutStats } from '../components/workout/WorkoutComponents'
 import PandiContextualBubble from '../components/PandiContextualBubble'
 import PandiTips from '../components/PandiTips'
+import { useStore } from '../store/useStore'
 
 const TABS = [
   { id: 'dashboard', icon: Dumbbell,  label: 'Inicio'     },
@@ -20,6 +21,7 @@ export default function Workout() {
   const { theme } = useTheme()
   const [tab, setTab] = useState('dashboard')
   const [activeSession, setActiveSession] = useState(null)
+  const { profile } = useStore()
 
   if (activeSession) {
     return <LiveWorkoutScreen session={activeSession} onFinish={() => setActiveSession(null)} />

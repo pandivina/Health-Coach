@@ -16,11 +16,11 @@ function NavItem({ to, icon: Icon, label }) {
   const { theme } = useTheme()
   return (
     <NavLink to={to}
-      className="flex flex-col items-center gap-0.5 py-2 px-3 rounded-xl transition-all"
-      style={({ isActive }) => ({ color: isActive ? theme.navActive : theme.navText })}>
-      <Icon size={20} strokeWidth={1.8} />
-      <span className="text-[10px] font-medium">{label}</span>
-    </NavLink>
+      className="flex flex-col items-center gap-1 py-1 px-3 rounded-xl transition-all duration-200 hover:scale-105"
+      style={({ isActive }) => ({ color: isActive ? theme.navActive : theme.navText })}>
+      <Icon size={22} strokeWidth={1.8} /> {/* Un pelín más grande para usabilidad táctil */}
+      <span className="text-[10px] font-semibold tracking-wide">{label}</span>
+    </NavLink>
   )
 }
 

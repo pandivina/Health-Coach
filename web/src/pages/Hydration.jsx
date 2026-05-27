@@ -4,6 +4,8 @@ import { Droplets, Plus, Minus } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useStore } from '../store/useStore'
 import { useTheme } from '../contexts/ThemeProvider'
+import PandiContextualBubble from '../components/PandiContextualBubble'
+import PandiTips from '../components/PandiTips'
 
 export default function Hydration() {
   const { user, addXP } = useStore()

@@ -1,3 +1,4 @@
+import { useStore } from '../store/useStore' // O la ruta donde tengas tu store (ej. '../hooks/useStore')
 import { useTheme } from '../contexts/ThemeProvider'
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'

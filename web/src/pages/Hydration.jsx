@@ -29,6 +29,7 @@ export default function Hydration() {
 
   return (
     <div className="page flex flex-col items-center">
+      <PandiContextualBubble section="hydration" data={{ glasses: 0, goal: 8 }} />
       <h1 className="text-2xl font-extrabold mb-6 self-start" style={{ color: theme.text }}>Hidratación 💧</h1>
 
       {/* Ring */}

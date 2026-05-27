@@ -180,13 +180,29 @@ export function AnalizarTab({ onSaved }) {
   const [error, setError] = useState('')
   const fileRef = useRef()
 
-  function handleFile(file) {
-    if (!file) return
-    setError(''); setResult(null)
-    const reader = new FileReader()
-    reader.onload = (e) => setPreview(e.target.result)
-    reader.readAsDataURL(file)
-  }
+  async function compressImage(file, maxWidth = 1024, quality = 0.7) {
+  return new Promise((resolve) => {
+    const img = new Image()
+    const url = URL.createObjectURL(file)
+    img.onload = () => {
+      const canvas = document.createElement('canvas')
+      const ratio  = Math.min(maxWidth / img.width, maxWidth / img.height, 1)
+      canvas.width  = Math.round(img.width  * ratio)
+      canvas.height = Math.round(img.height * ratio)
+      canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height)
+      URL.revokeObjectURL(url)
+      resolve(canvas.toDataURL('image/jpeg', quality))
+    }
+    img.src = url
+  })
+}
+
+async function handleFile(file) {
+  if (!file) return
+  setError(''); setResult(null)
+  const compressed = await compressImage(file)
+  setPreview(compressed)
+}
 
   async function analyze() {
     if (!preview) return

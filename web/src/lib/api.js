@@ -19,7 +19,8 @@ async function request(method, path, body) {
     ...(body ? { body: JSON.stringify(body) } : {}),
   })
   const data = await res.json()
-  if (!res.ok) throw new Error(data.error || 'Request failed')
+  if (res.status === 403) throw new Error('premium_required')
+if (!res.ok) throw new Error(data.error || 'Request failed')
   return data
 }
 

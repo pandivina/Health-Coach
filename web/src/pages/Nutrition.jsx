@@ -9,16 +9,20 @@ import AnalizarTab from '../components/nutrition/AnalizarTab'
 import EscanearTab from '../components/nutrition/EscanearTab'
 import DespensaTab from '../components/nutrition/DespensaTab'
 import RecetasTab from '../components/nutrition/RecetasTab'
+import TendenciasTab from '../components/nutrition/TendenciasTab'
+
 
 const TABS = [
   { id: 'diario',     icon: BookOpen,    label: 'Diario',      tour: 'nutrition-diary' },
   { id: 'despensa',   icon: ShoppingBag, label: 'Despensa',    tour: 'nutrition-pantry' },
   { id: 'recetas',    icon: ChefHat,     label: 'Recetas',     tour: 'nutrition-recipes' },
+
 ]
 
 export default function Nutrition() {
   const { theme } = useTheme()
   const [tab, setTab] = useState('diario')
+  const [showTendencias, setShowTendencias] = useState(false)
 
   // Tour guiado
   useTour('nutrition')
@@ -63,6 +67,24 @@ export default function Nutrition() {
           </motion.div>
         </AnimatePresence>
       </div>
+
+      {tab === 'diario' && (
+  <>
+    <div className="mt-4">
+      <button onClick={() => setShowTendencias(s => !s)}
+        className="w-full flex items-center justify-between px-4 py-3 rounded-2xl text-sm font-semibold"
+        style={{ background: theme.surface2, color: theme.textMuted }}>
+        <span>📈 Ver tendencias semanales</span>
+        <span>{showTendencias ? '▲' : '▼'}</span>
+      </button>
+      {showTendencias && (
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-3">
+          <TendenciasTab />
+        </motion.div>
+      )}
+    </div>
+  </>
+)}
 
       <TourHelpButton tourKey="nutrition" />
     </div>

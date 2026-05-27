@@ -1,94 +1,104 @@
-import { NavLink, useLocation } from 'react-router-dom'
-import { Home, MessageCircle, Apple, Dumbbell, CalendarDays } from 'lucide-react'
-import { motion } from 'framer-motion'
-import { useTheme } from '../contexts/ThemeProvider'
-
-const LEFT_NAV = [
-  { to: '/',         icon: Home,          label: 'Inicio'    },
-  { to: '/coach',     icon: MessageCircle, label: 'Coach'     },
-]
-
-const RIGHT_NAV = [
-  { to: '/nutrition', icon: Apple,         label: 'Nutrición' },
-  { to: '/workout',   icon: Dumbbell,      label: 'Entrena'   },
-]
-
-function NavItem({ to, icon: Icon, label }) {
-  const { theme } = useTheme()
-  return (
-    <NavLink to={to}
-      className="flex flex-col items-center gap-1 py-1 px-2 rounded-xl transition-all duration-200"
-      style={({ isActive }) => ({ 
-        // CAMBIO DE UI: Aseguramos que el estado inactivo use un color con suficiente contraste
-        color: isActive ? theme.navActive : theme.navText 
-      })}>
-      {/* Añadimos un pequeño efecto de escala al pasar/pulsar para que la PWA se sienta nativa */}
-      <motion.div whileTap={{ scale: 0.9 }}>
-        <Icon size={22} strokeWidth={1.8} /> 
-      </motion.div>
-      <span className="text-[10px] font-semibold tracking-wide">{label}</span>
-    </NavLink>
-  )
-}
+import React from 'react';
+import { NavLink, useLocation } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { Home, MessageSquare, CalendarDays, Apple, Dumbbell } from 'lucide-react';
+import { useTheme } from '../contexts/ThemeProvider'; // Ajusta la ruta si es necesario
 
 export default function BottomNav() {
-  const { theme }  = useTheme()
-  const location   = useLocation()
-  const isCalendar = location.pathname === '/calendar'
+  const { theme } = useTheme();
+  const location = useLocation();
+
+  // Helpers para comprobar la ruta activa
+  const isHome = location.pathname === '/';
+  const isCoach = location.pathname === '/coach';
+  const isCalendar = location.pathname === '/calendar';
+  const isNutrition = location.pathname === '/nutricion';
+  const isTrain = location.pathname === '/entrena';
 
   return (
-    <nav data-tour="bottom-nav" 
-      className="fixed bottom-0 left-0 right-0 max-w-lg mx-auto z-50"
-      style={{
-        background: theme.navBg,
-        borderTop: `1px solid ${theme.navBorder}`,
-        backdropFilter: 'blur(24px)',
-        WebkitBackdropFilter: 'blur(24px)',
-        paddingTop: '8px',
-        paddingBottom: 'calc(8px + env(safe-area-inset-bottom))', // Protege pantallas de iPhone con notch inferior
-      }}>
-      <div className="flex items-center justify-around px-2">
+    <nav 
+      className="fixed bottom-0 left-0 right-0 h-16 flex items-center justify-between px-2 z-50 border-t backdrop-blur-md transition-colors duration-300"
+      style={{ 
+        backgroundColor: theme.navBg, 
+        borderColor: theme.navBorder 
+      }}
+    >
+      {/* 1. INICIO */}
+      <NavLink to="/" className="flex-1 flex flex-col items-center justify-center h-full">
+        <Home size={22} color={isHome ? theme.navActive : theme.navText} />
+        <span 
+          className="text-[10px] font-medium mt-1"
+          style={{ color: isHome ? theme.navActive : theme.navText }}
+        >
+          Inicio
+        </span>
+      </NavLink>
 
-        {LEFT_NAV.map(item => <NavItem key={item.to} {...item} />)}
+      {/* 2. COACH */}
+      <NavLink to="/coach" className="flex-1 flex flex-col items-center justify-center h-full">
+        <MessageSquare size={22} color={isCoach ? theme.navActive : theme.navText} />
+        <span 
+          className="text-[10px] font-medium mt-1"
+          style={{ color: isCoach ? theme.navActive : theme.navText }}
+        >
+          Coach
+        </span>
+      </NavLink>
 
-{/* EL ORGANIZADOR MANTIENE EL TRONO CENTRAL */}
-        <div className="flex-1 flex flex-col items-center justify-center h-full relative">
-          <NavLink 
-            to="/calendar" 
-            className="flex flex-col items-center justify-center absolute -top-5 left-1/2 -translate-x-1/2 w-full text-center"
+      {/* 3. ORGANIZADOR (EL TRONO CENTRAL) */}
+      <div className="flex-1 flex flex-col items-center justify-center h-full relative">
+        <NavLink 
+          to="/calendar" 
+          className="flex flex-col items-center justify-center absolute -top-5 left-1/2 -translate-x-1/2 w-full text-center"
+        >
+          <motion.div 
+            whileTap={{ scale: 0.92 }}
+            style={{
+              width: 58, 
+              height: 58, 
+              borderRadius: '50%',
+              background: `linear-gradient(135deg, ${theme.primary}, #FF8FA3)`,
+              boxShadow: `0 6px 20px ${theme.primary}50`, 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center',
+              border: '4px solid white', 
+              margin: '0 auto',
+            }}
           >
-            <motion.div 
-              whileTap={{ scale: 0.92 }}
-              style={{
-                width: 58, 
-                height: 58, 
-                borderRadius: '50%',
-                background: `linear-gradient(135deg, ${theme.primary}, #FF8FA3)`,
-                boxShadow: `0 6px 20px ${theme.primary}50`, 
-                display: 'flex', 
-                alignItems: 'center', 
-                justifyContent: 'center',
-                border: '4px solid white', 
-                margin: '0 auto',
-              }}
-            >
-              <CalendarDays size={26} color="#fff" strokeWidth={1.8} />
-            </motion.div>
-            
-            <span 
-              className="text-[10px] font-bold mt-1 block w-full"
-              style={{ color: isCalendar ? theme.navActive : theme.navText }}
-            >
-              Organizador
-            </span>
-          </NavLink>
-        </div> {/* <-- Cierra el contenedor invisible del organizador */}
+            <CalendarDays size={26} color="#fff" strokeWidth={1.8} />
+          </motion.div>
+          <span 
+            className="text-[10px] font-bold mt-1 block w-full"
+            style={{ color: isCalendar ? theme.navActive : theme.navText }}
+          >
+            Organizador
+          </span>
+        </NavLink>
+      </div>
 
-        {/* AQUÍ VAN TUS BOTONES DE LA DERECHA (Nutrición, Entrena...) */}
-        {/* Asegúrate de que estén aquí antes del cierre de nav */}
+      {/* 4. NUTRICIÓN */}
+      <NavLink to="/nutricion" className="flex-1 flex flex-col items-center justify-center h-full">
+        <Apple size={22} color={isNutrition ? theme.navActive : theme.navText} />
+        <span 
+          className="text-[10px] font-medium mt-1"
+          style={{ color: isNutrition ? theme.navActive : theme.navText }}
+        >
+          Nutrición
+        </span>
+      </NavLink>
 
-      </nav> {/* <-- Ahora sí hace match perfecto con el <nav> de apertura */}
-    )
-  }
+      {/* 5. ENTRENA */}
+      <NavLink to="/entrena" className="flex-1 flex flex-col items-center justify-center h-full">
+        <Dumbbell size={22} color={isTrain ? theme.navActive : theme.navText} />
+        <span 
+          className="text-[10px] font-medium mt-1"
+          style={{ color: isTrain ? theme.navActive : theme.navText }}
+        >
+          Entrena
+        </span>
+      </NavLink>
 
-export default BottomNav; // O como se llame tu export final
+    </nav>
+  );
+}

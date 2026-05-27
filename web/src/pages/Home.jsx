@@ -126,6 +126,7 @@ function MorningCard({ petEmoji, theme }) {
               )}
             </motion.button>
           ))}
+          
         </div>
         {doneCount === MORNING_STEPS.length && (
           <motion.p initial={{ opacity:0 }} animate={{ opacity:1 }}
@@ -630,7 +631,8 @@ export default function Home() {
       {/* Insights */}
       <PandiInsights />
 
-      <TourHelpButton tourKey="home" />
+      <<TourHelpButton tourKey="home" />
+      <PandiTips section="home" />
     </div>
   )
 }

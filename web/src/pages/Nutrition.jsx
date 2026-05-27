@@ -10,6 +10,7 @@ import EscanearTab from '../components/nutrition/EscanearTab'
 import DespensaTab from '../components/nutrition/DespensaTab'
 import RecetasTab from '../components/nutrition/RecetasTab'
 import TendenciasTab from '../components/nutrition/TendenciasTab'
+import PandiContextualBubble from '../components/PandiContextualBubble'
 
 
 const TABS = [
@@ -28,15 +29,15 @@ export default function Nutrition() {
   useTour('nutrition')
 
   return (
-    <div className="min-h-screen pb-24" style={{ background: theme.bg }}>
-      <div className="px-4 pt-6 pb-3">
-        <h1 className="text-2xl font-extrabold" style={{ color: theme.text }}>Nutrición 🍎</h1>
-        <p className="text-sm" style={{ color: theme.textMuted }}>
-          {new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}
-        </p>
-      </div>
-
-      {/* Tab bar con data-tour */}
+  <div className="min-h-screen pb-24" style={{ background: theme.bg }}>
+    <div className="px-4 pt-6 pb-3">
+      <h1 className="text-2xl font-extrabold" style={{ color: theme.text }}>Nutrición 🍎</h1>
+      <p className="text-sm" style={{ color: theme.textMuted }}>
+        {new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}
+      </p>
+      <PandiContextualBubble section="nutrition" data={{ cals: 0, goal: 2000, protein: 0, proteinGoal: 150 }} />
+    </div>
+    {/* Tab bar con data-tour */}
       <div className="px-4 mb-4" data-tour="nutrition-tabs">
         <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
           {TABS.map(t => (

@@ -11,6 +11,28 @@ import PandiInsights from '../components/PandiInsights'
 import PandiTips from '../components/PandiTips'
 import { ChevronRight, Plus, Minus as MinusIcon, Droplets } from 'lucide-react'
 
+export default function Home() {
+  const { profile, user } = useStore()
+  const { theme, loaded } = useTheme() // 👈 Extraemos 'loaded'
+
+  // ... (aquí van tus useEffects y estados actuales)
+
+  // 🛡️ Escudo de carga por si el contexto aún no está listo:
+  if (!loaded) {
+    return (
+      <div className="w-full h-screen flex items-center justify-center" style={{ background: '#fff' }}>
+        <p className="text-sm font-semibold text-gray-400 animate-pulse">Cargando tu espacio... 🐼</p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="page pb-24">
+      {/* ... todo el resto de tu HTML/JSX actual */}
+    </div>
+  )
+}
+
 const PET_EMOJI = { panda:'🐼', cat:'🐱', dog:'🐶', fox:'🦊', rabbit:'🐰' }
 
 // ─── MODULE CARD ──────────────────────────────────────────────────────────────

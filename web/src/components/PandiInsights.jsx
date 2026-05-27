@@ -1,7 +1,8 @@
+import { useTheme } from '../contexts/ThemeProvider'
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { api } from '../lib/api'
-import { useTheme } from '../contexts/ThemeProvider'
+
 
 export default function PandiInsights() {
   const { theme }               = useTheme()

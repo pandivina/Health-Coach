@@ -51,29 +51,40 @@ export default function BottomNav() {
 
         {LEFT_NAV.map(item => <NavItem key={item.to} {...item} />)}
 
-        {/* EL ORGANIZADOR MANTIENE EL TRONO CENTRAL */}
-        <NavLink to="/calendar" className="flex flex-col items-center justify-center -mt-5">
-          <motion.div whileTap={{ scale: 0.92 }}
-            style={{
-              width: 58, height: 58, borderRadius: '50%',
-              background: `linear-gradient(135deg, ${theme.primary}, #FF8FA3)`,
-              boxShadow: `0 6px 20px ${theme.primary}50`, // Un poco más de profundidad en la sombra
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              border: '4px solid white', 
-              margin: '0 auto',
-            }}>
-            <CalendarDays size={26} color="#fff" strokeWidth={1.8} />
-          </motion.div>
-          {/* Aumentamos a font-bold y un pelo el tamaño para balancear los laterales */}
-          <span className="text-[10px] font-bold mt-1"
-            style={{ color: isCalendar ? theme.navActive : theme.navText }}>
-            Organizador
-          </span>
-        </NavLink>
+{/* EL ORGANIZADOR MANTIENE EL TRONO CENTRAL */}
+        <div className="flex-1 flex flex-col items-center justify-center h-full relative">
+          <NavLink 
+            to="/calendar" 
+            className="flex flex-col items-center justify-center absolute -top-5 left-1/2 -translate-x-1/2 w-full text-center"
+          >
+            <motion.div 
+              whileTap={{ scale: 0.92 }}
+              style={{
+                width: 58, 
+                height: 58, 
+                borderRadius: '50%',
+                background: `linear-gradient(135deg, ${theme.primary}, #FF8FA3)`,
+                boxShadow: `0 6px 20px ${theme.primary}50`, 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center',
+                border: '4px solid white', 
+                margin: '0 auto',
+              }}
+            >
+              <CalendarDays size={26} color="#fff" strokeWidth={1.8} />
+            </motion.div>
+            
+            {/* Texto perfectamente balanceado */}
+            <span 
+              className="text-[10px] font-bold mt-1 block w-full"
+              style={{ color: isCalendar ? theme.navActive : theme.navText }}
+            >
+              Organizador
+            </span>
+          </NavLink>
+        </div>
 
-        {RIGHT_NAV.map(item => <NavItem key={item.to} {...item} />)}
-
-      </div>
-    </nav>
-  )
-}
+      </nav>
+    )
+  }

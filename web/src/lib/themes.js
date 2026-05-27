@@ -1,8 +1,3 @@
-// ============================================================
-// HEALTH COACH — Sistema de Temas
-// Cada tema define tokens de color completos
-// ============================================================
-
 export const THEMES = {
 
   // ── FREE THEMES ──────────────────────────────────────────
@@ -17,44 +12,37 @@ export const THEMES = {
     dark: false,
     preview: ['#FFFFFF', '#2EC4B6', '#FF8FA3'],
 
-    // Fondos
     bg:       '#FFFFFF',
     surface:  '#F5F7FA',
     surface2: '#EEF1F5',
     surface3: '#E4E9EF',
 
-    // Colores principales
     primary:   '#2EC4B6',
     secondary: '#F7CAD0',
     accent:    '#FF8FA3',
 
-    // Texto
+    // Texto: Ajustados grises para legibilidad UI en tarjetas
     text:      '#1F2937',
-    textMuted: '#6B7280',
-    textLight: '#9CA3AF',
+    textMuted: '#4B5563', // Antes #6B7280 (Ahora Slate-600, ideal para subtítulos)
+    textLight: '#6B7280', // Antes #9CA3AF (Suficiente contraste sobre fondos claros)
 
-    // Bordes
     border:    '#E5E7EB',
     borderFocus: '#2EC4B6',
 
-    // Estados
     success: '#10B981',
     warning: '#F59E0B',
     error:   '#EF4444',
     info:    '#3B82F6',
 
-    // Gradiente brand
     gradientBrand: 'linear-gradient(135deg, #2EC4B6, #FF8FA3)',
     gradientHero:  'linear-gradient(135deg, #f0fffe, #fff0f3)',
 
-    // Sombras
     shadow: '0 4px 24px rgba(46, 196, 182, 0.12)',
     shadowCard: '0 2px 12px rgba(0, 0, 0, 0.06)',
 
-    // Nav
     navBg:      'rgba(255,255,255,0.95)',
     navBorder:  '#E5E7EB',
-    navText:    '#9CA3AF',
+    navText:    '#6B7280', // CORRECCIÓN: Antes #9CA3AF. Ahora los iconos inactivos se ven perfectos.
     navActive:  '#2EC4B6',
   },
 
@@ -78,8 +66,8 @@ export const THEMES = {
     accent:    '#6366f1',
 
     text:      '#f0f0ff',
-    textMuted: '#6b7280',
-    textLight: '#4b5563',
+    textMuted: '#9CA3AF', // Más claro para resaltar en fondo oscuro
+    textLight: '#6B7280',
 
     border:    'rgba(255,255,255,0.08)',
     borderFocus: '#6366f1',
@@ -97,7 +85,7 @@ export const THEMES = {
 
     navBg:     'rgba(14,14,26,0.95)',
     navBorder: 'rgba(255,255,255,0.05)',
-    navText:   'rgba(255,255,255,0.4)',
+    navText:   'rgba(255,255,255,0.55)', // CORRECCIÓN: Subido el contraste en modo oscuro
     navActive: '#6366f1',
   },
 
@@ -121,8 +109,8 @@ export const THEMES = {
     accent:    '#15803D',
 
     text:      '#14532D',
-    textMuted: '#4B7C59',
-    textLight: '#6B8F74',
+    textMuted: '#3B6043', // Un poco más oscuro para que resalte en el fondo verde pastel
+    textLight: '#4B7C59', 
 
     border:    '#BBF7D0',
     borderFocus: '#16A34A',
@@ -166,8 +154,8 @@ export const THEMES = {
     accent:    '#EA6B00',
 
     text:      '#1C1208',
-    textMuted: '#78614A',
-    textLight: '#A68B6A',
+    textMuted: '#5C4733', // Optimizado contraste
+    textLight: '#78614A',
 
     border:    '#FFD5A8',
     borderFocus: '#F97316',
@@ -185,7 +173,7 @@ export const THEMES = {
 
     navBg:     'rgba(255,251,245,0.95)',
     navBorder: '#FFD5A8',
-    navText:   '#A68B6A',
+    navText:   '#78614A', // CORRECCIÓN
     navActive: '#F97316',
   },
 
@@ -209,8 +197,8 @@ export const THEMES = {
     accent:    '#A855F7',
 
     text:      '#1E0540',
-    textMuted: '#6B4E8C',
-    textLight: '#9B7DBB',
+    textMuted: '#51376B', // Optimizado contraste
+    textLight: '#6B4E8C',
 
     border:    '#E9D5FF',
     borderFocus: '#9333EA',
@@ -228,7 +216,7 @@ export const THEMES = {
 
     navBg:     'rgba(250,245,255,0.95)',
     navBorder: '#E9D5FF',
-    navText:   '#9B7DBB',
+    navText:   '#6B4E8C', // CORRECCIÓN
     navActive: '#9333EA',
   },
 
@@ -252,8 +240,8 @@ export const THEMES = {
     accent:    '#0284C7',
 
     text:      '#0C2340',
-    textMuted: '#4A7090',
-    textLight: '#7BACC4',
+    textMuted: '#335270', // Optimizado contraste
+    textLight: '#4A7090',
 
     border:    '#BAE6FD',
     borderFocus: '#0EA5E9',
@@ -271,7 +259,7 @@ export const THEMES = {
 
     navBg:     'rgba(240,249,255,0.95)',
     navBorder: '#BAE6FD',
-    navText:   '#7BACC4',
+    navText:   '#4A7090', // CORRECCIÓN
     navActive: '#0EA5E9',
   },
 
@@ -295,8 +283,8 @@ export const THEMES = {
     accent:    '#059669',
 
     text:      '#022C22',
-    textMuted: '#2D6A4F',
-    textLight: '#52B788',
+    textMuted: '#1A4D35', // Optimizado contraste
+    textLight: '#2D6A4F',
 
     border:    '#99F6E4',
     borderFocus: '#10B981',
@@ -314,7 +302,7 @@ export const THEMES = {
 
     navBg:     'rgba(240,255,248,0.95)',
     navBorder: '#99F6E4',
-    navText:   '#52B788',
+    navText:   '#2D6A4F', // CORRECCIÓN
     navActive: '#10B981',
   },
 
@@ -338,8 +326,8 @@ export const THEMES = {
     accent:    '#E11D48',
 
     text:      '#2D0A14',
-    textMuted: '#8B4553',
-    textLight: '#C4748A',
+    textMuted: '#6B303C', // Optimizado contraste
+    textLight: '#8B4553',
 
     border:    '#FFD5C0',
     borderFocus: '#F43F5E',
@@ -347,7 +335,7 @@ export const THEMES = {
     success: '#16A34A',
     warning: '#D97706',
     error:   '#DC2626',
-    info:    '#0284C7',
+    info: '#0284C7',
 
     gradientBrand: 'linear-gradient(135deg, #F43F5E, #F97316)',
     gradientHero:  'linear-gradient(135deg, #fff7f0, #fff0f3)',
@@ -357,7 +345,7 @@ export const THEMES = {
 
     navBg:     'rgba(255,247,240,0.95)',
     navBorder: '#FFD5C0',
-    navText:   '#C4748A',
+    navText:   '#8B4553', // CORRECCIÓN
     navActive: '#F43F5E',
   },
 
@@ -381,8 +369,8 @@ export const THEMES = {
     accent:    '#A21CAF',
 
     text:      '#2D0038',
-    textMuted: '#7C3A8C',
-    textLight: '#B06CC0',
+    textMuted: '#5C2569', // Optimizado contraste
+    textLight: '#7C3A8C',
 
     border:    '#F5D0FE',
     borderFocus: '#C026D3',
@@ -400,7 +388,7 @@ export const THEMES = {
 
     navBg:     'rgba(253,244,255,0.95)',
     navBorder: '#F5D0FE',
-    navText:   '#B06CC0',
+    navText:   '#7C3A8C', // CORRECCIÓN
     navActive: '#C026D3',
   },
 
@@ -424,8 +412,8 @@ export const THEMES = {
     accent:    '#2EC4B6',
 
     text:      '#F5F5F5',
-    textMuted: '#888888',
-    textLight: '#555555',
+    textMuted: '#A3A3A3', // Un poco más claro sobre fondo negro puro
+    textLight: '#737373',
 
     border:    'rgba(255,255,255,0.08)',
     borderFocus: '#2EC4B6',
@@ -443,62 +431,7 @@ export const THEMES = {
 
     navBg:     'rgba(10,10,10,0.95)',
     navBorder: 'rgba(255,255,255,0.08)',
-    navText:   '#555555',
+    navText:   '#737373', // CORRECCIÓN: Antes #555555 (Invisibles en oscuridad)
     navActive: '#2EC4B6',
   },
-}
-
-// Mapa mascota → tema
-export const PET_THEME_MAP = {
-  panda:  'panda-serenity',
-  fox:    'fox-energy',
-  cat:    'cat-dream',
-  dog:    'dog-comfort',
-  rabbit: 'bunny-fresh',
-}
-
-// Tema por defecto
-export const DEFAULT_THEME = 'panda-serenity'
-
-// Obtener tema por id (con fallback)
-export function getTheme(id) {
-  return THEMES[id] || THEMES[DEFAULT_THEME]
-}
-
-// Aplicar tema al DOM (CSS variables en :root)
-export function applyTheme(theme) {
-  const root = document.documentElement
-  const t = typeof theme === 'string' ? getTheme(theme) : theme
-
-  root.setAttribute('data-theme', t.id)
-  root.setAttribute('data-dark', t.dark ? 'true' : 'false')
-
-  const vars = {
-    '--color-bg':           t.bg,
-    '--color-surface':      t.surface,
-    '--color-surface-2':    t.surface2,
-    '--color-surface-3':    t.surface3,
-    '--color-primary':      t.primary,
-    '--color-secondary':    t.secondary,
-    '--color-accent':       t.accent,
-    '--color-text':         t.text,
-    '--color-text-muted':   t.textMuted,
-    '--color-text-light':   t.textLight,
-    '--color-border':       t.border,
-    '--color-border-focus': t.borderFocus,
-    '--color-success':      t.success,
-    '--color-warning':      t.warning,
-    '--color-error':        t.error,
-    '--color-info':         t.info,
-    '--gradient-brand':     t.gradientBrand,
-    '--gradient-hero':      t.gradientHero,
-    '--shadow-card':        t.shadowCard,
-    '--shadow-primary':     t.shadow,
-    '--color-nav-bg':       t.navBg,
-    '--color-nav-border':   t.navBorder,
-    '--color-nav-text':     t.navText,
-    '--color-nav-active':   t.navActive,
-  }
-
-  Object.entries(vars).forEach(([k, v]) => root.style.setProperty(k, v))
 }

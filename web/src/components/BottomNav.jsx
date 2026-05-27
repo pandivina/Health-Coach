@@ -75,7 +75,6 @@ export default function BottomNav() {
               <CalendarDays size={26} color="#fff" strokeWidth={1.8} />
             </motion.div>
             
-            {/* Texto perfectamente balanceado */}
             <span 
               className="text-[10px] font-bold mt-1 block w-full"
               style={{ color: isCalendar ? theme.navActive : theme.navText }}
@@ -83,8 +82,13 @@ export default function BottomNav() {
               Organizador
             </span>
           </NavLink>
-        </div>
+        </div> {/* <-- Cierra el contenedor invisible del organizador */}
 
-      </nav>
+        {/* AQUÍ VAN TUS BOTONES DE LA DERECHA (Nutrición, Entrena...) */}
+        {/* Asegúrate de que estén aquí antes del cierre de nav */}
+
+      </nav> {/* <-- Ahora sí hace match perfecto con el <nav> de apertura */}
     )
   }
+
+export default BottomNav; // O como se llame tu export final

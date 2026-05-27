@@ -496,7 +496,8 @@ function MeditationTab({ theme }) {
         if (e + 1 >= total) {
           clearInterval(intervalRef.current)
           setRunning(false); setDone(true); stopAll()
-          useStore.getState().addBondXP?.(10)
+          useStore.getState().addXP?.(duration * 5)
+useStore.getState().addBondXP?.(10)
           return total
         }
         return e + 1

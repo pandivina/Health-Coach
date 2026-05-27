@@ -1,3 +1,8 @@
+// ============================================================
+// HEALTH COACH — Sistema de Temas
+// Cada tema define tokens de color completos
+// ============================================================
+
 export const THEMES = {
 
   // ── FREE THEMES ──────────────────────────────────────────
@@ -335,7 +340,7 @@ export const THEMES = {
     success: '#16A34A',
     warning: '#D97706',
     error:   '#DC2626',
-    info: '#0284C7',
+    info:      '#0284C7',
 
     gradientBrand: 'linear-gradient(135deg, #F43F5E, #F97316)',
     gradientHero:  'linear-gradient(135deg, #fff7f0, #fff0f3)',
@@ -434,4 +439,59 @@ export const THEMES = {
     navText:   '#737373', // CORRECCIÓN: Antes #555555 (Invisibles en oscuridad)
     navActive: '#2EC4B6',
   },
+}
+
+// Mapa mascota → tema
+export const PET_THEME_MAP = {
+  panda:  'panda-serenity',
+  fox:    'fox-energy',
+  cat:    'cat-dream',
+  dog:    'dog-comfort',
+  rabbit: 'bunny-fresh',
+}
+
+// Tema por defecto — ¡CORREGIDO: Ahora con export explícito!
+export const DEFAULT_THEME = 'panda-serenity'
+
+// Obtener tema por id (con fallback)
+export function getTheme(id) {
+  return THEMES[id] || THEMES[DEFAULT_THEME]
+}
+
+// Aplicar tema al DOM (CSS variables en :root)
+export function applyTheme(theme) {
+  const root = document.documentElement
+  const t = typeof theme === 'string' ? getTheme(theme) : theme
+
+  root.setAttribute('data-theme', t.id)
+  root.setAttribute('data-dark', t.dark ? 'true' : 'false')
+
+  const vars = {
+    '--color-bg':           t.bg,
+    '--color-surface':      t.surface,
+    '--color-surface-2':    t.surface2,
+    '--color-surface-3':    t.surface3,
+    '--color-primary':      t.primary,
+    '--color-secondary':    t.secondary,
+    '--color-accent':       t.accent,
+    '--color-text':         t.text,
+    '--color-text-muted':   t.textMuted,
+    '--color-text-light':   t.textLight,
+    '--color-border':       t.border,
+    '--color-border-focus': t.borderFocus,
+    '--color-success':      t.success,
+    '--color-warning':      t.warning,
+    '--color-error':        t.error,
+    '--color-info':         t.info,
+    '--gradient-brand':      t.gradientBrand,
+    '--gradient-hero':       t.gradientHero,
+    '--shadow-card':         t.shadowCard,
+    '--shadow-primary':      t.shadow,
+    '--color-nav-bg':        t.navBg,
+    '--color-nav-border':    t.navBorder,
+    '--color-nav-text':      t.navText,
+    '--color-nav-active':    t.navActive,
+  }
+
+  Object.entries(vars).forEach(([k, v]) => root.style.setProperty(k, v))
 }

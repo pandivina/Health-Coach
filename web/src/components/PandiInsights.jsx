@@ -13,13 +13,40 @@ export default function PandiInsights() {
   const [generated, setGenerated] = useState(false)
 
   useEffect(() => {
-    api.insights.get()
-      .then(data => {
-        if (data?.length > 0) setInsights(data)
-      })
-      .catch(() => {})
-  }, [])
-
+  api.insights.get()
+    .then(async data => {
+      if (data?.length > 0) {
+        setInsights(data)
+        // Verificar si el más reciente tiene más de 24h
+        const lastGenerated = data[0]?.generated_at
+        const hoursAgo = lastGenerated
+          ? (Date.now() - new Date(lastGenerated)) / 3600000
+          : 999
+        if (hoursAgo > 24) {
+          // Regenerar en background sin bloquear UI
+          api.insights.generate()
+            .then(res => {
+              if (res.insights?.length > 0) {
+                setInsights(res.insights)
+                setBrief(res.pandi_brief)
+              }
+            })
+            .catch(() => {})
+        }
+      } else {
+        // Sin insights previos — generar directamente
+        api.insights.generate()
+          .then(res => {
+            if (res.insights?.length > 0) {
+              setInsights(res.insights)
+              setBrief(res.pandi_brief)
+            }
+          })
+          .catch(() => {})
+      }
+    })
+    .catch(() => {})
+}, [])
   async function generate() {
     setLoading(true)
     try {

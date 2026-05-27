@@ -1,4 +1,5 @@
 // ── DESPENSA TAB ─────────────────────────────────────────────
+import PremiumGate from '../components/PremiumGate'
 import { useState, useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { Plus, Camera, Trash2, Sparkles, Clock, Flame, CheckCircle, ChefHat, TrendingUp } from 'lucide-react'
@@ -129,6 +130,7 @@ export function RecetasTab() {
   const [recipes, setRecipes] = useState([])
   const [generating, setGenerating] = useState(false)
   const [expanded, setExpanded] = useState(null)
+  const [showPremium, setShowPremium] = useState(false)
 
   async function load() {
     const { data } = await supabase.from('generated_recipes').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(10)
@@ -141,7 +143,10 @@ export function RecetasTab() {
     try {
       const data = await api.recipes.generate()
       setRecipes(prev => [...data, ...prev]); addXP(5)
-    } catch { alert('Error. Añade ingredientes en Despensa primero.') }
+    } catch (err) {
+  if (err.message === 'premium_required') setShowPremium(true)
+  else alert('Error. Añade ingredientes en Despensa primero.')
+}
     finally { setGenerating(false) }
   }
 
@@ -209,6 +214,7 @@ export function RecetasTab() {
           <div className="text-center py-10" style={{ color: theme.textMuted }}>
             <ChefHat size={40} className="mx-auto mb-3 opacity-30" />
             <p>Genera recetas basadas en tu despensa</p>
+            <PremiumGate visible={showPremium} onClose={() => setShowPremium(false)} feature="Recetas con IA" />
           </div>
         )}
       </div>

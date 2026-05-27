@@ -8,7 +8,10 @@ import { supabase } from '../lib/supabase'
 import { useStore } from '../store/useStore'
 import { useTheme } from '../contexts/ThemeProvider'
 import CycleTab from '../components/mood/CycleTab'
-import WellnessCalendar from '../components/mood/WellnessCalendar' 
+import WellnessCalendar from '../components/mood/WellnessCalendar'
+import PandiContextualBubble from '../components/PandiContextualBubble'
+import PandiTips from '../components/PandiTips'
+
 const A = {
   ambient: {
     rain:   '/audio/ambient-rain.mp3',

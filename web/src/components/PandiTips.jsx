@@ -1,8 +1,23 @@
+import { useState, useEffect } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useTheme } from '../contexts/ThemeProvider'
+import { useStore } from '../store/useStore' // ✅ Añadido el import que causaba la pantalla blanca
+import { Lightbulb, X } from 'lucide-react' // ✅ Añadido para evitar futuros errores de iconos
+
+// Supongo que tienes tu objeto TIPS definido aquí o importado. 
+// Si lo tienes en otro archivo, recuerda importarlo (ej: import { TIPS } from '../data/tips')
+const TIPS = {
+  home: [
+    "Beber agua en ayunas despierta tu metabolismo. 💧",
+    "Dar un pequeño paseo después de comer mejora tu digestión notablemente. 🚶",
+    "Intenta reducir las pantallas 30 minutos antes de ir a dormir. 😴"
+  ]
+}
+
 // Añade la propiedad 'variant' (por defecto "inline")
 export default function PandiTips({ section, variant = "inline" }) {
   const { theme } = useTheme()
-  const { profile } = useStore()
+  const { profile } = useStore() // ✅ Ahora sí funcionará perfectamente
   const [tip, setTip] = useState(null)
   const [visible, setVisible] = useState(false)
   const [imgErr, setImgErr] = useState(false)

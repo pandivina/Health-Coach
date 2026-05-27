@@ -187,7 +187,7 @@ function PandiGreeting({ profile, theme, todayData }) {
           position: 'absolute', left: -8, bottom: 12, width: 0, height: 0,
           borderTop: '8px solid transparent', borderBottom: '8px solid transparent',
           borderRight: `8px solid ${theme.surface}`,
-        }} }} /> {/* Corregido el cierre aquí */}
+        }} /> {/* Corregido el cierre aquí */}
         <AnimatePresence mode="wait">
           <motion.div key={msgIdx} initial={{ opacity: 0, x: 6 }} animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -6 }} transition={{ duration: 0.25 }}

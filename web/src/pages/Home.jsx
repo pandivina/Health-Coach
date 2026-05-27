@@ -9,6 +9,7 @@ import TourHelpButton from '../components/tour/TourHelpButton'
 import WeeklySummary from '../components/WeeklySummary'
 import PandiInsights from '../components/PandiInsights'
 import { ChevronRight, Plus, Minus as MinusIcon, Droplets } from 'lucide-react'
+import PandiTips from '../components/PandiTips'
 
 const PET_EMOJI = { panda:'🐼', cat:'🐱', dog:'🐶', fox:'🦊', rabbit:'🐰' }
 

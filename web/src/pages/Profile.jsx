@@ -8,6 +8,7 @@ import { useTour } from '../hooks/useTour'
 import TourHelpButton from '../components/tour/TourHelpButton'
 import InstallPWA from '../components/InstallPWA'
 import NotificationSetup from '../components/NotificationSetup'
+import LanguagePicker from '../components/LanguagePicker'
 
 const GOAL_LABELS = { lose_fat:'Perder grasa 🔥', gain_muscle:'Ganar músculo 💪', maintain:'Mantener peso ⚖️', recomp:'Recomposición 🔄', health:'Salud general ❤️' }
 const ACTIVITY_LABELS = { sedentary:'Sedentario 🛋️', light:'Ligero 🚶', moderate:'Moderado 🏃', intense:'Intenso ⚡' }
@@ -177,6 +178,7 @@ export default function Profile() {
   </div>
   )
 }
+      <LanguagePicker />
       {/* Apariencia */}
       <Link to="/appearance" data-tour="profile-appearance">
         <motion.div whileTap={{ scale: 0.97 }}

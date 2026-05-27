@@ -9,7 +9,6 @@ import TourHelpButton from '../components/tour/TourHelpButton'
 import WeeklySummary from '../components/WeeklySummary'
 import PandiInsights from '../components/PandiInsights'
 import PandiTips from '../components/PandiTips'
-import ContextualTutorial from '../components/ContextualTutorial' // <-- Importamos tus tutoriales de frames
 import { ChevronRight, Plus, Minus as MinusIcon, Droplets } from 'lucide-react'
 
 const PET_EMOJI = { panda:'🐼', cat:'🐱', dog:'🐶', fox:'🦊', rabbit:'🐰' }
@@ -395,7 +394,6 @@ export default function Home() {
   const [weightLogs,   setWeightLogs]   = useState([])
   const [todaySleep,   setTodaySleep]   = useState(null)
   const [todayMood,    setTodayMood]    = useState(null)
-  const [forceShowTutorial, setForceShowTutorial] = useState(false) // <-- Estado local para forzar tutorial
 
   useTour('home')
 
@@ -465,15 +463,8 @@ export default function Home() {
   const doneTodayCount = modules.filter(m => m.done).length
 
   return (
-    <div className="page pb-24"> {/* Aseguramos el padding inferior por la Tab Bar */}
+    <div className="page pb-24">
       
-      {/* ── CONTROLADOR DE TUTORIAL CONTEXTUAL (FRAMES) ── */}
-      <ContextualTutorial 
-        sectionId="dashboard" 
-        forceShow={forceShowTutorial} 
-        onClose={() => setForceShowTutorial(false)} 
-      />
-
       {/* ── HEADER ─────────────────────────────────────────────────────────── */}
       <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-4">
         <div className="flex items-center justify-between">
@@ -537,8 +528,7 @@ export default function Home() {
         hasWorkout: !!todayWorkout,
       }} />
 
-      {/* 📍 UBICACIÓN ESTRATÉGICA DEL PANDI TIP (Modo Inline) */}
-      {/* Rompe la densidad justo después de los saludos e introduce datos de valor */}
+      {/* Ubicación limpia en modo inline de PandiTips */}
       <PandiTips section="home" variant="inline" />
 
       {/* Card notificaciones */}
@@ -614,10 +604,7 @@ export default function Home() {
       {/* Insights */}
       <PandiInsights />
 
-      {/* Botón de Ayuda del Tour vinculado al disparador del Frame de Tutoriales */}
-      <div onClick={() => setForceShowTutorial(true)}>
-        <TourHelpButton tourKey="home" />
-      </div>
+      <TourHelpButton tourKey="home" />
     </div>
   )
 }

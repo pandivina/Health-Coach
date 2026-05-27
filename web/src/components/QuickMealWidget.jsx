@@ -15,19 +15,30 @@ function getMealWindows(wakeTime, workSchedule) {
   let breakfast, lunch, dinner, snack
 
   if (workSchedule === 'night') {
-    // Turno nocturno: desayuno al despertar, comida a medianoche aprox
-    breakfast = wakeMinutes            // al despertar
-    lunch     = wakeMinutes + 6 * 60  // 6h después
-    dinner    = wakeMinutes + 12 * 60 // 12h después
-    snack     = wakeMinutes + 9 * 60  // snack entre medias
-  } else {
-    // Horario normal / diurno / remoto
-    breakfast = wakeMinutes + 30       // 30min después de despertar
-    lunch     = 13 * 60               // 13:00
-    snack     = 17 * 60               // 17:00
-    dinner    = 20 * 60               // 20:00
-  }
-
+  // Turno nocturno — todo relativo al despertar
+  breakfast = wakeMinutes + 30
+  lunch     = wakeMinutes + 5 * 60
+  snack     = wakeMinutes + 8 * 60
+  dinner    = wakeMinutes + 11 * 60
+} else if (workSchedule === 'rotating') {
+  // Rotativo — ventanas más amplias para cubrir cualquier turno
+  breakfast = wakeMinutes + 30
+  lunch     = wakeMinutes + 5 * 60
+  snack     = wakeMinutes + 8 * 60
+  dinner    = wakeMinutes + 11 * 60
+} else if (workSchedule === 'remote') {
+  // Remoto — horarios más flexibles, comida más tarde
+  breakfast = wakeMinutes + 60
+  lunch     = 14 * 60
+  snack     = 17 * 60
+  dinner    = 21 * 60
+} else {
+  // day / other — horario estándar
+  breakfast = wakeMinutes + 30
+  lunch     = 13 * 60
+  snack     = 17 * 60
+  dinner    = 20 * 60
+}
   // Normalizar a 0-1440
   const norm = (m) => ((m % 1440) + 1440) % 1440
 

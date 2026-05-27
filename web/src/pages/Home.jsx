@@ -1,4 +1,3 @@
-import PandiTips from '../components/PandiTips'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -9,12 +8,13 @@ import { useTour } from '../hooks/useTour'
 import TourHelpButton from '../components/tour/TourHelpButton'
 import WeeklySummary from '../components/WeeklySummary'
 import PandiInsights from '../components/PandiInsights'
+import PandiTips from '../components/PandiTips'
+import ContextualTutorial from '../components/ContextualTutorial' // <-- Importamos tus tutoriales de frames
 import { ChevronRight, Plus, Minus as MinusIcon, Droplets } from 'lucide-react'
 
 const PET_EMOJI = { panda:'🐼', cat:'🐱', dog:'🐶', fox:'🦊', rabbit:'🐰' }
 
 // ─── MODULE CARD ──────────────────────────────────────────────────────────────
-
 function ModuleCard({ to, icon, label, value, sublabel, color, done, theme }) {
   return (
     <Link to={to}>
@@ -38,7 +38,7 @@ function ModuleCard({ to, icon, label, value, sublabel, color, done, theme }) {
             {value}
           </p>
           {sublabel && (
-            <p className="text-[10px] mt-0.5 leading-tight" style={{ color: theme.textMuted }}>
+            <p className="text-[10px] mt-1 leading-tight" style={{ color: theme.textMuted }}>
               {sublabel}
             </p>
           )}
@@ -52,7 +52,6 @@ function ModuleCard({ to, icon, label, value, sublabel, color, done, theme }) {
 }
 
 // ─── MORNING CARD ─────────────────────────────────────────────────────────────
-
 const MORNING_STEPS = [
   { emoji: '💧', text: 'Bebe un vaso de agua al levantarte' },
   { emoji: '🌤️', text: 'Abre las persianas — la luz regula tu ritmo circadiano' },
@@ -127,7 +126,6 @@ function MorningCard({ petEmoji, theme }) {
               )}
             </motion.button>
           ))}
-          
         </div>
         {doneCount === MORNING_STEPS.length && (
           <motion.p initial={{ opacity:0 }} animate={{ opacity:1 }}
@@ -141,7 +139,6 @@ function MorningCard({ petEmoji, theme }) {
 }
 
 // ─── PANDI GREETING ──────────────────────────────────────────────────────────
-
 function PandiGreeting({ profile, theme, todayData }) {
   const hour    = new Date().getHours()
   const name    = profile?.name?.split(' ')[0] || ''
@@ -149,15 +146,13 @@ function PandiGreeting({ profile, theme, todayData }) {
   const [imgErr, setImgErr] = useState(false)
   const [msgIdx, setMsgIdx] = useState(0)
 
-  // Calcular prioridades del día
   const priorities = []
   if (!todayData?.hasMood)     priorities.push({ text: `¿Cómo estás hoy, ${name}? Cuéntamelo 🧘`, to: '/mood',      color: '#2EC4B6' })
   if (!todayData?.hasMeals)    priorities.push({ text: 'Registra tu primera comida del día 🍎',      to: '/nutrition', color: '#F97316' })
   if (!todayData?.hasWater)    priorities.push({ text: 'No te olvides del agua hoy 💧',              to: '/hydration', color: '#3B82F6' })
   if (!todayData?.hasSleep)    priorities.push({ text: '¿Cómo dormiste anoche? Registra tu sueño 😴', to: '/sleep',     color: '#818CF8' })
-  if (!todayData?.hasWorkout)  priorities.push({ text: '¿Toca entrenar hoy? ¡Vamos! 💪',             to: '/workout',   color: '#6366F1' })
+  if (!todayData?.hasWorkout)  priorities.push({ text: '¿Toca entrenar hoy? ¡Vamos! 💪',              to: '/workout',   color: '#6366F1' })
 
-  // Saludo base si todo completado
   const greetings = [
     hour < 12 ? `¡Buenos días, ${name}! 🌅 ¿Lista para hoy?` : hour < 20 ? `¡Buenas tardes, ${name}! ¿Qué tal va?` : `¡Buenas noches, ${name}! 🌙`,
     `Estoy aquí para ayudarte, ${name} 🐼`,
@@ -165,7 +160,6 @@ function PandiGreeting({ profile, theme, todayData }) {
 
   const messages = priorities.length > 0 ? priorities.slice(0, 3) : greetings.map(t => ({ text: t, to: '/pet', color: theme.primary }))
 
-  // Rotar mensaje cada 10 segundos
   useEffect(() => {
     if (messages.length <= 1) return
     const t = setInterval(() => setMsgIdx(i => (i + 1) % messages.length), 10000)
@@ -177,36 +171,26 @@ function PandiGreeting({ profile, theme, todayData }) {
   return (
     <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }}
       className="flex items-end gap-3 mb-4">
-
-      {/* Imagen busto Pandi */}
       <Link to="/pet" className="flex-shrink-0">
-        <motion.div
-          animate={{ y: [0, -3, 0] }}
-          transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}>
+        <motion.div animate={{ y: [0, -3, 0] }} transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}>
           {imgErr ? (
             <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl"
               style={{ background: theme.surface2 }}>🐼</div>
           ) : (
-            <img src="/panda/talk_1.png" alt={petName}
-              onError={() => setImgErr(true)}
-              style={{ width: 122, height: 122, objectFit: 'contain' }} />
+            <img src="/panda/talk_1.png" alt={petName} onError={() => setImgErr(true)}
+              style={{ width: 110, height: 110, objectFit: 'contain' }} />
           )}
         </motion.div>
       </Link>
 
-      {/* Bocadillo */}
       <div className="flex-1 relative">
-        {/* Cola del bocadillo */}
         <div style={{
-          position: 'absolute', left: -8, bottom: 12,
-          width: 0, height: 0,
-          borderTop: '8px solid transparent',
-          borderBottom: '8px solid transparent',
+          position: 'absolute', left: -8, bottom: 12, width: 0, height: 0,
+          borderTop: '8px solid transparent', borderBottom: '8px solid transparent',
           borderRight: `8px solid ${theme.surface}`,
         }} />
         <AnimatePresence mode="wait">
-          <motion.div key={msgIdx}
-            initial={{ opacity: 0, x: 6 }} animate={{ opacity: 1, x: 0 }}
+          <motion.div key={msgIdx} initial={{ opacity: 0, x: 6 }} animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -6 }} transition={{ duration: 0.25 }}
             className="rounded-2xl rounded-bl-sm p-3"
             style={{ background: theme.surface, border: `1px solid ${theme.border}` }}>
@@ -216,7 +200,6 @@ function PandiGreeting({ profile, theme, todayData }) {
             <p className="text-xs leading-relaxed" style={{ color: theme.text }}>
               {current.text}
             </p>
-            {/* Dots indicador */}
             {messages.length > 1 && (
               <div className="flex gap-1 mt-2">
                 {messages.map((_, i) => (
@@ -236,7 +219,6 @@ function PandiGreeting({ profile, theme, todayData }) {
 }
 
 // ─── WATER WIDGET ─────────────────────────────────────────────────────────────
-
 function WaterWidget({ userId, theme }) {
   const [glasses, setGlasses] = useState(0)
   const [goal,    setGoal]    = useState(8)
@@ -317,8 +299,7 @@ function WaterWidget({ userId, theme }) {
 }
 
 // ─── RING PROGRESS ────────────────────────────────────────────────────────────
-
-function RingProgress({ value, max, color, size = 80, label }) {
+function RingProgress({ value, max, color, size = 80, label, theme }) {
   const r = 30, circ = 2 * Math.PI * r
   const pct = Math.min(value / max, 1)
   return (
@@ -336,16 +317,15 @@ function RingProgress({ value, max, color, size = 80, label }) {
           <span className="text-xs font-bold" style={{ color }}>{Math.round(value)}</span>
         </div>
       </div>
-      <p className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>{label}</p>
-      <p className="text-[10px]" style={{ color: 'var(--color-text-light)' }}>/ {max}</p>
+      <p className="text-[11px] font-medium" style={{ color: theme.textMuted }}>{label}</p>
+      <p className="text-[10px]" style={{ color: theme.textLight }}>/ {max}</p>
     </div>
   )
 }
 
 // ─── NOTIFICATION CARD ───────────────────────────────────────────────────────
-
 function NotificationCard({ theme }) {
-  const [status,    setStatus]    = useState(null) // null | 'default' | 'granted' | 'denied'
+  const [status,    setStatus]    = useState(null)
   const [dismissed, setDismissed] = useState(false)
 
   useEffect(() => {
@@ -377,8 +357,7 @@ function NotificationCard({ theme }) {
       className="card mb-4 flex items-start gap-3"
       style={{ background: `${theme.primary}08`, border: `1px solid ${theme.primary}25` }}>
       <motion.img src="/panda/talk_1.png" alt="Pandi"
-        animate={{ y: [0, -3, 0] }}
-        transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
+        animate={{ y: [0, -3, 0] }} transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
         style={{ width: 48, height: 48, objectFit: 'contain', flexShrink: 0 }}
         onError={e => { e.target.style.display = 'none' }} />
       <div className="flex-1 min-w-0">
@@ -405,8 +384,7 @@ function NotificationCard({ theme }) {
   )
 }
 
-// ─── HOME ─────────────────────────────────────────────────────────────────────
-
+// ─── MAIN HOME COMPONENT ──────────────────────────────────────────────────────
 export default function Home() {
   const { profile, user } = useStore()
   const { theme }         = useTheme()
@@ -417,6 +395,7 @@ export default function Home() {
   const [weightLogs,   setWeightLogs]   = useState([])
   const [todaySleep,   setTodaySleep]   = useState(null)
   const [todayMood,    setTodayMood]    = useState(null)
+  const [forceShowTutorial, setForceShowTutorial] = useState(false) // <-- Estado local para forzar tutorial
 
   useTour('home')
 
@@ -445,7 +424,7 @@ export default function Home() {
   const protein = todayMeals.reduce((s, m) => s + (m.protein_g || 0), 0)
   const burned  = todayWorkout?.calories_burned || 0
 
-  const MOODS      = { 1:'😩', 2:'😞', 3:'😐', 4:'😊', 5:'🤩' }
+  const MOODS       = { 1:'😩', 2:'😞', 3:'😐', 4:'😊', 5:'🤩' }
   const MOOD_LABELS = { 1:'Muy mal', 2:'Mal', 3:'Regular', 4:'Bien', 5:'Genial' }
 
   const currentWeight  = weightLogs[0]?.weight_kg
@@ -486,13 +465,18 @@ export default function Home() {
   const doneTodayCount = modules.filter(m => m.done).length
 
   return (
-    <div className="page">
+    <div className="page pb-24"> {/* Aseguramos el padding inferior por la Tab Bar */}
+      
+      {/* ── CONTROLADOR DE TUTORIAL CONTEXTUAL (FRAMES) ── */}
+      <ContextualTutorial 
+        sectionId="dashboard" 
+        forceShow={forceShowTutorial} 
+        onClose={() => setForceShowTutorial(false)} 
+      />
 
       {/* ── HEADER ─────────────────────────────────────────────────────────── */}
       <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-4">
-
         <div className="flex items-center justify-between">
-          {/* Saludo + nombre */}
           <div>
             <p className="text-xs" style={{ color: theme.textMuted }}>
               {hour < 12 ? '¡Buenos días' : hour < 20 ? '¡Buenas tardes' : '¡Buenas noches'},
@@ -504,28 +488,23 @@ export default function Home() {
 
           {/* Badges: Nivel · Racha · Perfil */}
           <div className="flex items-center gap-1.5">
-            <div className="flex flex-col items-center px-2.5 py-1.5 rounded-2xl"
-              style={{ background: theme.surface2 }}>
+            <div className="flex flex-col items-center px-2.5 py-1.5 rounded-2xl" style={{ background: theme.surface2 }}>
               <span className="text-[9px]" style={{ color: theme.textMuted }}>Nivel</span>
               <span className="font-extrabold text-sm" style={{ color: theme.primary }}>
                 {profile?.level || 1}
               </span>
             </div>
 
-            <div className="flex flex-col items-center px-2.5 py-1.5 rounded-2xl"
-              style={{ background: theme.surface2 }}>
+            <div className="flex flex-col items-center px-2.5 py-1.5 rounded-2xl" style={{ background: theme.surface2 }}>
               <span className="text-[9px]" style={{ color: theme.textMuted }}>Racha</span>
               <span className="font-extrabold text-sm" style={{ color: '#F97316' }}>
                 🔥{profile?.streak || 0}
-                {profile?.streak_shields > 0 && (
-                  <span style={{ fontSize: 9, color: theme.textMuted }}> 🛡️</span>
-                )}
+                {profile?.streak_shields > 0 && <span style={{ fontSize: 9, color: theme.textMuted }}> 🛡️</span>}
               </span>
             </div>
 
             <Link to="/profile">
-              <div className="flex flex-col items-center px-2.5 py-1.5 rounded-2xl"
-                style={{ background: theme.surface2 }}>
+              <div className="flex flex-col items-center px-2.5 py-1.5 rounded-2xl" style={{ background: theme.surface2 }}>
                 <span className="text-[9px]" style={{ color: theme.textMuted }}>Menú</span>
                 <span className="font-extrabold text-sm" style={{ color: theme.textMuted }}>☰</span>
               </div>
@@ -553,10 +532,14 @@ export default function Home() {
       <PandiGreeting profile={profile} theme={theme} todayData={{
         hasMood:    !!todayMood,
         hasMeals:   cals > 0,
-        hasWater:   false, // WaterWidget lo maneja internamente
+        hasWater:   false,
         hasSleep:   !!todaySleep,
         hasWorkout: !!todayWorkout,
       }} />
+
+      {/* 📍 UBICACIÓN ESTRATÉGICA DEL PANDI TIP (Modo Inline) */}
+      {/* Rompe la densidad justo después de los saludos e introduce datos de valor */}
+      <PandiTips section="home" variant="inline" />
 
       {/* Card notificaciones */}
       <NotificationCard theme={theme} />
@@ -588,15 +571,14 @@ export default function Home() {
       <WaterWidget userId={user?.id} theme={theme} />
 
       {/* Rings */}
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }}
-        className="card mb-4">
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }} className="card mb-4">
         <p className="text-xs mb-3 font-medium uppercase tracking-wider" style={{ color: theme.textMuted }}>
           Progreso de hoy
         </p>
         <div className="flex justify-around">
-          <RingProgress value={cals}    max={goals.calories}  color={theme.warning} label="Calorías" />
-          <RingProgress value={protein} max={goals.protein_g} color={theme.primary} label="Proteína" />
-          <RingProgress value={burned}  max={400}             color={theme.success} label="Quemadas" />
+          <RingProgress value={cals}    max={goals.calories}  color={theme.warning} label="Calorías" theme={theme} />
+          <RingProgress value={protein} max={goals.protein_g} color={theme.primary} label="Proteína" theme={theme} />
+          <RingProgress value={burned}  max={400}             color={theme.success} label="Quemadas" theme={theme} />
         </div>
         <div className="mt-3 pt-3 flex justify-center" style={{ borderTop: `1px solid ${theme.border}` }}>
           <span className="text-xs" style={{ color: theme.textMuted }}>
@@ -632,8 +614,10 @@ export default function Home() {
       {/* Insights */}
       <PandiInsights />
 
-      <TourHelpButton tourKey="home" />
-      <PandiTips section="home" />
+      {/* Botón de Ayuda del Tour vinculado al disparador del Frame de Tutoriales */}
+      <div onClick={() => setForceShowTutorial(true)}>
+        <TourHelpButton tourKey="home" />
+      </div>
     </div>
   )
 }

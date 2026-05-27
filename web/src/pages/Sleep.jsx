@@ -35,6 +35,7 @@ export default function Sleep() {
 
   return (
     <div className="page">
+      <PandiContextualBubble section="sleep" data={{ hours: todaySleep?.hours, quality: todaySleep?.quality, avg: 7 }} />
       <h1 className="text-2xl font-extrabold mb-5" style={{ color: theme.text }}>Sueño 🌙</h1>
 
       <div className="card mb-5 flex gap-4">

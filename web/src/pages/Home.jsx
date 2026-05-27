@@ -631,7 +631,7 @@ export default function Home() {
       {/* Insights */}
       <PandiInsights />
 
-      <<TourHelpButton tourKey="home" />
+      <TourHelpButton tourKey="home" />
       <PandiTips section="home" />
     </div>
   )

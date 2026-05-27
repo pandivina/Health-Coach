@@ -88,6 +88,7 @@ export default function Nutrition() {
 )}
 
       <TourHelpButton tourKey="nutrition" />
+    <PandiTips section="nutrition" />
     </div>
   )
 }

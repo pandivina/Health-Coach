@@ -1,3 +1,4 @@
+import { useTheme } from '../contexts/ThemeProvider'
 // Añade la propiedad 'variant' (por defecto "inline")
 export default function PandiTips({ section, variant = "inline" }) {
   const { theme } = useTheme()

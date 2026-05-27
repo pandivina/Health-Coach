@@ -1,5 +1,5 @@
 // ── DESPENSA TAB ─────────────────────────────────────────────
-import PremiumGate from '../components/PremiumGate'
+import PremiumGate from '../../components/PremiumGate'
 import { useState, useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { Plus, Camera, Trash2, Sparkles, Clock, Flame, CheckCircle, ChefHat, TrendingUp } from 'lucide-react'

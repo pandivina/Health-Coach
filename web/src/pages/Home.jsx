@@ -474,6 +474,7 @@ export default function Home() {
     <div className="page pb-24">
       {/* ── HEADER ─────────────────────────────────────────────────────────── */}
       <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-4">
+        {/* ... contenido del header ... */}
         <div className="flex items-center justify-between">
           <div>
             <p className="text-xs" style={{ color: theme.textMuted }}>
@@ -482,44 +483,6 @@ export default function Home() {
             <h1 className="text-2xl font-extrabold" style={{ color: theme.text }}>
               {profile?.name?.split(' ')[0] || 'Compi'} 👋
             </h1>
-          </div>
-
-          <div className="flex items-center gap-1.5">
-            <div className="flex flex-col items-center px-2.5 py-1.5 rounded-2xl" style={{ background: theme.surface2 }}>
-              <span className="text-[9px]" style={{ color: theme.textMuted }}>Nivel</span>
-              <span className="font-extrabold text-sm" style={{ color: theme.primary }}>
-                {profile?.level || 1}
-              </span>
-            </div>
-
-            <div className="flex flex-col items-center px-2.5 py-1.5 rounded-2xl" style={{ background: theme.surface2 }}>
-              <span className="text-[9px]" style={{ color: theme.textMuted }}>Racha</span>
-              <span className="font-extrabold text-sm" style={{ color: '#F97316' }}>
-                🔥{profile?.streak || 0}
-                {profile?.streak_shields > 0 && <span style={{ fontSize: 9, color: theme.textMuted }}> 🛡️</span>}
-              </span>
-            </div>
-
-            <Link to="/profile">
-              <div className="flex flex-col items-center px-2.5 py-1.5 rounded-2xl" style={{ background: theme.surface2 }}>
-                <span className="text-[9px]" style={{ color: theme.textMuted }}>Menú</span>
-                <span className="font-extrabold text-sm" style={{ color: theme.textMuted }}>☰</span>
-              </div>
-            </Link>
-          </div>
-        </div>
-
-        <div className="mt-3">
-          <div className="flex justify-between text-[10px] mb-1" style={{ color: theme.textMuted }}>
-            <span>{profile?.xp || 0} XP</span>
-            <span>Nivel {(profile?.level || 1) + 1} → {(profile?.level || 1) * 500} XP</span>
-          </div>
-          <div className="h-1.5 rounded-full overflow-hidden" style={{ background: theme.surface2 }}>
-            <motion.div className="h-full rounded-full"
-              style={{ background: `linear-gradient(90deg, ${theme.primary}, #FF8FA3)` }}
-              initial={{ width: 0 }}
-              animate={{ width: `${((profile?.xp || 0) % 500) / 5}%` }}
-              transition={{ duration: 0.8 }} />
           </div>
         </div>
       </motion.div>
@@ -532,13 +495,14 @@ export default function Home() {
         hasWorkout: !!todayWorkout,
       }} />
 
-      <PandiTips section="home" variant="inline" />
+      {/* 👇 COMENTAMOS ESTOS TRES PARA VER SI LA APP REVIVE 👇 */}
+      {/* <PandiTips section="home" variant="inline" /> */}
 
       <NotificationCard theme={theme} />
 
       {isMorning && <MorningCard petEmoji={petEmoji} theme={theme} />}
 
-      <WeeklySummary />
+      {/* <WeeklySummary /> */}
 
       <div className="card mb-4" data-tour="home-progress">
         <div className="flex items-center justify-between mb-3">
@@ -558,48 +522,10 @@ export default function Home() {
 
       <WaterWidget userId={user?.id} theme={theme} />
 
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }} className="card mb-4">
-        <p className="text-xs mb-3 font-medium uppercase tracking-wider" style={{ color: theme.textMuted }}>
-          Progreso de hoy
-        </p>
-        <div className="flex justify-around">
-          <RingProgress value={cals} max={goals.calories} color={theme.warning} label="Calorías" theme={theme} />
-          <RingProgress value={protein} max={goals.protein_g} color={theme.primary} label="Proteína" theme={theme} />
-          <RingProgress value={burned} max={400} color={theme.success} label="Quemadas" theme={theme} />
-        </div>
-        <div className="mt-3 pt-3 flex justify-center" style={{ borderTop: `1px solid ${theme.border}` }}>
-          <span className="text-xs" style={{ color: theme.textMuted }}>
-            Balance:{' '}
-            <span style={{ color: cals - burned > goals.calories ? theme.error : theme.success }}>
-              {Math.round(cals - burned)} kcal
-            </span>
-          </span>
-        </div>
-      </motion.div>
-
-      <Link to="/mood">
-        <motion.div whileTap={{ scale: 0.98 }} className="card mb-4 flex items-center gap-3"
-          style={{ background: 'linear-gradient(135deg,#f0fffe,#fff5f7)', border: '1px solid rgba(46,196,182,0.2)' }}>
-          <motion.span animate={{ rotate: [0, 10, -10, 10, 0] }}
-            transition={{ duration: 1.5, repeat: Infinity, repeatDelay: 4 }}
-            style={{ fontSize: 32, flexShrink: 0 }}>
-            {todayMood ? ['😩', '😞', '😐', '😊', '🤩'][todayMood.mood - 1] : '🐼'}
-          </motion.span>
-          <div className="flex-1">
-            <p className="font-extrabold text-sm" style={{ color: '#1F2937' }}>Mi Bienestar</p>
-            <p className="text-xs" style={{ color: '#6B7280' }}>
-              {todayMood
-                ? `Hoy te sientes ${['muy mal', 'mal', 'regular', 'bien', 'genial'][todayMood.mood - 1]} · Respiración, meditación y más`
-                : 'Check-in de ánimo · Respiración · Meditación'}
-            </p>
-          </div>
-          <ChevronRight size={16} style={{ color: '#9CA3AF' }} />
-        </motion.div>
-      </Link>
-
-      <PandiInsights />
+      {/* <PandiInsights /> */}
 
       <TourHelpButton tourKey="home" />
     </div>
   )
+}
 }

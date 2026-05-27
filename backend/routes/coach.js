@@ -130,6 +130,7 @@ router.post('/', requireAuth, checkCoachLimit, async (req, res) => {
       moodRes, workoutRes, weightRes, treatmentsRes, labsRes,
       memory
     ] = await Promise.all([
+      safe(supabaseAdmin.from('health_profiles').select('*').eq('user_id', userId).maybeSingle()),
       safe(supabaseAdmin.from('user_profiles').select('name,xp,level,streak,pet_name,motivation_why').eq('id', userId).single()),
       safe(supabaseAdmin.from('health_profiles').select('*').eq('user_id', userId).single()),
       safe(supabaseAdmin.from('nutrition_goals').select('*').eq('user_id', userId).maybeSingle()),
@@ -184,6 +185,9 @@ Objetivo: ${health.goal || 'No definido'} | Intensidad: ${health.goal_intensity 
 Actividad: ${health.activity_level || 'No especificada'} | Entrena: ${health.training_days_per_week || 0} días/semana
 Profesión: ${health.profession || 'No especificada'} | Horario: ${health.work_schedule || 'No especificado'}
 Motivación personal: ${profile.motivation_why || 'No especificada'}
+Lesiones/limitaciones: ${health.physical_limitations || 'Ninguna'}
+Objetivo específico: ${health.specific_goals || 'No especificado'}
+Restricciones alimentarias: ${health.dietary_restrictions || 'Ninguna'}
 
 METABOLISMO
 TDEE: ${health.tdee || 'No calculado'} kcal | BMR: ${health.bmr || 'No calculado'} kcal

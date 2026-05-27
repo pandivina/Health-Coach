@@ -3,6 +3,8 @@ import { motion } from 'framer-motion'
 import { supabase } from '../lib/supabase'
 import { useStore } from '../store/useStore'
 import { useTheme } from '../contexts/ThemeProvider'
+import PandiContextualBubble from '../components/PandiContextualBubble'
+import PandiTips from '../components/PandiTips'
 
 const QUALITY_LABELS = { 1:'Terrible 😫', 2:'Malo 😞', 3:'Regular 😐', 4:'Bueno 😊', 5:'Excelente 🌟' }
 

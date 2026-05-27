@@ -25,6 +25,7 @@ export default function Workout() {
 
   return (
     <div className="page pb-32" style={{ background: theme.bg }}>
+      <PandiContextualBubble section="workout" data={{ hasWorkout: false, streak: profile?.streak || 0 }} />
       <h1 className="text-2xl font-extrabold mb-4" style={{ color: theme.text }}>Entreno 💪</h1>
 
       <div className="flex gap-1 rounded-2xl p-1 mb-5" style={{ background: theme.surface2 }}>

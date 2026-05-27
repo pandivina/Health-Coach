@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react'
-import es from '../i18n/es'
-import en from '../i18n/en'
+import es from '../i18n/es.js'
+import en from '../i18n/en.js'
 import { useStore } from '../store/useStore'
 
 const LANGUAGES = { es, en }

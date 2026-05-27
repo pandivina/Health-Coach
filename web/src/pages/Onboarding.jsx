@@ -6,6 +6,7 @@ import { useTheme } from '../contexts/ThemeProvider'
 import { supabase } from '../lib/supabase'
 import { api } from '../lib/api'
 import { MedicalDisclaimerText } from '../components/legal/MedicalDisclaimer'
+import LanguagePicker from '../components/LanguagePicker'
 
 const GOALS = [
   { value: 'lose_fat',    emoji: '🔥', label: 'Perder grasa',   desc: 'Reducir % de grasa corporal'     },
@@ -117,6 +118,10 @@ export default function Onboarding() {
         <label className="label">Tu nombre</label>
         <input className="input" placeholder="¿Cómo te llamamos?" value={form.name} onChange={e => set('name', e.target.value)} />
       </div>
+      <div>
+  <label className="label">Idioma / Language</label>
+  <LanguagePicker inline />
+</div>
       <div className="flex gap-3">
         <div className="flex-1">
           <label className="label">Fecha de nacimiento</label>

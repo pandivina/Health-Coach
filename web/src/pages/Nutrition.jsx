@@ -11,6 +11,7 @@ import DespensaTab from '../components/nutrition/DespensaTab'
 import RecetasTab from '../components/nutrition/RecetasTab'
 import TendenciasTab from '../components/nutrition/TendenciasTab'
 import PandiContextualBubble from '../components/PandiContextualBubble'
+import PandiTips from '../components/PandiTips'
 
 
 const TABS = [

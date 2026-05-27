@@ -1,3 +1,4 @@
+import PandiTips from '../components/PandiTips'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -9,7 +10,6 @@ import TourHelpButton from '../components/tour/TourHelpButton'
 import WeeklySummary from '../components/WeeklySummary'
 import PandiInsights from '../components/PandiInsights'
 import { ChevronRight, Plus, Minus as MinusIcon, Droplets } from 'lucide-react'
-import PandiTips from '../components/PandiTips'
 
 const PET_EMOJI = { panda:'🐼', cat:'🐱', dog:'🐶', fox:'🦊', rabbit:'🐰' }
 

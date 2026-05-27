@@ -178,7 +178,7 @@ export default function Profile() {
   </div>
   )
 }
-      <LanguagePicker 
+      <LanguagePicker/>
         
       {/* Apariencia */}
       <Link to="/appearance" data-tour="profile-appearance">

@@ -178,7 +178,8 @@ export default function Profile() {
   </div>
   )
 }
-      <LanguagePicker />
+      <LanguagePicker 
+        
       {/* Apariencia */}
       <Link to="/appearance" data-tour="profile-appearance">
         <motion.div whileTap={{ scale: 0.97 }}
@@ -193,8 +194,8 @@ export default function Profile() {
             <p className="text-xs" style={{ color: theme.textMuted }}>Temas y colores de la app</p>
           </div>
           <span className="ml-auto" style={{ color: theme.textMuted }}>›</span>
-          <div style={{ borderTop: `1px solid ${theme.border}`, paddingTop: 12, marginTop: 4 }}>
-  <p className="text-xs font-bold mb-3 uppercase tracking-wide" style={{ color: theme.textMuted }}>
+          <div className="card mb-5 space-y-3" style={{ border: `1px solid ${theme.border}` }}>
+  <p className="text-xs font-bold uppercase tracking-wide" style={{ color: theme.textMuted }}>
     Salud avanzada (opcional)
   </p>
   <div>

@@ -1,4 +1,4 @@
-import { useTheme } from '../../contexts/ThemeProvider'
+import { useTheme } from '../contexts/ThemeProvider'
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { api } from '../lib/api'

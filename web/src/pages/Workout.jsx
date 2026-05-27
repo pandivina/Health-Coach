@@ -5,6 +5,8 @@ import { useTheme } from '../contexts/ThemeProvider'
 import WorkoutDashboard from '../components/workout/WorkoutDashboard'
 import LiveWorkoutScreen from '../components/workout/LiveWorkoutScreen'
 import { RoutineGenerator, ExerciseLibrary, WorkoutHistory, WorkoutStats } from '../components/workout/WorkoutComponents'
+import PandiContextualBubble from '../components/PandiContextualBubble'
+import PandiTips from '../components/PandiTips'
 
 const TABS = [
   { id: 'dashboard', icon: Dumbbell,  label: 'Inicio'     },

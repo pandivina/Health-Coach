@@ -96,7 +96,7 @@ export function RoutineGenerator({ onStartSession }) {
                 <div className="w-6 h-6 rounded-lg bg-accent/20 flex items-center justify-center text-xs font-bold text-accent">{i+1}</div>
                 <div className="flex-1">
                   <p className="text-sm font-medium">{ex.exercise_name}</p>
-                  <p className="text-white/40 text-xs">{ex.sets} × {ex.reps} · {ex.rest_seconds}s descanso</p>
+                  <p className="style={{ color: theme.textMuted }} text-xs">{ex.sets} × {ex.reps} · {ex.rest_seconds}s descanso</p>
                 </div>
               </div>
             ))}
@@ -122,9 +122,9 @@ function ExerciseCard({ ex }) {
         </div>
         <div className="flex-1">
           <p className="font-medium text-sm">{ex.name}</p>
-          <p className="text-white/40 text-xs capitalize">{ex.equipment}</p>
+          <p className="style={{ color: theme.textMuted }} text-xs capitalize">{ex.equipment}</p>
         </div>
-        <span className="text-white/30 text-xs">{open ? '▲' : '▼'}</span>
+        <span className="style={{ color: theme.textMuted }} text-xs">{open ? '▲' : '▼'}</span>
       </div>
       {open && ex.instructions && (
         <p className="text-white/60 text-xs leading-relaxed mt-3 pl-12">
@@ -132,7 +132,7 @@ function ExerciseCard({ ex }) {
         </p>
       )}
       {open && ex.secondary_muscles?.length > 0 && (
-        <p className="text-white/30 text-xs mt-2 pl-12">
+        <p className="style={{ color: theme.textMuted }} text-xs mt-2 pl-12">
           También trabaja: {ex.secondary_muscles.join(', ')}
         </p>
       )}
@@ -182,7 +182,7 @@ export function ExerciseLibrary() {
       </div>
 
       {filtered.length === 0 && (
-        <p className="text-white/30 text-center py-8">Sin resultados</p>
+        <p className="style={{ color: theme.textMuted }} text-center py-8">Sin resultados</p>
       )}
 
       {Object.entries(grouped).map(([group, items]) => (
@@ -219,7 +219,7 @@ export function WorkoutHistory() {
           <div className="flex items-start justify-between">
             <div>
               <p className="font-semibold">{s.name}</p>
-              <p className="text-white/40 text-xs">{new Date(s.finished_at).toLocaleDateString('es-ES', { weekday:'short', day:'numeric', month:'short' })}</p>
+              <p className="style={{ color: theme.textMuted }} text-xs">{new Date(s.finished_at).toLocaleDateString('es-ES', { weekday:'short', day:'numeric', month:'short' })}</p>
             </div>
             <span className="text-accent-green text-xs font-medium">✓ Completado</span>
           </div>
@@ -297,7 +297,7 @@ export function WorkoutStats() {
                 <div className="w-7 h-7 rounded-lg bg-accent/20 flex items-center justify-center text-xs font-bold text-accent">{i+1}</div>
                 <div className="flex-1">
                   <p className="text-sm font-medium">{ex.exercise_name}</p>
-                  <p className="text-white/40 text-xs">{ex.total_sessions} sesiones · {ex.best_weight_kg}kg máx</p>
+                  <p className="style={{ color: theme.textMuted }} text-xs">{ex.total_sessions} sesiones · {ex.best_weight_kg}kg máx</p>
                 </div>
               </div>
             ))}

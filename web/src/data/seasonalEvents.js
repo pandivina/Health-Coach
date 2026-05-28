@@ -1,158 +1,143 @@
-// ─── SISTEMA DE EVENTOS DE TEMPORADA ─────────────────────────────────────────
-// Añade nuevos eventos aquí. SeasonalEventCard carga el activo automáticamente.
+// src/data/seasonalEvents.js
 
-function nextOccurrence(month, day) {
-  const now  = new Date()
-  const year = now.getFullYear()
-  const date = new Date(`${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}T23:59:59`)
-  return date < now ? new Date(`${year + 1}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}T23:59:59`) : date
-}
+export const EVENT_REGISTRY = {
+  // 🎃 OTOÑO / HALLOWEEN: El Grimorio y la Cosecha de Fuerza
+  yggdrasil_halloween: {
+    id: 'yggdrasil_halloween',
+    name: 'El Grimorio de Yggdrasil',
+    subtitle: 'Noche de Brujas · Cosecha de Fuerza',
+    emoji: '🎃',
+    isActive: (now) => now.getMonth() >= 8 && now.getMonth() <= 10, // Septiembre, Octubre, Noviembre
+    endsAt: () => new Date(new Date().getFullYear() + '-10-31T23:59:59'),
+    
+    // 🏋️‍♂️ ENFOQUE DE WORKOUT (Hipertrofia / Volumen / Fuerza)
+    workoutFocus: {
+      goal: 'Hipertrofia y Ganancia de Fuerza',
+      desc: 'El otoño es tiempo de recolectar energía y canalizarla en los hierros. Enfócate en ejercicios multiarticulares pesados para construir masa rúnica.',
+    },
+    
+    // 🍎 ENFOQUE DE DIETA (Productos de temporada)
+    dietFocus: {
+      strategy: 'Superávit Calórico Controlado (Volumen)',
+      foods: ['Calabaza', 'Boniato / Camote', 'Castañas y Frutos Secos', 'Setas / Hongos silvestres', 'Granadas'],
+      tip: 'Aprovecha los carbohidratos complejos de la calabaza y el boniato post-entreno para recargar el glucógeno muscular y levantar más pesado.'
+    },
 
-export const EVENTS = {
-  halloween: {
-    id:       'yggdrasil_halloween',
-    name:     'El Grimorio de Yggdrasil',
-    subtitle: 'Noche de Brujas · Evento de Temporada',
-    emoji:    '🎃',
-    activeFrom: { month: 10, day: 24 }, // se activa 7 días antes
-    endsAt:   nextOccurrence(10, 31),
     styles: {
-      bg:        'linear-gradient(135deg, #0F0517, #1A0A2E, #0C0A1A)',
-      border:    'conic-gradient(from 0deg, #7C3AED, #F97316, #1F2937, #DC2626, #7C3AED)',
-      glow:      'radial-gradient(ellipse at 50% 0%, rgba(124,58,237,0.3) 0%, rgba(249,115,22,0.12) 60%, transparent 100%)',
-      particles: ['#F97316','#7C3AED','#DC2626','#F59E0B'],
-      accent:    '#F97316',
-      tagBg:     'rgba(124,58,237,0.3)',
-      tagText:   '#D8B4FE',
-      timerColor: '#F87171',
+      borderGradient: 'conic-gradient(from 0deg, #7C3AED, #F97316, #1F2937, #DC2626, #7C3AED)',
+      bgGlow: 'radial-gradient(ellipse at 50% 0%, rgba(124,58,237,0.25) 0%, rgba(249,115,22,0.1) 60%, transparent 100%)',
+      accentColor: '#F97316',
+      tagBg: 'rgba(124,58,237,0.3)',
+      tagText: '#D8B4FE'
     },
     reward: {
-      name:  'Tema: Noche de Brujas',
-      emoji: '🧙',
-      desc:  'Desbloquea el tema visual "Grimorio" y el accesorio Sombrero de Pandi',
+      name: 'Aquelarre de Sombras',
+      emoji: '🔮',
+      desc: 'Desbloquea el plan nutricional "Pócimas de Otoño" y la skin "Pandi Vampiro"',
     },
     missions: [
       {
-        id: 'steel', school: 'Transmutación', path: 'titan',
-        emoji: '⚚', name: 'Canalizar Acero',
-        desc: 'Levantar 1.0t de volumen acumulado esta semana',
-        target: 1000, unit: 'kg', color: '#F97316',
+        id: 'steel',
+        school: 'Nigromancia',
+        emoji: '💀',
+        name: 'Levantar a los Muertos',
+        desc: 'Mover 2.0t acumuladas en Peso Muerto o Sentadillas pesadas',
+        target: 2000,
+        unit: 'kg',
+        color: '#7C3AED',
       },
       {
-        id: 'mana', school: 'Evocación', path: 'warrior',
-        emoji: '⚡', name: 'Tormenta de Maná',
-        desc: 'Quemar 300 kcal en entrenamientos HIIT',
-        target: 300, unit: 'kcal', color: '#7C3AED',
+        id: 'mana',
+        school: 'Alquimia',
+        emoji: '🍲',
+        name: 'Festín del Aquelarre',
+        desc: 'Registrar 5 comidas ricas en alimentos de otoño (Calabaza/Boniato)',
+        target: 5,
+        unit: 'comidas',
+        color: '#F97316',
       },
       {
-        id: 'astral', school: 'Restauración', path: 'zen',
-        emoji: '🌀', name: 'Equilibrio Astral',
-        desc: 'Completar 20 minutos de Yoga o Pilates',
-        target: 20, unit: 'min', color: '#DC2626',
+        id: 'astral',
+        school: 'Restauración',
+        emoji: '👁️',
+        name: 'Trance Regenerativo',
+        desc: 'Completar 40 min de estiramientos pesados para liberar fascias',
+        target: 40,
+        unit: 'min',
+        color: '#DC2626',
       },
     ],
   },
 
-  christmas: {
-    id:       'pandi_navidad',
-    name:     'El Festín de Pandi',
-    subtitle: 'Navidad · Evento de Temporada',
-    emoji:    '🎄',
-    activeFrom: { month: 12, day: 18 },
-    endsAt:   nextOccurrence(12, 31),
-    styles: {
-      bg:        'linear-gradient(135deg, #0A1F0A, #1A0A0A, #0A0A1F)',
-      border:    'conic-gradient(from 0deg, #16A34A, #DC2626, #F59E0B, #16A34A)',
-      glow:      'radial-gradient(ellipse at 50% 0%, rgba(22,163,74,0.25) 0%, rgba(220,38,38,0.1) 60%, transparent 100%)',
-      particles: ['#16A34A','#DC2626','#F59E0B','#FFFFFF'],
-      accent:    '#16A34A',
-      tagBg:     'rgba(22,163,74,0.3)',
-      tagText:   '#86EFAC',
-      timerColor: '#FCA5A5',
+  // ❄️ INVIERNO: El Fimbulwinter y la Resistencia al Frío
+  yggdrasil_winter: {
+    id: 'yggdrasil_winter',
+    name: 'Supervivencia: Fimbulwinter',
+    subtitle: 'El Invierno Mitológico · Resistencia Extrema',
+    emoji: '❄️',
+    isActive: (now) => now.getMonth() === 11 || now.getMonth() <= 1, // Diciembre, Enero, Febrero
+    endsAt: () => new Date(new Date().getFullYear() + '-02-28T23:59:59'),
+    
+    workoutFocus: {
+      goal: 'Termogénesis y Resistencia Cardiovascular',
+      desc: 'Combate el frío helado de Midgard. El objetivo es mantener el núcleo activo: entrenamientos HIIT, circuitos metabólicos cortos y máxima intensidad cardiovascular.',
     },
-    reward: {
-      name:  'Tema: Navidad Ártica',
-      emoji: '🎅',
-      desc:  'Desbloquea el tema "Pandi Santa" y el accesorio Gorro de Navidad',
+    
+    dietFocus: {
+      strategy: 'Mantenimiento / Definición e Inmunidad',
+      foods: ['Naranjas y Mandarinas (Vit C)', 'Brócoli y Coliflor', 'Espinacas', 'Caldos óseos / Sopas', 'Alcachofas'],
+      tip: 'Usa los caldos calientes densos en nutrientes antes de entrenar para aclimatar el cuerpo y blinda tus defensas con los cítricos de temporada.'
     },
-    missions: [
-      {
-        id: 'steel', school: 'Fuerza Invernal', path: 'titan',
-        emoji: '❄️', name: 'Voluntad de Hielo',
-        desc: 'Levantar 1.0t de volumen esta semana',
-        target: 1000, unit: 'kg', color: '#16A34A',
-      },
-      {
-        id: 'mana', school: 'Resistencia Ártica', path: 'warrior',
-        emoji: '🏃', name: 'Carrera del Reno',
-        desc: 'Quemar 300 kcal en cardio esta semana',
-        target: 300, unit: 'kcal', color: '#DC2626',
-      },
-      {
-        id: 'astral', school: 'Paz Interior', path: 'zen',
-        emoji: '🕯️', name: 'Luz de Adviento',
-        desc: 'Completar 20 minutos de meditación o yoga',
-        target: 20, unit: 'min', color: '#F59E0B',
-      },
-    ],
-  },
 
-  summer: {
-    id:       'pandi_verano',
-    name:     'El Solsticio de Pandi',
-    subtitle: 'Verano · Evento de Temporada',
-    emoji:    '☀️',
-    activeFrom: { month: 6, day: 17 },
-    endsAt:   nextOccurrence(6, 24),
     styles: {
-      bg:        'linear-gradient(135deg, #0A1520, #1A1005, #0A1520)',
-      border:    'conic-gradient(from 0deg, #F59E0B, #0EA5E9, #6EE7B7, #F59E0B)',
-      glow:      'radial-gradient(ellipse at 50% 0%, rgba(245,158,11,0.25) 0%, rgba(14,165,233,0.1) 60%, transparent 100%)',
-      particles: ['#F59E0B','#0EA5E9','#6EE7B7','#FDE68A'],
-      accent:    '#F59E0B',
-      tagBg:     'rgba(245,158,11,0.3)',
-      tagText:   '#FDE68A',
-      timerColor: '#FDE68A',
+      borderGradient: 'conic-gradient(from 0deg, #0EA5E9, #38BDF8, #1E293B, #E2E8F0, #0EA5E9)',
+      bgGlow: 'radial-gradient(ellipse at 50% 0%, rgba(14,165,233,0.25) 0%, rgba(56,189,248,0.1) 60%, transparent 100%)',
+      accentColor: '#0EA5E9',
+      tagBg: 'rgba(14,165,233,0.3)',
+      tagText: '#7DD3FC'
     },
     reward: {
-      name:  'Tema: Paraíso Solar',
-      emoji: '🌊',
-      desc:  'Desbloquea el tema "Pandi Beach" y el accesorio Gafas de Sol',
+      name: 'Aura de Jötunheim',
+      emoji: '🛡️',
+      desc: 'Desbloquea recetas de "Caldos de Poder" y el título de perfil "Inmune al Frío"',
     },
     missions: [
       {
-        id: 'steel', school: 'Forja Solar', path: 'titan',
-        emoji: '🔆', name: 'Calor de Acero',
-        desc: 'Levantar 1.0t de volumen esta semana',
-        target: 1000, unit: 'kg', color: '#F59E0B',
+        id: 'steel',
+        school: 'Fuerza de Escarcha',
+        emoji: '🏔️',
+        name: 'Romper el Permafrost',
+        desc: 'Completar 100 repeticiones totales de zancadas o prensa (fuerza de piernas)',
+        target: 100,
+        unit: 'reps',
+        color: '#0EA5E9',
       },
       {
-        id: 'mana', school: 'Oleaje Cardio', path: 'warrior',
-        emoji: '🌊', name: 'Marea de Fuego',
-        desc: 'Quemar 300 kcal en cardio',
-        target: 300, unit: 'kcal', color: '#0EA5E9',
+        id: 'mana',
+        school: 'Termogénesis',
+        emoji: '🏃‍♂️',
+        name: 'Encender el Núcleo',
+        desc: 'Quemar 600 kcal en sesiones de cardio/HIIT de alta intensidad para sudar el frío',
+        target: 600,
+        unit: 'kcal',
+        color: '#38BDF8',
       },
       {
-        id: 'astral', school: 'Flujo Zen', path: 'zen',
-        emoji: '🌴', name: 'Brisa del Solsticio',
-        desc: 'Completar 20 minutos de Yoga al aire libre',
-        target: 20, unit: 'min', color: '#6EE7B7',
+        id: 'astral',
+        school: 'Inmunidad',
+        emoji: '🍵',
+        name: 'Elixir de Odín',
+        desc: 'Tomar 3 infusiones/caldos vegetales de temporada ricos en micronutrientes',
+        target: 3,
+        unit: 'tazas',
+        color: '#E2E8F0',
       },
     ],
   },
 }
 
-// ─── SELECCIÓN AUTOMÁTICA DEL EVENTO ACTIVO ───────────────────────────────────
-
-export function getActiveEvent() {
-  const now   = new Date()
-  const month = now.getMonth() + 1
-  const day   = now.getDate()
-
-  for (const event of Object.values(EVENTS)) {
-    const { activeFrom, endsAt } = event
-    const start = new Date(`${now.getFullYear()}-${String(activeFrom.month).padStart(2,'0')}-${String(activeFrom.day).padStart(2,'0')}T00:00:00`)
-    if (now >= start && now <= endsAt) return event
-  }
-  return null // sin evento activo
+export function getCurrentEvent() {
+  const now = new Date()
+  const found = Object.values(EVENT_REGISTRY).find(event => event.isActive(now))
+  return found || EVENT_REGISTRY.yggdrasil_halloween
 }

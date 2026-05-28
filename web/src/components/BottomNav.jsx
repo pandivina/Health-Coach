@@ -12,8 +12,8 @@ export default function BottomNav() {
   const isHome = location.pathname === '/';
   const isCoach = location.pathname === '/coach';
   const isCalendar = location.pathname === '/calendar';
-  const isNutrition = location.pathname === '/nutricion';
-  const isTrain = location.pathname === '/entrena';
+  const isNutrition = location.pathname === '/nutrition';
+  const isTrain = location.pathname === '/workout';
 
   return (
     <nav 
@@ -78,7 +78,7 @@ export default function BottomNav() {
       </div>
 
       {/* 4. NUTRICIÓN */}
-      <NavLink to="/nutricion" className="flex-1 flex flex-col items-center justify-center h-full">
+      <NavLink to="/nutrition" className="flex-1 flex flex-col items-center justify-center h-full">
         <Apple size={22} color={isNutrition ? theme.navActive : theme.navText} />
         <span 
           className="text-[10px] font-medium mt-1"
@@ -89,7 +89,7 @@ export default function BottomNav() {
       </NavLink>
 
       {/* 5. ENTRENA */}
-      <NavLink to="/entrena" className="flex-1 flex flex-col items-center justify-center h-full">
+      <NavLink to="/workout" className="flex-1 flex flex-col items-center justify-center h-full">
         <Dumbbell size={22} color={isTrain ? theme.navActive : theme.navText} />
         <span 
           className="text-[10px] font-medium mt-1"

@@ -9,6 +9,7 @@ import Layout from './components/Layout'
 import CookieBanner from './components/legal/CookieBanner'
 import { PrivacyPolicy, TermsOfUse, MedicalDisclaimerPage } from './pages/Legal'
 import UpdateBanner from './components/UpdateBanner'
+import WorkoutView from './pages/WorkoutView'
 
 // Public
 import Landing from './pages/Landing'
@@ -119,7 +120,7 @@ export default function App() {
           <Route path="/nutrition" element={<Nutrition />} />
           <Route path="/pantry" element={<Navigate to="/nutrition" replace />} />
           <Route path="/recipes" element={<Navigate to="/nutrition" replace />} />
-          <Route path="/workout" element={<Workout />} />
+          <Route path="/workout" element={<WorkoutView />} />
           <Route path="/sleep" element={<Sleep />} />
           <Route path="/mood" element={<Mood />} />
           <Route path="/hydration" element={<Hydration />} />

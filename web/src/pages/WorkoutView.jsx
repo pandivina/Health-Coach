@@ -4,10 +4,12 @@ import { Play, ChevronRight, Sparkles, X } from 'lucide-react'
 import { useTheme } from '../contexts/ThemeProvider'
 import { useStore } from '../store/useStore'
 import { api } from '../lib/api'
-import LiveWorkoutScreen from '../components/workout/LiveWorkoutScreen'
+import { useWorkoutStore } from '../store/useWorkoutStore'
+import ActiveWorkoutView from './ActiveWorkoutView'
 import { getGuidedSession } from '../data/exerciseLibrary'
 import PandiContextualBubble from '../components/PandiContextualBubble'
 import PandiTips from '../components/PandiTips'
+import SeasonalEventCard from '../components/SeasonalEventCard'
 
 // ─── DATOS ───────────────────────────────────────────────────────────────────
 
@@ -228,11 +230,11 @@ function ProgramCard({ program, accent, userLevel, theme, onStart }) {
 export default function WorkoutView() {
   const { theme }         = useTheme()
   const { profile, user } = useStore()
-  const [activePath,     setActivePath]     = useState('titan')
-  const [stats,          setStats]          = useState(null)
-  const [activeSession,  setActiveSession]  = useState(null)
-  const [loading,        setLoading]        = useState(false)
-  const [supportModal,   setSupportModal]   = useState(null) // 'warmup' | 'stretching' | null
+  const { startWorkout, activeWorkout, endWorkout } = useWorkoutStore()
+  const [activePath,   setActivePath]   = useState('titan')
+  const [stats,        setStats]        = useState(null)
+  const [loading,      setLoading]      = useState(false)
+  const [supportModal, setSupportModal] = useState(null)
 
   const path      = PATHS[activePath]
   const userLevel = profile?.level || 1
@@ -244,23 +246,22 @@ export default function WorkoutView() {
   async function startFreeWorkout() {
     setLoading(true)
     try {
-      // Cargar sesión guiada por defecto según la senda
       const defaultPrograms = { titan: 'hyper', warrior: 'circuit', zen: 'hatha' }
-      const guided = getGuidedSession(defaultPrograms[activePath])
+      const guided   = getGuidedSession(defaultPrograms[activePath])
       const exercises = guided?.exerciseList || []
-      const result = await api.workouts.start({
+      const result   = await api.workouts.start({
         name: guided?.name || `Entreno ${path.name}`,
         exercises: exercises.map(ex => ({ exercise_name: ex.name })),
       })
-      // Inyectar datos de biblioteca en cada ejercicio
-      const enriched = {
-        ...result,
-        exercises: (result.exercises || []).map((ex, i) => ({
+      startWorkout({
+        name:      guided?.name || `Entreno ${path.name}`,
+        senda:     activePath,
+        exercises: exercises.map((ex, i) => ({
           ...ex,
-          libraryData: exercises[i] || null,
+          backendId: result.exercises?.[i]?.id,
         })),
-      }
-      setActiveSession({ ...enriched, workoutPath: activePath })
+        sessionId: result.session?.id,
+      })
     } catch (err) { alert('Error: ' + err.message) }
     finally { setLoading(false) }
   }
@@ -268,29 +269,28 @@ export default function WorkoutView() {
   async function startProgram(program) {
     setLoading(true)
     try {
-      const guided    = getGuidedSession(program.id)
+      const guided   = getGuidedSession(program.id)
       const exercises = guided?.exerciseList || []
-      const result    = await api.workouts.start({
+      const result   = await api.workouts.start({
         name: program.name,
         exercises: exercises.map(ex => ({ exercise_name: ex.name })),
       })
-      const enriched = {
-        ...result,
-        exercises: (result.exercises || []).map((ex, i) => ({
+      startWorkout({
+        name:      program.name,
+        senda:     activePath,
+        exercises: exercises.map((ex, i) => ({
           ...ex,
-          libraryData: exercises[i] || null,
+          backendId: result.exercises?.[i]?.id,
         })),
-      }
-      setActiveSession({ ...enriched, workoutPath: activePath })
+        sessionId: result.session?.id,
+      })
     } catch (err) { alert('Error: ' + err.message) }
     finally { setLoading(false) }
   }
 
-  if (activeSession) {
-    return <LiveWorkoutScreen
-      session={activeSession}
-      workoutPath={activeSession.workoutPath || activePath}
-      onFinish={() => setActiveSession(null)} />
+  // Si hay sesión activa → modo entrenador
+  if (activeWorkout) {
+    return <ActiveWorkoutView onFinish={() => endWorkout()} />
   }
 
   return (

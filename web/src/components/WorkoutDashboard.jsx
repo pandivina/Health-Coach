@@ -6,7 +6,7 @@ import { api } from '../../lib/api'
 import { useStore } from '../../store/useStore'
 import { useTheme } from '../../contexts/ThemeProvider'
 
-export default function WorkoutDashboard({ onStartSession }) {
+export default function WorkoutDashboard({ onStartSession, hideQuickStart }) {
   const { user }  = useStore()
   const { theme } = useTheme()
   const [templates,      setTemplates]      = useState([])

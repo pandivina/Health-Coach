@@ -5,9 +5,9 @@ import { useTheme } from '../contexts/ThemeProvider'
 import { useStore } from '../store/useStore'
 import { api } from '../lib/api'
 import LiveWorkoutScreen from '../components/workout/LiveWorkoutScreen'
+import { getGuidedSession } from '../data/exerciseLibrary'
 import PandiContextualBubble from '../components/PandiContextualBubble'
 import PandiTips from '../components/PandiTips'
-import SeasonalEventCard from '../components/SeasonalEventCard'
 
 // ─── DATOS ───────────────────────────────────────────────────────────────────
 
@@ -109,7 +109,6 @@ const PATHS = {
     ],
   },
 }
-
 
 // ─── SUPPORT MODAL ────────────────────────────────────────────────────────────
 
@@ -245,8 +244,23 @@ export default function WorkoutView() {
   async function startFreeWorkout() {
     setLoading(true)
     try {
-      const result = await api.workouts.start({ name: `Entreno ${path.name}`, exercises: [] })
-      setActiveSession(result)
+      // Cargar sesión guiada por defecto según la senda
+      const defaultPrograms = { titan: 'hyper', warrior: 'circuit', zen: 'hatha' }
+      const guided = getGuidedSession(defaultPrograms[activePath])
+      const exercises = guided?.exerciseList || []
+      const result = await api.workouts.start({
+        name: guided?.name || `Entreno ${path.name}`,
+        exercises: exercises.map(ex => ({ exercise_name: ex.name })),
+      })
+      // Inyectar datos de biblioteca en cada ejercicio
+      const enriched = {
+        ...result,
+        exercises: (result.exercises || []).map((ex, i) => ({
+          ...ex,
+          libraryData: exercises[i] || null,
+        })),
+      }
+      setActiveSession({ ...enriched, workoutPath: activePath })
     } catch (err) { alert('Error: ' + err.message) }
     finally { setLoading(false) }
   }
@@ -254,14 +268,29 @@ export default function WorkoutView() {
   async function startProgram(program) {
     setLoading(true)
     try {
-      const result = await api.workouts.start({ name: program.name, exercises: [] })
-      setActiveSession(result)
+      const guided    = getGuidedSession(program.id)
+      const exercises = guided?.exerciseList || []
+      const result    = await api.workouts.start({
+        name: program.name,
+        exercises: exercises.map(ex => ({ exercise_name: ex.name })),
+      })
+      const enriched = {
+        ...result,
+        exercises: (result.exercises || []).map((ex, i) => ({
+          ...ex,
+          libraryData: exercises[i] || null,
+        })),
+      }
+      setActiveSession({ ...enriched, workoutPath: activePath })
     } catch (err) { alert('Error: ' + err.message) }
     finally { setLoading(false) }
   }
 
   if (activeSession) {
-    return <LiveWorkoutScreen session={activeSession} onFinish={() => setActiveSession(null)} />
+    return <LiveWorkoutScreen
+      session={activeSession}
+      workoutPath={activeSession.workoutPath || activePath}
+      onFinish={() => setActiveSession(null)} />
   }
 
   return (
@@ -410,8 +439,6 @@ export default function WorkoutView() {
 
         </motion.div>
       </AnimatePresence>
-      
-      <SeasonalEventCard />
 
       {/* Support Modal */}
       <AnimatePresence>

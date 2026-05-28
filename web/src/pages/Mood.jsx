@@ -3,7 +3,7 @@ import {
 } from '../lib/pandiMessages'
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Play, Pause, RotateCcw, Volume2, VolumeX, Check } from 'lucide-react'
+import { Play, Pause, RotateCcw, Volume2, VolumeX, Check, Smile, Heart, Sparkles, Lock } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useStore } from '../store/useStore'
 import { useTheme } from '../contexts/ThemeProvider'
@@ -56,6 +56,12 @@ const AMBIENT = [
   { id: 'forest', emoji: '🌲', label: 'Bosque'  },
   { id: 'bowls',  emoji: '🎵', label: 'Cuencos' },
   { id: 'space',  emoji: '🌌', label: 'Espacio' },
+]
+
+const MASCOTAS_COLECCIONABLES = [
+  { id: 'pandi', nombreDefault: 'Pandi', especie: 'Oso Panda', desc: 'Tu compañero fiel inicial. Le encanta la meditación.', nivelRequerido: 1 },
+  { id: 'slothi', nombreDefault: 'Slothi', especie: 'Perezoso', desc: 'Experto en calma profunda y rutinas sin prisas.', nivelRequerido: 4 },
+  { id: 'lumi', nombreDefault: 'Lumi', especie: 'Luciérnaga', desc: 'Brilla con fuerza en tus momentos más oscuros.', nivelRequerido: 8 },
 ]
 
 const MED_SESSIONS = { 2: [1,2,3], 5: [4,5,6,7], 10: [8,9,10] }
@@ -118,7 +124,7 @@ function PandaImg({ name, size = 48, fallback = '🐼', className = '', style = 
 
 function PandiResponse({ mood, message, action, onAction, theme, loadingCoach }) {
   const moodData  = MOODS.find(m => m.v === mood)
-  const frameInfo = PANDI_MOOD_FRAME[mood] || { file: 'talk_1', fallback: '🐼' }
+  const frameInfo = PANDI_MOOD_FRAME[mood] || { file: 'avatar_neutro', fallback: '🐼' }
   return (
     <motion.div key={mood} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0 }} className="card"
@@ -126,7 +132,7 @@ function PandiResponse({ mood, message, action, onAction, theme, loadingCoach })
       <div className="flex items-start gap-3 mb-3">
         <motion.div animate={loadingCoach ? { rotate: [0, 15, -15, 0] } : { scale: [1, 1.06, 1] }}
           transition={loadingCoach ? { duration: 0.5, repeat: Infinity } : { duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}>
-          <PandaImg name={frameInfo.file} size={48} fallback={frameInfo.fallback}
+          <PandaImg name={mood >= 4 ? 'avatar_happy' : 'avatar_neutro'} size={48} fallback={frameInfo.fallback}
             style={{ borderRadius: 12 }} />
         </motion.div>
         <div className="flex-1">
@@ -161,7 +167,6 @@ function CheckinTab({ theme, userId, addXP, onTabChange }) {
   const [notes, setNotes] = useState('')
   const [saved, setSaved] = useState(false)
   
-  // Estados para el motor del Coach IA Clínico en caliente
   const [pandiMessage, setPandiMessage] = useState('')
   const [loadingCoach, setLoadingCoach] = useState(false)
   
@@ -176,7 +181,6 @@ function CheckinTab({ theme, userId, addXP, onTabChange }) {
       setMood(t.mood); 
       setNotes(t.notes || ''); 
       setSaved(true) 
-      // Si ya estaba guardado previamente, cargamos el mensaje estático por defecto
       setPandiMessage(PANDI_MOOD_MESSAGES.already_saved[t.mood] || '')
     }
   }
@@ -187,7 +191,6 @@ function CheckinTab({ theme, userId, addXP, onTabChange }) {
     if (!mood) return
     setLoadingCoach(true)
     
-    // 1. Guardar de forma inmediata en Supabase
     await supabase.from('mood_logs').upsert(
       { user_id: userId, date: today, mood, notes },
       { onConflict: 'user_id,date' }
@@ -195,7 +198,6 @@ function CheckinTab({ theme, userId, addXP, onTabChange }) {
     await addXP(10)
     setSaved(true)
 
-    // 2. Disparar consulta en tiempo real al Coach IA con psicología TCC
     try {
       const moodLabel = MOODS.find(m => m.v === mood)?.label || 'Desconocido'
       const promptOculto = `[SISTEMA: El usuario acaba de hacer Check-in de salud mental en la app. Ha marcado su estado de ánimo hoy como "${moodLabel}" (${mood}/5). Notas contextuales que ha escrito sobre lo que influye en su día: "${notes || 'Sin notas escritas'}". Actúa inmediatamente como su Psicólogo y Terapeuta TCC/ACT. Dame una respuesta corta, de máximo 3 líneas, súper empática, validando su estado emocional y dándole un reencuadre o consejo útil sin rodeos ni introducciones corporativas.]`
@@ -231,7 +233,6 @@ function CheckinTab({ theme, userId, addXP, onTabChange }) {
     })
   })()
 
-  // Si no se ha guardado aún y el usuario cambia el selector, le previsualizamos el texto estático de la app
   const finalMessage = saved ? pandiMessage : (PANDI_MOOD_MESSAGES.first[mood] ?? '')
   const action = (!saved && mood) ? PANDI_ACTIONS[mood] : null
 
@@ -348,7 +349,7 @@ function BreathingTab({ theme }) {
   const t           = TECHNIQUES[tech]
   const phaseInfo   = PHASES[phase]
   const animDur     = phase === 'inhale' ? t.inhale : phase === 'exhale' ? t.exhale
-                   : phase === 'hold'   ? t.hold   : t.holdOut
+                    : phase === 'hold'   ? t.hold   : t.holdOut
   const breathFrame = phaseInfo.breathFrame || 1
 
   return (
@@ -385,7 +386,7 @@ function BreathingTab({ theme }) {
             transition={{ duration: animDur, ease: 'easeInOut' }}
             style={{ position: 'relative', zIndex: 2, width: 78, height: 78, borderRadius: '50%',
               background: '#fff', boxShadow: `0 4px 24px ${phaseInfo.color}40`,
-              display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              display: 'flex', alignItems: 'center', justifyCONtent: 'center' }}>
             <AnimatePresence mode="wait">
               <motion.div key={breathFrame}
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
@@ -471,7 +472,7 @@ function PandaFrame({ running }) {
   }
 
   return (
-    <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+    <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyCOntent: 'center' }}>
       <motion.div
         animate={
           transitioning ? { scale: 1.4, opacity: 0.85 }
@@ -671,7 +672,7 @@ function MeditationTab({ theme }) {
 
 // ─── HABITS TAB ───────────────────────────────────────────────────────────────
 
-function HabitsTab({ theme, userId }) {
+function HabitsTab({ theme, userId, onHabitsUpdate }) {
   const today      = new Date().toISOString().split('T')[0]
   const storageKey = `pandi_habits_${today}`
   const configKey  = 'pandi_habit_config'
@@ -690,21 +691,21 @@ function HabitsTab({ theme, userId }) {
   const doneCount = active.filter(h => checked[h.id]).length
   const allDone   = active.length > 0 && doneCount === active.length
 
+  useEffect(() => {
+    if (onHabitsUpdate) {
+      onHabitsUpdate(checked)
+    }
+  }, [checked])
+
   function toggle(id) {
     const next = { ...checked, [id]: !checked[id] }
     setChecked(next)
     localStorage.setItem(storageKey, JSON.stringify(next))
-    if (active.every(h => (h.id === id ? !checked[id] : checked[h.id]))) {
+    if (!checked[id] && active.every(h => h.id === id ? true : checked[h.id])) {
       setCelebrated(true)
       useStore.getState().addBondXP?.(5)
       setTimeout(() => setCelebrated(false), 3000)
     }
-  }
-
-  function toggleEnabled(id) {
-    const next = habits.map(h => h.id === id ? { ...h, enabled: !h.enabled } : h)
-    setHabits(next)
-    localStorage.setItem(configKey, JSON.stringify(next))
   }
 
   return (
@@ -714,10 +715,10 @@ function HabitsTab({ theme, userId }) {
         <AnimatePresence mode="wait">
           {allDone
             ? <motion.div key="celebrate" initial={{ scale: 0.5 }} animate={{ scale: 1 }}>
-                <PandaImg name="celebrate_1" size={48} fallback="🎉" />
+                <PandaImg name="avatar_celebrate" size={48} fallback="🎉" />
               </motion.div>
             : <motion.div key="normal">
-                <PandaImg name="encourage_1" size={48} fallback="🐼" />
+                <PandaImg name="avatar_neutro" size={48} fallback="🐼" />
               </motion.div>
           }
         </AnimatePresence>
@@ -765,44 +766,262 @@ function HabitsTab({ theme, userId }) {
               style={{
                 color:          checked[h.id] ? theme.primary : theme.text,
                 textDecoration: checked[h.id] ? 'line-through' : 'none',
-                opacity:        checked[h.id] ? 0.7 : 1,
               }}>
-              {h.label}
+              {h.name}
             </p>
-            <motion.div animate={{ scale: checked[h.id] ? 1 : 0.6, opacity: checked[h.id] ? 1 : 0.3 }}
-              className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0"
-              style={{ background: checked[h.id] ? theme.primary : theme.surface2 }}>
-              <Check size={12} color={checked[h.id] ? '#fff' : theme.textMuted} />
-            </motion.div>
+            <div className="w-5 h-5 rounded-full border flex items-center justify-center"
+              style={{ 
+                borderColor: checked[h.id] ? theme.primary : theme.textMuted,
+                background: checked[h.id] ? theme.primary : 'transparent' 
+              }}>
+              {checked[h.id] && <Check size={12} className="text-white" />}
+            </div>
           </motion.button>
         ))}
       </div>
+    </div>
+  )
+}
+
+// ─── SANTUARIO TAB (TAMAGOTCHI) ───────────────────────────────────────────────
+
+function SantuarioTab({ theme, userLevel, currentMood, habitsChecked }) {
+  const [mascotaActiva, setMascotaActiva] = useState(() => localStorage.getItem('pandi_active_pet') || 'pandi')
+  const [nombresMascotas, setNombresMascotas] = useState(() => {
+    const saved = localStorage.getItem('pandi_pet_names')
+    return saved ? JSON.parse(saved) : { pandi: 'Pandi', slothi: 'Slothi', lumi: 'Lumi' }
+  })
+  const [editingName, setEditingName] = useState(false)
+  const [newNameInput, setNewNameInput] = useState('')
+
+  const menteStatus  = currentMood ? (currentMood / 5) * 100 : 50
+  
+  const totalHabits  = Object.keys(habitsChecked).length || 3
+  const doneHabits   = Object.values(habitsChecked).filter(Boolean).length
+  const rutinaStatus = Math.min(Math.round((doneHabits / totalHabits) * 100) || 0, 100)
+  
+  const almaStatus   = 75 
+
+  const infoMascota  = MASCOTAS_COLECCIONABLES.find(m => m.id === mascotaActiva)
+  const nombreActual = nombresMascotas[mascotaActiva] || infoMascota?.nombreDefault
+
+  let sufijoEstado = 'neutro' 
+
+  if (currentMood >= 4) {
+    sufijoEstado = 'happy'
+  }
+
+  if (rutinaStatus === 100) {
+    sufijoEstado = 'celebrate'
+  }
+
+  const prefijoMascota = mascotaActiva === 'pandi' ? 'avatar' : mascotaActiva
+  const pathImagenMascota = `/panda/${prefijoMascota}_${sufijoEstado}.png`
+
+  function cambiarNombre() {
+    if (!newNameInput.trim()) return
+    const next = { ...nombresMascotas, [mascotaActiva]: newNameInput }
+    setNombresMascotas(next)
+    localStorage.setItem('pandi_pet_names', JSON.stringify(next))
+    setEditingName(false)
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="card relative overflow-hidden flex flex-col items-center pt-8 pb-6 bg-gradient-to-b from-sky-100/40 via-transparent to-transparent">
+        <div className="text-center z-10">
+          {editingName ? (
+            <div className="flex gap-2 items-center justify-center">
+              <input className="input py-1 text-center font-bold text-sm" value={newNameInput} 
+                onChange={e => setNewNameInput(e.target.value)} maxLength={12} style={{ maxWidth: 140 }} />
+              <button onClick={cambiarNombre} className="p-1.5 rounded-xl bg-emerald-500 text-white"><Check size={14}/></button>
+            </div>
+          ) : (
+            <div className="cursor-pointer group flex items-center justify-center gap-1.5" onClick={() => { setNewNameInput(nombreActual); setEditingName(true) }}>
+              <p className="text-xl font-black tracking-tight" style={{ color: theme.text }}>{nombreActual}</p>
+              <span className="text-[10px] opacity-0 group-hover:opacity-60 transition-opacity">✏️</span>
+            </div>
+          )}
+          <p className="text-[10px] uppercase font-bold tracking-widest mt-0.5" style={{ color: theme.textMuted }}>{infoMascota?.especie}</p>
+        </div>
+
+        <div className="relative my-6 flex items-center justify-center" style={{ minHeight: 200, width: '100%' }}>
+          <div className="absolute w-44 h-44 rounded-full filter blur-3xl opacity-20 animate-pulse"
+            style={{ backgroundColor: currentMood <= 2 ? '#F97316' : '#2EC4B6' }} />
+          
+          <motion.img 
+            key={pathImagenMascota}
+            src={pathImagenMascota} 
+            alt={nombreActual}
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.9, opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="w-44 h-44 object-contain z-10"
+          />
+        </div>
+
+        <div className="w-full grid grid-cols-3 gap-2 px-2">
+          <div className="bg-white/40 dark:bg-black/10 p-2 rounded-xl border border-black/5 flex flex-col gap-1">
+            <div className="flex items-center gap-1 text-[10px] font-bold" style={{ color: theme.text }}>
+              <Smile size={12} className="text-amber-500" /> Mente
+            </div>
+            <div className="h-1.5 w-full bg-black/5 dark:bg-white/10 rounded-full overflow-hidden">
+              <div className="h-full bg-amber-500 transition-all duration-500" style={{ width: `${menteStatus}%` }} />
+            </div>
+          </div>
+
+          <div className="bg-white/40 dark:bg-black/10 p-2 rounded-xl border border-black/5 flex flex-col gap-1">
+            <div className="flex items-center gap-1 text-[10px] font-bold" style={{ color: theme.text }}>
+              <Heart size={12} className="text-rose-500" /> Rutina
+            </div>
+            <div className="h-1.5 w-full bg-black/5 dark:bg-white/10 rounded-full overflow-hidden">
+              <div className="h-full bg-rose-500 transition-all duration-500" style={{ width: `${rutinaStatus}%` }} />
+            </div>
+          </div>
+
+          <div className="bg-white/40 dark:bg-black/10 p-2 rounded-xl border border-black/5 flex flex-col gap-1">
+            <div className="flex items-center gap-1 text-[10px] font-bold" style={{ color: theme.text }}>
+              <Sparkles size={12} className="text-purple-500" /> Alma
+            </div>
+            <div className="h-1.5 w-full bg-black/5 dark:bg-white/10 rounded-full overflow-hidden">
+              <div className="h-full bg-purple-500 transition-all duration-500" style={{ width: `${almaStatus}%` }} />
+            </div>
+          </div>
+        </div>
+      </div>
 
       <div className="card">
-        <p className="text-sm font-bold mb-3" style={{ color: theme.text }}>Configurar seguimiento</p>
-        <div className="space-y-2">
-          {habits.map(h => (
-            <div key={h.id} className="flex items-center justify-between py-1">
-              <div className="flex items-center gap-2">
-                <span className="text-lg">{h.icon}</span>
-                <p className="text-sm" style={{ color: theme.text }}>{h.label}</p>
-                <span className="text-[10px] px-1.5 py-0.5 rounded"
-                  style={{ background: theme.surface2, color: theme.textMuted }}>{h.time}</span>
+        <p className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: theme.textMuted }}>Tus Coleccionables</p>
+        <div className="space-y-2.5">
+          {MASCOTAS_COLECCIONABLES.map(m => {
+            const desbloqueado = userLevel >= m.nivelRequerido
+            const esActiva = mascotaActiva === m.id
+            const nombreMascota = nombresMascotas[m.id] || m.nombreDefault
+
+            return (
+              <div key={m.id} className="flex items-center gap-3 p-2.5 rounded-xl transition-all"
+                style={{ 
+                  backgroundColor: esActiva ? `${theme.primary}10` : theme.surface2,
+                  border: esActiva ? `1px solid ${theme.primary}40` : '1px solid transparent',
+                  opacity: desbloqueado ? 1 : 0.6
+                }}>
+                
+                <div className="w-12 h-12 rounded-xl bg-white/60 dark:bg-black/20 flex items-center justify-center text-2xl">
+                  {!desbloqueado ? (
+                    <Lock size={16} className="text-neutral-400" />
+                  ) : (
+                    <img src={m.id === 'pandi' ? '/panda/avatar_neutro.png' : `/panda/${m.id}_neutro.png`} alt={m.id} className="w-9 h-9 object-contain"
+                      onError={e => { e.target.src = "🐼" }} />
+                  )}
+                </div>
+
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-baseline gap-1.5">
+                    <p className="text-sm font-bold truncate" style={{ color: theme.text }}>{nombreMascota}</p>
+                    <span className="text-[9px] font-medium opacity-60">({m.especie})</span>
+                  </div>
+                  <p className="text-[11px] truncate" style={{ color: theme.textMuted }}>{m.desc}</p>
+                </div>
+
+                {desbloqueado ? (
+                  <button 
+                    onClick={() => { setMascotaActiva(m.id); localStorage.setItem('pandi_active_pet', m.id); }}
+                    className="text-xs font-bold px-3 py-1.5 rounded-xl"
+                    style={{ 
+                      backgroundColor: esActiva ? theme.primary : theme.surface,
+                      color: esActiva ? '#fff' : theme.text 
+                    }}>
+                    {esActiva ? 'Activa' : 'Elegir'}
+                  </button>
+                ) : (
+                  <div className="text-[10px] font-bold px-2 py-1 rounded bg-neutral-200 dark:bg-neutral-800 text-neutral-500">
+                    Nivel {m.nivelRequerido}
+                  </div>
+                )}
               </div>
-              <button onClick={() => toggleEnabled(h.id)}
-                className="w-10 h-6 rounded-full relative transition-all"
-                style={{ background: h.enabled ? theme.primary : theme.surface2 }}>
-                <motion.div animate={{ x: h.enabled ? 16 : 2 }}
-                  transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                  className="absolute top-1 w-4 h-4 rounded-full bg-white shadow-sm" />
-              </button>
-            </div>
-          ))}
+            )
+          })}
         </div>
       </div>
     </div>
   )
 }
 
-// Exportamos por defecto el contenedor o el Tab que necesites principal
-export default CheckinTab;
+// ─── MAIN COMPONENT ───────────────────────────────────────────────────────────
+
+export default function Mood() {
+  const { theme } = useTheme()
+  const { user, addXP } = useStore()
+  const [activeTab, setActiveTab] = useState('checkin')
+  const [currentMood, setCurrentMood] = useState(3)
+  const [habitsChecked, setHabitsChecked] = useState({})
+
+  useEffect(() => {
+    async function fetchTodayMood() {
+      if (!user?.id) return
+      const today = new Date().toISOString().split('T')[0]
+      const { data } = await supabase.from('mood_logs')
+        .select('mood')
+        .eq('user_id', user.id)
+        .eq('date', today)
+        .maybeSingle()
+      if (data?.mood) {
+        setCurrentMood(data.mood)
+      }
+    }
+    fetchTodayMood()
+  }, [user?.id, activeTab])
+
+  const tabs = [
+    { id: 'checkin',    label: 'Check-in',  emoji: '📝' },
+    { id: 'santuario',  label: 'Santuario', emoji: '🐾' },
+    { id: 'breathing',  label: 'Respirar',  emoji: '🫁' },
+    { id: 'meditation', label: 'Meditar',   emoji: '🧘' },
+    { id: 'habits',     label: 'Hábitos',   emoji: '⚡' },
+    { id: 'calendar',   label: 'Historial', emoji: '📅' },
+    { id: 'cycles',     label: 'Ciclos',    emoji: '🌙' },
+  ]
+
+  return (
+    <div className="max-w-md mx-auto pb-24 px-2 pt-4">
+      <PandiContextualBubble theme={theme} currentTab={activeTab} />
+      
+      <div className="flex gap-1.5 overflow-x-auto no-scrollbar pb-3 mb-2 mask-linear-edge">
+        {tabs.map(t => (
+          <button key={t.id} onClick={() => setActiveTab(t.id)}
+            className="flex items-center gap-1 px-3 py-2 rounded-2xl text-xs font-bold transition-all flex-shrink-0"
+            style={{
+              background: activeTab === t.id ? theme.primary : theme.surface,
+              color:      activeTab === t.id ? '#fff' : theme.textMuted,
+              boxShadow:  activeTab === t.id ? `0 4px 12px ${theme.primary}30` : 'none',
+            }}>
+            <span>{t.emoji}</span>
+            <span>{t.label}</span>
+          </button>
+        ))}
+      </div>
+
+      <motion.div key={activeTab} initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.2 }} className="min-h-[400px]">
+        {activeTab === 'checkin' && (
+          <CheckinTab theme={theme} userId={user?.id} addXP={addXP} onTabChange={setActiveTab} />
+        )}
+        {activeTab === 'santuario' && (
+          <SantuarioTab theme={theme} userLevel={user?.level || 1} currentMood={currentMood} habitsChecked={habitsChecked} />
+        )}
+        {activeTab === 'breathing' && <BreathingTab theme={theme} />}
+        {activeTab === 'meditation' && <MeditationTab theme={theme} />}
+        {activeTab === 'habits' && (
+          <HabitsTab theme={theme} userId={user?.id} onHabitsUpdate={setHabitsChecked} />
+        )}
+        {activeTab === 'calendar' && <WellnessCalendar theme={theme} userId={user?.id} />}
+        {activeTab === 'cycles' && <CycleTab theme={theme} userId={user?.id} />}
+      </motion.div>
+
+      <div className="mt-4">
+        <PandiTips theme={theme} />
+      </div>
+    </div>
+  )
+}

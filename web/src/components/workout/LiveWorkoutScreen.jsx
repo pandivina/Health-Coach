@@ -4,8 +4,9 @@ import { X, Plus, Check, ChevronDown, ChevronUp, Trophy, Timer } from 'lucide-re
 import { api } from '../../lib/api'
 import { useStore } from '../../store/useStore'
 import { useTheme } from '../../contexts/ThemeProvider'
+import ExerciseSelectorModal from '../ExerciseSelectorModal'
 
-// ─── REST TIMER ───────────────────────────────────────────────
+// ─── REST TIMER ───────────────────────────────────────────────────────────────
 
 function RestTimer({ seconds, onDone }) {
   const [left, setLeft] = useState(seconds)
@@ -43,7 +44,7 @@ function RestTimer({ seconds, onDone }) {
   )
 }
 
-// ─── PR BANNER ────────────────────────────────────────────────
+// ─── PR BANNER ────────────────────────────────────────────────────────────────
 
 function PRBanner() {
   return (
@@ -59,14 +60,17 @@ function PRBanner() {
   )
 }
 
-// ─── EXERCISE BLOCK ───────────────────────────────────────────
+// ─── EXERCISE BLOCK ───────────────────────────────────────────────────────────
 
 function ExerciseBlock({ workoutExercise, onSetComplete }) {
-  const { theme }    = useTheme()
-  const [sets,       setSets]     = useState([])
-  const [weight,     setWeight]   = useState('')
-  const [reps,       setReps]     = useState('')
-  const [expanded,   setExpanded] = useState(true)
+  const { theme }  = useTheme()
+  const [sets,     setSets]     = useState([])
+  const [weight,   setWeight]   = useState('')
+  const [reps,     setReps]     = useState('')
+  const [expanded, setExpanded] = useState(true)
+
+  // Info del ejercicio de la biblioteca (si existe)
+  const info = workoutExercise.libraryData
 
   async function logSet(isWarmup = false) {
     if (!weight && !reps) return
@@ -89,26 +93,41 @@ function ExerciseBlock({ workoutExercise, onSetComplete }) {
   const workingSets = sets.filter(s => !s.is_warmup)
 
   return (
-    <div className="card mb-3">
-      <div className="flex items-center justify-between mb-3 cursor-pointer"
+    <div className="card mb-3" style={{ border: `1px solid ${theme.border}` }}>
+      <div className="flex items-start justify-between mb-3 cursor-pointer"
         onClick={() => setExpanded(e => !e)}>
-        <div>
-          <p className="font-semibold" style={{ color: theme.text }}>
-            {workoutExercise.exercise_name}
-          </p>
-          <p className="text-xs" style={{ color: theme.textMuted }}>
-            {workingSets.length} series completadas
-          </p>
+        <div className="flex items-center gap-2.5">
+          {info?.emoji && (
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center text-xl flex-shrink-0"
+              style={{ background: theme.surface2 }}>
+              {info.emoji}
+            </div>
+          )}
+          <div>
+            <p className="font-bold text-sm" style={{ color: theme.text }}>
+              {workoutExercise.exercise_name}
+            </p>
+            <p className="text-[10px]" style={{ color: theme.textMuted }}>
+              {info
+                ? `${info.sets} series × ${info.reps} · ${info.rest}s descanso`
+                : `${workingSets.length} series completadas`}
+            </p>
+          </div>
         </div>
         {expanded
           ? <ChevronUp size={16} style={{ color: theme.textMuted }} />
-          : <ChevronDown size={16} style={{ color: theme.textMuted }} />
-        }
+          : <ChevronDown size={16} style={{ color: theme.textMuted }} />}
       </div>
 
       {expanded && (
         <>
-          {/* Series completadas */}
+          {info?.desc && (
+            <p className="text-[11px] mb-3 leading-relaxed p-2 rounded-xl"
+              style={{ color: theme.textMuted, background: theme.surface2 }}>
+              {info.desc}
+            </p>
+          )}
+
           {sets.length > 0 && (
             <div className="space-y-1 mb-3">
               {sets.map((s, i) => (
@@ -124,15 +143,13 @@ function ExerciseBlock({ workoutExercise, onSetComplete }) {
                   <span>
                     {s.is_pr
                       ? <Trophy size={12} style={{ color: '#EAB308' }} />
-                      : <Check size={12} style={{ color: theme.success }} />
-                    }
+                      : <Check size={12} style={{ color: theme.success }} />}
                   </span>
                 </div>
               ))}
             </div>
           )}
 
-          {/* Input nueva serie */}
           <div className="flex gap-2 items-center">
             <div className="flex-1">
               <p className="text-[10px] mb-1" style={{ color: theme.textMuted }}>Peso (kg)</p>
@@ -146,12 +163,12 @@ function ExerciseBlock({ workoutExercise, onSetComplete }) {
             </div>
             <div className="flex flex-col gap-1 mt-4">
               <button onClick={() => logSet(false)}
-                className="w-11 h-10 rounded-xl flex items-center justify-center active:scale-90 transition-all"
+                className="w-11 h-10 rounded-xl flex items-center justify-center"
                 style={{ background: theme.primary }}>
                 <Check size={16} color="#fff" />
               </button>
               <button onClick={() => logSet(true)}
-                className="w-11 h-10 rounded-xl flex items-center justify-center active:scale-90 transition-all text-[9px] font-bold"
+                className="w-11 h-10 rounded-xl flex items-center justify-center text-[9px] font-bold"
                 style={{ background: theme.surface2, color: theme.textMuted }}>
                 C
               </button>
@@ -163,19 +180,18 @@ function ExerciseBlock({ workoutExercise, onSetComplete }) {
   )
 }
 
-// ─── LIVE WORKOUT SCREEN ──────────────────────────────────────
+// ─── LIVE WORKOUT SCREEN ──────────────────────────────────────────────────────
 
-export default function LiveWorkoutScreen({ session, onFinish }) {
-  const { addXP }    = useStore()
-  const { theme }    = useTheme()
-  const [exercises,       setExercises]       = useState(Array.isArray(session.exercises) ? session.exercises : [])
-  const [elapsed,         setElapsed]         = useState(0)
-  const [showRest,        setShowRest]        = useState(false)
-  const [showPR,          setShowPR]          = useState(false)
-  const [finishing,       setFinishing]       = useState(false)
-  const [showAddExercise, setShowAddExercise] = useState(false)
-  const [searchEx,        setSearchEx]        = useState('')
-  const [allExercises,    setAllExercises]    = useState([])
+export default function LiveWorkoutScreen({ session, onFinish, workoutPath = 'titan' }) {
+  const { addXP }   = useStore()
+  const { theme }   = useTheme()
+  const [exercises,    setExercises]    = useState(Array.isArray(session.exercises) ? session.exercises : [])
+  const [elapsed,      setElapsed]      = useState(0)
+  const [showRest,     setShowRest]     = useState(false)
+  const [showPR,       setShowPR]       = useState(false)
+  const [finishing,    setFinishing]    = useState(false)
+  const [showModal,    setShowModal]    = useState(false)
+  const [restSeconds,  setRestSeconds]  = useState(90)
   const startTime = useRef(Date.now())
 
   useEffect(() => {
@@ -183,14 +199,8 @@ export default function LiveWorkoutScreen({ session, onFinish }) {
     return () => clearInterval(t)
   }, [])
 
-  useEffect(() => {
-    api.workouts.getExercises()
-      .then(data => setAllExercises(Array.isArray(data) ? data : []))
-      .catch(() => {})
-  }, [])
-
-  const formatTime = (s) =>
-    `${Math.floor(s/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}`
+  const formatTime = s =>
+    `${Math.floor(s/3600).toString().padStart(2,'0')}:${Math.floor((s%3600)/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}`
 
   async function handleSetComplete(data) {
     const result = await api.workouts.completeSet(data)
@@ -198,19 +208,22 @@ export default function LiveWorkoutScreen({ session, onFinish }) {
       setShowPR(true)
       setTimeout(() => setShowPR(false), 3000)
     }
+    // Descanso según el ejercicio
+    const ex = exercises.find(e => e.id === data.workout_exercise_id)
+    setRestSeconds(ex?.libraryData?.rest || 90)
     setShowRest(true)
     return result
   }
 
-  async function addExercise(ex) {
-    const result = await api.workouts.addExercise({
-      session_id:    session.session.id,
-      exercise_name: ex.name,
-      exercise_id:   ex.id,
-      order_index:   exercises.length,
-    })
-    setExercises(e => [...e, result])
-    setShowAddExercise(false)
+  async function addExerciseFromLibrary(libraryEx) {
+    try {
+      const result = await api.workouts.addExercise({
+        session_id:    session.session.id,
+        exercise_name: libraryEx.name,
+        order_index:   exercises.length,
+      })
+      setExercises(e => [...e, { ...result, libraryData: libraryEx }])
+    } catch (err) { alert('Error añadiendo ejercicio: ' + err.message) }
   }
 
   async function finish() {
@@ -223,25 +236,17 @@ export default function LiveWorkoutScreen({ session, onFinish }) {
     finally { setFinishing(false) }
   }
 
-  const filtered = allExercises.filter(e =>
-    e.name.toLowerCase().includes(searchEx.toLowerCase())
-  )
+  const isEmpty = exercises.length === 0
 
   return (
     <div className="min-h-screen pb-32" style={{ background: theme.bg }}>
 
       {/* Header */}
       <div className="sticky top-0 z-40 px-4 py-3"
-        style={{
-          background: `${theme.bg}f5`,
-          backdropFilter: 'blur(20px)',
-          borderBottom: `1px solid ${theme.border}`,
-        }}>
+        style={{ background: `${theme.bg}f5`, backdropFilter: 'blur(20px)', borderBottom: `1px solid ${theme.border}` }}>
         <div className="flex items-center justify-between">
           <div>
-            <p className="font-bold" style={{ color: theme.text }}>
-              {session.session?.name}
-            </p>
+            <p className="font-bold" style={{ color: theme.text }}>{session.session?.name}</p>
             <div className="flex items-center gap-1 text-xs" style={{ color: theme.textMuted }}>
               <Timer size={10} />
               <span>{formatTime(elapsed)}</span>
@@ -249,60 +254,59 @@ export default function LiveWorkoutScreen({ session, onFinish }) {
             </div>
           </div>
           <button onClick={finish} disabled={finishing}
-            className="text-sm font-bold px-4 py-2 rounded-xl active:scale-95 transition-all disabled:opacity-50 text-white"
+            className="text-sm font-bold px-4 py-2 rounded-xl text-white disabled:opacity-50"
             style={{ background: theme.success }}>
             {finishing ? 'Guardando…' : 'Terminar'}
           </button>
         </div>
       </div>
 
-      {/* Exercises */}
       <div className="px-4 pt-4">
+
+        {/* Estado vacío — animar a añadir */}
+        {isEmpty && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+            className="text-center py-10 mb-4 rounded-2xl"
+            style={{ background: theme.surface2 }}>
+            <p className="text-3xl mb-3">💪</p>
+            <p className="font-bold text-sm mb-1" style={{ color: theme.text }}>
+              ¡Empieza tu sesión!
+            </p>
+            <p className="text-xs mb-4" style={{ color: theme.textMuted }}>
+              Añade ejercicios de la biblioteca para empezar
+            </p>
+            <motion.button whileTap={{ scale: 0.95 }} onClick={() => setShowModal(true)}
+              className="px-6 py-2.5 rounded-xl font-bold text-white text-sm"
+              style={{ background: `linear-gradient(135deg, ${theme.primary}, #FF8FA3)` }}>
+              + Añadir primer ejercicio
+            </motion.button>
+          </motion.div>
+        )}
+
+        {/* Ejercicios */}
         {exercises.map(ex => (
           <ExerciseBlock key={ex.id} workoutExercise={ex} onSetComplete={handleSetComplete} />
         ))}
 
-        {/* Añadir ejercicio */}
-        {!showAddExercise ? (
-          <button onClick={() => setShowAddExercise(true)}
+        {/* Botón añadir más */}
+        {!isEmpty && (
+          <motion.button whileTap={{ scale: 0.97 }} onClick={() => setShowModal(true)}
             className="w-full rounded-2xl py-4 flex items-center justify-center gap-2 transition-all"
-            style={{
-              border: `2px dashed ${theme.border}`,
-              color: theme.textMuted,
-            }}>
-            <Plus size={16} /> Añadir ejercicio
-          </button>
-        ) : (
-          <div className="card">
-            <input className="input mb-3 text-sm" placeholder="Buscar ejercicio…"
-              value={searchEx} onChange={e => setSearchEx(e.target.value)} autoFocus />
-            <div className="max-h-48 overflow-y-auto space-y-1">
-              {filtered.slice(0, 20).map(ex => (
-                <button key={ex.id} onClick={() => addExercise(ex)}
-                  className="w-full text-left px-3 py-2 rounded-xl transition-all"
-                  style={{ background: 'transparent' }}
-                  onMouseEnter={e => e.currentTarget.style.background = theme.surface2}
-                  onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
-                  <p className="text-sm font-medium" style={{ color: theme.text }}>{ex.name}</p>
-                  <p className="text-xs" style={{ color: theme.textMuted }}>
-                    {ex.muscle_group} · {ex.equipment}
-                  </p>
-                </button>
-              ))}
-            </div>
-            <button onClick={() => setShowAddExercise(false)}
-              className="btn-secondary text-sm py-2 mt-2">
-              Cancelar
-            </button>
-          </div>
+            style={{ border: `2px dashed ${theme.border}`, color: theme.textMuted }}>
+            <Plus size={16} /> Añadir ejercicio de la biblioteca
+          </motion.button>
         )}
       </div>
 
-      {/* PR Banner */}
-      <AnimatePresence>{showPR && <PRBanner />}</AnimatePresence>
+      {/* Modal selector */}
+      <ExerciseSelectorModal
+        isOpen={showModal}
+        onClose={() => setShowModal(false)}
+        currentPath={workoutPath}
+        onSelectExercise={addExerciseFromLibrary} />
 
-      {/* Rest Timer */}
-      {showRest && <RestTimer seconds={90} onDone={() => setShowRest(false)} />}
+      <AnimatePresence>{showPR && <PRBanner />}</AnimatePresence>
+      {showRest && <RestTimer seconds={restSeconds} onDone={() => setShowRest(false)} />}
     </div>
   )
 }

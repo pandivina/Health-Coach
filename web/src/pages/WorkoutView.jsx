@@ -7,6 +7,7 @@ import { api } from '../lib/api'
 import LiveWorkoutScreen from '../components/workout/LiveWorkoutScreen'
 import PandiContextualBubble from '../components/PandiContextualBubble'
 import PandiTips from '../components/PandiTips'
+import SeasonalEventCard from '../components/SeasonalEventCard'
 
 // ─── DATOS ───────────────────────────────────────────────────────────────────
 
@@ -108,6 +109,7 @@ const PATHS = {
     ],
   },
 }
+
 
 // ─── SUPPORT MODAL ────────────────────────────────────────────────────────────
 

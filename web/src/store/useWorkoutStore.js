@@ -3,33 +3,25 @@ import { create } from 'zustand'
 export const useWorkoutStore = create((set, get) => ({
   // ─── Estado activo ────────────────────────────────────────────────────────
   activeWorkout: null,
-  // {
-  //   id: string,
-  //   name: string,
-  //   senda: 'titan' | 'warrior' | 'zen',
-  //   startedAt: Date,
-  //   exercises: [ { id, name, emoji, sets, reps, rest, libraryData } ],
-  //   currentExerciseIndex: number,
-  //   currentSetIndex: number,
-  //   completedSeries: [ { exerciseId, peso, reps, timestamp } ],
-  //   sessionId: string, // ID de Supabase
-  // }
-
   history: [], // entrenamientos completados
 
   // ─── Acciones ─────────────────────────────────────────────────────────────
-
   startWorkout: ({ name, senda, exercises, sessionId }) => {
+    // Preparar los ejercicios inyectándoles un array vacío de series completadas localmente
+    const preparedExercises = (exercises || []).map(ex => ({
+      ...ex,
+      completedSetsList: [] // Almacenará { peso, reps, timestamp }
+    }))
+
     set({
       activeWorkout: {
         id:                   `workout_${Date.now()}`,
         name,
         senda,
         startedAt:            new Date(),
-        exercises:            exercises || [],
+        exercises:            preparedExercises,
         currentExerciseIndex: 0,
-        currentSetIndex:      1,
-        completedSeries:      [],
+        currentSetIndex:      1, // Representa la serie que SE VA A REALIZAR
         sessionId,
         elapsed:              0,
       }
@@ -39,12 +31,25 @@ export const useWorkoutStore = create((set, get) => ({
   logSerie: ({ exerciseId, peso, reps }) => {
     const { activeWorkout } = get()
     if (!activeWorkout) return
-    const serie = { exerciseId, peso, reps, timestamp: new Date() }
+
+    const nuevaSerie = { peso, reps, timestamp: new Date() }
+
+    // Mapeamos los ejercicios para añadir la serie al ejercicio correspondiente
+    const updatedExercises = activeWorkout.exercises.map(ex => {
+      if (ex.id === exerciseId) {
+        return {
+          ...ex,
+          completedSetsList: [...ex.completedSetsList, nuevaSerie]
+        }
+      }
+      return ex
+    })
+
     set({
       activeWorkout: {
         ...activeWorkout,
-        completedSeries:  [...activeWorkout.completedSeries, serie],
-        currentSetIndex:  activeWorkout.currentSetIndex + 1,
+        exercises:       updatedExercises,
+        currentSetIndex: activeWorkout.currentSetIndex + 1, // Siguiente set
       }
     })
   },
@@ -53,12 +58,13 @@ export const useWorkoutStore = create((set, get) => ({
     const { activeWorkout } = get()
     if (!activeWorkout) return
     const nextIndex = activeWorkout.currentExerciseIndex + 1
-    if (nextIndex >= activeWorkout.exercises.length) return // ya está en el último
+    if (nextIndex >= activeWorkout.exercises.length) return 
+    
     set({
       activeWorkout: {
         ...activeWorkout,
         currentExerciseIndex: nextIndex,
-        currentSetIndex:      1,
+        currentSetIndex:      1, // Resetea al set 1 del nuevo ejercicio
       }
     })
   },
@@ -66,11 +72,13 @@ export const useWorkoutStore = create((set, get) => ({
   goToExercise: (index) => {
     const { activeWorkout } = get()
     if (!activeWorkout) return
+    if (index < 0 || index >= activeWorkout.exercises.length) return
+
     set({
       activeWorkout: {
         ...activeWorkout,
         currentExerciseIndex: index,
-        currentSetIndex:      1,
+        currentSetIndex:      activeWorkout.exercises[index].completedSetsList.length + 1,
       }
     })
   },
@@ -97,20 +105,25 @@ export const useWorkoutStore = create((set, get) => ({
     })
   },
 
-  // Helper — contexto para el Coach IA
+  // Helper reactivo — Esto es lo que consumirá en tiempo real tu "HealthCoach.jsx"
   getCoachContext: () => {
     const { activeWorkout } = get()
-    if (!activeWorkout) return null
-    const current = activeWorkout.exercises[activeWorkout.currentExerciseIndex]
+    if (!activeWorkout) return { isActive: false }
+    
+    const currentEx = activeWorkout.exercises[activeWorkout.currentExerciseIndex]
+    const lastSet = currentEx?.completedSetsList[currentEx.completedSetsList.length - 1] || null
+
     return {
-      isActive:          true,
-      name:              activeWorkout.name,
-      senda:             activeWorkout.senda,
-      elapsed:           activeWorkout.elapsed,
-      currentExercise:   current?.name,
-      exercisesDone:     activeWorkout.currentExerciseIndex,
-      totalExercises:    activeWorkout.exercises.length,
-      seriesCompleted:   activeWorkout.completedSeries.length,
+      isActive:               true,
+      name:                   activeWorkout.name,
+      senda:                  activeWorkout.senda,
+      elapsed:                activeWorkout.elapsed,
+      currentExerciseName:    currentEx?.name || '',
+      currentExerciseEmoji:   currentEx?.emoji || '💪',
+      seriesCompletedInEx:    currentEx?.completedSetsList.length || 0,
+      totalSetsRequired:      currentEx?.sets || 3,
+      lastSetRegistered:      lastSet ? { peso: lastSet.peso, reps: lastSet.reps } : null,
+      progressPercent:        Math.round((activeWorkout.currentExerciseIndex / activeWorkout.exercises.length) * 100)
     }
   },
 }))

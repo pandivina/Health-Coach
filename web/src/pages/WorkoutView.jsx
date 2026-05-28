@@ -410,6 +410,8 @@ export default function WorkoutView() {
 
         </motion.div>
       </AnimatePresence>
+      
+      <SeasonalEventCard />
 
       {/* Support Modal */}
       <AnimatePresence>

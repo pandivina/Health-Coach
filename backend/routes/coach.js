@@ -4,24 +4,23 @@ const Anthropic = require('@anthropic-ai/sdk');
 const { requireAuth, supabaseAdmin } = require('../middleware/auth');
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-const FREE_DAILY_LIMIT = 10
+const FREE_DAILY_LIMIT = 10;
 
 // ─── RATE LIMIT ───────────────────────────────────────────────────────────────
-
 async function checkCoachLimit(req, res, next) {
   try {
-    const userId = req.user.id
-    const today  = new Date().toISOString().split('T')[0]
+    const userId = req.user.id;
+    const today  = new Date().toISOString().split('T')[0];
 
     const { data: profile } = await supabaseAdmin
-      .from('user_profiles').select('is_premium').eq('id', userId).single()
+      .from('user_profiles').select('is_premium').eq('id', userId).single();
 
-    if (profile?.is_premium) return next()
+    if (profile?.is_premium) return next();
 
     const { data: usage } = await supabaseAdmin
-      .from('coach_usage').select('count').eq('user_id', userId).eq('date', today).maybeSingle()
+      .from('coach_usage').select('count').eq('user_id', userId).eq('date', today).maybeSingle();
 
-    const count = usage?.count || 0
+    const count = usage?.count || 0;
 
     if (count >= FREE_DAILY_LIMIT) {
       return res.status(429).json({
@@ -29,58 +28,54 @@ async function checkCoachLimit(req, res, next) {
         message: `Has alcanzado el límite de ${FREE_DAILY_LIMIT} mensajes diarios del plan gratuito.`,
         limit: FREE_DAILY_LIMIT,
         used: count,
-      })
+      });
     }
 
     await supabaseAdmin.from('coach_usage').upsert(
       { user_id: userId, date: today, count: count + 1 },
       { onConflict: 'user_id,date' }
-    )
+    );
 
-    next()
+    next();
   } catch (err) {
-    next()
+    next();
   }
 }
 
 // ─── MEMORIA PERSISTENTE ──────────────────────────────────────────────────────
-
 async function loadMemory(userId) {
   try {
     const { data } = await supabaseAdmin
       .from('coach_memory')
       .select('summary, preferences, important_events')
       .eq('user_id', userId)
-      .maybeSingle()
-    return data || null
-  } catch { return null }
+      .maybeSingle();
+    return data || null;
+  } catch { return null; }
 }
 
 async function updateMemory(userId, messages, lastReply) {
   try {
-    // Solo actualizar cada 5 mensajes para no sobrecargar
     const { data: existing } = await supabaseAdmin
       .from('coach_memory').select('summary, message_count')
-      .eq('user_id', userId).maybeSingle()
+      .eq('user_id', userId).maybeSingle();
 
-    const messageCount = (existing?.message_count || 0) + 1
+    const messageCount = (existing?.message_count || 0) + 1;
     if (messageCount % 5 !== 0) {
-      // Solo actualizar contador
       await supabaseAdmin.from('coach_memory').upsert({
         user_id: userId,
         message_count: messageCount,
         last_updated: new Date().toISOString(),
-      }, { onConflict: 'user_id' })
-      return
+      }, { onConflict: 'user_id' });
+      return;
     }
 
-    // Cada 5 mensajes regenerar resumen con IA
     const lastMessages = messages.slice(-10).map(m =>
       `${m.role === 'user' ? 'Usuario' : 'Coach'}: ${m.content}`
-    ).join('\n')
+    ).join('\n');
 
     const summaryRes = await anthropic.messages.create({
-      model: 'claude-sonnet-4-6',
+      model: process.env.ANTHROPIC_MODEL || 'claude-3-5-sonnet-latest',
       max_tokens: 400,
       messages: [{
         role: 'user',
@@ -98,41 +93,39 @@ Genera un resumen actualizado MUY CONCISO (máx 200 palabras) que incluya:
 
 Solo el texto del resumen, sin introducción.`
       }]
-    })
+    });
 
-    const newSummary = summaryRes.content[0].text.trim()
+    const newSummary = summaryRes.content[0].text.trim();
 
     await supabaseAdmin.from('coach_memory').upsert({
       user_id: userId,
       summary: newSummary,
       message_count: messageCount,
       last_updated: new Date().toISOString(),
-    }, { onConflict: 'user_id' })
+    }, { onConflict: 'user_id' });
 
   } catch (err) {
-    console.error('Memory update error:', err.message)
+    console.error('Memory update error:', err.message);
   }
 }
 
 // ─── POST /api/coach ──────────────────────────────────────────────────────────
-
 router.post('/', requireAuth, checkCoachLimit, async (req, res) => {
   try {
-    const { messages } = req.body;
+    const { messages, context } = req.body; // <-- Capturamos el contexto del entrenamiento activo enviado desde el front
     const userId = req.user.id;
     const today = new Date().toISOString().split('T')[0];
 
-    const safe = async fn => { try { return await fn } catch { return { data: null } } }
+    const safe = async fn => { try { return await fn } catch { return { data: null } } };
 
-    // Cargar datos del usuario y memoria en paralelo
+    // Cargar datos del usuario y memoria en paralelo (Corregido solapamiento de health_profiles)
     const [
-      profileRes, healthRes, goalsRes, mealsRes, sleepRes,
+      healthRes, profileRes, goalsRes, mealsRes, sleepRes,
       moodRes, workoutRes, weightRes, treatmentsRes, labsRes,
       memory
     ] = await Promise.all([
       safe(supabaseAdmin.from('health_profiles').select('*').eq('user_id', userId).maybeSingle()),
-      safe(supabaseAdmin.from('user_profiles').select('name,xp,level,streak,pet_name,motivation_why').eq('id', userId).single()),
-      safe(supabaseAdmin.from('health_profiles').select('*').eq('user_id', userId).single()),
+      safe(supabaseAdmin.from('user_profiles').select('name,xp,level,streak,motivation_why').eq('id', userId).single()),
       safe(supabaseAdmin.from('nutrition_goals').select('*').eq('user_id', userId).maybeSingle()),
       safe(supabaseAdmin.from('meal_logs').select('calories,protein_g,food_name').eq('user_id', userId).eq('date', today)),
       safe(supabaseAdmin.from('sleep_logs').select('hours,quality').eq('user_id', userId).order('date', { ascending: false }).limit(3)),
@@ -144,17 +137,18 @@ router.post('/', requireAuth, checkCoachLimit, async (req, res) => {
       loadMemory(userId),
     ]);
 
-    const profile    = profileRes.data   || {};
-    const health     = healthRes.data    || {};
-    const goals      = goalsRes.data     || {};
-    const meals      = mealsRes.data     || [];
-    const sleepLogs  = sleepRes.data     || [];
-    const mood       = moodRes.data      || {};
-    const workouts   = workoutRes.data   || [];
-    const weightLogs = weightRes.data    || [];
+    const health      = healthRes.data     || {};
+    const profile     = profileRes.data    || {};
+    const goals       = goalsRes.data      || {};
+    const meals       = mealsRes.data      || [];
+    const sleepLogs  = sleepRes.data      || [];
+    const mood       = moodRes.data       || {};
+    const workouts   = workoutRes.data    || [];
+    const weightLogs = weightRes.data     || [];
     const treatments = treatmentsRes.data || [];
-    const lastLab    = labsRes.data      || {};
+    const lastLab    = labsRes.data       || {};
 
+    // Métricas calculadas
     const caloriesConsumed = meals.reduce((s, m) => s + (m.calories || 0), 0);
     const proteinConsumed  = meals.reduce((s, m) => s + (m.protein_g || 0), 0);
     const avgSleep = sleepLogs.length
@@ -167,6 +161,53 @@ router.post('/', requireAuth, checkCoachLimit, async (req, res) => {
       ? Math.floor((new Date() - new Date(health.birth_date)) / (365.25 * 24 * 3600 * 1000))
       : null;
 
+    // ─── 🦍 PROCESAMIENTO DINÁMICO DEL CONTEXTO EN EL GIMNASIO ───────────────────
+    let workoutContextSection = '';
+    let behaviorInstruction = 'Adopta una postura de consultoría híbrida de salud, empática y clínica.';
+
+    if (context?.activeWorkout) {
+      const { routineName, senda, elapsedTime, progress, currentExercise } = context.activeWorkout;
+      const elapsedMinutes = Math.floor(elapsedTime / 60);
+
+      // Determinar tono de voz e identidad según la Senda mística del entrenamiento actual
+      let sendaStyle = '';
+      if (senda === 'titan') {
+        sendaStyle = 'SENDA TITÁN: Tu tono debe ser épico, exigente, hiper-motivador y energético. Habla de forjar fuerza.';
+      } else if (senda === 'warrior') {
+        sendaStyle = 'SENDA GUERRERO: Tu tono debe ser enfocado, ágil, táctico y determinado. Disciplina pura.';
+      } else if (senda === 'zen') {
+        sendaStyle = 'SENDA ZEN: Tu tono debe ser calmado, atento, consciente (mindful). Enfatiza la conexión mente-músculo y la respiración.';
+      }
+
+      workoutContextSection = `
+⚠️ ¡EL USUARIO ESTÁ ENTRENANDO EN TIEMPO REAL AHORA MISMO! ⚠️
+- **Rutina en curso**: ${routineName}
+- **Senda Mitológica**: ${senda.toUpperCase()}
+- **Ejercicio Actual**: ${currentExercise || 'Transición o descanso'}
+- **Progreso en la sesión**: Ejercicio número ${progress}
+- **Tiempo entrenando**: ${elapsedMinutes} minutos acumulados de sesión continua.
+
+INSTRUCCIONES EXTRAURGENTES PARA ESTE ESTADO:
+1. Si el usuario te pregunta cosas rápidas ("no puedo más", "ayuda", "¿cómo coloco los pies?"), asume DIRECTAMENTE que se refiere al ejercicio actual (${currentExercise}).
+2. El usuario está cansado y entre series. Reduce drásticamente tus respuestas a 1 o 2 párrafos ultra condensados, directos e impactantes. No tiene tiempo de leer textos largos en el móvil.
+3. Incorpora consejos anatómicos o biomecánicos aplicados al ${currentExercise} de inmediato.
+`;
+      behaviorInstruction = `Prioriza la arenga deportiva instantánea, la técnica de levantamiento y el soporte bajo fatiga. ${sendaStyle}`;
+    }
+
+    // Adaptación horaria basada en el cliente
+    let clientTimeStr = 'No provista';
+    if (context?.clientTime && context?.timezone) {
+      try {
+        clientTimeStr = new Date(context.clientTime).toLocaleTimeString('es-ES', {
+          timeZone: context.timezone,
+          hour: '2-digit',
+          minute: '2-digit'
+        }) + ` (${context.timezone})`;
+      } catch (e) {}
+    }
+
+    // ─── CONSTRUCCIÓN DEL SYSTEM PROMPT CENTRALIZADO ─────────────────────────────
     const systemPrompt = `Eres el Coach IA de Health Coach, un asistente de salud personalizado, empático, motivador y con conocimiento clínico. Conoces bien a este usuario y recuerdas vuestras conversaciones anteriores.
 
 ${memory?.summary ? `═══════════════════════════════════
@@ -202,7 +243,7 @@ Alimentos: ${meals.map(m => m.food_name).join(', ') || 'Ninguno registrado'}
 SUEÑO (promedio 3 días): ${avgSleep} h
 ÁNIMO (último): ${mood.mood ? mood.mood + '/5' : 'No registrado'}
 
-ENTRENAMIENTO RECIENTE
+ENTRENAMIENTO HISTÓRICO RECIENTE
 ${workouts.length ? workouts.map(w => `• ${w.name}: ${w.total_volume_kg}kg volumen, ${w.calories_burned} kcal`).join('\n') : 'Sin entrenamientos recientes'}
 
 PESO (tendencia): ${weightTrend ? (weightTrend > 0 ? '+' : '') + weightTrend + 'kg en los últimos registros' : 'Sin datos de tendencia'}
@@ -216,6 +257,9 @@ ${lastLab.ai_recommendations || 'Sin analíticas subidas'}
 GAMIFICACIÓN
 Nivel: ${profile.level || 1} | XP: ${profile.xp || 0} | Racha: ${profile.streak || 0} días
 
+HORA ACTUAL DISPOSITIVO DEL USUARIO: ${clientTimeStr}
+${workoutContextSection}
+
 ═══════════════════════════════════
 REGLAS DEL COACH
 ═══════════════════════════════════
@@ -224,13 +268,14 @@ REGLAS DEL COACH
 3. Ten en cuenta los TRATAMIENTOS MÉDICOS al dar consejos nutricionales.
 4. Si hay analíticas, considera las recomendaciones en tus respuestas.
 5. Adapta los consejos al HORARIO LABORAL del usuario.
-6. Sé empático, directo y motivador.
+6. Sé empático, directo y motivador. ${behaviorInstruction}
 7. Responde siempre en español.
-8. Máximo 3 párrafos por respuesta.
+8. Máximo 3 párrafos por respuesta (si está entrenando activamente, redúcelo obligatoriamente a 1 o 2 párrafos cortos).
 9. Usa emojis con moderación.`;
 
+    // ─── LLAMADA A CLAUDE ────────────────────────────────────────────────────────
     const response = await anthropic.messages.create({
-      model: process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-6',
+      model: process.env.ANTHROPIC_MODEL || 'claude-3-5-sonnet-latest',
       max_tokens: 800,
       system: systemPrompt,
       messages: messages.map(m => ({ role: m.role, content: m.content })),
@@ -239,9 +284,9 @@ REGLAS DEL COACH
     const reply = response.content[0].text;
     res.json({ reply });
 
-    // Actualizar memoria en background (sin bloquear respuesta)
-    const allMessages = [...messages, { role: 'assistant', content: reply }]
-    updateMemory(userId, allMessages, reply).catch(() => {})
+    // Actualizar memoria en background (sin bloquear la respuesta de la UI)
+    const allMessages = [...messages, { role: 'assistant', content: reply }];
+    updateMemory(userId, allMessages, reply).catch(() => {});
 
   } catch (err) {
     console.error('Coach error:', err.message);

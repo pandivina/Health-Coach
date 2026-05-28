@@ -6,11 +6,14 @@ import { useStore } from '../store/useStore'
 // ─── DATOS DEL EVENTO ────────────────────────────────────────────────────────
 
 const EVENT = {
-  id:       'yggdrasil_solsticio',
-  name:     'El Despertar de Yggdrasil',
-  subtitle: 'Solsticio de Verano · Evento de Temporada',
-  emoji:    '🌳',
-  endsAt:   new Date(Date.now() + 5 * 24 * 60 * 60 * 1000 + 12 * 60 * 60 * 1000), // 5d 12h desde ahora
+  id:       'yggdrasil_halloween',
+  name:     'El Grimorio de Yggdrasil',
+  subtitle: 'Noche de Brujas · Evento de Temporada',
+  emoji:    '🎃',
+  endsAt: (() => {
+    const d = new Date(new Date().getFullYear() + '-10-31T23:59:59')
+    return d < new Date() ? new Date((new Date().getFullYear() + 1) + '-10-31T23:59:59') : d
+  })(),
   reward: {
     name: 'Tema: Magia del Bosque',
     emoji: '🔮',
@@ -95,7 +98,7 @@ function MysticParticles() {
           transition={{ duration: 1.2, delay: i * 0.05, ease: 'easeOut' }}
           className="absolute w-2 h-2 rounded-full"
           style={{
-            background: ['#F59E0B','#8B5CF6','#6EE7B7','#F97316'][i % 4],
+            background: ['#F97316','#7C3AED','#DC2626','#F59E0B'][i % 4],
             filter: 'blur(1px)',
           }} />
       ))}
@@ -106,9 +109,9 @@ function MysticParticles() {
 // ─── MAIN COMPONENT ──────────────────────────────────────────────────────────
 
 export default function SeasonalEventCard() {
-  const { theme }       = useTheme()
+  const { theme }         = useTheme()
   const { profile, addXP } = useStore()
-  const countdown       = useCountdown(EVENT.endsAt)
+  const countdown         = useCountdown(EVENT.endsAt)
   const [expanded,      setExpanded]      = useState(false)
   const [unlocked,      setUnlocked]      = useState(false)
   const [particles,     setParticles]     = useState(false)
@@ -152,24 +155,25 @@ export default function SeasonalEventCard() {
         background: 'linear-gradient(135deg, #0F0C1A, #1A0F2E, #0C1A2E)',
         border: '1.5px solid transparent',
         backgroundClip: 'padding-box',
-      }}>
-
-      {/* Borde animado rúnico */}
+      }}
+    >
+      {/* Borde animado rúnico (Actualizado a tonos Halloween) */}
       <motion.div
         animate={{ rotate: 360 }}
         transition={{ duration: 8, repeat: Infinity, ease: 'linear' }}
         className="absolute inset-0 rounded-3xl pointer-events-none"
         style={{
-          background: 'conic-gradient(from 0deg, #8B5CF6, #F59E0B, #6EE7B7, #8B5CF6)',
+          background: 'conic-gradient(from 0deg, #7C3AED, #F97316, #1F2937, #DC2626, #7C3AED)',
           padding: '1.5px',
           WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
           WebkitMaskComposite: 'xor',
           maskComposite: 'exclude',
-        }} />
+        }} 
+      />
 
-      {/* Glow de fondo */}
+      {/* Glow de fondo (Actualizado a tonos Halloween) */}
       <div className="absolute inset-0 pointer-events-none"
-        style={{ background: 'radial-gradient(ellipse at 50% 0%, rgba(139,92,246,0.15) 0%, transparent 70%)' }} />
+        style={{ background: 'radial-gradient(ellipse at 50% 0%, rgba(124,58,237,0.25) 0%, rgba(249,115,22,0.1) 60%, transparent 100%)' }} />
 
       {particles && <MysticParticles />}
 
@@ -189,7 +193,7 @@ export default function SeasonalEventCard() {
                 <div className="flex items-center gap-2 mb-0.5">
                   <p className="font-extrabold text-sm text-white truncate">{EVENT.name}</p>
                   <span className="text-[9px] font-black px-1.5 py-0.5 rounded-full flex-shrink-0"
-                    style={{ background: 'rgba(139,92,246,0.3)', color: '#C4B5FD' }}>
+                    style={{ background: 'rgba(124,58,237,0.3)', color: '#D8B4FE' }}>
                     TEMPORADA
                   </span>
                 </div>
@@ -208,7 +212,7 @@ export default function SeasonalEventCard() {
                 TERMINA EN
               </p>
               <p className="font-black text-xs"
-                style={{ color: countdown.urgent ? '#F87171' : '#F59E0B' }}>
+                style={{ color: countdown.urgent ? '#F87171' : '#F97316' }}>
                 {countdown.days}d {countdown.hours}h {countdown.minutes}m
               </p>
             </motion.div>
@@ -220,7 +224,7 @@ export default function SeasonalEventCard() {
               <p className="text-[10px] font-bold" style={{ color: 'rgba(255,255,255,0.6)' }}>
                 Progreso del evento
               </p>
-              <p className="text-[10px] font-black" style={{ color: '#F59E0B' }}>
+              <p className="text-[10px] font-black" style={{ color: '#F97316' }}>
                 {completedMissions}/{EVENT.missions.length} misiones · {totalPct}%
               </p>
             </div>
@@ -229,7 +233,7 @@ export default function SeasonalEventCard() {
                 initial={{ width: 0 }}
                 animate={{ width: `${totalPct}%` }}
                 transition={{ duration: 0.8 }}
-                style={{ background: 'linear-gradient(90deg, #8B5CF6, #F59E0B, #6EE7B7)' }} />
+                style={{ background: 'linear-gradient(90deg, #7C3AED, #F97316, #DC2626)' }} />
             </div>
           </div>
 
@@ -313,15 +317,15 @@ export default function SeasonalEventCard() {
                 {/* Recompensa */}
                 <motion.div
                   animate={allDone && !unlocked
-                    ? { boxShadow: ['0 0 0px rgba(245,158,11,0)', '0 0 20px rgba(245,158,11,0.5)', '0 0 0px rgba(245,158,11,0)'] }
+                    ? { boxShadow: ['0 0 0px rgba(249,115,22,0)', '0 0 20px rgba(249,115,22,0.5)', '0 0 0px rgba(249,115,22,0)'] }
                     : {}}
                   transition={{ duration: 2, repeat: Infinity }}
                   className="rounded-2xl p-3 mt-1"
                   style={{
                     background: unlocked
-                      ? 'linear-gradient(135deg, rgba(245,158,11,0.2), rgba(139,92,246,0.2))'
+                      ? 'linear-gradient(135deg, rgba(249,115,22,0.2), rgba(124,58,237,0.2))'
                       : 'rgba(255,255,255,0.04)',
-                    border: `1px solid ${unlocked ? '#F59E0B60' : allDone ? '#F59E0B40' : 'rgba(255,255,255,0.06)'}`,
+                    border: `1px solid ${unlocked ? '#F9731660' : allDone ? '#F9731640' : 'rgba(255,255,255,0.06)'}`,
                   }}>
                   <div className="flex items-center gap-3">
                     <motion.span
@@ -331,7 +335,7 @@ export default function SeasonalEventCard() {
                       {unlocked ? '✨' : allDone ? EVENT.reward.emoji : '🔒'}
                     </motion.span>
                     <div className="flex-1">
-                      <p className="font-bold text-xs" style={{ color: allDone ? '#F59E0B' : 'rgba(255,255,255,0.3)' }}>
+                      <p className="font-bold text-xs" style={{ color: allDone ? '#F97316' : 'rgba(255,255,255,0.3)' }}>
                         {unlocked ? '¡Recompensa reclamada!' : EVENT.reward.name}
                       </p>
                       <p className="text-[10px]" style={{ color: 'rgba(255,255,255,0.4)' }}>
@@ -341,7 +345,7 @@ export default function SeasonalEventCard() {
                     {allDone && !unlocked && (
                       <motion.button whileTap={{ scale: 0.95 }} onClick={claimReward}
                         className="px-3 py-1.5 rounded-xl font-black text-xs text-white flex-shrink-0"
-                        style={{ background: 'linear-gradient(135deg, #8B5CF6, #F59E0B)' }}>
+                        style={{ background: 'linear-gradient(135deg, #7C3AED, #F97316)' }}>
                         ¡Reclamar!
                       </motion.button>
                     )}

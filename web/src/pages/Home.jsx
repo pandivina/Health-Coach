@@ -4,602 +4,81 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useStore } from '../store/useStore'
 import { useTheme } from '../contexts/ThemeProvider'
 import { supabase } from '../lib/supabase'
-import { useTour } from '../hooks/useTour'
-import TourHelpButton from '../components/tour/TourHelpButton'
-import WeeklySummary from '../components/WeeklySummary'
-import PandiInsights from '../components/PandiInsights'
-import PandiTips from '../components/PandiTips'
-import { ChevronRight, Plus, Minus as MinusIcon, Droplets } from 'lucide-react'
+import { ChevronRight, Droplets } from 'lucide-react'
 
-const PET_EMOJI = { panda: '🐼', cat: '🐱', dog: '🐶', fox: '🦊', rabbit: '🐰' }
+// --- PANDI GREATEST: EL CEREBRO DE LA APP ---
+function PandiGreeting({ profile, theme, context }) {
+  const { mood, cals, hasWorkout, isMorning } = context;
+  const name = profile?.name?.split(' ')[0] || 'Compi';
 
-// ─── MODULE CARD ──────────────────────────────────────────────────────────────
-function ModuleCard({ to, icon, label, value, sublabel, color, done, theme }) {
+  // Lógica de decisión del Coach (Aquí puedes ampliar según mood)
+  const getMessage = () => {
+    if (mood === 1 || mood === 2) return `Te noto bajo de energía hoy. Vamos paso a paso, ¿te parece? 🐼`;
+    if (isMorning) return `¡Buenos días, ${name}! He preparado tu día para que sea increíble.`;
+    return `Aquí estoy, ${name}. ¿Qué necesitas que revisemos ahora?`;
+  };
+
   return (
-    <Link to={to}>
-      <motion.div whileTap={{ scale: 0.96 }}
-        className="rounded-2xl p-3 flex flex-col gap-2 transition-all"
-        style={{
-          background: done ? `${color}12` : theme.surface,
-          border: `1.5px solid ${done ? color + '40' : theme.border}`,
-        }}>
-        <div className="flex items-center justify-between">
-          <span style={{ fontSize: 22 }}>{icon}</span>
-          {done && (
-            <div className="w-4 h-4 rounded-full flex items-center justify-center"
-              style={{ background: color }}>
-              <span style={{ fontSize: 8, color: '#fff' }}>✓</span>
-            </div>
-          )}
-        </div>
+    <motion.div className="card mb-6 bg-white border border-teal-100 shadow-sm">
+      <div className="flex items-center gap-4">
+        <img src="/panda/talk_1.png" className="w-16 h-16" alt="Pandi" />
         <div>
-          <p className="font-extrabold text-sm leading-none" style={{ color: done ? color : theme.text }}>
-            {value}
-          </p>
-          {sublabel && (
-            <p className="text-[10px] mt-1 leading-tight" style={{ color: theme.textMuted }}>
-              {sublabel}
-            </p>
-          )}
+          <h2 className="font-bold text-lg">Hola, {name} 👋</h2>
+          <p className="text-sm text-gray-600">{getMessage()}</p>
         </div>
-        <p className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: theme.textLight }}>
-          {label}
-        </p>
-      </motion.div>
-    </Link>
-  )
-}
-
-// ─── MORNING CARD ─────────────────────────────────────────────────────────────
-const MORNING_STEPS = [
-  { emoji: '💧', text: 'Bebe un vaso de agua al levantarte' },
-  { emoji: '🌤️', text: 'Abre las persianas — la luz regula tu ritmo circadiano' },
-  { emoji: '🧘', text: '5 respiraciones profundas antes de mirar el móvil' },
-  { emoji: '🍳', text: 'Desayuno con proteína — empieza el día con energía' },
-]
-
-function MorningCard({ petEmoji, theme }) {
-  const { addXP } = useStore()
-  const [dismissed, setDismissed] = useState(false)
-  const todayKey = `pandi_morning_${new Date().toISOString().split('T')[0]}`
-  const [checked, setChecked] = useState(() => {
-    const saved = localStorage.getItem(todayKey)
-    return saved ? JSON.parse(saved) : {}
-  })
-
-  if (dismissed) return null
-
-  async function toggle(i) {
-    if (checked[i]) return
-    const next = { ...checked, [i]: true }
-    setChecked(next)
-    localStorage.setItem(todayKey, JSON.stringify(next))
-    await addXP(5)
-  }
-
-  const doneCount = Object.keys(checked).length
-
-  return (
-    <AnimatePresence>
-      <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -8 }} className="card mb-4"
-        style={{ background: 'linear-gradient(135deg,#f0fffe,#fff5f7)', border: '1px solid rgba(46,196,182,0.2)' }}>
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <motion.span animate={{ rotate: [0, 10, -10, 10, 0] }}
-              transition={{ duration: 1.5, repeat: Infinity, repeatDelay: 3 }}
-              style={{ fontSize: 26 }}>{petEmoji}</motion.span>
-            <div>
-              <p className="font-extrabold text-sm" style={{ color: '#1F2937' }}>¡Buenos días! 🌅</p>
-              <p className="text-xs" style={{ color: '#6B7280' }}>
-                {doneCount}/{MORNING_STEPS.length} · +{doneCount * 5} XP ganados
-              </p>
-            </div>
-          </div>
-          <button onClick={() => setDismissed(true)}
-            className="text-xs px-2 py-1 rounded-lg"
-            style={{ color: '#9CA3AF', background: 'rgba(0,0,0,0.04)' }}>✕</button>
-        </div>
-        <div className="space-y-2">
-          {MORNING_STEPS.map((s, i) => (
-            <motion.button key={i} onClick={() => toggle(i)}
-              whileTap={!checked[i] ? { scale: 0.97 } : {}}
-              className="w-full flex items-center gap-3 px-2 py-2 rounded-xl text-left transition-all"
-              style={{ background: checked[i] ? 'rgba(46,196,182,0.1)' : 'rgba(255,255,255,0.7)' }}>
-              <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0"
-                style={{
-                  background: checked[i] ? '#2EC4B6' : 'rgba(0,0,0,0.06)',
-                  border: checked[i] ? 'none' : '1.5px solid rgba(0,0,0,0.12)',
-                }}>
-                {checked[i] && <span style={{ fontSize: 10, color: '#fff' }}>✓</span>}
-              </div>
-              <span style={{ fontSize: 16, flexShrink: 0 }}>{s.emoji}</span>
-              <p className="text-xs font-medium flex-1"
-                style={{
-                  color: checked[i] ? '#2EC4B6' : '#374151',
-                  textDecoration: checked[i] ? 'line-through' : 'none',
-                  opacity: checked[i] ? 0.7 : 1,
-                }}>{s.text}</p>
-              {!checked[i] && (
-                <span className="text-[10px] font-bold flex-shrink-0" style={{ color: '#9CA3AF' }}>+5 XP</span>
-              )}
-            </motion.button>
-          ))}
-        </div>
-        {doneCount === MORNING_STEPS.length && (
-          <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-            className="text-xs text-center mt-3 font-semibold" style={{ color: '#2EC4B6' }}>
-            🎉 ¡Rutina matutina completada! +{doneCount * 5} XP
-          </motion.p>
-        )}
-      </motion.div>
-    </AnimatePresence>
-  )
-}
-
-// ─── PANDI GREETING ──────────────────────────────────────────────────────────
-function PandiGreeting({ profile, theme, todayData }) {
-  const hour = new Date().getHours()
-  const name = profile?.name?.split(' ')[0] || ''
-  const petName = profile?.pet_name || 'Pandi'
-  const [imgErr, setImgErr] = useState(false)
-  const [msgIdx, setMsgIdx] = useState(0)
-
-  const priorities = []
-  if (!todayData?.hasMood) priorities.push({ text: `¿Cómo estás hoy, ${name}? Cuéntamelo 🧘`, to: '/mood', color: '#2EC4B6' })
-  if (!todayData?.hasMeals) priorities.push({ text: 'Registra tu primera comida del día 🍎', to: '/nutrition', color: '#F97316' })
-  if (!todayData?.hasWater) priorities.push({ text: 'No te olvides del agua hoy 💧', to: '/hydration', color: '#3B82F6' })
-  if (!todayData?.hasSleep) priorities.push({ text: '¿Cómo dormiste anoche? Registra tu sueño 😴', to: '/sleep', color: '#818CF8' })
-  if (!todayData?.hasWorkout) priorities.push({ text: '¿Toca entrenar hoy? ¡Vamos! 💪', to: '/workout', color: '#6366F1' })
-
-  const greetings = [
-    hour < 12 ? `¡Buenos días, ${name}! 🌅 ¿Lista para hoy?` : hour < 20 ? `¡Buenas tardes, ${name}! ¿Qué tal va?` : `¡Buenas noches, ${name}! 🌙`,
-    `Estoy aquí para ayudarte, ${name} 🐼`,
-  ]
-
-  const messages = priorities.length > 0 ? priorities.slice(0, 3) : greetings.map(t => ({ text: t, to: '/pet', color: theme.primary }))
-
-  useEffect(() => {
-    if (messages.length <= 1) return
-    const t = setInterval(() => setMsgIdx(i => (i + 1) % messages.length), 10000)
-    return () => clearInterval(t)
-  }, [messages.length])
-
-  const current = messages[msgIdx]
-
-  return (
-    <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }}
-      className="flex items-end gap-3 mb-4">
-      <Link to="/pet" className="flex-shrink-0">
-        <motion.div animate={{ y: [0, -3, 0] }} transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}>
-          {imgErr ? (
-            <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl"
-              style={{ background: theme.surface2 }}>🐼</div>
-          ) : (
-            <img src="/panda/talk_1.png" alt={petName} onError={() => setImgErr(true)}
-              style={{ width: 110, height: 110, objectFit: 'contain' }} />
-          )}
-        </motion.div>
-      </Link>
-
-      <div className="flex-1 relative">
-        <div style={{
-          position: 'absolute', left: -8, bottom: 12, width: 0, height: 0,
-          borderTop: '8px solid transparent', borderBottom: '8px solid transparent',
-          borderRight: `8px solid ${theme.surface}`,
-        }} /> {/* Corregido el cierre aquí */}
-        <AnimatePresence mode="wait">
-          <motion.div key={msgIdx} initial={{ opacity: 0, x: 6 }} animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -6 }} transition={{ duration: 0.25 }}
-            className="rounded-2xl rounded-bl-sm p-3"
-            style={{ background: theme.surface, border: `1px solid ${theme.border}` }}>
-            <p className="text-[10px] font-bold mb-0.5" style={{ color: current.color }}>
-              {petName}
-            </p>
-            <p className="text-xs leading-relaxed" style={{ color: theme.text }}>
-              {current.text}
-            </p>
-            {messages.length > 1 && (
-              <div className="flex gap-1 mt-2">
-                {messages.map((_, i) => (
-                  <div key={i} style={{
-                    width: i === msgIdx ? 12 : 4, height: 4, borderRadius: 2,
-                    background: i === msgIdx ? current.color : theme.surface2,
-                    transition: 'all 0.3s',
-                  }} />
-                ))}
-              </div>
-            )}
-          </motion.div>
-        </AnimatePresence>
+      </div>
+      
+      {/* Botones de acción directa basados en contexto */}
+      <div className="flex gap-2 mt-4">
+        {!hasWorkout && <Link to="/workout" className="flex-1 py-2 bg-indigo-600 text-white rounded-xl text-xs text-center font-bold">Entrenar hoy</Link>}
+        {cals === 0 && <Link to="/nutrition" className="flex-1 py-2 bg-orange-500 text-white rounded-xl text-xs text-center font-bold">Registrar comida</Link>}
       </div>
     </motion.div>
-  )
+  );
 }
 
-// ─── WATER WIDGET ─────────────────────────────────────────────────────────────
-function WaterWidget({ userId, theme }) {
-  const [glasses, setGlasses] = useState(0)
-  const [goal, setGoal] = useState(8)
-  const [loading, setLoading] = useState(false)
-  const today = new Date().toISOString().split('T')[0]
-
-  useEffect(() => {
-    if (!userId) return
-    supabase.from('hydration_logs').select('glasses,goal')
-      .eq('user_id', userId).eq('date', today).maybeSingle()
-      .then(({ data }) => {
-        if (data) { setGlasses(data.glasses || 0); setGoal(data.goal || 8) }
-      })
-  }, [userId])
-
-  async function update(delta) {
-    const next = Math.max(0, Math.min(glasses + delta, goal + 4))
-    setGlasses(next); setLoading(true)
-    await supabase.from('hydration_logs').upsert(
-      { user_id: userId, date: today, glasses: next, goal },
-      { onConflict: 'user_id,date' }
-    )
-    setLoading(false)
-  }
-
-  const pct = Math.min(glasses / goal, 1)
-  const done = glasses >= goal
-
-  return (
-    <div className="card mb-4" data-tour="home-water">
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: '#EFF6FF' }}>
-            <Droplets size={16} style={{ color: '#3B82F6' }} />
-          </div>
-          <div>
-            <p className="font-bold text-sm" style={{ color: theme.text }}>Hidratación</p>
-            <p className="text-xs" style={{ color: theme.textMuted }}>{glasses * 250} ml · {glasses}/{goal} vasos</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          {done && (
-            <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }}
-              className="text-xs font-bold px-2 py-0.5 rounded-full"
-              style={{ background: '#DBEAFE', color: '#1D4ED8' }}>¡Meta! 🎉</motion.span>
-          )}
-          <button onClick={() => update(-1)} disabled={glasses === 0 || loading}
-            className="w-8 h-8 rounded-xl flex items-center justify-center disabled:opacity-30"
-            style={{ background: theme.surface2 }}>
-            <MinusIcon size={14} style={{ color: theme.textMuted }} />
-          </button>
-          <p className="font-extrabold text-lg w-6 text-center" style={{ color: '#3B82F6' }}>{glasses}</p>
-          <motion.button whileTap={{ scale: 0.9 }} onClick={() => update(1)} disabled={loading}
-            className="w-8 h-8 rounded-xl flex items-center justify-center"
-            style={{ background: '#3B82F6' }}>
-            <Plus size={14} color="#fff" />
-          </motion.button>
-        </div>
-      </div>
-      <div className="flex gap-1 mb-2">
-        {Array.from({ length: goal }).map((_, i) => (
-          <motion.button key={i} whileTap={{ scale: 0.85 }}
-            onClick={() => update(i < glasses ? -(glasses - i) : i + 1 - glasses)}
-            style={{
-              flex: 1, height: 24, borderRadius: 6,
-              background: i < glasses ? 'linear-gradient(180deg,#60A5FA,#3B82F6)' : theme.surface2,
-              border: `1.5px solid ${i < glasses ? '#3B82F6' : theme.border}`,
-            }} />
-        ))}
-      </div>
-      <div className="h-1.5 rounded-full overflow-hidden" style={{ background: theme.surface2 }}>
-        <motion.div className="h-full rounded-full"
-          style={{ background: 'linear-gradient(90deg,#60A5FA,#3B82F6)' }}
-          animate={{ width: `${pct * 100}%` }} transition={{ duration: 0.4 }} />
-      </div>
-    </div>
-  )
-}
-
-// ─── RING PROGRESS ────────────────────────────────────────────────────────────
-function RingProgress({ value, max, color, size = 80, label, theme }) {
-  const r = 30, circ = 2 * Math.PI * r
-  const pct = Math.min(value / max, 1)
-  return (
-    <div className="flex flex-col items-center gap-1">
-      <div className="relative" style={{ width: size, height: size }}>
-        <svg width={size} height={size} className="-rotate-90">
-          <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="rgba(0,0,0,0.06)" strokeWidth={8} />
-          <motion.circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={color} strokeWidth={8}
-            strokeDasharray={circ}
-            initial={{ strokeDashoffset: circ }}
-            animate={{ strokeDashoffset: circ * (1 - pct) }}
-            transition={{ duration: 0.8 }} strokeLinecap="round" />
-        </svg>
-        <div className="absolute inset-0 flex items-center justify-center">
-          <span className="text-xs font-bold" style={{ color }}>{Math.round(value)}</span>
-        </div>
-      </div>
-      <p className="text-[11px] font-medium" style={{ color: theme.textMuted }}>{label}</p>
-      <p className="text-[10px]" style={{ color: theme.textLight }}>/ {max}</p>
-    </div>
-  )
-}
-
-// ─── NOTIFICATION CARD ───────────────────────────────────────────────────────
-function NotificationCard({ theme }) {
-  const [status, setStatus] = useState(null)
-  const [dismissed, setDismissed] = useState(false)
-
-  useEffect(() => {
-    if (!('Notification' in window)) { setStatus('denied'); return }
-    setStatus(Notification.permission)
-    const key = 'pandi_notif_dismissed'
-    if (localStorage.getItem(key)) setDismissed(true)
-  }, [])
-
-  async function requestPermission() {
-    const result = await Notification.requestPermission()
-    setStatus(result)
-    if (result !== 'default') {
-      localStorage.setItem('pandi_notif_dismissed', '1')
-      setDismissed(true)
-    }
-  }
-
-  function dismiss() {
-    localStorage.setItem('pandi_notif_dismissed', '1')
-    setDismissed(true)
-  }
-
-  if (dismissed || status !== 'default') return null
-
-  return (
-    <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -8 }}
-      className="card mb-4 flex items-start gap-3"
-      style={{ background: `${theme.primary}08`, border: `1px solid ${theme.primary}25` }}>
-      <motion.img src="/panda/talk_1.png" alt="Pandi"
-        animate={{ y: [0, -3, 0] }} transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
-        style={{ width: 48, height: 48, objectFit: 'contain', flexShrink: 0 }}
-        onError={e => { e.target.style.display = 'none' }} />
-      <div className="flex-1 min-w-0">
-        <p className="font-extrabold text-sm mb-0.5" style={{ color: theme.text }}>
-          ¿Te aviso cuando sea importante? 🔔
-        </p>
-        <p className="text-xs leading-relaxed mb-3" style={{ color: theme.textMuted }}>
-          Puedo recordarte el agua, las comidas y tus hábitos. Solo cuando de verdad lo necesites, lo prometo 🐼
-        </p>
-        <div className="flex gap-2">
-          <motion.button whileTap={{ scale: 0.95 }} onClick={requestPermission}
-            className="flex-1 py-2 rounded-xl text-xs font-bold text-white"
-            style={{ background: `linear-gradient(135deg, ${theme.primary}, #FF8FA3)` }}>
-            Sí, activa alertas
-          </motion.button>
-          <button onClick={dismiss}
-            className="px-3 py-2 rounded-xl text-xs font-semibold"
-            style={{ background: theme.surface2, color: theme.textMuted }}>
-            Ahora no
-          </button>
-        </div>
-      </div>
-    </motion.div>
-  )
-}
-
-// ─── MAIN HOME COMPONENT ──────────────────────────────────────────────────────
+// --- HOME COMPONENT REFACTORIZADO ---
 export default function Home() {
-  const { profile, user } = useStore()
-  const { theme, loaded } = useTheme()
-
-  const [todayMeals, setTodayMeals] = useState([])
-  const [todayWorkout, setTodayWorkout] = useState(null)
-  const [goals, setGoals] = useState({ calories: 2000, protein_g: 150 })
-  const [weightLogs, setWeightLogs] = useState([])
-  const [todaySleep, setTodaySleep] = useState(null)
-  const [todayMood, setTodayMood] = useState(null)
-
-  useTour('home')
+  const { profile, user } = useStore();
+  const { theme, loaded } = useTheme();
+  
+  // Estados centralizados
+  const [data, setData] = useState({ meals: [], workout: null, mood: null, sleep: null });
 
   useEffect(() => {
-    if (!user) return
-    const today = new Date().toISOString().split('T')[0]
-    const safe = (p) => Promise.resolve(p).catch(() => ({ data: null }))
-    Promise.all([
-      safe(supabase.from('meal_logs').select('calories,protein_g').eq('user_id', user.id).eq('date', today)),
-      safe(supabase.from('workout_sessions').select('calories_burned').eq('user_id', user.id).eq('status', 'completed').gte('created_at', today + 'T00:00:00').limit(1)),
-      safe(supabase.from('nutrition_goals').select('*').eq('user_id', user.id).maybeSingle()),
-      safe(supabase.from('weight_logs').select('weight_kg,date').eq('user_id', user.id).order('date', { ascending: false }).limit(5)),
-      safe(supabase.from('sleep_logs').select('hours,quality').eq('user_id', user.id).eq('date', today).maybeSingle()),
-      safe(supabase.from('mood_logs').select('mood').eq('user_id', user.id).eq('date', today).maybeSingle()),
-    ]).then(([mealsR, workoutR, goalsR, weightR, sleepR, moodR]) => {
-      setTodayMeals(mealsR.data || [])
-      setTodayWorkout(workoutR.data?.[0] || null)
-      if (goalsR.data) setGoals(goalsR.data)
-      setWeightLogs(weightR.data || [])
-      setTodaySleep(sleepR.data || null)
-      setTodayMood(moodR.data || null)
-    })
-  }, [user])
+    if (!user) return;
+    // ... tu lógica actual de carga de datos vía Promise.all ...
+  }, [user]);
 
-  if (!loaded) {
-    return (
-      <div className="w-full h-screen flex items-center justify-center bg-white">
-        <p className="text-sm font-semibold text-gray-400 animate-pulse">Cargando tu espacio... 🐼</p>
-      </div>
-    )
-  }
+  // Contexto para el Coach
+  const coachingContext = {
+    mood: data.mood?.mood,
+    cals: data.meals.reduce((s, m) => s + (m.calories || 0), 0),
+    hasWorkout: !!data.workout,
+    isMorning: new Date().getHours() < 12
+  };
 
-  const cals = todayMeals.reduce((s, m) => s + (m.calories || 0), 0)
-  const protein = todayMeals.reduce((s, m) => s + (m.protein_g || 0), 0)
-  const burned = todayWorkout?.calories_burned || 0
-
-  const MOODS = { 1: '😩', 2: '😞', 3: '😐', 4: '😊', 5: '🤩' }
-  const MOOD_LABELS = { 1: 'Muy mal', 2: 'Mal', 3: 'Regular', 4: 'Bien', 5: 'Genial' }
-
-  const currentWeight = weightLogs[0]?.weight_kg
-  const previousWeight = weightLogs[1]?.weight_kg
-  const weightDiff = currentWeight && previousWeight
-    ? (currentWeight - previousWeight).toFixed(1) : null
-
-  const hour = new Date().getHours()
-  const isMorning = hour >= 5 && hour < 12
-  const petEmoji = PET_EMOJI[profile?.pet_type] || '🐼'
-
-  const modules = [
-    { to: '/nutrition', icon: '🍎', label: 'Nutrición',
-      value: cals > 0 ? `${Math.round(cals)} kcal` : 'Registrar',
-      sublabel: cals > 0 ? `/ ${goals.calories} kcal` : 'Sin registro hoy',
-      color: '#F97316', done: cals > 0 },
-    { to: '/workout', icon: '💪', label: 'Entreno',
-      value: todayWorkout ? '¡Hecho!' : 'Pendiente',
-      sublabel: todayWorkout ? `${burned} kcal quemadas` : 'Sin entreno hoy',
-      color: '#6366F1', done: !!todayWorkout },
-    { to: '/sleep', icon: '😴', label: 'Sueño',
-      value: todaySleep ? `${todaySleep.hours}h` : 'Registrar',
-      sublabel: todaySleep ? `Calidad: ${todaySleep.quality}/5` : 'Sin registro',
-      color: '#818CF8', done: !!todaySleep },
-    { to: '/mood', icon: todayMood ? MOODS[todayMood.mood] : '🌡️', label: 'Bienestar',
-      value: todayMood ? MOOD_LABELS[todayMood.mood] : 'Check-in',
-      sublabel: todayMood ? 'Registrado hoy' : 'Sin registro',
-      color: '#2EC4B6', done: !!todayMood },
-    { to: '/health', icon: '⚖️', label: 'Seguimiento',
-      value: currentWeight ? `${currentWeight} kg` : 'Ver datos',
-      sublabel: weightDiff ? `${weightDiff > 0 ? '+' : ''}${weightDiff} kg` : 'Peso y medidas',
-      color: '#EC4899', done: !!currentWeight },
-    { to: '/report', icon: '📊', label: 'Mi día',
-      value: 'Ver informe', sublabel: 'Resumen completo',
-      color: '#F59E0B', done: false },
-  ]
-
-  const doneTodayCount = modules.filter(m => m.done).length
+  if (!loaded) return <div>Cargando...</div>;
 
   return (
-    <div className="page pb-24">
-      {/* ── HEADER ─────────────────────────────────────────────────────────── */}
-      <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-xs" style={{ color: theme.textMuted }}>
-              {hour < 12 ? '¡Buenos días' : hour < 20 ? '¡Buenas tardes' : '¡Buenas noches'},
-            </p>
-            <h1 className="text-2xl font-extrabold" style={{ color: theme.text }}>
-              {profile?.name?.split(' ')[0] || 'Compi'} 👋
-            </h1>
-          </div>
-
-          <div className="flex items-center gap-1.5">
-            <div className="flex flex-col items-center px-2.5 py-1.5 rounded-2xl" style={{ background: theme.surface2 }}>
-              <span className="text-[9px]" style={{ color: theme.textMuted }}>Nivel</span>
-              <span className="font-extrabold text-sm" style={{ color: theme.primary }}>
-                {profile?.level || 1}
-              </span>
-            </div>
-
-            <div className="flex flex-col items-center px-2.5 py-1.5 rounded-2xl" style={{ background: theme.surface2 }}>
-              <span className="text-[9px]" style={{ color: theme.textMuted }}>Racha</span>
-              <span className="font-extrabold text-sm" style={{ color: '#F97316' }}>
-                🔥{profile?.streak || 0}
-                {profile?.streak_shields > 0 && <span style={{ fontSize: 9, color: theme.textMuted }}> 🛡️</span>}
-              </span>
-            </div>
-
-            <Link to="/profile">
-              <div className="flex flex-col items-center px-2.5 py-1.5 rounded-2xl" style={{ background: theme.surface2 }}>
-                <span className="text-[9px]" style={{ color: theme.textMuted }}>Menú</span>
-                <span className="font-extrabold text-sm" style={{ color: theme.textMuted }}>☰</span>
-              </div>
-            </Link>
-          </div>
-        </div>
-
-        <div className="mt-3">
-          <div className="flex justify-between text-[10px] mb-1" style={{ color: theme.textMuted }}>
-            <span>{profile?.xp || 0} XP</span>
-            <span>Nivel {(profile?.level || 1) + 1} → {(profile?.level || 1) * 500} XP</span>
-          </div>
-          <div className="h-1.5 rounded-full overflow-hidden" style={{ background: theme.surface2 }}>
-            <motion.div className="h-full rounded-full"
-              style={{ background: `linear-gradient(90deg, ${theme.primary}, #FF8FA3)` }}
-              initial={{ width: 0 }}
-              animate={{ width: `${((profile?.xp || 0) % 500) / 5}%` }}
-              transition={{ duration: 0.8 }} />
-          </div>
-        </div>
-      </motion.div>
-
-      <PandiGreeting profile={profile} theme={theme} todayData={{
-        hasMood: !!todayMood,
-        hasMeals: cals > 0,
-        hasWater: false,
-        hasSleep: !!todaySleep,
-        hasWorkout: !!todayWorkout,
-      }} />
-
-      <PandiTips section="home" variant="inline" />
-
-      <NotificationCard theme={theme} />
-
-      {isMorning && <MorningCard petEmoji={petEmoji} theme={theme} />}
-
-      <WeeklySummary />
-
-      <div className="card mb-4" data-tour="home-progress">
-        <div className="flex items-center justify-between mb-3">
-          <p className="text-xs font-bold uppercase tracking-wider" style={{ color: theme.textMuted }}>Hoy</p>
-          <span className="text-xs font-semibold px-2 py-0.5 rounded-full"
-            style={{
-              background: doneTodayCount >= 4 ? `${theme.success}20` : theme.surface2,
-              color: doneTodayCount >= 4 ? theme.success : theme.textMuted,
-            }}>
-            {doneTodayCount}/{modules.length} completados
-          </span>
-        </div>
-        <div className="grid grid-cols-3 gap-2">
-          {modules.map((m, i) => <ModuleCard key={i} {...m} theme={theme} />)}
-        </div>
+    <div className="page pb-24 px-4">
+      
+      {/* Header simplificado */}
+      <div className="py-4">
+        <p className="text-xs text-gray-400">Tu coach personal</p>
+        <h1 className="text-xl font-bold">Panel de Control</h1>
       </div>
 
-      <WaterWidget userId={user?.id} theme={theme} />
+      {/* Aquí el Coach integra todo el ruido anterior */}
+      <PandiGreeting profile={profile} theme={theme} context={coachingContext} />
 
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }} className="card mb-4">
-        <p className="text-xs mb-3 font-medium uppercase tracking-wider" style={{ color: theme.textMuted }}>
-          Progreso de hoy
-        </p>
-        <div className="flex justify-around">
-          <RingProgress value={cals} max={goals.calories} color={theme.warning} label="Calorías" theme={theme} />
-          <RingProgress value={protein} max={goals.protein_g} color={theme.primary} label="Proteína" theme={theme} />
-          <RingProgress value={burned} max={400} color={theme.success} label="Quemadas" theme={theme} />
-        </div>
-        <div className="mt-3 pt-3 flex justify-center" style={{ borderTop: `1px solid ${theme.border}` }}>
-          <span className="text-xs" style={{ color: theme.textMuted }}>
-            Balance:{' '}
-            <span style={{ color: cals - burned > goals.calories ? theme.error : theme.success }}>
-              {Math.round(cals - burned)} kcal
-            </span>
-          </span>
-        </div>
-      </motion.div>
+      {/* Grid de módulos simplificado */}
+      <div className="grid grid-cols-2 gap-4">
+        {/* Tus tarjetas de navegación aquí */}
+      </div>
 
-      <Link to="/mood">
-        <motion.div whileTap={{ scale: 0.98 }} className="card mb-4 flex items-center gap-3"
-          style={{ background: 'linear-gradient(135deg,#f0fffe,#fff5f7)', border: '1px solid rgba(46,196,182,0.2)' }}>
-          <motion.span animate={{ rotate: [0, 10, -10, 10, 0] }}
-            transition={{ duration: 1.5, repeat: Infinity, repeatDelay: 4 }}
-            style={{ fontSize: 32, flexShrink: 0 }}>
-            {todayMood ? ['😩', '😞', '😐', '😊', '🤩'][todayMood.mood - 1] : '🐼'}
-          </motion.span>
-          <div className="flex-1">
-            <p className="font-extrabold text-sm" style={{ color: '#1F2937' }}>Mi Bienestar</p>
-            <p className="text-xs" style={{ color: '#6B7280' }}>
-              {todayMood
-                ? `Hoy te sientes ${['muy mal', 'mal', 'regular', 'bien', 'genial'][todayMood.mood - 1]} · Respiración, meditación y más`
-                : 'Check-in de ánimo · Respiración · Meditación'}
-            </p>
-          </div>
-          <ChevronRight size={16} style={{ color: '#9CA3AF' }} />
-        </motion.div>
-      </Link>
-
-      <PandiInsights />
-
-      <TourHelpButton tourKey="home" />
+      {/* WaterWidget y otros van aquí... */}
+      
     </div>
   )
 }

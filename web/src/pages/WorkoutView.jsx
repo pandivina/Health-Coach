@@ -10,6 +10,7 @@ import { getGuidedSession } from '../data/exerciseLibrary'
 import PandiContextualBubble from '../components/PandiContextualBubble'
 import PandiTips from '../components/PandiTips'
 import SeasonalEventCard from '../components/SeasonalEventCard'
+import ExerciseAnimation from '../components/ExerciseAnimation'
 
 // ─── DATOS ───────────────────────────────────────────────────────────────────
 
@@ -252,13 +253,10 @@ function GuidedSupportSession({ type, path, onClose, theme }) {
 
           {/* Ejercicio actual */}
           <div className="flex flex-col items-center text-center">
-            <motion.span
-              key={idx}
-              initial={{ scale: 0.5, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              style={{ fontSize: 80, lineHeight: 1, marginBottom: 16 }}>
-              {current.emoji}
-            </motion.span>
+            <ExerciseAnimation
+              exerciseName={current.name}
+              size={180}
+              accent={path.accent} />
             <motion.h2 key={idx + '_name'}
               initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
               className="font-extrabold text-2xl mb-2" style={{ color: theme.text }}>

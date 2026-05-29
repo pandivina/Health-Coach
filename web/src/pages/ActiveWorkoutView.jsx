@@ -1,11 +1,12 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Check, ChevronLeft, ChevronRight, Plus, Trophy } from 'lucide-react'
+import { Check, ChevronLeft, ChevronRight, Plus, Trophy, X } from 'lucide-react'
 import { useTheme } from '../contexts/ThemeProvider'
 import { useStore } from '../store/useStore'
 import { useWorkoutStore } from '../store/useWorkoutStore'
 import { api } from '../lib/api'
 import ExerciseSelectorModal from '../components/ExerciseSelectorModal'
+import ExerciseAnimation from '../components/ExerciseAnimation'
 
 // ─── COLORES POR SENDA ────────────────────────────────────────────────────────
 const PATH_STYLE = {
@@ -14,7 +15,7 @@ const PATH_STYLE = {
   zen:     { gradient: 'linear-gradient(135deg, #6EE7B7, #818CF8)', accent: '#6EE7B7', label: '🧘 Zen'      },
 }
 
-// ─── CRONÓMETRO DE DESCANSO AUTOMÁTICO ────────────────────────────────────────
+// ─── CRONÓMETRO DE DESCANSO ───────────────────────────────────────────────────
 function RestCountdown({ seconds, onDone, accent }) {
   const [left, setLeft] = useState(seconds)
   const pct = ((seconds - left) / seconds) * 100
@@ -27,69 +28,62 @@ function RestCountdown({ seconds, onDone, accent }) {
   }, [left])
 
   return (
-    <motion.div 
-      initial={{ opacity: 0, scale: 0.95 }} 
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 1.05 }}
-      className="fixed inset-0 z-50 flex flex-col items-center justify-center backdrop-blur-md"
-      style={{ background: 'rgba(15, 12, 27, 0.96)' }}>
+    <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.8 }}
+      className="fixed inset-0 z-50 flex flex-col items-center justify-center"
+      style={{ background: 'rgba(0,0,0,0.92)' }}>
 
-      <p className="text-white/40 text-xs mb-2 font-black uppercase tracking-widest animate-pulse">
-        ⏳ Recuperación Mitológica
+      <p className="text-white/60 text-sm mb-6 font-semibold tracking-wider uppercase">
+        Descansando
       </p>
-      
-      <div className="relative w-44 h-44 mb-8">
+
+      <div className="relative w-40 h-40 mb-6">
         <svg viewBox="0 0 120 120" className="w-full h-full -rotate-90">
-          <circle cx="60" cy="60" r="52" fill="none" stroke="rgba(255,255,255,0.04)" strokeWidth="6" />
-          <motion.circle cx="60" cy="60" r="52" fill="none" stroke={accent} strokeWidth="6"
+          <circle cx="60" cy="60" r="52" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="8" />
+          <motion.circle cx="60" cy="60" r="52" fill="none" stroke={accent} strokeWidth="8"
             strokeDasharray={circ}
             animate={{ strokeDashoffset: circ * (1 - pct / 100) }}
-            transition={{ duration: 0.4 }}
+            transition={{ duration: 0.5 }}
             strokeLinecap="round" />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-6xl font-black text-white tracking-tighter">{left}</span>
-          <span className="text-white/40 text-[10px] font-bold uppercase tracking-widest">segundos</span>
+          <span className="text-5xl font-black text-white">{left}</span>
+          <span className="text-white/40 text-xs">seg</span>
         </div>
       </div>
 
       <motion.button whileTap={{ scale: 0.95 }} onClick={onDone}
-        className="px-6 py-3 rounded-xl font-extrabold text-white text-xs uppercase tracking-wider transition-colors"
-        style={{ background: accent + '15', border: `1px solid ${accent}40` }}>
-        Saltar Descanso →
+        className="px-8 py-3 rounded-2xl font-bold text-white text-sm"
+        style={{ background: accent + '30', border: `1px solid ${accent}60` }}>
+        Saltar descanso →
       </motion.button>
     </motion.div>
   )
 }
 
-// ─── DOTS DE PROGRESO DE LA TARJETA CENTRAL ───────────────────────────────────
-function SetDots({ total, current, completedCount, accent }) {
+// ─── INDICADOR DE SERIE ───────────────────────────────────────────────────────
+function SetDots({ total, current, accent }) {
   return (
     <div className="flex gap-2 justify-center">
-      {Array.from({ length: total }, (_, i) => {
-        const isCompleted = i < completedCount
-        const isCurrent = i + 1 === current
-
-        return (
-          <motion.div key={i}
-            animate={{ scale: isCurrent ? 1.25 : 1 }}
-            className="rounded-full"
-            style={{
-              width:      isCurrent ? 20 : 10,
-              height:     6,
-              background: isCompleted ? '#10B981' : isCurrent ? accent : 'rgba(255,255,255,0.12)',
-              borderRadius: '4px'
-            }} />
-        )
-      })}
+      {Array.from({ length: total }, (_, i) => (
+        <motion.div key={i}
+          animate={{ scale: i + 1 === current ? 1.3 : 1 }}
+          className="rounded-full"
+          style={{
+            width:      i + 1 < current ? 10 : i + 1 === current ? 14 : 10,
+            height:     i + 1 < current ? 10 : i + 1 === current ? 14 : 10,
+            background: i + 1 < current ? accent : i + 1 === current ? accent : 'rgba(255,255,255,0.15)',
+            opacity:    i + 1 < current ? 0.5 : 1,
+          }} />
+      ))}
     </div>
   )
 }
 
-// ─── VISTA PRINCIPAL TOTALMENTE INTERCONECTADA ───────────────────────────────
+// ─── VISTA PRINCIPAL ──────────────────────────────────────────────────────────
 export default function ActiveWorkoutView({ onFinish }) {
-  const { theme } = useTheme()
-  const { addXP } = useStore()
+  const { theme }    = useTheme()
+  const { addXP }    = useStore()
   const {
     activeWorkout, logSerie, advanceExercise,
     goToExercise, endWorkout, updateElapsed,
@@ -101,10 +95,9 @@ export default function ActiveWorkoutView({ onFinish }) {
   const [showModal,   setShowModal]   = useState(false)
   const [showPR,      setShowPR]      = useState(false)
   const [finishing,   setFinishing]   = useState(false)
-  
   const startRef = useRef(Date.now())
 
-  // Cronómetro global del tiempo transcurrido
+  // Cronómetro global
   useEffect(() => {
     const t = setInterval(() => {
       updateElapsed(Math.floor((Date.now() - startRef.current) / 1000))
@@ -114,76 +107,52 @@ export default function ActiveWorkoutView({ onFinish }) {
 
   if (!activeWorkout) return null
 
-  const sStyle      = PATH_STYLE[activeWorkout.senda] || PATH_STYLE.titan
-  const exercises   = activeWorkout.exercises
-  const exIndex     = activeWorkout.currentExerciseIndex
-  const current     = exercises[exIndex]
-  
-  // Variables calculadas en base a las colecciones reales de Zustand
-  const completedSetsCount = current?.completedSetsList?.length || 0
-  const setIndex           = activeWorkout.currentSetIndex
-  const totalSets          = current?.sets || 3
-  const restSecs           = current?.rest ?? (activeWorkout.senda === 'zen' ? 45 : activeWorkout.senda === 'warrior' ? 60 : 90)
-  
-  const isLastExercise     = exIndex >= exercises.length - 1
-  const elapsed            = activeWorkout.elapsed || 0
+  const sStyle   = PATH_STYLE[activeWorkout.senda] || PATH_STYLE.titan
+  const exercises = activeWorkout.exercises
+  const exIndex  = activeWorkout.currentExerciseIndex
+  const current  = exercises[exIndex]
+  const setIndex = activeWorkout.currentSetIndex
+  const totalSets = current?.sets || 3
+  const restSecs  = current?.rest ?? (activeWorkout.senda === 'zen' ? 20 : activeWorkout.senda === 'warrior' ? 15 : 90)
+
+  const isLastSet      = setIndex > totalSets
+  const isLastExercise = exIndex >= exercises.length - 1
+  const elapsed        = activeWorkout.elapsed || 0
 
   function formatTime(s) {
-    const m = Math.floor(s / 60)
+    const h = Math.floor(s / 3600)
+    const m = Math.floor((s % 3600) / 60)
     const sec = s % 60
+    if (h > 0) return `${h}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`
     return `${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`
   }
 
-  // Ejecución al acabar el temporizador de descanso
-  function handleRestFinished() {
-    setShowRest(false)
-    // Si ya completamos todas las series requeridas de este ejercicio, saltamos al siguiente automáticamente
-    if (completedSetsCount >= totalSets && !isLastExercise) {
-      advanceExercise()
-    }
-  }
-
   async function handleCheck() {
-    if (!peso || !reps) return
-    
-    const finalPeso = parseFloat(peso) || 0
-    const finalReps = parseInt(reps) || 0
+    if (!peso && !reps) return
+    // Registrar serie en el store
+    logSerie({ exerciseId: current.id, peso: parseFloat(peso) || 0, reps: parseInt(reps) || 0 })
 
-    // 1. Guardar localmente de inmediato en Zustand para alimentar al Coach IA
-    logSerie({ exerciseId: current.id, peso: finalPeso, reps: finalReps })
-
-    // 2. Enviar datos al Backend de forma asíncrona (background)
+    // Registrar en backend
     try {
       const result = await api.workouts.completeSet({
         workout_exercise_id: current.backendId || current.id,
-        set_number: completedSetsCount + 1, 
-        weight_kg:  finalPeso,
-        reps:       finalReps,
+        set_number: setIndex,
+        weight_kg:  parseFloat(peso) || 0,
+        reps:       parseInt(reps) || 0,
         is_warmup:  false,
       })
-      if (result?.is_pr) { 
-        setShowPR(true)
-        setTimeout(() => setShowPR(false), 2500) 
-      }
-    } catch (e) {
-      console.error("Error guardando set en backend:", e)
-    }
+      if (result?.is_pr) { setShowPR(true); setTimeout(() => setShowPR(false), 2500) }
+    } catch {}
 
-    // Limpiar campos de texto para la siguiente iteración
     setPeso(''); setReps('')
 
-    // 3. Evaluar navegación automática y disparadores de descanso
-    if (completedSetsCount + 1 < totalSets) {
-      // Quedan más series de este mismo ejercicio -> Arranca descanso obligatorio
+    // Si quedan más series → descanso
+    if (setIndex < totalSets) {
       setShowRest(true)
     } else {
-      // Era la última serie de este ejercicio
+      // Última serie del ejercicio → avanzar al siguiente
       if (!isLastExercise) {
-        // No es el último ejercicio global -> Descanso y al cerrar pasa al siguiente ejercicio
-        setShowRest(true)
-      } else {
-        // Es el último set del ÚLTIMO ejercicio de la rutina entera -> Finalización fluida
-        alert("¡Has terminado todas las sendas rúnicas de hoy! Pulsa 'Terminar' arriba para consolidar tus puntos de experiencia.")
+        setTimeout(() => { advanceExercise(); setShowRest(false) }, 300)
       }
     }
   }
@@ -199,11 +168,8 @@ export default function ActiveWorkoutView({ onFinish }) {
       addXP(50)
       endWorkout()
       onFinish?.()
-    } catch (err) { 
-      alert('Error al consolidar entreno: ' + err.message) 
-    } finally { 
-      setFinishing(false) 
-    }
+    } catch (err) { alert('Error: ' + err.message) }
+    finally { setFinishing(false) }
   }
 
   async function addExerciseFromLibrary(ex) {
@@ -213,19 +179,10 @@ export default function ActiveWorkoutView({ onFinish }) {
         exercise_name: ex.name,
         order_index:   exercises.length,
       })
-      
-      // Estructuramos el nuevo ejercicio respetando la propiedad 'completedSetsList'
-      const preparedNewExercise = {
-        ...ex,
-        backendId: result?.id,
-        sets: ex.sets || 3,
-        completedSetsList: []
-      }
-
       useWorkoutStore.setState(s => ({
         activeWorkout: {
           ...s.activeWorkout,
-          exercises: [...s.activeWorkout.exercises, preparedNewExercise],
+          exercises: [...s.activeWorkout.exercises, { ...ex, backendId: result?.id }],
         }
       }))
     } catch {}
@@ -233,198 +190,168 @@ export default function ActiveWorkoutView({ onFinish }) {
   }
 
   return (
-    <div className="min-h-screen flex flex-col select-none" style={{ background: theme.bg }}>
+    <div className="min-h-screen flex flex-col" style={{ background: theme.bg }}>
 
-      {/* ─── HEADER SUPERIOR ─── */}
+      {/* ── HEADER ── */}
       <div className="px-4 py-3 flex items-center justify-between"
         style={{ borderBottom: `1px solid ${theme.border}` }}>
         <div>
-          <p className="font-black text-sm tracking-tight" style={{ color: theme.text }}>
+          <p className="font-extrabold text-sm" style={{ color: theme.text }}>
             {activeWorkout.name}
           </p>
-          <div className="flex items-center gap-1.5 text-[11px] font-bold" style={{ color: theme.textMuted }}>
+          <div className="flex items-center gap-2 text-xs" style={{ color: theme.textMuted }}>
             <span style={{ color: sStyle.accent }}>{sStyle.label}</span>
             <span>·</span>
             <span>⏱ {formatTime(elapsed)}</span>
             <span>·</span>
-            <span className="text-white/60">{exIndex + 1}/{exercises.length} Ejercicios</span>
+            <span>{exIndex + 1}/{exercises.length}</span>
           </div>
         </div>
         <motion.button whileTap={{ scale: 0.95 }} onClick={handleFinish} disabled={finishing}
-          className="px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider text-white disabled:opacity-50 transition-all shadow-md"
-          style={{ background: theme.success || '#10B981' }}>
+          className="px-4 py-2 rounded-xl text-sm font-bold text-white disabled:opacity-50"
+          style={{ background: theme.success }}>
           {finishing ? '…' : 'Terminar'}
         </motion.button>
       </div>
 
-      {/* ─── MINIATURAS ESTILO STORIES (PROGRESO GLOBAL) ─── */}
-      <div className="flex gap-2.5 px-4 py-3 overflow-x-auto border-b border-white/[0.03] no-scrollbar">
+      {/* ── MINIATURAS EJERCICIOS ── */}
+      <div className="flex gap-2 px-4 py-2 overflow-x-auto">
         {exercises.map((ex, i) => {
-          const isSelected = i === exIndex
-          const setsHechos = ex.completedSetsList?.length || 0
-          const esTotalmenteCompletado = setsHechos >= (ex.sets || 3)
-          
+          const done = i < exIndex
+          const active = i === exIndex
           return (
-            <motion.button 
-              key={i} 
-              whileTap={{ scale: 0.93 }}
+            <motion.button key={i} whileTap={{ scale: 0.93 }}
               onClick={() => goToExercise(i)}
-              className="flex-shrink-0 flex flex-col items-center p-2 rounded-2xl min-w-[72px] transition-all border"
+              className="flex-shrink-0 flex flex-col items-center gap-1 px-3 py-2 rounded-xl transition-all"
               style={{
-                background: isSelected ? `${sStyle.accent}15` : esTotalmenteCompletado ? 'rgba(16, 185, 129, 0.04)' : theme.surface,
-                borderColor: isSelected ? sStyle.accent : esTotalmenteCompletado ? 'rgba(16, 185, 129, 0.3)' : theme.border,
-                opacity: esTotalmenteCompletado && !isSelected ? 0.5 : 1
-              }}
-            >
-              <span className="text-xl mb-0.5">{ex.emoji || '💪'}</span>
-              <p className="text-[9px] font-black tracking-tight text-center max-w-[56px] truncate"
-                style={{ color: isSelected ? sStyle.accent : theme.textMuted }}>
-                {ex.name}
+                background: active ? sStyle.accent + '25' : done ? theme.surface2 : theme.surface,
+                border: `1.5px solid ${active ? sStyle.accent : 'transparent'}`,
+                opacity: done ? 0.5 : 1,
+              }}>
+              <span style={{ fontSize: 18 }}>{ex.emoji || '💪'}</span>
+              <p className="text-[9px] font-semibold text-center max-w-[48px] leading-tight truncate"
+                style={{ color: active ? sStyle.accent : theme.textMuted }}>
+                {ex.name.split(' ')[0]}
               </p>
-              
-              {/* Dots minúsculos de series completadas debajo de cada burbuja */}
-              <div className="flex gap-0.5 mt-1">
-                {Array.from({ length: ex.sets || 3 }).map((_, sIdx) => (
-                  <div 
-                    key={sIdx} 
-                    className="w-1 h-1 rounded-full" 
-                    style={{ background: sIdx < setsHechos ? '#10B981' : 'rgba(255,255,255,0.15)' }} 
-                  />
-                ))}
-              </div>
+              {done && <span style={{ fontSize: 8, color: theme.success }}>✓</span>}
             </motion.button>
           )
         })}
-        
-        {/* Botón rápido Añadir */}
         <motion.button whileTap={{ scale: 0.93 }} onClick={() => setShowModal(true)}
-          className="flex-shrink-0 flex flex-col items-center justify-center p-2 rounded-2xl min-w-[72px]"
+          className="flex-shrink-0 flex flex-col items-center gap-1 px-3 py-2 rounded-xl"
           style={{ background: theme.surface2, border: `1.5px dashed ${theme.border}` }}>
-          <Plus size={16} style={{ color: theme.textMuted }} />
-          <p className="text-[9px] font-black uppercase mt-0.5 tracking-wider" style={{ color: theme.textMuted }}>Añadir</p>
+          <Plus size={18} style={{ color: theme.textMuted }} />
+          <p className="text-[9px] font-semibold" style={{ color: theme.textMuted }}>Añadir</p>
         </motion.button>
       </div>
 
-      {/* ─── CENTRAL: MODO ENFOQUE SECUENCIAL ─── */}
-      <div className="flex-1 flex flex-col justify-center px-4 py-4 max-w-md mx-auto w-full">
+      {/* ── EJERCICIO ACTUAL ── */}
+      <div className="flex-1 flex flex-col px-4 py-2">
         <AnimatePresence mode="wait">
           {current && (
-            <motion.div 
-              key={current.id + exIndex}
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -15 }}
-              transition={{ duration: 0.22 }}
-              className="w-full flex flex-col"
-            >
-              {/* Tarjeta Gigante */}
-              <div className="rounded-[2.5rem] p-6 mb-4 flex flex-col items-center text-center shadow-xl border"
-                style={{ background: theme.surface, borderColor: theme.border }}>
-                
-                <span className="text-6xl mb-4 p-4 bg-white/[0.02] rounded-3xl border border-white/[0.03]">
-                  {current.emoji || '💪'}
-                </span>
-                
-                <h2 className="font-black text-xl mb-1 tracking-tight" style={{ color: theme.text }}>
-                  {current.name}
-                </h2>
-                
-                <p className="text-[10px] font-black uppercase tracking-wider mb-3 text-purple-400">
-                  {current.category} · {current.equipment || 'Manejo Libre'}
+            <motion.div key={current.id + exIndex}
+              initial={{ opacity: 0, x: 40 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -40 }}
+              transition={{ duration: 0.25 }}
+              className="flex-1 flex flex-col">
+
+              {/* Tarjeta ejercicio */}
+              <div className="rounded-3xl p-5 mb-4 flex flex-col items-center text-center"
+                style={{ background: theme.surface, border: `1px solid ${theme.border}` }}>
+                {/* Animación del ejercicio */}
+              <div className="flex items-center justify-center mb-2">
+                <ExerciseAnimation
+                  exerciseId={current.id}
+                  exerciseName={current.name}
+                  size={180}
+                  accent={sStyle.accent} />
+              </div>
+              <h2 className="font-extrabold text-xl mb-1" style={{ color: theme.text }}>
+                {current.name}
+              </h2>
+                <p className="text-xs mb-3" style={{ color: theme.textMuted }}>
+                  {current.category} · {current.equipment}
                 </p>
-                
                 {current.desc && (
-                  <p className="text-xs leading-relaxed px-2 text-gray-400"
+                  <p className="text-xs leading-relaxed px-2"
                     style={{ color: theme.textMuted }}>
                     {current.desc}
                   </p>
                 )}
               </div>
 
-              {/* Título de estado de series e indicadores */}
+              {/* Info series */}
               <div className="flex items-center justify-between mb-3 px-1">
-                <p className="text-[11px] font-black uppercase tracking-wider" style={{ color: theme.textMuted }}>
-                  Serie {Math.min(completedSetsCount + 1, totalSets)} de {totalSets}
+                <p className="text-xs font-bold" style={{ color: theme.textMuted }}>
+                  Serie {Math.min(setIndex, totalSets)} de {totalSets}
                 </p>
-                <span className="text-[10px] font-black px-2 py-0.5 rounded-md uppercase tracking-wide"
-                  style={{ background: sStyle.accent + '15', color: sStyle.accent }}>
-                  Objetivo: {current.reps} Reps
-                </span>
+                <p className="text-xs font-bold px-2 py-0.5 rounded-full"
+                  style={{ background: sStyle.accent + '20', color: sStyle.accent }}>
+                  {current.reps} reps · {restSecs}s descanso
+                </p>
               </div>
 
-              {/* Dots horizontales */}
-              <div className="mb-5">
-                <SetDots 
-                  total={totalSets} 
-                  current={Math.min(completedSetsCount + 1, totalSets)} 
-                  completedCount={completedSetsCount} 
-                  accent={sStyle.accent} 
-                />
+              {/* Dots de series */}
+              <div className="mb-4">
+                <SetDots total={totalSets} current={setIndex} accent={sStyle.accent} />
               </div>
 
-              {/* Inputs Formulario */}
+              {/* Input peso + reps */}
               <div className="flex gap-3 mb-4">
                 <div className="flex-1">
-                  <p className="text-[9px] font-black uppercase tracking-wider mb-1 text-center" style={{ color: theme.textMuted }}>
+                  <p className="text-[10px] font-bold mb-1 text-center" style={{ color: theme.textMuted }}>
                     Peso (kg)
                   </p>
-                  <input type="number" placeholder="0" value={peso} inputMode="decimal"
+                  <input type="number" placeholder="0" value={peso}
                     onChange={e => setPeso(e.target.value)}
-                    className="w-full rounded-2xl text-center text-2xl font-black py-3.5 outline-none transition-all"
+                    className="w-full rounded-2xl text-center text-2xl font-extrabold py-4 outline-none"
                     style={{
                       background: theme.surface2,
                       color:      theme.text,
-                      border:     `2px solid ${peso ? sStyle.accent + '50' : theme.border}`,
+                      border:     `2px solid ${peso ? sStyle.accent + '60' : theme.border}`,
                     }} />
                 </div>
                 <div className="flex-1">
-                  <p className="text-[9px] font-black uppercase tracking-wider mb-1 text-center" style={{ color: theme.textMuted }}>
+                  <p className="text-[10px] font-bold mb-1 text-center" style={{ color: theme.textMuted }}>
                     Reps
                   </p>
-                  <input type="number" placeholder="0" value={reps} inputMode="numeric"
+                  <input type="number" placeholder="0" value={reps}
                     onChange={e => setReps(e.target.value)}
-                    className="w-full rounded-2xl text-center text-2xl font-black py-3.5 outline-none transition-all"
+                    className="w-full rounded-2xl text-center text-2xl font-extrabold py-4 outline-none"
                     style={{
                       background: theme.surface2,
                       color:      theme.text,
-                      border:     `2px solid ${reps ? sStyle.accent + '50' : theme.border}`,
+                      border:     `2px solid ${reps ? sStyle.accent + '60' : theme.border}`,
                     }} />
                 </div>
               </div>
 
-              {/* Botón Check Verde */}
-              <motion.button 
-                whileTap={{ scale: 0.97 }} 
-                onClick={handleCheck}
-                disabled={!peso || !reps}
-                className="w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white disabled:opacity-20 flex items-center justify-center gap-2 transition-all shadow-lg"
-                style={{ 
-                  background: peso && reps ? 'linear-gradient(135deg, #10B981, #059669)' : sStyle.gradient,
-                  boxShadow: peso && reps ? '0 4px 15px rgba(16, 185, 129, 0.2)' : `0 4px 15px ${sStyle.accent}20`
-                }}
-              >
-                <Check size={16} />
-                {completedSetsCount + 1 < totalSets 
-                  ? `Registrar Serie ${completedSetsCount + 1}` 
-                  : isLastExercise ? 'Consolidar Último Ejercicio ✓' : 'Siguiente Ejercicio →'}
+              {/* Botón check */}
+              <motion.button whileTap={{ scale: 0.96 }} onClick={handleCheck}
+                disabled={!peso && !reps}
+                className="w-full py-4 rounded-2xl font-extrabold text-white text-base disabled:opacity-30 flex items-center justify-center gap-2"
+                style={{ background: sStyle.gradient, boxShadow: `0 6px 20px ${sStyle.accent}30` }}>
+                <Check size={20} />
+                {setIndex < totalSets ? `Serie ${setIndex} completada` : isLastExercise ? 'Último ejercicio ✓' : 'Siguiente ejercicio →'}
               </motion.button>
 
-              {/* Flechas de emergencia / Salto Manual */}
-              <div className="flex items-center justify-between mt-4">
+              {/* Navegación */}
+              <div className="flex items-center justify-between mt-3">
                 <button onClick={() => exIndex > 0 && goToExercise(exIndex - 1)}
                   disabled={exIndex === 0}
-                  className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider disabled:opacity-20"
+                  className="flex items-center gap-1 px-3 py-2 rounded-xl text-xs font-semibold disabled:opacity-30"
                   style={{ color: theme.textMuted, background: theme.surface2 }}>
-                  <ChevronLeft size={12} /> Ant
+                  <ChevronLeft size={14} /> Anterior
                 </button>
-                <p className="text-xs font-bold" style={{ color: theme.textLight }}>
-                  {exIndex + 1} de {exercises.length}
+                <p className="text-xs" style={{ color: theme.textLight }}>
+                  {exIndex + 1} / {exercises.length}
                 </p>
                 <button onClick={() => !isLastExercise && advanceExercise()}
                   disabled={isLastExercise}
-                  className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider disabled:opacity-20"
+                  className="flex items-center gap-1 px-3 py-2 rounded-xl text-xs font-semibold disabled:opacity-30"
                   style={{ color: theme.textMuted, background: theme.surface2 }}>
-                  Sig <ChevronRight size={12} />
+                  Siguiente <ChevronRight size={14} />
                 </button>
               </div>
 
@@ -433,31 +360,29 @@ export default function ActiveWorkoutView({ onFinish }) {
         </AnimatePresence>
       </div>
 
-      {/* ─── CAPA DE DESCANSO COBERTURA COMPLETA ─── */}
+      {/* ── DESCANSO ── */}
       <AnimatePresence>
         {showRest && (
           <RestCountdown
             seconds={restSecs}
             accent={sStyle.accent}
-            onDone={handleRestFinished} />
+            onDone={() => setShowRest(false)} />
         )}
       </AnimatePresence>
 
-      {/* ─── BANNER RÉCORD PERSONAL (PR) ─── */}
+      {/* ── PR Banner ── */}
       <AnimatePresence>
         {showPR && (
           <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-            className="fixed top-20 left-4 right-4 rounded-2xl p-3.5 flex items-center gap-3 z-50 shadow-xl border border-yellow-500/20"
+            className="fixed top-20 left-4 right-4 rounded-2xl p-3 flex items-center gap-3 z-50"
             style={{ background: '#EAB308' }}>
-            <Trophy size={20} style={{ color: '#713F12' }} />
-            <p className="font-black text-xs uppercase tracking-wide" style={{ color: '#713F12' }}>
-              ¡Récord Personal detectado por el Templo! 🎉
-            </p>
+            <Trophy size={22} style={{ color: '#713F12' }} />
+            <p className="font-bold text-sm" style={{ color: '#713F12' }}>¡Nuevo récord personal! 🎉</p>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* ─── MODAL BIBLIOTECA SELECTOR ─── */}
+      {/* ── Modal añadir ejercicio ── */}
       <ExerciseSelectorModal
         isOpen={showModal}
         onClose={() => setShowModal(false)}

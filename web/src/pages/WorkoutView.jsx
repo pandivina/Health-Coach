@@ -112,57 +112,221 @@ const PATHS = {
   },
 }
 
-// ─── SUPPORT MODAL ────────────────────────────────────────────────────────────
+// ─── PARSEAR DURACIÓN ────────────────────────────────────────────────────────
 
-function SupportModal({ type, path, onClose, theme }) {
-  const items = type === 'warmup' ? path.warmup : path.stretching
-  const title = type === 'warmup' ? '🔋 Calentamiento Rápido' : '🌿 Estiramientos y Alivio'
+function parseDuration(str) {
+  if (!str) return 30
+  const minMatch = str.match(/(\d+)\s*min/)
+  if (minMatch) return parseInt(minMatch[1]) * 60
+  const secMatch = str.match(/(\d+)s/)
+  if (secMatch) return parseInt(secMatch[1])
+  return 30
+}
+
+// ─── GUIDED SUPPORT SESSION ───────────────────────────────────────────────────
+
+function GuidedSupportSession({ type, path, onClose, theme }) {
+  const items    = type === 'warmup' ? path.warmup : path.stretching
+  const title    = type === 'warmup' ? '🔋 Calentamiento' : '🌿 Estiramientos'
+  const [phase,  setPhase]  = useState('preview') // 'preview' | 'active' | 'done'
+  const [idx,    setIdx]    = useState(0)
+  const [timeLeft, setTimeLeft] = useState(0)
+  const [paused, setPaused] = useState(false)
+
+  const current  = items[idx]
+  const duration = parseDuration(current?.duration)
+  const progress = items.length > 0 ? (idx / items.length) * 100 : 0
+  const circ     = 2 * Math.PI * 48
+
+  // Arrancar cronómetro al entrar en 'active'
+  useEffect(() => {
+    if (phase !== 'active') return
+    setTimeLeft(parseDuration(items[idx]?.duration))
+  }, [idx, phase])
+
+  useEffect(() => {
+    if (phase !== 'active' || paused || timeLeft <= 0) return
+    if (timeLeft === 0) { handleNext(); return }
+    const t = setTimeout(() => setTimeLeft(l => l - 1), 1000)
+    return () => clearTimeout(t)
+  }, [phase, paused, timeLeft])
+
+  function handleNext() {
+    if (idx < items.length - 1) {
+      setIdx(i => i + 1)
+    } else {
+      setPhase('done')
+    }
+  }
+
+  function handlePrev() {
+    if (idx > 0) setIdx(i => i - 1)
+  }
+
+  const pct = duration > 0 ? ((duration - timeLeft) / duration) : 0
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-end justify-center"
-      style={{ background: 'rgba(0,0,0,0.5)' }} onClick={onClose}>
-      <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
-        transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-        className="w-full max-w-lg rounded-t-3xl p-6"
-        style={{ background: theme.bg }} onClick={e => e.stopPropagation()}>
+      className="fixed inset-0 flex flex-col"
+      style={{ background: theme.bg, zIndex: 9999 }}>
 
-        <div className="flex items-center justify-between mb-4">
+      {/* Header */}
+      <div className="flex items-center justify-between px-4 pt-12 pb-4"
+        style={{ borderBottom: `1px solid ${theme.border}` }}>
+        <div>
           <p className="font-extrabold text-base" style={{ color: theme.text }}>{title}</p>
-          <button onClick={onClose} className="w-8 h-8 rounded-xl flex items-center justify-center"
-            style={{ background: theme.surface2 }}>
-            <X size={15} style={{ color: theme.textMuted }} />
-          </button>
+          <p className="text-xs" style={{ color: theme.textMuted }}>
+            Senda {path.name} · {idx + 1}/{items.length}
+          </p>
         </div>
+        <button onClick={onClose} className="w-9 h-9 rounded-xl flex items-center justify-center"
+          style={{ background: theme.surface2 }}>
+          <X size={16} style={{ color: theme.textMuted }} />
+        </button>
+      </div>
 
-        <p className="text-xs mb-4" style={{ color: theme.textMuted }}>
-          Senda {path.name} · {items.reduce((s, i) => s + ' + ' + i.duration, '').slice(3)}
-        </p>
+      {/* Barra progreso global */}
+      <div className="h-1" style={{ background: theme.surface2 }}>
+        <motion.div className="h-full" animate={{ width: `${progress}%` }}
+          transition={{ duration: 0.4 }}
+          style={{ background: path.gradient }} />
+      </div>
 
-        <div className="space-y-2">
-          {items.map((item, i) => (
-            <motion.div key={i} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: i * 0.06 }}
-              className="flex items-center gap-3 p-3 rounded-2xl"
-              style={{ background: theme.surface2 }}>
-              <span style={{ fontSize: 22, flexShrink: 0 }}>{item.emoji}</span>
-              <div className="flex-1">
-                <p className="font-semibold text-sm" style={{ color: theme.text }}>{item.name}</p>
+      {/* FASE PREVIEW */}
+      {phase === 'preview' && (
+        <div className="flex-1 flex flex-col px-4 py-6 overflow-y-auto">
+          <p className="text-xs font-bold uppercase tracking-wider mb-3"
+            style={{ color: theme.textMuted }}>
+            {items.length} ejercicios · {items.reduce((s, i) => s + parseDuration(i.duration), 0)}s total
+          </p>
+          <div className="space-y-2 mb-6">
+            {items.map((item, i) => (
+              <motion.div key={i}
+                initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: i * 0.05 }}
+                className="flex items-center gap-3 p-3 rounded-2xl"
+                style={{ background: theme.surface, border: `1px solid ${theme.border}` }}>
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0"
+                  style={{ background: `${path.accent}15` }}>
+                  {item.emoji}
+                </div>
+                <div className="flex-1">
+                  <p className="font-semibold text-sm" style={{ color: theme.text }}>{item.name}</p>
+                </div>
+                <span className="text-xs font-bold px-2 py-1 rounded-lg flex-shrink-0"
+                  style={{ background: `${path.accent}20`, color: path.accent }}>
+                  {item.duration}
+                </span>
+              </motion.div>
+            ))}
+          </div>
+          <motion.button whileTap={{ scale: 0.97 }}
+            onClick={() => { setPhase('active'); setIdx(0) }}
+            className="w-full py-4 rounded-2xl font-extrabold text-white text-base"
+            style={{ background: path.gradient, boxShadow: `0 6px 20px ${path.accent}30` }}>
+            ▶ Empezar ahora
+          </motion.button>
+        </div>
+      )}
+
+      {/* FASE ACTIVE */}
+      {phase === 'active' && current && (
+        <div className="flex-1 flex flex-col items-center justify-between px-4 py-6">
+
+          {/* Miniaturas */}
+          <div className="flex gap-2 w-full overflow-x-auto pb-2">
+            {items.map((item, i) => (
+              <div key={i} className="flex-shrink-0 flex flex-col items-center gap-1">
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center text-lg"
+                  style={{
+                    background: i < idx ? `${path.accent}30` : i === idx ? path.accent : theme.surface2,
+                    opacity: i > idx ? 0.4 : 1,
+                  }}>
+                  {i < idx ? '✓' : item.emoji}
+                </div>
+                <div className="w-1 h-1 rounded-full"
+                  style={{ background: i === idx ? path.accent : 'transparent' }} />
               </div>
-              <span className="text-xs font-bold px-2 py-1 rounded-lg"
-                style={{ background: `${path.accent}20`, color: path.accent }}>
-                {item.duration}
-              </span>
-            </motion.div>
-          ))}
-        </div>
+            ))}
+          </div>
 
-        <motion.button whileTap={{ scale: 0.97 }} onClick={onClose}
-          className="w-full mt-4 py-3 rounded-2xl font-bold text-white"
-          style={{ background: path.gradient }}>
-          ¡Empezar {type === 'warmup' ? 'calentamiento' : 'estiramientos'}!
-        </motion.button>
-      </motion.div>
+          {/* Ejercicio actual */}
+          <div className="flex flex-col items-center text-center">
+            <motion.span
+              key={idx}
+              initial={{ scale: 0.5, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              style={{ fontSize: 80, lineHeight: 1, marginBottom: 16 }}>
+              {current.emoji}
+            </motion.span>
+            <motion.h2 key={idx + '_name'}
+              initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+              className="font-extrabold text-2xl mb-2" style={{ color: theme.text }}>
+              {current.name}
+            </motion.h2>
+            <p className="text-sm" style={{ color: theme.textMuted }}>{current.duration}</p>
+          </div>
+
+          {/* Cronómetro circular */}
+          <div className="relative w-40 h-40">
+            <svg viewBox="0 0 120 120" className="w-full h-full -rotate-90">
+              <circle cx="60" cy="60" r="48" fill="none"
+                stroke={theme.surface2} strokeWidth="8" />
+              <motion.circle cx="60" cy="60" r="48" fill="none"
+                stroke={path.accent} strokeWidth="8"
+                strokeDasharray={circ}
+                animate={{ strokeDashoffset: circ * (1 - pct) }}
+                transition={{ duration: 0.5 }}
+                strokeLinecap="round" />
+            </svg>
+            <div className="absolute inset-0 flex flex-col items-center justify-center">
+              <span className="font-black text-4xl" style={{ color: theme.text }}>{timeLeft}</span>
+              <span className="text-xs" style={{ color: theme.textMuted }}>seg</span>
+            </div>
+          </div>
+
+          {/* Controles */}
+          <div className="flex gap-3 w-full">
+            <button onClick={handlePrev} disabled={idx === 0}
+              className="flex-1 py-3 rounded-2xl font-bold text-sm disabled:opacity-30"
+              style={{ background: theme.surface2, color: theme.textMuted }}>
+              ← Anterior
+            </button>
+            <button onClick={() => setPaused(p => !p)}
+              className="w-14 rounded-2xl font-bold text-sm"
+              style={{ background: `${path.accent}20`, color: path.accent }}>
+              {paused ? '▶' : '⏸'}
+            </button>
+            <motion.button whileTap={{ scale: 0.97 }} onClick={handleNext}
+              className="flex-1 py-3 rounded-2xl font-bold text-sm text-white"
+              style={{ background: path.gradient }}>
+              {idx < items.length - 1 ? 'Siguiente →' : '¡Listo! ✓'}
+            </motion.button>
+          </div>
+        </div>
+      )}
+
+      {/* FASE DONE */}
+      {phase === 'done' && (
+        <div className="flex-1 flex flex-col items-center justify-center px-4 text-center gap-4">
+          <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }}
+            transition={{ type: 'spring', damping: 10 }}
+            style={{ fontSize: 80 }}>🎉</motion.span>
+          <h2 className="font-extrabold text-2xl" style={{ color: theme.text }}>
+            {type === 'warmup' ? '¡Calentamiento completo!' : '¡Estiramientos completados!'}
+          </h2>
+          <p className="text-sm" style={{ color: theme.textMuted }}>
+            {type === 'warmup'
+              ? 'Tu cuerpo está listo. Ahora a por el entrenamiento 💪'
+              : 'Recuperación iniciada. Tu cuerpo te lo agradece 🌿'}
+          </p>
+          <motion.button whileTap={{ scale: 0.97 }} onClick={onClose}
+            className="w-full py-4 rounded-2xl font-extrabold text-white mt-4"
+            style={{ background: path.gradient }}>
+            Continuar
+          </motion.button>
+        </div>
+      )}
     </motion.div>
   )
 }
@@ -440,10 +604,10 @@ export default function WorkoutView() {
         </motion.div>
       </AnimatePresence>
 
-      {/* Support Modal */}
+      {/* Guided Support Session */}
       <AnimatePresence>
         {supportModal && (
-          <SupportModal
+          <GuidedSupportSession
             type={supportModal}
             path={path}
             theme={theme}

@@ -864,81 +864,121 @@ export default function Onboarding() {
 
   // ── FINISH (idéntico a V1) ─────────────────────────────────────────────────
 
-  async function finish() {
-    setLoading(true)
-    try {
-      const userId = user.id
-      await supabase.from('user_profiles').update({
-        name: form.name, onboarding_done: true,
-        motivation_why: form.motivation_why || null,
-      }).eq('id', userId)
+ async function finish() {
+  setLoading(true)
+  try {
+    const userId = user.id
 
-      const age = form.birth_date
-        ? Math.floor((new Date() - new Date(form.birth_date)) / (365.25 * 24 * 3600 * 1000)) : null
-      const w   = parseFloat(form.weight_kg) || 70
-      const h   = parseFloat(form.height_cm) || 170
-      const bmr = form.sex === 'female'
-        ? 10*w + 6.25*h - 5*(age||25) - 161
-        : 10*w + 6.25*h - 5*(age||25) + 5
-      const actMult     = { sedentary:1.2, light:1.375, moderate:1.55, intense:1.725, athlete:1.9 }[form.activity_level] || 1.375
-      const tdee        = Math.round(bmr * actMult)
-      const deficit     = { slow:250, moderate:500, aggressive:750 }[form.goal_intensity] || 500
-      const targetCals  = form.goal === 'lose_fat' || form.goal === 'define'
-        ? tdee - deficit : form.goal === 'gain_muscle' ? tdee + 300 : tdee
-      const targetProtein = Math.round(w * 2.0)
-      const targetFat     = Math.round(targetCals * 0.25 / 9)
-      const targetCarbs   = Math.round((targetCals - targetProtein * 4 - targetFat * 9) / 4)
-      const bmi           = h > 0 ? Math.round((w / ((h/100) ** 2)) * 10) / 10 : null
+    await supabase.from('user_profiles').update({
+      name: form.name,
+      onboarding_done: true,
+      motivation_why: form.motivation_why || null,
+    }).eq('id', userId)
 
-      await supabase.from('health_profiles').upsert({
-        user_id: userId,
-        height_cm: parseFloat(form.height_cm)||null, weight_kg: parseFloat(form.weight_kg)||null,
-        target_weight_kg: parseFloat(form.target_weight_kg)||null,
-        sex: form.sex, birth_date: form.birth_date||null,
-        goal: form.goal, goal_intensity: form.goal_intensity,
-        activity_level: form.activity_level,
-        training_days_per_week: parseInt(form.training_days_per_week)||3,
-        profession: form.profession, work_schedule: form.work_schedule,
-        sleep_hours: parseFloat(form.sleep_hours)||7,
-        wake_time: form.wake_time, sleep_time: form.sleep_time,
-        diet_type: form.diet_type,
-        allergies: form.allergies ? form.allergies.split(',').map(s=>s.trim()).filter(Boolean) : [],
-        food_intolerances: form.food_intolerances ? form.food_intolerances.split(',').map(s=>s.trim()).filter(Boolean) : [],
-        is_smoker: form.is_smoker, alcohol_frequency: form.alcohol_frequency,
-        bmi, bmr: Math.round(bmr), tdee,
-        target_calories: targetCals, target_protein_g: targetProtein,
-        target_carbs_g: targetCarbs, target_fat_g: targetFat,
-        onboarding_done: true, onboarding_version: 2,
-      }, { onConflict: 'user_id' })
+    const age = form.birth_date
+      ? Math.floor((new Date() - new Date(form.birth_date)) / (365.25 * 24 * 3600 * 1000))
+      : null
+    const w   = parseFloat(form.weight_kg) || 70
+    const h   = parseFloat(form.height_cm) || 170
+    const bmr = form.sex === 'female'
+      ? 10 * w + 6.25 * h - 5 * (age || 25) - 161
+      : 10 * w + 6.25 * h - 5 * (age || 25) + 5
+    const actMult = {
+      sedentary: 1.2, light: 1.375, moderate: 1.55, intense: 1.725, athlete: 1.9,
+    }[form.activity_level] || 1.375
+    const tdee          = Math.round(bmr * actMult)
+    const deficit       = { slow: 250, moderate: 500, aggressive: 750 }[form.goal_intensity] || 500
+    const targetCals    = form.goal === 'lose_fat' || form.goal === 'define'
+      ? tdee - deficit
+      : form.goal === 'gain_muscle' ? tdee + 300 : tdee
+    const targetProtein = Math.round(w * 2.0)
+    const targetFat     = Math.round(targetCals * 0.25 / 9)
+    const targetCarbs   = Math.round((targetCals - targetProtein * 4 - targetFat * 9) / 4)
+    const bmi           = h > 0 ? Math.round((w / ((h / 100) ** 2)) * 10) / 10 : null
 
-      await supabase.from('nutrition_goals').upsert({
-        user_id: userId, calories: targetCals,
-        protein_g: targetProtein, carbs_g: targetCarbs, fat_g: targetFat,
-      }, { onConflict: 'user_id' })
+    await supabase.from('health_profiles').upsert({
+      user_id:                userId,
+      height_cm:              parseFloat(form.height_cm) || null,
+      weight_kg:              parseFloat(form.weight_kg) || null,
+      target_weight_kg:       parseFloat(form.target_weight_kg) || null,
+      sex:                    form.sex,
+      birth_date:             form.birth_date || null,
+      goal:                   form.goal,
+      goal_intensity:         form.goal_intensity,
+      activity_level:         form.activity_level,
+      training_days_per_week: parseInt(form.training_days_per_week) || 3,
+      profession:             form.profession,
+      work_schedule:          form.work_schedule,
+      sleep_hours:            parseFloat(form.sleep_hours) || 7,
+      wake_time:              form.wake_time,
+      sleep_time:             form.sleep_time,
+      diet_type:              form.diet_type,
+      allergies:              form.allergies
+        ? form.allergies.split(',').map(s => s.trim()).filter(Boolean) : [],
+      food_intolerances:      form.food_intolerances
+        ? form.food_intolerances.split(',').map(s => s.trim()).filter(Boolean) : [],
+      is_smoker:              form.is_smoker,
+      alcohol_frequency:      form.alcohol_frequency,
+      bmi,
+      bmr:                    Math.round(bmr),
+      tdee,
+      target_calories:        targetCals,
+      target_protein_g:       targetProtein,
+      target_carbs_g:         targetCarbs,
+      target_fat_g:           targetFat,
+      onboarding_done:        true,
+      onboarding_version:     2,
 
-      if (form.treatments.length > 0) {
-        await supabase.from('medical_treatments').insert(
-          form.treatments.map(t => ({
-            ...t, user_id: userId,
-            affects_weight:   ['glp1','thyroid','insulin','corticoid','contraceptive'].includes(t.type),
-            affects_appetite: ['glp1','antidepressant'].includes(t.type),
-          }))
-        )
-      }
-      if (form.weight_kg) {
-        await supabase.from('weight_logs').insert({
-          user_id: userId, weight_kg: parseFloat(form.weight_kg), notes: 'Peso inicial',
-        })
-      }
-      await fetchProfile(userId)
-      try { await api.email.welcome() } catch {}
-      navigate('/')
-    } catch (err) {
-      alert('Error: ' + err.message)
-    } finally {
-      setLoading(false)
+      // ── Snapshot de inicio (protegido por trigger, nunca se sobreescribe) ──
+      initial_weight_kg:  parseFloat(form.weight_kg) || null,
+      initial_bmi:        bmi,
+      initial_goal:       form.goal,
+      initial_activity:   form.activity_level,
+      initial_calories:   targetCals,
+      initial_protein_g:  targetProtein,
+      initial_carbs_g:    targetCarbs,
+      initial_fat_g:      targetFat,
+      onboarding_date:    new Date().toISOString(),
+
+    }, { onConflict: 'user_id' })
+
+    await supabase.from('nutrition_goals').upsert({
+      user_id:   userId,
+      calories:  targetCals,
+      protein_g: targetProtein,
+      carbs_g:   targetCarbs,
+      fat_g:     targetFat,
+    }, { onConflict: 'user_id' })
+
+    if (form.treatments.length > 0) {
+      await supabase.from('medical_treatments').insert(
+        form.treatments.map(t => ({
+          ...t,
+          user_id:          userId,
+          affects_weight:   ['glp1', 'thyroid', 'insulin', 'corticoid', 'contraceptive'].includes(t.type),
+          affects_appetite: ['glp1', 'antidepressant'].includes(t.type),
+        }))
+      )
     }
+
+    if (form.weight_kg) {
+      await supabase.from('weight_logs').insert({
+        user_id:   userId,
+        weight_kg: parseFloat(form.weight_kg),
+        notes:     'Peso inicial',
+      })
+    }
+
+    await fetchProfile(userId)
+    try { await api.email.welcome() } catch {}
+    navigate('/')
+
+  } catch (err) {
+    alert('Error: ' + err.message)
+  } finally {
+    setLoading(false)
   }
+}
 
   // ── RENDER PRINCIPAL ───────────────────────────────────────────────────────
 

@@ -42,14 +42,19 @@ import HealthTracking from './pages/HealthTracking'
 
 function LoadingScreen() {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: '#fff', flexDirection: 'column', gap: 16 }}>
+    <div style={{
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      height: '100vh', background: '#fff', flexDirection: 'column', gap: 16,
+    }}>
       <div style={{ fontSize: 40 }} className="animate-bounce">🐼</div>
-      <div style={{ width: 32, height: 32, borderRadius: '50%', border: '3px solid #2EC4B620', borderTopColor: '#2EC4B6' }} className="animate-spin" />
+      <div style={{
+        width: 32, height: 32, borderRadius: '50%',
+        border: '3px solid #2EC4B620', borderTopColor: '#2EC4B6',
+      }} className="animate-spin" />
     </div>
   )
 }
 
-// Raíz inteligente: landing para visitantes, dashboard para usuarios
 function SmartRoot() {
   const { session, profile, loading } = useStore()
   if (loading) return <LoadingScreen />
@@ -67,19 +72,23 @@ function ProtectedRoute({ children }) {
 }
 
 export default function App() {
-  const { setSession, setUser, fetchProfile, setLoading, setProfile } = useStore()
+  // ── setHealthProfile añadido ──────────────────────────────────────────────
+  const { setSession, setUser, fetchProfile, setLoading, setProfile, setHealthProfile } = useStore()
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session)
       setUser(session?.user ?? null)
       if (session?.user) {
+        // fetchProfile ahora carga ambas tablas en paralelo
         fetchProfile(session.user.id).finally(() => setLoading(false))
       } else {
         setProfile(null)
+        setHealthProfile(null)   // ← limpiar health profile en logout
         setLoading(false)
       }
     })
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session)
       setUser(session?.user ?? null)
@@ -87,52 +96,51 @@ export default function App() {
         fetchProfile(session.user.id)
       } else {
         setProfile(null)
+        setHealthProfile(null)   // ← limpiar health profile en logout
       }
     })
+
     return () => subscription.unsubscribe()
   }, [])
 
   return (
     <AchievementToastProvider>
-    <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-      <Routes>
-        {/* Raíz inteligente */}
-        <Route path="/" element={<SmartRoot />} />
+      <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+        <Routes>
+          <Route path="/" element={<SmartRoot />} />
 
-        {/* Rutas públicas */}
-        <Route path="/auth" element={<Auth />} />
-        <Route path="/onboarding" element={<Onboarding />} />
-        <Route path="/privacy"    element={<PrivacyPolicy />} />
-        <Route path="/terms"      element={<TermsOfUse />} />
-        <Route path="/disclaimer" element={<MedicalDisclaimerPage />} />
-        <Route path="/achievements" element={<Achievements />} />
+          <Route path="/auth"        element={<Auth />} />
+          <Route path="/onboarding"  element={<Onboarding />} />
+          <Route path="/privacy"     element={<PrivacyPolicy />} />
+          <Route path="/terms"       element={<TermsOfUse />} />
+          <Route path="/disclaimer"  element={<MedicalDisclaimerPage />} />
+          <Route path="/achievements" element={<Achievements />} />
 
-        {/* Rutas protegidas con Layout */}
-        <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
-          <Route path="/calendar" element={<Calendar />} />
-          <Route path="/home" element={<Home />} />
-          <Route path="/coach" element={<Coach />} />
-          <Route path="/report" element={<DailyReport />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/premium" element={<Premium />} />
-          <Route path="/appearance" element={<Appearance />} />
-          <Route path="/pet" element={<Pet />} />
-          <Route path="/nutrition" element={<Nutrition />} />
-          <Route path="/pantry" element={<Navigate to="/nutrition" replace />} />
-          <Route path="/recipes" element={<Navigate to="/nutrition" replace />} />
-          <Route path="/workout" element={<WorkoutView />} />
-          <Route path="/sleep" element={<Sleep />} />
-          <Route path="/mood" element={<Mood />} />
-          <Route path="/hydration" element={<Hydration />} />
-          <Route path="/smoking" element={<Smoking />} />
-          <Route path="/health" element={<HealthTracking />} />
-        </Route>
+          <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+            <Route path="/calendar"  element={<Calendar />} />
+            <Route path="/home"      element={<Home />} />
+            <Route path="/coach"     element={<Coach />} />
+            <Route path="/report"    element={<DailyReport />} />
+            <Route path="/profile"   element={<Profile />} />
+            <Route path="/premium"   element={<Premium />} />
+            <Route path="/appearance" element={<Appearance />} />
+            <Route path="/pet"       element={<Pet />} />
+            <Route path="/nutrition" element={<Nutrition />} />
+            <Route path="/pantry"    element={<Navigate to="/nutrition" replace />} />
+            <Route path="/recipes"   element={<Navigate to="/nutrition" replace />} />
+            <Route path="/workout"   element={<WorkoutView />} />
+            <Route path="/sleep"     element={<Sleep />} />
+            <Route path="/mood"      element={<Mood />} />
+            <Route path="/hydration" element={<Hydration />} />
+            <Route path="/smoking"   element={<Smoking />} />
+            <Route path="/health"    element={<HealthTracking />} />
+          </Route>
 
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-      <CookieBanner />
-      <UpdateBanner />
-    </BrowserRouter>
-  </AchievementToastProvider>
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+        <CookieBanner />
+        <UpdateBanner />
+      </BrowserRouter>
+    </AchievementToastProvider>
   )
 }

@@ -378,12 +378,14 @@ function FoodRow({ food, theme, onSelect }) {
 
 // ─── DIARIO TAB ───────────────────────────────────────────────────────────────
 
-export default function DiarioTab({ onAnalyze, onScan, onRecipes }) {
+// onSummaryChange: callback opcional que recibe los macros del día en tiempo real
+// Lo usa Nutrition.jsx para pasárselos al useSectionContext y al coach
+export default function DiarioTab({ onAnalyze, onScan, onRecipes, onSummaryChange }) {
   const { user, addXP } = useStore()
   const { theme }       = useTheme()
-  const [meals,  setMeals]  = useState([])
-  const [goals,  setGoals]  = useState({ calories: 2000, protein_g: 150, carbs_g: 200, fat_g: 65 })
-  const [modal,  setModal]  = useState(null)
+  const [meals, setMeals] = useState([])
+  const [goals, setGoals] = useState({ calories: 2000, protein_g: 150, carbs_g: 200, fat_g: 65 })
+  const [modal, setModal] = useState(null)
   const today = new Date().toISOString().split('T')[0]
 
   async function load() {
@@ -392,9 +394,27 @@ export default function DiarioTab({ onAnalyze, onScan, onRecipes }) {
       supabase.from('meal_logs').select('*').eq('user_id', user.id).eq('date', today).order('created_at'),
       supabase.from('nutrition_goals').select('*').eq('user_id', user.id).maybeSingle(),
     ])
-    setMeals(mealsRes.data || [])
-    if (goalsRes.data) setGoals(goalsRes.data)
+    const loadedMeals = mealsRes.data || []
+    const loadedGoals = goalsRes.data || goals
+
+    setMeals(loadedMeals)
+    if (goalsRes.data) setGoals(loadedGoals)
+
+    // ── Notificar al padre (Nutrition.jsx) para que el coach lo vea ─────────
+    onSummaryChange?.({
+      caloriesConsumed: loadedMeals.reduce((s, m) => s + (m.calories  || 0), 0),
+      caloriesTarget:   loadedGoals.calories  || 2000,
+      proteinConsumed:  loadedMeals.reduce((s, m) => s + (m.protein_g || 0), 0),
+      proteinTarget:    loadedGoals.protein_g || 150,
+      carbsConsumed:    loadedMeals.reduce((s, m) => s + (m.carbs_g   || 0), 0),
+      carbsTarget:      loadedGoals.carbs_g   || 200,
+      fatConsumed:      loadedMeals.reduce((s, m) => s + (m.fat_g     || 0), 0),
+      fatTarget:        loadedGoals.fat_g     || 65,
+      lastMeal:         loadedMeals[loadedMeals.length - 1]?.food_name || null,
+      mealsCount:       loadedMeals.length,
+    })
   }
+
   useEffect(() => { load() }, [user])
 
   async function addMeal(mealType, entry) {
@@ -408,7 +428,7 @@ export default function DiarioTab({ onAnalyze, onScan, onRecipes }) {
     })
     await addXP(10)
     setModal(null)
-    load()
+    load()  // load() ya llama a onSummaryChange con los datos actualizados
   }
 
   async function deleteMeal(id) {

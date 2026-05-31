@@ -7,6 +7,7 @@ import { Play, Pause, RotateCcw, Volume2, VolumeX, Check, Smile, Heart, Sparkles
 import { supabase } from '../lib/supabase'
 import { useStore } from '../store/useStore'
 import { useTheme } from '../contexts/ThemeProvider'
+import { useSectionContext } from '../hooks/useSectionContext'
 import CycleTab from '../components/mood/CycleTab'
 import WellnessCalendar from '../components/mood/WellnessCalendar'
 import PandiContextualBubble from '../components/PandiContextualBubble'
@@ -38,9 +39,9 @@ const MOODS = [
 ]
 
 const TECHNIQUES = {
-  '478':    { name: '4-7-8',  inhale: 4, hold: 7, exhale: 8, holdOut: 0, desc: 'Para ansiedad'  },
+  '478':    { name: '4-7-8',  inhale: 4, hold: 7, exhale: 8, holdOut: 0, desc: 'Para ansiedad'   },
   'box':    { name: 'Box',    inhale: 4, hold: 4, exhale: 4, holdOut: 4, desc: 'Para equilibrio' },
-  'simple': { name: 'Simple', inhale: 4, hold: 0, exhale: 4, holdOut: 0, desc: 'Para empezar'   },
+  'simple': { name: 'Simple', inhale: 4, hold: 0, exhale: 4, holdOut: 0, desc: 'Para empezar'    },
 }
 
 const PHASES = {
@@ -59,15 +60,13 @@ const AMBIENT = [
 ]
 
 const MASCOTAS_COLECCIONABLES = [
-  { id: 'pandi', nombreDefault: 'Pandi', especie: 'Oso Panda', desc: 'Tu compañero fiel inicial. Le encanta la meditación.', nivelRequerido: 1 },
-  { id: 'slothi', nombreDefault: 'Slothi', especie: 'Perezoso', desc: 'Experto en calma profunda y rutinas sin prisas.', nivelRequerido: 4 },
-  { id: 'lumi', nombreDefault: 'Lumi', especie: 'Luciérnaga', desc: 'Brilla con fuerza en tus momentos más oscuros.', nivelRequerido: 8 },
+  { id: 'pandi',  nombreDefault: 'Pandi',  especie: 'Oso Panda',  desc: 'Tu compañero fiel inicial. Le encanta la meditación.', nivelRequerido: 1 },
+  { id: 'slothi', nombreDefault: 'Slothi', especie: 'Perezoso',   desc: 'Experto en calma profunda y rutinas sin prisas.',       nivelRequerido: 4 },
+  { id: 'lumi',   nombreDefault: 'Lumi',   especie: 'Luciérnaga', desc: 'Brilla con fuerza en tus momentos más oscuros.',        nivelRequerido: 8 },
 ]
 
 const MED_SESSIONS = { 2: [1,2,3], 5: [4,5,6,7], 10: [8,9,10] }
 const pickSession  = (m) => { const p = MED_SESSIONS[m] ?? [1]; return p[Math.floor(Math.random()*p.length)] }
-
-// ─── AUDIO HELPERS ────────────────────────────────────────────────────────────
 
 function fadeIn(audio, targetVol = 0.45, step = 0.03) {
   audio.volume = 0
@@ -99,28 +98,19 @@ function stopAmbient(ref) {
   ref.current = null; fadeOut(audio)
 }
 
-// ─── PANDA IMG ────────────────────────────────────────────────────────────────
-
 function PandaImg({ name, size = 48, fallback = '🐼', className = '', style = {} }) {
   const [err, setErr] = useState(false)
-  if (err) {
-    return (
-      <span style={{ fontSize: size * 0.65, lineHeight: 1, display: 'flex',
-        alignItems: 'center', justifyContent: 'center', width: size, height: size, ...style }}
-        className={className}>
-        {fallback}
-      </span>
-    )
-  }
+  if (err) return (
+    <span style={{ fontSize: size * 0.65, lineHeight: 1, display: 'flex',
+      alignItems: 'center', justifyContent: 'center', width: size, height: size, ...style }}
+      className={className}>{fallback}</span>
+  )
   return (
     <img src={`/panda/${name}.png`} alt="Pandi"
       style={{ width: size, height: size, objectFit: 'contain', ...style }}
-      className={className}
-      onError={() => setErr(true)} />
+      className={className} onError={() => setErr(true)} />
   )
 }
-
-// ─── PANDI RESPONSE ───────────────────────────────────────────────────────────
 
 function PandiResponse({ mood, message, action, onAction, theme, loadingCoach }) {
   const moodData  = MOODS.find(m => m.v === mood)
@@ -131,9 +121,11 @@ function PandiResponse({ mood, message, action, onAction, theme, loadingCoach })
       style={{ borderLeft: `4px solid ${moodData?.color}` }}>
       <div className="flex items-start gap-3 mb-3">
         <motion.div animate={loadingCoach ? { rotate: [0, 15, -15, 0] } : { scale: [1, 1.06, 1] }}
-          transition={loadingCoach ? { duration: 0.5, repeat: Infinity } : { duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}>
-          <PandaImg name={mood >= 4 ? 'avatar_happy' : 'avatar_neutro'} size={48} fallback={frameInfo.fallback}
-            style={{ borderRadius: 12 }} />
+          transition={loadingCoach
+            ? { duration: 0.5, repeat: Infinity }
+            : { duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}>
+          <PandaImg name={mood >= 4 ? 'avatar_happy' : 'avatar_neutro'} size={48}
+            fallback={frameInfo.fallback} style={{ borderRadius: 12 }} />
         </motion.div>
         <div className="flex-1">
           <p className="text-[10px] font-bold uppercase tracking-wide mb-1"
@@ -159,17 +151,13 @@ function PandiResponse({ mood, message, action, onAction, theme, loadingCoach })
   )
 }
 
-// ─── CHECK-IN TAB ─────────────────────────────────────────────────────────────
-
-function CheckinTab({ theme, userId, addXP, onTabChange }) {
-  const [logs,  setLogs]  = useState([])
-  const [mood,  setMood]  = useState(null)
-  const [notes, setNotes] = useState('')
-  const [saved, setSaved] = useState(false)
-  
+function CheckinTab({ theme, userId, addXP, onTabChange, onMoodSaved }) {
+  const [logs,         setLogs]         = useState([])
+  const [mood,         setMood]         = useState(null)
+  const [notes,        setNotes]        = useState('')
+  const [saved,        setSaved]        = useState(false)
   const [pandiMessage, setPandiMessage] = useState('')
   const [loadingCoach, setLoadingCoach] = useState(false)
-  
   const today = new Date().toISOString().split('T')[0]
 
   async function load() {
@@ -177,49 +165,39 @@ function CheckinTab({ theme, userId, addXP, onTabChange }) {
       .eq('user_id', userId).order('date', { ascending: false }).limit(7)
     setLogs(data || [])
     const t = data?.find(l => l.date === today)
-    if (t) { 
-      setMood(t.mood); 
-      setNotes(t.notes || ''); 
-      setSaved(true) 
+    if (t) {
+      setMood(t.mood); setNotes(t.notes || ''); setSaved(true)
       setPandiMessage(PANDI_MOOD_MESSAGES.already_saved[t.mood] || '')
+      onMoodSaved?.(t.mood)
     }
   }
-  
+
   useEffect(() => { if (userId) load() }, [userId])
 
   async function save() {
     if (!mood) return
     setLoadingCoach(true)
-    
     await supabase.from('mood_logs').upsert(
       { user_id: userId, date: today, mood, notes },
       { onConflict: 'user_id,date' }
     )
     await addXP(10)
     setSaved(true)
-
+    onMoodSaved?.(mood)
     try {
       const moodLabel = MOODS.find(m => m.v === mood)?.label || 'Desconocido'
       const promptOculto = `[SISTEMA: El usuario acaba de hacer Check-in de salud mental en la app. Ha marcado su estado de ánimo hoy como "${moodLabel}" (${mood}/5). Notas contextuales que ha escrito sobre lo que influye en su día: "${notes || 'Sin notas escritas'}". Actúa inmediatamente como su Psicólogo y Terapeuta TCC/ACT. Dame una respuesta corta, de máximo 3 líneas, súper empática, validando su estado emocional y dándole un reencuadre o consejo útil sin rodeos ni introducciones corporativas.]`
-
-      const res = await fetch('/api/coach', {
+      const res  = await fetch('/api/coach', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: promptOculto, userId })
+        body: JSON.stringify({ message: promptOculto, userId }),
       })
       const data = await res.json()
-      
-      if (data && data.response) {
-        setPandiMessage(data.response)
-      } else {
-        setPandiMessage(PANDI_MOOD_MESSAGES.first[mood] ?? '')
-      }
-    } catch (err) {
-      console.error("Error al conectar con Pandi Coach clínico:", err)
+      setPandiMessage(data?.response || PANDI_MOOD_MESSAGES.first[mood] || '')
+    } catch {
       setPandiMessage(PANDI_MOOD_MESSAGES.first[mood] ?? '')
     } finally {
-      setLoadingCoach(false)
-      load()
+      setLoadingCoach(false); load()
     }
   }
 
@@ -234,7 +212,7 @@ function CheckinTab({ theme, userId, addXP, onTabChange }) {
   })()
 
   const finalMessage = saved ? pandiMessage : (PANDI_MOOD_MESSAGES.first[mood] ?? '')
-  const action = (!saved && mood) ? PANDI_ACTIONS[mood] : null
+  const action       = (!saved && mood) ? PANDI_ACTIONS[mood] : null
 
   return (
     <div className="space-y-4">
@@ -247,8 +225,8 @@ function CheckinTab({ theme, userId, addXP, onTabChange }) {
               className="flex flex-col items-center gap-1 p-3 rounded-2xl transition-all"
               style={{
                 background: mood === m.v ? `${m.color}20` : 'transparent',
-                border:      mood === m.v ? `2px solid ${m.color}60` : '2px solid transparent',
-                opacity:     mood && mood !== m.v ? 0.35 : 1,
+                border:     mood === m.v ? `2px solid ${m.color}60` : '2px solid transparent',
+                opacity:    mood && mood !== m.v ? 0.35 : 1,
               }}>
               <span className="text-3xl">{m.emoji}</span>
               <span className="text-[10px] font-semibold"
@@ -258,7 +236,8 @@ function CheckinTab({ theme, userId, addXP, onTabChange }) {
         </div>
         <input className="input mb-3" placeholder="¿Qué ha influido? (opcional)…"
           value={notes} onChange={e => setNotes(e.target.value)} disabled={loadingCoach} />
-        <button onClick={save} disabled={!mood || saved || loadingCoach} className="btn-primary w-full disabled:opacity-40">
+        <button onClick={save} disabled={!mood || saved || loadingCoach}
+          className="btn-primary w-full disabled:opacity-40">
           {loadingCoach ? '🧠 Pandi analizando...' : saved ? '✅ Guardado hoy' : '💾 Guardar (+10 XP)'}
         </button>
       </div>
@@ -283,8 +262,6 @@ function CheckinTab({ theme, userId, addXP, onTabChange }) {
     </div>
   )
 }
-
-// ─── BREATHING TAB ────────────────────────────────────────────────────────────
 
 function BreathingTab({ theme }) {
   const [tech,    setTech]    = useState('478')
@@ -346,10 +323,10 @@ function BreathingTab({ theme }) {
 
   useEffect(() => () => stop(), [])
 
-  const t           = TECHNIQUES[tech]
-  const phaseInfo   = PHASES[phase]
-  const animDur     = phase === 'inhale' ? t.inhale : phase === 'exhale' ? t.exhale
-                    : phase === 'hold'   ? t.hold   : t.holdOut
+  const t         = TECHNIQUES[tech]
+  const phaseInfo = PHASES[phase]
+  const animDur   = phase === 'inhale' ? t.inhale : phase === 'exhale' ? t.exhale
+                  : phase === 'hold'   ? t.hold   : t.holdOut
   const breathFrame = phaseInfo.breathFrame || 1
 
   return (
@@ -386,7 +363,7 @@ function BreathingTab({ theme }) {
             transition={{ duration: animDur, ease: 'easeInOut' }}
             style={{ position: 'relative', zIndex: 2, width: 78, height: 78, borderRadius: '50%',
               background: '#fff', boxShadow: `0 4px 24px ${phaseInfo.color}40`,
-              display: 'flex', alignItems: 'center', justifyCONtent: 'center' }}>
+              display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <AnimatePresence mode="wait">
               <motion.div key={breathFrame}
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
@@ -397,7 +374,6 @@ function BreathingTab({ theme }) {
             </AnimatePresence>
           </motion.div>
         </div>
-
         <div className="text-center min-h-[64px] flex flex-col items-center justify-center">
           <AnimatePresence mode="wait">
             <motion.p key={phase}
@@ -408,9 +384,7 @@ function BreathingTab({ theme }) {
           </AnimatePresence>
           {running && (
             <motion.p key={count} initial={{ scale: 1.4, opacity: 0.6 }} animate={{ scale: 1, opacity: 1 }}
-              className="text-5xl font-black mt-1" style={{ color: theme.text }}>
-              {count}
-            </motion.p>
+              className="text-5xl font-black mt-1" style={{ color: theme.text }}>{count}</motion.p>
           )}
           {rounds > 0 && (
             <p className="text-xs mt-1" style={{ color: theme.textMuted }}>
@@ -418,7 +392,6 @@ function BreathingTab({ theme }) {
             </p>
           )}
         </div>
-
         {!running ? (
           <motion.button whileTap={{ scale: 0.94 }} onClick={start}
             className="flex items-center gap-2 px-8 py-3 rounded-2xl font-bold text-white"
@@ -432,7 +405,6 @@ function BreathingTab({ theme }) {
             <Pause size={16} /> Pausar
           </motion.button>
         )}
-
         <p className="text-[11px] text-center" style={{ color: theme.textMuted }}>
           {t.inhale}s inhala
           {t.hold    > 0 ? ` · ${t.hold}s mantén`  : ''}
@@ -443,8 +415,6 @@ function BreathingTab({ theme }) {
     </div>
   )
 }
-
-// ─── PANDA FRAME MEDITACIÓN ───────────────────────────────────────────────────
 
 function PandaFrame({ running }) {
   const [frame,         setFrame]         = useState(1)
@@ -463,16 +433,14 @@ function PandaFrame({ running }) {
     return () => clearTimeout(id)
   }, [running])
 
-  if (imgError) {
-    return (
-      <motion.span animate={running ? { scale: [1, 1.06, 1] } : {}}
-        transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
-        style={{ fontSize: 100 }}>🧘</motion.span>
-    )
-  }
+  if (imgError) return (
+    <motion.span animate={running ? { scale: [1, 1.06, 1] } : {}}
+      transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
+      style={{ fontSize: 100 }}>🧘</motion.span>
+  )
 
   return (
-    <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyCOntent: 'center' }}>
+    <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <motion.div
         animate={
           transitioning ? { scale: 1.4, opacity: 0.85 }
@@ -502,8 +470,6 @@ function PandaFrame({ running }) {
     </div>
   )
 }
-
-// ─── MEDITATION TAB ───────────────────────────────────────────────────────────
 
 function MeditationTab({ theme }) {
   const [duration, setDuration] = useState(5)
@@ -577,13 +543,10 @@ function MeditationTab({ theme }) {
               style={{
                 background: duration === d ? 'linear-gradient(135deg,#2EC4B6,#FF8FA3)' : theme.surface2,
                 color:      duration === d ? '#fff' : theme.textMuted,
-              }}>
-              {d} min
-            </button>
+              }}>{d} min</button>
           ))}
         </div>
       </div>
-
       <div className="card">
         <p className="text-sm font-bold mb-3" style={{ color: theme.text }}>Sonido ambiental</p>
         <div className="grid grid-cols-5 gap-2">
@@ -593,7 +556,7 @@ function MeditationTab({ theme }) {
               className="flex flex-col items-center gap-1 py-2.5 rounded-2xl transition-all"
               style={{
                 background: sound === a.id ? '#2EC4B618' : theme.surface2,
-                border:      `2px solid ${sound === a.id ? '#2EC4B6' : 'transparent'}`,
+                border:     `2px solid ${sound === a.id ? '#2EC4B6' : 'transparent'}`,
               }}>
               <span className="text-xl">{a.emoji}</span>
               <span className="text-[9px] font-semibold"
@@ -603,7 +566,6 @@ function MeditationTab({ theme }) {
         </div>
         {!sound && <p className="text-[11px] mt-2 text-center" style={{ color: theme.textMuted }}>Sin sonido ambiental</p>}
       </div>
-
       <div className="card flex flex-col items-center gap-4 pb-6 pt-4 overflow-hidden">
         <div className="w-full flex items-center justify-center" style={{ minHeight: 300 }}>
           {done
@@ -670,8 +632,6 @@ function MeditationTab({ theme }) {
   )
 }
 
-// ─── HABITS TAB ───────────────────────────────────────────────────────────────
-
 function HabitsTab({ theme, userId, onHabitsUpdate }) {
   const today      = new Date().toISOString().split('T')[0]
   const storageKey = `pandi_habits_${today}`
@@ -691,11 +651,7 @@ function HabitsTab({ theme, userId, onHabitsUpdate }) {
   const doneCount = active.filter(h => checked[h.id]).length
   const allDone   = active.length > 0 && doneCount === active.length
 
-  useEffect(() => {
-    if (onHabitsUpdate) {
-      onHabitsUpdate(checked)
-    }
-  }, [checked])
+  useEffect(() => { onHabitsUpdate?.(checked) }, [checked])
 
   function toggle(id) {
     const next = { ...checked, [id]: !checked[id] }
@@ -736,7 +692,6 @@ function HabitsTab({ theme, userId, onHabitsUpdate }) {
           </p>
         )}
       </div>
-
       <AnimatePresence>
         {celebrated && (
           <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
@@ -748,7 +703,6 @@ function HabitsTab({ theme, userId, onHabitsUpdate }) {
           </motion.div>
         )}
       </AnimatePresence>
-
       <div className="card space-y-2">
         <p className="text-sm font-bold mb-2" style={{ color: theme.text }}>Hoy</p>
         {active.map(h => (
@@ -756,7 +710,7 @@ function HabitsTab({ theme, userId, onHabitsUpdate }) {
             className="w-full flex items-center gap-3 p-3 rounded-2xl transition-all text-left"
             style={{
               background: checked[h.id] ? `${theme.primary}12` : theme.surface2,
-              border:      `2px solid ${checked[h.id] ? theme.primary + '60' : 'transparent'}`,
+              border:     `2px solid ${checked[h.id] ? theme.primary + '60' : 'transparent'}`,
             }}>
             <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 text-xl"
               style={{ background: checked[h.id] ? `${theme.primary}20` : theme.surface }}>
@@ -766,13 +720,11 @@ function HabitsTab({ theme, userId, onHabitsUpdate }) {
               style={{
                 color:          checked[h.id] ? theme.primary : theme.text,
                 textDecoration: checked[h.id] ? 'line-through' : 'none',
-              }}>
-              {h.name}
-            </p>
+              }}>{h.name}</p>
             <div className="w-5 h-5 rounded-full border flex items-center justify-center"
-              style={{ 
+              style={{
                 borderColor: checked[h.id] ? theme.primary : theme.textMuted,
-                background: checked[h.id] ? theme.primary : 'transparent' 
+                background:  checked[h.id] ? theme.primary : 'transparent',
               }}>
               {checked[h.id] && <Check size={12} className="text-white" />}
             </div>
@@ -783,39 +735,29 @@ function HabitsTab({ theme, userId, onHabitsUpdate }) {
   )
 }
 
-// ─── SANTUARIO TAB (TAMAGOTCHI) ───────────────────────────────────────────────
-
 function SantuarioTab({ theme, userLevel, currentMood, habitsChecked }) {
-  const [mascotaActiva, setMascotaActiva] = useState(() => localStorage.getItem('pandi_active_pet') || 'pandi')
-  const [nombresMascotas, setNombresMascotas] = useState(() => {
+  const [mascotaActiva,    setMascotaActiva]    = useState(() => localStorage.getItem('pandi_active_pet') || 'pandi')
+  const [nombresMascotas,  setNombresMascotas]  = useState(() => {
     const saved = localStorage.getItem('pandi_pet_names')
     return saved ? JSON.parse(saved) : { pandi: 'Pandi', slothi: 'Slothi', lumi: 'Lumi' }
   })
-  const [editingName, setEditingName] = useState(false)
+  const [editingName,  setEditingName]  = useState(false)
   const [newNameInput, setNewNameInput] = useState('')
 
   const menteStatus  = currentMood ? (currentMood / 5) * 100 : 50
-  
   const totalHabits  = Object.keys(habitsChecked).length || 3
   const doneHabits   = Object.values(habitsChecked).filter(Boolean).length
   const rutinaStatus = Math.min(Math.round((doneHabits / totalHabits) * 100) || 0, 100)
-  
-  const almaStatus   = 75 
+  const almaStatus   = 75
 
   const infoMascota  = MASCOTAS_COLECCIONABLES.find(m => m.id === mascotaActiva)
   const nombreActual = nombresMascotas[mascotaActiva] || infoMascota?.nombreDefault
 
-  let sufijoEstado = 'neutro' 
+  let sufijoEstado = 'neutro'
+  if (currentMood >= 4)    sufijoEstado = 'happy'
+  if (rutinaStatus === 100) sufijoEstado = 'celebrate'
 
-  if (currentMood >= 4) {
-    sufijoEstado = 'happy'
-  }
-
-  if (rutinaStatus === 100) {
-    sufijoEstado = 'celebrate'
-  }
-
-  const prefijoMascota = mascotaActiva === 'pandi' ? 'avatar' : mascotaActiva
+  const prefijoMascota    = mascotaActiva === 'pandi' ? 'avatar' : mascotaActiva
   const pathImagenMascota = `/panda/${prefijoMascota}_${sufijoEstado}.png`
 
   function cambiarNombre() {
@@ -832,90 +774,71 @@ function SantuarioTab({ theme, userLevel, currentMood, habitsChecked }) {
         <div className="text-center z-10">
           {editingName ? (
             <div className="flex gap-2 items-center justify-center">
-              <input className="input py-1 text-center font-bold text-sm" value={newNameInput} 
+              <input className="input py-1 text-center font-bold text-sm" value={newNameInput}
                 onChange={e => setNewNameInput(e.target.value)} maxLength={12} style={{ maxWidth: 140 }} />
-              <button onClick={cambiarNombre} className="p-1.5 rounded-xl bg-emerald-500 text-white"><Check size={14}/></button>
+              <button onClick={cambiarNombre} className="p-1.5 rounded-xl bg-emerald-500 text-white">
+                <Check size={14} />
+              </button>
             </div>
           ) : (
-            <div className="cursor-pointer group flex items-center justify-center gap-1.5" onClick={() => { setNewNameInput(nombreActual); setEditingName(true) }}>
+            <div className="cursor-pointer group flex items-center justify-center gap-1.5"
+              onClick={() => { setNewNameInput(nombreActual); setEditingName(true) }}>
               <p className="text-xl font-black tracking-tight" style={{ color: theme.text }}>{nombreActual}</p>
               <span className="text-[10px] opacity-0 group-hover:opacity-60 transition-opacity">✏️</span>
             </div>
           )}
-          <p className="text-[10px] uppercase font-bold tracking-widest mt-0.5" style={{ color: theme.textMuted }}>{infoMascota?.especie}</p>
+          <p className="text-[10px] uppercase font-bold tracking-widest mt-0.5"
+            style={{ color: theme.textMuted }}>{infoMascota?.especie}</p>
         </div>
-
         <div className="relative my-6 flex items-center justify-center" style={{ minHeight: 200, width: '100%' }}>
           <div className="absolute w-44 h-44 rounded-full filter blur-3xl opacity-20 animate-pulse"
             style={{ backgroundColor: currentMood <= 2 ? '#F97316' : '#2EC4B6' }} />
-          
-          <motion.img 
-            key={pathImagenMascota}
-            src={pathImagenMascota} 
-            alt={nombreActual}
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.9, opacity: 0 }}
-            transition={{ duration: 0.3 }}
-            className="w-44 h-44 object-contain z-10"
-          />
+          <motion.img key={pathImagenMascota} src={pathImagenMascota} alt={nombreActual}
+            initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.9, opacity: 0 }} transition={{ duration: 0.3 }}
+            className="w-44 h-44 object-contain z-10" />
         </div>
-
         <div className="w-full grid grid-cols-3 gap-2 px-2">
-          <div className="bg-white/40 dark:bg-black/10 p-2 rounded-xl border border-black/5 flex flex-col gap-1">
-            <div className="flex items-center gap-1 text-[10px] font-bold" style={{ color: theme.text }}>
-              <Smile size={12} className="text-amber-500" /> Mente
+          {[
+            { icon: <Smile size={12} className="text-amber-500" />,   label: 'Mente',  value: menteStatus,  color: 'bg-amber-500'  },
+            { icon: <Heart size={12} className="text-rose-500" />,    label: 'Rutina', value: rutinaStatus, color: 'bg-rose-500'   },
+            { icon: <Sparkles size={12} className="text-purple-500"/>, label: 'Alma',   value: almaStatus,   color: 'bg-purple-500' },
+          ].map(({ icon, label, value, color }) => (
+            <div key={label} className="bg-white/40 dark:bg-black/10 p-2 rounded-xl border border-black/5 flex flex-col gap-1">
+              <div className="flex items-center gap-1 text-[10px] font-bold" style={{ color: theme.text }}>
+                {icon} {label}
+              </div>
+              <div className="h-1.5 w-full bg-black/5 dark:bg-white/10 rounded-full overflow-hidden">
+                <div className={`h-full ${color} transition-all duration-500`} style={{ width: `${value}%` }} />
+              </div>
             </div>
-            <div className="h-1.5 w-full bg-black/5 dark:bg-white/10 rounded-full overflow-hidden">
-              <div className="h-full bg-amber-500 transition-all duration-500" style={{ width: `${menteStatus}%` }} />
-            </div>
-          </div>
-
-          <div className="bg-white/40 dark:bg-black/10 p-2 rounded-xl border border-black/5 flex flex-col gap-1">
-            <div className="flex items-center gap-1 text-[10px] font-bold" style={{ color: theme.text }}>
-              <Heart size={12} className="text-rose-500" /> Rutina
-            </div>
-            <div className="h-1.5 w-full bg-black/5 dark:bg-white/10 rounded-full overflow-hidden">
-              <div className="h-full bg-rose-500 transition-all duration-500" style={{ width: `${rutinaStatus}%` }} />
-            </div>
-          </div>
-
-          <div className="bg-white/40 dark:bg-black/10 p-2 rounded-xl border border-black/5 flex flex-col gap-1">
-            <div className="flex items-center gap-1 text-[10px] font-bold" style={{ color: theme.text }}>
-              <Sparkles size={12} className="text-purple-500" /> Alma
-            </div>
-            <div className="h-1.5 w-full bg-black/5 dark:bg-white/10 rounded-full overflow-hidden">
-              <div className="h-full bg-purple-500 transition-all duration-500" style={{ width: `${almaStatus}%` }} />
-            </div>
-          </div>
+          ))}
         </div>
       </div>
-
       <div className="card">
-        <p className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: theme.textMuted }}>Tus Coleccionables</p>
+        <p className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: theme.textMuted }}>
+          Tus Coleccionables
+        </p>
         <div className="space-y-2.5">
           {MASCOTAS_COLECCIONABLES.map(m => {
-            const desbloqueado = userLevel >= m.nivelRequerido
-            const esActiva = mascotaActiva === m.id
+            const desbloqueado  = userLevel >= m.nivelRequerido
+            const esActiva      = mascotaActiva === m.id
             const nombreMascota = nombresMascotas[m.id] || m.nombreDefault
-
             return (
               <div key={m.id} className="flex items-center gap-3 p-2.5 rounded-xl transition-all"
-                style={{ 
+                style={{
                   backgroundColor: esActiva ? `${theme.primary}10` : theme.surface2,
-                  border: esActiva ? `1px solid ${theme.primary}40` : '1px solid transparent',
-                  opacity: desbloqueado ? 1 : 0.6
+                  border:   esActiva ? `1px solid ${theme.primary}40` : '1px solid transparent',
+                  opacity:  desbloqueado ? 1 : 0.6,
                 }}>
-                
                 <div className="w-12 h-12 rounded-xl bg-white/60 dark:bg-black/20 flex items-center justify-center text-2xl">
-                  {!desbloqueado ? (
-                    <Lock size={16} className="text-neutral-400" />
-                  ) : (
-                    <img src={m.id === 'pandi' ? '/panda/avatar_neutro.png' : `/panda/${m.id}_neutro.png`} alt={m.id} className="w-9 h-9 object-contain"
-                      onError={e => { e.target.src = "🐼" }} />
-                  )}
+                  {!desbloqueado
+                    ? <Lock size={16} className="text-neutral-400" />
+                    : <img src={m.id === 'pandi' ? '/panda/avatar_neutro.png' : `/panda/${m.id}_neutro.png`}
+                        alt={m.id} className="w-9 h-9 object-contain"
+                        onError={e => { e.target.style.display = 'none' }} />
+                  }
                 </div>
-
                 <div className="flex-1 min-w-0">
                   <div className="flex items-baseline gap-1.5">
                     <p className="text-sm font-bold truncate" style={{ color: theme.text }}>{nombreMascota}</p>
@@ -923,15 +846,10 @@ function SantuarioTab({ theme, userLevel, currentMood, habitsChecked }) {
                   </div>
                   <p className="text-[11px] truncate" style={{ color: theme.textMuted }}>{m.desc}</p>
                 </div>
-
                 {desbloqueado ? (
-                  <button 
-                    onClick={() => { setMascotaActiva(m.id); localStorage.setItem('pandi_active_pet', m.id); }}
+                  <button onClick={() => { setMascotaActiva(m.id); localStorage.setItem('pandi_active_pet', m.id) }}
                     className="text-xs font-bold px-3 py-1.5 rounded-xl"
-                    style={{ 
-                      backgroundColor: esActiva ? theme.primary : theme.surface,
-                      color: esActiva ? '#fff' : theme.text 
-                    }}>
+                    style={{ backgroundColor: esActiva ? theme.primary : theme.surface, color: esActiva ? '#fff' : theme.text }}>
                     {esActiva ? 'Activa' : 'Elegir'}
                   </button>
                 ) : (
@@ -948,30 +866,36 @@ function SantuarioTab({ theme, userLevel, currentMood, habitsChecked }) {
   )
 }
 
-// ─── MAIN COMPONENT ───────────────────────────────────────────────────────────
+// ─── MAIN ─────────────────────────────────────────────────────────────────────
 
 export default function Mood() {
-  const { theme } = useTheme()
-  const { user, addXP } = useStore()
-  const [activeTab, setActiveTab] = useState('checkin')
-  const [currentMood, setCurrentMood] = useState(3)
-  const [habitsChecked, setHabitsChecked] = useState({})
+  const { theme }        = useTheme()
+  const { user, addXP }  = useStore()
+  const [activeTab,      setActiveTab]      = useState('checkin')
+  const [currentMood,    setCurrentMood]    = useState(null)
+  const [habitsChecked,  setHabitsChecked]  = useState({})
 
   useEffect(() => {
-    async function fetchTodayMood() {
-      if (!user?.id) return
-      const today = new Date().toISOString().split('T')[0]
-      const { data } = await supabase.from('mood_logs')
-        .select('mood')
-        .eq('user_id', user.id)
-        .eq('date', today)
-        .maybeSingle()
-      if (data?.mood) {
-        setCurrentMood(data.mood)
-      }
-    }
-    fetchTodayMood()
+    if (!user?.id) return
+    const today = new Date().toISOString().split('T')[0]
+    supabase.from('mood_logs').select('mood')
+      .eq('user_id', user.id).eq('date', today).maybeSingle()
+      .then(({ data }) => { if (data?.mood) setCurrentMood(data.mood) })
   }, [user?.id, activeTab])
+
+  const doneHabits  = Object.values(habitsChecked).filter(Boolean).length
+  const totalHabits = Object.keys(habitsChecked).length || 1
+
+  // ── Coach ve: ánimo actual, tab activo, progreso de hábitos ─────────────
+  useSectionContext('mood', {
+    todayMood:       currentMood,
+    activeTab,
+    habitsCompleted: doneHabits,
+    habitsTotal:     totalHabits,
+    habitsPct:       Math.round((doneHabits / totalHabits) * 100),
+    isBreathing:     activeTab === 'breathing',
+    isMeditating:    activeTab === 'meditation',
+  })
 
   const tabs = [
     { id: 'checkin',    label: 'Check-in',  emoji: '📝' },
@@ -986,7 +910,6 @@ export default function Mood() {
   return (
     <div className="max-w-md mx-auto pb-24 px-2 pt-4">
       <PandiContextualBubble theme={theme} currentTab={activeTab} />
-      
       <div className="flex gap-1.5 overflow-x-auto no-scrollbar pb-3 mb-2 mask-linear-edge">
         {tabs.map(t => (
           <button key={t.id} onClick={() => setActiveTab(t.id)}
@@ -996,32 +919,29 @@ export default function Mood() {
               color:      activeTab === t.id ? '#fff' : theme.textMuted,
               boxShadow:  activeTab === t.id ? `0 4px 12px ${theme.primary}30` : 'none',
             }}>
-            <span>{t.emoji}</span>
-            <span>{t.label}</span>
+            <span>{t.emoji}</span><span>{t.label}</span>
           </button>
         ))}
       </div>
-
       <motion.div key={activeTab} initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.2 }} className="min-h-[400px]">
         {activeTab === 'checkin' && (
-          <CheckinTab theme={theme} userId={user?.id} addXP={addXP} onTabChange={setActiveTab} />
+          <CheckinTab theme={theme} userId={user?.id} addXP={addXP}
+            onTabChange={setActiveTab} onMoodSaved={setCurrentMood} />
         )}
         {activeTab === 'santuario' && (
-          <SantuarioTab theme={theme} userLevel={user?.level || 1} currentMood={currentMood} habitsChecked={habitsChecked} />
+          <SantuarioTab theme={theme} userLevel={user?.level || 1}
+            currentMood={currentMood} habitsChecked={habitsChecked} />
         )}
-        {activeTab === 'breathing' && <BreathingTab theme={theme} />}
+        {activeTab === 'breathing'  && <BreathingTab  theme={theme} />}
         {activeTab === 'meditation' && <MeditationTab theme={theme} />}
-        {activeTab === 'habits' && (
+        {activeTab === 'habits'     && (
           <HabitsTab theme={theme} userId={user?.id} onHabitsUpdate={setHabitsChecked} />
         )}
         {activeTab === 'calendar' && <WellnessCalendar theme={theme} userId={user?.id} />}
-        {activeTab === 'cycles' && <CycleTab theme={theme} userId={user?.id} />}
+        {activeTab === 'cycles'   && <CycleTab theme={theme} userId={user?.id} />}
       </motion.div>
-
-      <div className="mt-4">
-        <PandiTips theme={theme} />
-      </div>
+      <div className="mt-4"><PandiTips theme={theme} /></div>
     </div>
   )
 }

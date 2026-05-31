@@ -15,7 +15,6 @@ import WorkoutView from './pages/WorkoutView'
 import Landing from './pages/Landing'
 import Auth from './pages/Auth'
 import Onboarding from './pages/Onboarding'
-import DemoAccess from './pages/DemoAccess'
 
 // Core
 import Home from './pages/Home'

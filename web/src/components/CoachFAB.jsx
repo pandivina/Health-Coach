@@ -11,6 +11,7 @@ import { X, Send, Minimize2 } from 'lucide-react'
 import { useTheme } from '../contexts/ThemeProvider'
 import { useStore } from '../store/useStore'
 import { usePandiState } from '../contexts/PandiStateContext'
+import { useTourContext } from '../contexts/GuidedTourProvider'
 import { api } from '../lib/api'
 import { SECTION_LABELS } from '../hooks/useSectionContext'
 
@@ -36,6 +37,10 @@ export default function CoachFAB({ excludeRoutes = ['/coach'] }) {
   const { theme }                = useTheme()
   const { profile }              = useStore()
   const { pandiState, recoveryLight } = usePandiState()
+  const { isActive: tourActive } = useTourContext()
+
+  // No mostrar el FAB mientras hay un tour activo
+  if (tourActive) return null
 
   const [open,     setOpen]     = useState(false)
   const [messages, setMessages] = useState([])
@@ -131,7 +136,7 @@ export default function CoachFAB({ excludeRoutes = ['/coach'] }) {
               left:         16,
               maxWidth:     420,
               margin:       '0 auto',
-              zIndex:       50,
+              zIndex:       40,
               borderRadius: 24,
               background:   theme.bg,
               border:       `1.5px solid ${theme.border}`,
@@ -310,7 +315,7 @@ export default function CoachFAB({ excludeRoutes = ['/coach'] }) {
           display:      'flex',
           alignItems:   'center',
           justifyContent:'center',
-          zIndex:        49,
+          zIndex:        39,
           boxShadow:    `0 4px 20px ${fabColor}60`,
         }}>
         {open

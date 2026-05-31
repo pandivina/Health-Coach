@@ -1,3 +1,4 @@
+import DemoAccess from './pages/DemoAccess'
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'

@@ -4,35 +4,55 @@ import { Droplets, Plus, Minus } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useStore } from '../store/useStore'
 import { useTheme } from '../contexts/ThemeProvider'
+import { useSectionContext } from '../hooks/useSectionContext'
 import PandiContextualBubble from '../components/PandiContextualBubble'
 import PandiTips from '../components/PandiTips'
 
 export default function Hydration() {
   const { user, addXP } = useStore()
-  const { theme } = useTheme()
+  const { theme }       = useTheme()
   const [glasses, setGlasses] = useState(0)
-  const [goal, setGoal] = useState(8)
+  const [goal,    setGoal]    = useState(8)
   const today = new Date().toISOString().split('T')[0]
 
   async function load() {
-    const { data } = await supabase.from('hydration_logs').select('*').eq('user_id', user.id).eq('date', today).single()
+    const { data } = await supabase.from('hydration_logs').select('*')
+      .eq('user_id', user.id).eq('date', today).single()
     if (data) { setGlasses(data.glasses); setGoal(data.goal) }
   }
+
   useEffect(() => { if (user) load() }, [user])
 
   async function update(val) {
     const v = Math.max(0, val)
     setGlasses(v)
-    await supabase.from('hydration_logs').upsert({ user_id: user.id, date: today, glasses: v, goal }, { onConflict: 'user_id,date' })
+    await supabase.from('hydration_logs').upsert(
+      { user_id: user.id, date: today, glasses: v, goal },
+      { onConflict: 'user_id,date' }
+    )
     if (v === goal) addXP(20)
   }
 
-  const pct = Math.min((glasses / goal) * 100, 100)
+  const pct     = Math.min((glasses / goal) * 100, 100)
+  const mlTotal = glasses * 250
+
+  // ── Coach ve: vasos actuales, meta, ml, porcentaje ───────────────────────
+  useSectionContext('hydration', {
+    consumed:   mlTotal,
+    target:     goal * 250,
+    glasses,
+    goalGlasses: goal,
+    percentage: Math.round(pct),
+    goalReached: glasses >= goal,
+    logsCount:  glasses,
+  })
 
   return (
     <div className="page flex flex-col items-center">
-      <PandiContextualBubble section="hydration" data={{ glasses: 0, goal: 8 }} />
-      <h1 className="text-2xl font-extrabold mb-6 self-start" style={{ color: theme.text }}>Hidratación 💧</h1>
+      <PandiContextualBubble section="hydration" data={{ glasses, goal }} />
+      <h1 className="text-2xl font-extrabold mb-6 self-start" style={{ color: theme.text }}>
+        Hidratación 💧
+      </h1>
 
       {/* Ring */}
       <div className="relative w-48 h-48 mb-6">
@@ -57,7 +77,9 @@ export default function Hydration() {
           🎉 ¡Meta de hidratación alcanzada!
         </motion.p>
       ) : (
-        <p className="mb-6" style={{ color: theme.textMuted }}>{goal - glasses} vaso{goal - glasses !== 1 ? 's' : ''} más para tu meta</p>
+        <p className="mb-6" style={{ color: theme.textMuted }}>
+          {goal - glasses} vaso{goal - glasses !== 1 ? 's' : ''} más para tu meta
+        </p>
       )}
 
       <div className="flex items-center gap-6 mb-8">
@@ -78,17 +100,19 @@ export default function Hydration() {
       <div className="w-full card">
         <label className="label">Meta diaria (vasos)</label>
         <div className="flex gap-2">
-          {[6,7,8,10,12].map(g => (
+          {[6, 7, 8, 10, 12].map(g => (
             <button key={g} onClick={() => setGoal(g)}
               className="flex-1 py-2 rounded-xl border text-sm transition-all"
               style={{
                 borderColor: goal === g ? theme.primary : theme.border,
-                background: goal === g ? `${theme.primary}15` : theme.surface2,
-                color: goal === g ? theme.primary : theme.textMuted,
+                background:  goal === g ? `${theme.primary}15` : theme.surface2,
+                color:       goal === g ? theme.primary : theme.textMuted,
               }}>{g}</button>
           ))}
         </div>
       </div>
+
+      <PandiTips section="hydration" />
     </div>
   )
 }

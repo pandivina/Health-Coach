@@ -112,6 +112,7 @@ export default function App() {
           <Route path="/demo" element={<DemoAccess />} />
           <Route path="/auth"        element={<Auth />} />
           <Route path="/onboarding"  element={<Onboarding />} />
+          <Route path="/demo"        element={<DemoAccess />} /> 
           <Route path="/privacy"     element={<PrivacyPolicy />} />
           <Route path="/terms"       element={<TermsOfUse />} />
           <Route path="/disclaimer"  element={<MedicalDisclaimerPage />} />

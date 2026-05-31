@@ -132,9 +132,9 @@ export default function CoachFAB({ excludeRoutes = ['/coach'] }) {
             style={{
               position:     'fixed',
               bottom:       90,
-              right:        16,
+              right:        auto,
               left:         16,
-              maxWidth:     420,
+              maxWidth:     340,
               margin:       '0 auto',
               zIndex:       40,
               borderRadius: 24,
@@ -304,8 +304,8 @@ export default function CoachFAB({ excludeRoutes = ['/coach'] }) {
         transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
         style={{
           position:     'fixed',
-          bottom:       80,
-          right:        16,
+          bottom:       88,
+          left:        16,
           width:        52,
           height:       52,
           borderRadius: 16,

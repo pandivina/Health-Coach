@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import InstallPWA from '../components/InstallPWA'
-import HeroSection from '../components/landing/HeroSection'
+import HeroSection from '../components/HeroSection'
 import {
   Brain, Apple, Dumbbell, Moon, FlaskConical, Trophy,
   Check, ChevronDown, Star, ArrowRight,

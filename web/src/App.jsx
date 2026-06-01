@@ -109,7 +109,6 @@ export default function App() {
         <Routes>
           <Route path="/" element={<SmartRoot />} />
 
-          <Route path="/demo" element={<DemoAccess />} />
           <Route path="/auth"        element={<Auth />} />
           <Route path="/onboarding"  element={<Onboarding />} />
           <Route path="/privacy"     element={<PrivacyPolicy />} />

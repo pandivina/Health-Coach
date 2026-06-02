@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useStore } from '../store/useStore'
@@ -12,66 +12,82 @@ import PandiInsights from '../components/PandiInsights'
 import PandiTips from '../components/PandiTips'
 import { Plus, Minus as MinusIcon, Droplets } from 'lucide-react'
 
-// ─── CONFIGURACIÓN DE ESTADOS ─────────────────────────────────────────────────
+// ─── FRAMES POR ESTADO ────────────────────────────────────────────────────────
+// Añade aquí los frames cuando los tengas generados
 const STATE_CONFIG = {
   GREEN: {
-    bg:      '/panda/sanctuary_green.png',
-    avatar:  '/panda/avatar_happy.png',
-    glow:    'rgba(46,196,182,0.5)',
-    dot:     '#2EC4B6',
-    label:   'En forma',
-    msg:     'Hoy tienes energía para todo.',
-    frames:  ['/panda/avatar_happy.png', '/panda/avatar_wink.png', '/panda/happy_1.png'],
+    bg:     '/panda/sanctuary_green.png',
+    glow:   'rgba(46,196,182,0.4)',
+    dot:    '#2EC4B6',
+    msg:    'Hoy tienes energía para todo.',
+    frames: [
+      '/panda/panda_base.png',      // idle
+      '/panda/avatar_happy.png',    // happy
+      '/panda/panda_base.png',      // idle
+      '/panda/avatar_wink.png',     // wink
+    ],
+    frameDuration: 2500, // ms por frame
   },
   YELLOW: {
-    bg:      '/panda/sanctuary_yellow.png',
-    avatar:  '/panda/avatar_thinking.png',
-    glow:    'rgba(245,158,11,0.45)',
-    dot:     '#F59E0B',
-    label:   'Moderado',
-    msg:     'Ritmo moderado. Ajustando tu plan.',
-    frames:  ['/panda/avatar_thinking.png', '/panda/curious_1.png'],
+    bg:     '/panda/sanctuary_yellow.png',
+    glow:   'rgba(245,158,11,0.4)',
+    dot:    '#F59E0B',
+    msg:    'Ritmo moderado. Ajustando tu plan.',
+    frames: [
+      '/panda/panda_base.png',
+      '/panda/avatar_thinking.png',
+      '/panda/panda_base.png',
+      '/panda/curious_1.png',
+    ],
+    frameDuration: 3000,
   },
   RED: {
-    bg:      '/panda/sanctuary_red.png',
-    avatar:  '/panda/avatar_sleep.png',
-    glow:    'rgba(255,143,163,0.45)',
-    dot:     '#FF8FA3',
-    label:   'Descansando',
-    msg:     'Hoy el descanso ES el entrenamiento.',
-    frames:  ['/panda/avatar_sleep.png', '/panda/avatar_neutro.png'],
+    bg:     '/panda/sanctuary_red.png',
+    glow:   'rgba(255,143,163,0.4)',
+    dot:    '#FF8FA3',
+    msg:    'Hoy el descanso ES el entrenamiento.',
+    frames: [
+      '/panda/panda_base.png',
+      '/panda/avatar_neutro.png',
+      '/panda/avatar_sleep.png',
+      '/panda/avatar_neutro.png',
+    ],
+    frameDuration: 3500,
   },
 }
 
 // ─── SANTUARIO ────────────────────────────────────────────────────────────────
 function Sanctuary({ recoveryLight, profile, theme, greeting, name }) {
-  const cfg         = STATE_CONFIG[recoveryLight] || STATE_CONFIG.GREEN
-  const [frame, setFrame] = useState(0)
-  const [imgErr, setImgErr] = useState(false)
-  const [bgErr,  setBgErr]  = useState(false)
+  const cfg = STATE_CONFIG[recoveryLight] || STATE_CONFIG.GREEN
+  const [frameIdx, setFrameIdx] = useState(0)
+  const [imgErr,   setImgErr]   = useState(false)
+  const [bgErr,    setBgErr]    = useState(false)
 
-  // Cicla entre frames cada 3 segundos
+  // Resetear frame al cambiar estado
   useEffect(() => {
-    setFrame(0)
+    setFrameIdx(0)
     setImgErr(false)
-    if (cfg.frames.length <= 1) return
-    const t = setInterval(() => setFrame(f => (f + 1) % cfg.frames.length), 3000)
-    return () => clearInterval(t)
   }, [recoveryLight])
 
-  const currentFrame = cfg.frames[frame] || cfg.avatar
+  // Ciclar frames
+  useEffect(() => {
+    if (cfg.frames.length <= 1) return
+    const t = setInterval(() => {
+      setFrameIdx(i => (i + 1) % cfg.frames.length)
+    }, cfg.frameDuration)
+    return () => clearInterval(t)
+  }, [recoveryLight, cfg.frames.length, cfg.frameDuration])
 
   return (
     <div style={{ position: 'relative', height: 420, overflow: 'hidden' }}>
 
-      {/* Fondo del santuario */}
+      {/* ── FONDO ─────────────────────────────────────────────────────── */}
       <AnimatePresence mode="wait">
         <motion.div key={recoveryLight}
           initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
           transition={{ duration: 1.2 }}
           style={{ position: 'absolute', inset: 0, zIndex: 0 }}>
           {bgErr ? (
-            // Fallback CSS si no carga la imagen
             <div style={{
               width: '100%', height: '100%',
               background: recoveryLight === 'GREEN'
@@ -82,117 +98,161 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name }) {
             }} />
           ) : (
             <img src={cfg.bg} alt="Santuario"
-              style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center' }}
+              style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top' }}
               onError={() => setBgErr(true)} />
           )}
         </motion.div>
       </AnimatePresence>
 
-      {/* Overlay suave para legibilidad del header */}
+      {/* Overlay top para header */}
       <div style={{
-        position: 'absolute', top: 0, left: 0, right: 0, height: 100, zIndex: 1,
-        background: 'linear-gradient(to bottom, rgba(0,0,0,0.25) 0%, transparent 100%)',
+        position: 'absolute', top: 0, left: 0, right: 0, height: 110, zIndex: 1,
+        background: 'linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, transparent 100%)',
+        pointerEvents: 'none',
       }} />
 
-      {/* Overlay suave abajo para transición al contenido */}
+      {/* Overlay bottom para transición al contenido */}
       <div style={{
-        position: 'absolute', bottom: 0, left: 0, right: 0, height: 120, zIndex: 1,
-        background: 'linear-gradient(to top, rgba(248,250,250,1) 0%, transparent 100%)',
+        position: 'absolute', bottom: 0, left: 0, right: 0, height: 100, zIndex: 1,
+        background: 'linear-gradient(to top, #f8fafa 0%, transparent 100%)',
+        pointerEvents: 'none',
       }} />
 
       {/* ── HEADER ────────────────────────────────────────────────────── */}
-      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10, padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <div style={{
+        position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10,
+        padding: '16px 20px',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      }}>
         <div>
-          <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.75)', margin: 0, fontWeight: 600 }}>{greeting},</p>
-          <h1 style={{ fontSize: 22, fontWeight: 900, color: 'white', margin: 0, letterSpacing: '-.02em', textShadow: '0 2px 8px rgba(0,0,0,0.3)' }}>{name} 👋</h1>
+          <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.8)', margin: 0, fontWeight: 600 }}>{greeting},</p>
+          <h1 style={{ fontSize: 22, fontWeight: 900, color: 'white', margin: 0, letterSpacing: '-.02em', textShadow: '0 2px 8px rgba(0,0,0,0.25)' }}>
+            {name} 👋
+          </h1>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <div style={{ padding: '6px 12px', borderRadius: 12, background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.3)' }}>
+          <div style={{ padding: '6px 12px', borderRadius: 12, background: 'rgba(255,255,255,0.88)', backdropFilter: 'blur(8px)' }}>
             <p style={{ fontSize: 9, color: '#6B7280', margin: 0, textAlign: 'center' }}>Nivel</p>
             <p style={{ fontSize: 14, fontWeight: 900, color: theme.primary, margin: 0, textAlign: 'center' }}>{profile?.level || 1}</p>
           </div>
-          <div style={{ padding: '6px 12px', borderRadius: 12, background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.3)' }}>
+          <div style={{ padding: '6px 12px', borderRadius: 12, background: 'rgba(255,255,255,0.88)', backdropFilter: 'blur(8px)' }}>
             <p style={{ fontSize: 9, color: '#6B7280', margin: 0, textAlign: 'center' }}>Racha</p>
             <p style={{ fontSize: 14, fontWeight: 900, color: '#F97316', margin: 0, textAlign: 'center' }}>🔥{profile?.streak || 0}</p>
           </div>
           <Link to="/profile">
-            <div style={{ width: 36, height: 36, borderRadius: 12, background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>☰</div>
+            <div style={{ width: 36, height: 36, borderRadius: 12, background: 'rgba(255,255,255,0.88)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>☰</div>
           </Link>
         </div>
       </div>
 
-      {/* ── PANDI ANIMADO ─────────────────────────────────────────────── */}
-      <div style={{ position: 'absolute', bottom: '22%', left: '50%', transform: 'translateX(-50%)', zIndex: 5 }}>
-        {/* Sombra proyectada */}
+      {/* ── PANDI SENTADA EN LA PLATAFORMA ────────────────────────────── */}
+      {/* Ajusta 'bottom' para que coincida con la plataforma de tu imagen */}
+      <div style={{
+        position: 'absolute',
+        bottom: '24%',       // ← ajusta este valor para centrar en la plataforma
+        left: '50%',
+        transform: 'translateX(-50%)',
+        zIndex: 5,
+      }}>
+        {/* Glow de aura — sutil, no flotante */}
         <motion.div
-          animate={{ scaleX: [1, 1.06, 1], opacity: [0.2, 0.35, 0.2] }}
+          animate={{ opacity: [0.3, 0.5, 0.3] }}
           transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-          style={{ width: 120, height: 16, borderRadius: '50%', background: 'rgba(0,0,0,0.2)', filter: 'blur(6px)', margin: '0 auto', marginTop: 8 }}
-        />
-
-        {/* Glow de aura */}
-        <motion.div
-          animate={{ scale: [1, 1.1, 1], opacity: [0.3, 0.5, 0.3] }}
-          transition={{ duration: 3.5, repeat: Infinity, ease: 'easeInOut' }}
           style={{
-            position: 'absolute', top: '50%', left: '50%',
+            position: 'absolute',
+            top: '50%', left: '50%',
             transform: 'translate(-50%, -50%)',
-            width: 180, height: 180, borderRadius: '50%',
-            background: `radial-gradient(circle, ${cfg.glow} 0%, transparent 70%)`,
-            filter: 'blur(20px)', zIndex: -1,
+            width: 200, height: 200,
+            borderRadius: '50%',
+            background: `radial-gradient(circle, ${cfg.glow} 0%, transparent 65%)`,
+            filter: 'blur(24px)',
+            zIndex: -1,
+            pointerEvents: 'none',
           }}
         />
 
-        {/* Frame animado de Pandi */}
-        <div
-  style={{
-    filter: `drop-shadow(0 16px 24px ${cfg.glow}) drop-shadow(0 4px 8px rgba(0,0,0,0.2))`,
-  }}
->
-          <AnimatePresence mode="wait">
-            <motion.div key={currentFrame}
-              initial={{ opacity: 0, scale: 0.92 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.92 }}
-              transition={{ duration: 0.5 }}
-            >
-              {imgErr ? (
-                <span style={{ fontSize: 100, display: 'block' }}>🐼</span>
-              ) : (
-                <img
-                  src={currentFrame}
-                  alt="Pandi"
-                  style={{ width: 160, height: 160, objectFit: 'contain' }}
-                  onError={() => setImgErr(true)}
-                />
-              )}
-            </motion.div>
-          </AnimatePresence>
-        </motion.div>
+        {/* Sombra en el suelo */}
+        <motion.div
+          animate={{ scaleX: [1, 1.04, 1], opacity: [0.25, 0.35, 0.25] }}
+          transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+          style={{
+            position: 'absolute',
+            bottom: -8, left: '50%',
+            transform: 'translateX(-50%)',
+            width: 110, height: 14,
+            borderRadius: '50%',
+            background: 'rgba(0,0,0,0.18)',
+            filter: 'blur(5px)',
+            zIndex: -1,
+          }}
+        />
+
+        {/* Frame animado — sin flotación, solo crossfade */}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={`${recoveryLight}-${frameIdx}`}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.6, ease: 'easeInOut' }}
+            style={{
+              filter: `drop-shadow(0 12px 20px ${cfg.glow})`,
+            }}
+          >
+            {imgErr ? (
+              <span style={{ fontSize: 100, display: 'block' }}>🐾</span>
+            ) : (
+              <img
+                src={cfg.frames[frameIdx]}
+                alt="Pandi"
+                style={{ width: 170, height: 170, objectFit: 'contain' }}
+                onError={() => setImgErr(true)}
+              />
+            )}
+          </motion.div>
+        </AnimatePresence>
       </div>
 
       {/* ── BADGE SEMÁFORO ────────────────────────────────────────────── */}
-      <div style={{ position: 'absolute', bottom: 56, left: '50%', transform: 'translateX(-50%)', zIndex: 10 }}>
+      <div style={{
+        position: 'absolute', bottom: 52, left: '50%',
+        transform: 'translateX(-50%)', zIndex: 10,
+      }}>
         <AnimatePresence mode="wait">
           <motion.div key={recoveryLight}
             initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}
-            style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '8px 16px', borderRadius: 20, background: 'rgba(255,255,255,0.88)', backdropFilter: 'blur(12px)', border: `1.5px solid ${cfg.dot}40`, boxShadow: '0 4px 20px rgba(0,0,0,0.1)', whiteSpace: 'nowrap' }}>
-            <motion.div animate={{ scale: [1, 1.4, 1] }} transition={{ duration: 1.5, repeat: Infinity }}
-              style={{ width: 8, height: 8, borderRadius: '50%', background: cfg.dot, boxShadow: `0 0 8px ${cfg.dot}`, flexShrink: 0 }} />
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 8,
+              padding: '8px 18px', borderRadius: 20,
+              background: 'rgba(255,255,255,0.9)',
+              backdropFilter: 'blur(12px)',
+              border: `1.5px solid ${cfg.dot}35`,
+              boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
+              whiteSpace: 'nowrap',
+            }}>
+            <motion.div
+              animate={{ scale: [1, 1.4, 1] }}
+              transition={{ duration: 1.5, repeat: Infinity }}
+              style={{ width: 8, height: 8, borderRadius: '50%', background: cfg.dot, boxShadow: `0 0 8px ${cfg.dot}`, flexShrink: 0 }}
+            />
             <span style={{ fontSize: 12, fontWeight: 700, color: '#1A2332' }}>{cfg.msg}</span>
           </motion.div>
         </AnimatePresence>
       </div>
 
       {/* ── XP BAR ────────────────────────────────────────────────────── */}
-      <div style={{ position: 'absolute', bottom: 16, left: 20, right: 20, zIndex: 10 }}>
+      <div style={{ position: 'absolute', bottom: 14, left: 20, right: 20, zIndex: 10 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: 'rgba(255,255,255,0.7)', marginBottom: 4 }}>
           <span>{profile?.xp || 0} XP</span>
           <span>Nivel {(profile?.level || 1) + 1} → {(profile?.level || 1) * 500} XP</span>
         </div>
-        <div style={{ height: 4, borderRadius: 2, background: 'rgba(255,255,255,0.25)', overflow: 'hidden' }}>
-          <motion.div style={{ height: '100%', borderRadius: 2, background: 'rgba(255,255,255,0.9)' }}
-            initial={{ width: 0 }} animate={{ width: `${((profile?.xp || 0) % 500) / 5}%` }} transition={{ duration: 0.8 }} />
+        <div style={{ height: 4, borderRadius: 2, background: 'rgba(255,255,255,0.2)', overflow: 'hidden' }}>
+          <motion.div
+            style={{ height: '100%', borderRadius: 2, background: 'rgba(255,255,255,0.85)' }}
+            initial={{ width: 0 }}
+            animate={{ width: `${((profile?.xp || 0) % 500) / 5}%` }}
+            transition={{ duration: 0.8 }}
+          />
         </div>
       </div>
     </div>
@@ -203,8 +263,14 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name }) {
 function DayTask({ to, icon, label, sublabel, color, done }) {
   return (
     <Link to={to}>
-      <motion.div whileTap={{ scale: 0.97 }}
-        style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 16px', borderRadius: 18, background: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(8px)', border: `1px solid ${done ? color + '30' : 'rgba(0,0,0,0.06)'}`, boxShadow: done ? `0 2px 12px ${color}15` : '0 2px 8px rgba(0,0,0,0.04)', marginBottom: 8 }}>
+      <motion.div whileTap={{ scale: 0.97 }} style={{
+        display: 'flex', alignItems: 'center', gap: 14,
+        padding: '14px 16px', borderRadius: 18,
+        background: 'rgba(255,255,255,0.95)',
+        border: `1px solid ${done ? color + '30' : 'rgba(0,0,0,0.06)'}`,
+        boxShadow: done ? `0 2px 12px ${color}15` : '0 2px 8px rgba(0,0,0,0.04)',
+        marginBottom: 8,
+      }}>
         <div style={{ width: 44, height: 44, borderRadius: 14, flexShrink: 0, background: done ? `${color}15` : 'rgba(0,0,0,0.04)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22 }}>
           {icon}
         </div>
@@ -241,8 +307,11 @@ function WaterWidget({ userId }) {
 
   const pct = Math.min(glasses / goal, 1)
   return (
-    <motion.div whileTap={{ scale: 0.98 }}
-      style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', borderRadius: 18, background: 'rgba(255,255,255,0.9)', border: '1px solid rgba(59,130,246,0.2)', marginBottom: 8, boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+    <motion.div whileTap={{ scale: 0.98 }} style={{
+      display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', borderRadius: 18,
+      background: 'rgba(255,255,255,0.95)', border: '1px solid rgba(59,130,246,0.2)',
+      marginBottom: 8, boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+    }}>
       <div style={{ width: 44, height: 44, borderRadius: 14, background: '#EFF6FF', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
         <Droplets size={20} style={{ color: '#3B82F6' }} />
       </div>
@@ -299,7 +368,6 @@ export default function Home() {
   const { theme, loaded } = useTheme()
 
   let recoveryLight = 'GREEN'
-  let recoveryMsg   = 'Hoy tienes energía para todo.'
   try {
     const ctx = usePandiState()
     recoveryLight = ctx.recoveryLight || 'GREEN'
@@ -358,20 +426,20 @@ export default function Home() {
     </div>
   )
 
-  const hour          = new Date().getHours()
-  const greeting      = hour < 12 ? '¡Buenos días' : hour < 20 ? '¡Buenas tardes' : '¡Buenas noches'
-  const name          = profile?.name?.split(' ')[0] || 'Compi'
-  const MOODS         = { 1:'😩', 2:'😞', 3:'😐', 4:'😊', 5:'🤩' }
-  const MOOD_LABELS   = { 1:'Muy mal', 2:'Mal', 3:'Regular', 4:'Bien', 5:'Genial' }
-  const currentWeight = weightLogs[0]?.weight_kg
+  const hour           = new Date().getHours()
+  const greeting       = hour < 12 ? '¡Buenos días' : hour < 20 ? '¡Buenas tardes' : '¡Buenas noches'
+  const name           = profile?.name?.split(' ')[0] || 'Compi'
+  const MOODS          = { 1:'😩', 2:'😞', 3:'😐', 4:'😊', 5:'🤩' }
+  const MOOD_LABELS    = { 1:'Muy mal', 2:'Mal', 3:'Regular', 4:'Bien', 5:'Genial' }
+  const currentWeight  = weightLogs[0]?.weight_kg
   const doneTodayCount = [cals > 0, !!todayWorkout, !!todaySleep, !!todayMood, waterGlasses > 0].filter(Boolean).length
 
   const tasks = [
-    { to:'/nutrition', icon:'🍎', label:'Nutrición',     sublabel: cals > 0 ? `${Math.round(cals)} / ${goals.calories} kcal` : 'Sin registro hoy',                      color:'#F97316', done: cals > 0 },
-    { to:'/workout',   icon:'💪', label:'Entrenamiento', sublabel: todayWorkout ? `${burned} kcal quemadas` : 'Sin entreno hoy',                                          color:'#6366F1', done: !!todayWorkout },
-    { to:'/sleep',     icon:'😴', label:'Sueño',         sublabel: todaySleep ? `${todaySleep.hours}h · Calidad ${todaySleep.quality}/5` : 'Sin registro',               color:'#818CF8', done: !!todaySleep },
+    { to:'/nutrition', icon:'🍎', label:'Nutrición',     sublabel: cals > 0 ? `${Math.round(cals)} / ${goals.calories} kcal` : 'Sin registro hoy',                                         color:'#F97316', done: cals > 0 },
+    { to:'/workout',   icon:'💪', label:'Entrenamiento', sublabel: todayWorkout ? `${burned} kcal quemadas` : 'Sin entreno hoy',                                                             color:'#6366F1', done: !!todayWorkout },
+    { to:'/sleep',     icon:'😴', label:'Sueño',         sublabel: todaySleep ? `${todaySleep.hours}h · Calidad ${todaySleep.quality}/5` : 'Sin registro',                                  color:'#818CF8', done: !!todaySleep },
     { to:'/mood',      icon: todayMood ? MOODS[todayMood.mood] : '🧘', label:'Bienestar', sublabel: todayMood ? `Hoy te sientes ${MOOD_LABELS[todayMood.mood].toLowerCase()}` : 'Check-in pendiente', color:'#2EC4B6', done: !!todayMood },
-    { to:'/health',    icon:'⚖️', label:'Seguimiento',  sublabel: currentWeight ? `${currentWeight} kg actual` : 'Peso y medidas',                                        color:'#EC4899', done: !!currentWeight },
+    { to:'/health',    icon:'⚖️', label:'Seguimiento',  sublabel: currentWeight ? `${currentWeight} kg actual` : 'Peso y medidas',                                                           color:'#EC4899', done: !!currentWeight },
   ]
 
   return (
@@ -409,10 +477,10 @@ export default function Home() {
             </div>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-around', padding: '8px 0', borderTop: '1px solid rgba(0,0,0,0.05)' }}>
-            <MiniRing value={cals}         max={goals.calories}   color="#F97316"    label="Calorías" />
+            <MiniRing value={cals}         max={goals.calories}   color="#F97316"       label="Calorías" />
             <MiniRing value={protein}      max={goals.protein_g}  color={theme.primary} label="Proteína" />
-            <MiniRing value={burned}       max={400}              color="#22C55E"    label="Quemadas" />
-            <MiniRing value={waterGlasses} max={8}                color="#3B82F6"    label="Agua" />
+            <MiniRing value={burned}       max={400}              color="#22C55E"        label="Quemadas" />
+            <MiniRing value={waterGlasses} max={8}                color="#3B82F6"        label="Agua" />
           </div>
         </motion.div>
 

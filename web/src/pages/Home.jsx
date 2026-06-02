@@ -144,13 +144,11 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name }) {
         />
 
         {/* Frame animado de Pandi */}
-        <motion.div
-          animate={{ y: [0, -8, 0] }}
-          transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-          style={{
-            filter: `drop-shadow(0 16px 24px ${cfg.glow}) drop-shadow(0 4px 8px rgba(0,0,0,0.2))`,
-          }}
-        >
+        <div
+  style={{
+    filter: `drop-shadow(0 16px 24px ${cfg.glow}) drop-shadow(0 4px 8px rgba(0,0,0,0.2))`,
+  }}
+>
           <AnimatePresence mode="wait">
             <motion.div key={currentFrame}
               initial={{ opacity: 0, scale: 0.92 }}

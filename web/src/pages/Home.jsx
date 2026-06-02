@@ -39,8 +39,8 @@ const STATE_CONFIG = {
   },
 }
 
-// Precargar todas las imágenes al inicio
 const ALL_FRAMES = [
+  '/panda/panda_blink.png',
   ...STATE_CONFIG.GREEN.frames,
   ...STATE_CONFIG.YELLOW.frames,
   ...STATE_CONFIG.RED.frames,
@@ -54,8 +54,9 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name }) {
   const [frameIdx, setFrameIdx] = useState(0)
   const [imgErr,   setImgErr]   = useState(false)
   const [bgErr,    setBgErr]    = useState(false)
+  const [blinking, setBlinking] = useState(false)
 
-  // Precargar todas las imágenes la primera vez
+  // Precargar todas las imágenes
   useEffect(() => {
     ALL_FRAMES.forEach(src => { const i = new Image(); i.src = src })
   }, [])
@@ -72,6 +73,16 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name }) {
     const t = setInterval(() => setFrameIdx(i => (i + 1) % cfg.frames.length), cfg.frameDuration)
     return () => clearInterval(t)
   }, [recoveryLight, cfg.frames.length, cfg.frameDuration])
+
+  // Parpadeo natural
+  useEffect(() => {
+    const schedule = () => setTimeout(() => {
+      setBlinking(true)
+      setTimeout(() => { setBlinking(false); schedule() }, 120)
+    }, 3000 + Math.random() * 4000)
+    const t = schedule()
+    return () => clearTimeout(t)
+  }, [])
 
   return (
     <div style={{ position: 'relative', height: 420, overflow: 'hidden' }}>
@@ -116,7 +127,7 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name }) {
         </div>
       </div>
 
-      {/* PANDI — sin AnimatePresence, cambio directo de src */}
+      {/* PANDI */}
       <div style={{ position:'absolute', bottom:'8%', left:'50%', transform:'translateX(-50%)', zIndex:5 }}>
         <motion.div
           animate={{ opacity:[0.3,0.5,0.3] }}
@@ -131,7 +142,12 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name }) {
         <div style={{ filter:`drop-shadow(0 12px 20px ${cfg.glow})` }}>
           {imgErr
             ? <span style={{ fontSize:100, display:'block' }}>🐾</span>
-            : <img src={cfg.frames[frameIdx]} alt="Pandi" style={{ width:250, height:250, objectFit:'contain', display:'block' }} onError={() => setImgErr(true)} />
+            : <img
+                src={blinking ? '/panda/panda_blink.png' : cfg.frames[frameIdx]}
+                alt="Pandi"
+                style={{ width:250, height:250, objectFit:'contain', display:'block' }}
+                onError={() => setImgErr(true)}
+              />
           }
         </div>
       </div>

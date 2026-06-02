@@ -160,7 +160,7 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name }) {
           transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
           style={{
             position: 'absolute',
-            top: '50%', left: '50%',
+            top: '16%', left: '50%',
             transform: 'translate(-50%, -50%)',
             width: 200, height: 200,
             borderRadius: '50%',

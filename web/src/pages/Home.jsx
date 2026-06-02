@@ -205,7 +205,7 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name }) {
               <img
                 src={cfg.frames[frameIdx]}
                 alt="Pandi"
-                style={{ width: 220, height: 220, objectFit: 'contain' }}
+                style={{ width: 300, height: 300, objectFit: 'contain' }}
                 onError={() => setImgErr(true)}
               />
             )}

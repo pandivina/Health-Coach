@@ -149,7 +149,7 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name }) {
       {/* Ajusta 'bottom' para que coincida con la plataforma de tu imagen */}
       <div style={{
         position: 'absolute',
-        bottom: '10%',       // ← ajusta este valor para centrar en la plataforma
+        bottom: '8%',       // ← ajusta este valor para centrar en la plataforma
         left: '50%',
         transform: 'translateX(-50%)',
         zIndex: 5,
@@ -162,7 +162,7 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name }) {
             position: 'absolute',
             top: '50%', left: '50%',
             transform: 'translate(-50%, -50%)',
-            width: 200, height: 200,
+            width: 180, height: 180,
             borderRadius: '50%',
             background: `radial-gradient(circle, ${cfg.glow} 0%, transparent 65%)`,
             filter: 'blur(24px)',

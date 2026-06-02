@@ -128,7 +128,7 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name }) {
       </div>
 
       {/* PANDI */}
-      <div style={{ position:'absolute', bottom:'8%', left:'50%', transform:'translateX(-50%)', zIndex:5 }}>
+      <div style={{ position:'absolute', bottom:'14%', left:'50%', transform:'translateX(-50%)', zIndex:5 }}>
         <motion.div
           animate={{ opacity:[0.3,0.5,0.3] }}
           transition={{ duration:3, repeat:Infinity, ease:'easeInOut' }}

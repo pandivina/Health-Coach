@@ -19,8 +19,8 @@
     "zustand": "^4.5.0",
     "@react-three/drei": "^9.109.0",
     "@react-three/fiber": "^8.17.0",
-    "three": "^0.167.0",
-},
+    "three": "^0.167.0"
+  },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.2.1",
     "autoprefixer": "^10.4.18",

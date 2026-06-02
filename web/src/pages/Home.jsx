@@ -98,7 +98,7 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name }) {
             }} />
           ) : (
             <img src={cfg.bg} alt="Santuario"
-              style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top' }}
+              style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 60%' }}
               onError={() => setBgErr(true)} />
           )}
         </motion.div>
@@ -149,7 +149,7 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name }) {
       {/* Ajusta 'bottom' para que coincida con la plataforma de tu imagen */}
       <div style={{
         position: 'absolute',
-        bottom: '24%',       // ← ajusta este valor para centrar en la plataforma
+        bottom: '14%',       // ← ajusta este valor para centrar en la plataforma
         left: '50%',
         transform: 'translateX(-50%)',
         zIndex: 5,

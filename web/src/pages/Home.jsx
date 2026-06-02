@@ -215,7 +215,7 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name }) {
 
       {/* ── BADGE SEMÁFORO ────────────────────────────────────────────── */}
       <div style={{
-        position: 'absolute', bottom: 52, left: '50%',
+        position: 'absolute', bottom: 16, left: '50%',
         transform: 'translateX(-50%)', zIndex: 10,
       }}>
         <AnimatePresence mode="wait">

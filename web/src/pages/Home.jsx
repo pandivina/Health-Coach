@@ -22,10 +22,10 @@ const STATE_CONFIG = {
     msg:    'Hoy tienes energía para todo.',
     frames: [
       '/panda/panda_base.png',      // idle
-      '/panda/avatar_happy.png',    // happy
+      '/panda/panda_happy.png',    // happy
       '/panda/panda_base.png',      // idle
-      '/panda/avatar_wink.png',     // wink
-      '/panda/avatar_happy.png',    // happy
+      '/panda/panda_wink.png',     // wink
+      '/panda/panda_happy.png',    // happy
       '/panda/panda_base.png',      // idle
     ],
     frameDuration: 2500, // ms por frame

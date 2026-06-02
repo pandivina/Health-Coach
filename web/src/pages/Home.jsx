@@ -149,7 +149,7 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name }) {
       {/* Ajusta 'bottom' para que coincida con la plataforma de tu imagen */}
       <div style={{
         position: 'absolute',
-        bottom: '14%',       // ← ajusta este valor para centrar en la plataforma
+        bottom: '10%',       // ← ajusta este valor para centrar en la plataforma
         left: '50%',
         transform: 'translateX(-50%)',
         zIndex: 5,

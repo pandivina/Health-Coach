@@ -25,6 +25,8 @@ const STATE_CONFIG = {
       '/panda/avatar_happy.png',    // happy
       '/panda/panda_base.png',      // idle
       '/panda/avatar_wink.png',     // wink
+      '/panda/avatar_happy.png',    // happy
+      '/panda/panda_base.png',      // idle
     ],
     frameDuration: 2500, // ms por frame
   },

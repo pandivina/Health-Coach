@@ -196,7 +196,7 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name }) {
   initial={{ opacity: 1 }}
   animate={{ opacity: 1 }}
   exit={{ opacity: 1 }}
-  transition={{ duration: 0 }}
+  transition={{ duration: 0.1 }}
             style={{
               filter: `drop-shadow(0 12px 20px ${cfg.glow})`,
             }}

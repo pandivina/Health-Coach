@@ -162,7 +162,7 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name }) {
             position: 'absolute',
             top: '50%', left: '50%',
             transform: 'translate(-50%, -50%)',
-            width: 500, height: 500,
+            width: 200, height: 200,
             borderRadius: '50%',
             background: `radial-gradient(circle, ${cfg.glow} 0%, transparent 65%)`,
             filter: 'blur(24px)',
@@ -205,7 +205,7 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name }) {
               <img
                 src={cfg.frames[frameIdx]}
                 alt="Pandi"
-                style={{ width: 170, height: 170, objectFit: 'contain' }}
+                style={{ width: 220, height: 220, objectFit: 'contain' }}
                 onError={() => setImgErr(true)}
               />
             )}

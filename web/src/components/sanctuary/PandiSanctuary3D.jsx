@@ -23,7 +23,7 @@ import * as THREE from 'three'
 // 1. Sketchfab: busca "panda 3d model" → descarga GLB → sube a /public/models/
 // 2. Spline: diseña → Export → React → copia URL
 // 3. Blender: exporta tu modelo como pandi.glb → /public/models/pandi.glb
-const PANDI_MODEL_URL = '/models/pandi.glb'
+const PANDI_MODEL_URL = 'https://fftqehbzktwuohzoofeb.supabase.co/storage/v1/object/public/assets/pandi.glb'
 
 // Colores del santuario según semáforo
 const SANCTUARY_CONFIG = {

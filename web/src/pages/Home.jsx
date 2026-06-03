@@ -198,7 +198,7 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name }) {
           <motion.div
             animate={{ opacity:[0.3,0.5,0.3] }}
             transition={{ duration:3, repeat:Infinity, ease:'easeInOut' }}
-            style={{ position:'absolute', top:'50%', left:'50%', transform:'translate(-50%,-50%)', width:180, height:180, borderRadius:'50%', background:`radial-gradient(circle, ${cfg.glow} 0%, transparent 65%)`, filter:'blur(24px)', zIndex:-1, pointerEvents:'none' }}
+            style={{ position:'absolute', top:'50%', left:'50%', transform:'translate(-50%,-50%)', width:280, height:280, borderRadius:'50%', background:`radial-gradient(circle, ${cfg.glow} 0%, transparent 65%)`, filter:'blur(24px)', zIndex:-1, pointerEvents:'none' }}
           />
           <motion.div
             animate={{ scaleX:[1,1.04,1], opacity:[0.25,0.35,0.25] }}

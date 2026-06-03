@@ -208,7 +208,7 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name }) {
           <div style={{ filter:`drop-shadow(0 12px 20px ${cfg.glow})` }}>
             {imgErr
               ? <span style={{ fontSize:100, display:'block' }}>🐾</span>
-              : <img src={currentFrame} alt="Pandi" style={{ width:300, height:300, objectFit:'contain', display:'block' }} onError={() => setImgErr(true)} />
+              : <img src={currentFrame} alt="Pandi" style={{ width:280, height:280, objectFit:'contain', display:'block' }} onError={() => setImgErr(true)} />
             }
           </div>
         </div>

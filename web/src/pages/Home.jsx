@@ -312,8 +312,7 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name }) {
           <span>{profile?.xp || 0} XP</span>
           <span>Nivel {(profile?.level || 1) + 1} → {(profile?.level || 1) * 500} XP</span>
         </div>
-        <div style={{ height:4, borderRadius:2, background:'rgba(255,255,255,0.2)', overflow:'hidden' }}>
-          <motion.div style={{ height:'100%', borderRadius:2, background:'rgba(255,255,255,0.85)' }}
+        '/panda/panda_happy.png'
             initial={{ width:0 }} animate={{ width:`${((profile?.xp || 0) % 500) / 5}%` }} transition={{ duration:0.8 }} />
         </div>
       </div>

@@ -199,7 +199,7 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name }) {
             exit={{ opacity:0, scale:0.8, x:10 }}
             transition={{ type:'spring', damping:20, stiffness:300 }}
             onClick={handleTipClick}
-            style={{ position:'absolute', right:16, bottom:80, cursor:'pointer', maxWidth:150, zIndex:6 }}
+            style={{ position:'absolute', right:16, bottom:100, cursor:'pointer', maxWidth:150, zIndex:6 }}
           >
             {/* Cola apuntando a Pandi */}
             <div style={{ position:'absolute', left:-8, bottom:20, width:0, height:0, borderTop:'7px solid transparent', borderBottom:'7px solid transparent', borderRight:`8px solid ${tipOpen ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.6)'}`, transition:'border-right-color 0.3s' }} />
@@ -231,7 +231,7 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name }) {
       </AnimatePresence>
 
       {/* BADGE SEMÁFORO */}
-      <div style={{ position:'absolute', bottom:50, left:'50%', transform:'translateX(-50%)', zIndex:10 }}>
+      <div style={{ position:'absolute', bottom:42, left:'50%', transform:'translateX(-50%)', zIndex:10 }}>
         <AnimatePresence mode="wait">
           <motion.div key={recoveryLight}
             initial={{ opacity:0, y:6 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0, y:-6 }}

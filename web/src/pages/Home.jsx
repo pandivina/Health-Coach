@@ -17,7 +17,7 @@ const STATE_CONFIG = {
     glow:          'rgba(46,196,182,0.4)',
     dot:           '#2EC4B6',
     msg:           'Hoy tienes energía para todo.',
-    frames:        ['/panda/panda_base.png','/panda/panda_happy.png','/panda/panda_happy_2.png','/panda/panda_happy.png','/panda/panda_happy_2.png','/panda/panda_happy.png','/panda/panda_base.png'],
+    frames:        ['/panda/panda_base.png','/panda/panda_happy.png','/panda/panda_base.png','/panda/panda_wink.png','/panda/panda_happy.png','/panda/panda_base.png'],
     frameDuration: 2500,
   },
   YELLOW: {
@@ -37,7 +37,6 @@ const STATE_CONFIG = {
     frameDuration: 3500,
   },
 }
-
 
 const ALL_FRAMES = [
   '/panda/panda_blink.png',
@@ -192,7 +191,7 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name }) {
       </div>
 
       {/* PANDI + BOCADILLO */}
-      <div style={{ position:'absolute', bottom:'14%', left:0, right:0, zIndex:5, display:'flex', alignItems:'flex-end', justifyContent:'center', gap:0, paddingLeft:16, paddingRight:16 }}>
+      <div style={{ position:'absolute', bottom:'4%', left:0, right:0, zIndex:5, display:'flex', alignItems:'flex-end', justifyContent:'center', gap:0, paddingLeft:16, paddingRight:16 }}>
 
         {/* Pandi */}
         <div style={{ position:'relative', flexShrink:0 }}>
@@ -209,7 +208,7 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name }) {
           <div style={{ filter:`drop-shadow(0 12px 20px ${cfg.glow})` }}>
             {imgErr
               ? <span style={{ fontSize:100, display:'block' }}>🐾</span>
-              : <img src={currentFrame} alt="Pandi" style={{ width:250, height:250, objectFit:'contain', display:'block' }} onError={() => setImgErr(true)} />
+              : <img src={currentFrame} alt="Pandi" style={{ width:200, height:200, objectFit:'contain', display:'block' }} onError={() => setImgErr(true)} />
             }
           </div>
         </div>

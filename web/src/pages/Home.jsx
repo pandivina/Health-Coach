@@ -17,7 +17,7 @@ const STATE_CONFIG = {
     glow:          'rgba(46,196,182,0.4)',
     dot:           '#2EC4B6',
     msg:           'Hoy tienes energía para todo.',
-    frames:        ['/panda/panda_base.png','/panda/panda_happy.png','/panda/panda_happy_2.png','/panda/panda_happy.png','/panda/panda_happy_2.png','/panda/panda_happy.png','/panda/panda_base.png'],
+    frames:        ['/panda/panda_base.png','/panda/panda_happy.png','/panda/panda_base.png','/panda/panda_wink.png','/panda/panda_happy.png','/panda/panda_base.png'],
     frameDuration: 2500,
   },
   YELLOW: {
@@ -190,8 +190,8 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name }) {
         </div>
       </div>
 
-      {/* PANDI + BOCADILLO */}
-      <div style={{ position:'absolute', bottom:'4%', left:0, right:0, zIndex:5, display:'flex', alignItems:'flex-end', justifyContent:'center', gap:0, paddingLeft:16, paddingRight:16, maxHeight:220, overflow:'hidden' }}>
+      {/* PANDI — centrada en la plataforma */}
+      <div style={{ position:'absolute', bottom:'4%', left:0, right:0, zIndex:5, display:'flex', alignItems:'flex-end', justifyContent:'center' }}>
 
         {/* Pandi */}
         <div style={{ position:'relative', flexShrink:0 }}>
@@ -224,7 +224,7 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name }) {
               onClick={handleTipClick}
               style={{
                 position:       'relative',
-                marginBottom:   200,
+                marginBottom:   40,
                 marginLeft:     -8,
                 cursor:         'pointer',
                 maxWidth:       160,

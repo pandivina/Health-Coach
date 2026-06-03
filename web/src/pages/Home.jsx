@@ -315,7 +315,6 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name }) {
         '/panda/panda_happy.png'
             initial={{ width:0 }} animate={{ width:`${((profile?.xp || 0) % 500) / 5}%` }} transition={{ duration:0.8 }} />
         </div>
-      </div>
     </div>
   )
 }

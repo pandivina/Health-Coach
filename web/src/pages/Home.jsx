@@ -191,7 +191,7 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name }) {
       </div>
 
       {/* PANDI + BOCADILLO */}
-      <div style={{ position:'absolute', bottom:'4%', left:0, right:0, zIndex:5, display:'flex', alignItems:'flex-end', justifyContent:'center', gap:0, paddingLeft:16, paddingRight:16 }}>
+      <div style={{ position:'absolute', bottom:'4%', left:0, right:0, zIndex:5, display:'flex', alignItems:'flex-end', justifyContent:'center', gap:0, paddingLeft:16, paddingRight:16, maxHeight:220, overflow:'hidden' }}>
 
         {/* Pandi */}
         <div style={{ position:'relative', flexShrink:0 }}>

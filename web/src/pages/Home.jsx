@@ -224,7 +224,7 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name }) {
               onClick={handleTipClick}
               style={{
                 position:       'relative',
-                marginBottom:   100,
+                marginBottom:   150,
                 marginLeft:     -8,
                 cursor:         'pointer',
                 maxWidth:       160,

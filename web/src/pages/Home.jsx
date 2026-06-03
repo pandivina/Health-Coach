@@ -18,7 +18,7 @@ const STATE_CONFIG = {
     dot:           '#2EC4B6',
     msg:           'Hoy tienes energía para todo.',
     frames:        ['/panda/panda_base.png','/panda/panda_happy.png','/panda/panda_base.png','/panda/panda_wink.png','/panda/panda_happy.png','/panda/panda_base.png'],
-    frameDuration: 1500,
+    frameDuration: 2500,
   },
   YELLOW: {
     bg:            '/panda/sanctuary_yellow.png',
@@ -191,14 +191,14 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name }) {
       </div>
 
       {/* PANDI — centrada en la plataforma */}
-      <div style={{ position:'absolute', bottom:'8%', left:0, right:0, zIndex:5, display:'flex', alignItems:'flex-end', justifyContent:'center' }}>
+      <div style={{ position:'absolute', bottom:'4%', left:0, right:0, zIndex:5, display:'flex', alignItems:'flex-end', justifyContent:'center' }}>
 
         {/* Pandi */}
         <div style={{ position:'relative', flexShrink:0 }}>
           <motion.div
             animate={{ opacity:[0.3,0.5,0.3] }}
             transition={{ duration:3, repeat:Infinity, ease:'easeInOut' }}
-            style={{ position:'absolute', top:'50%', left:'50%', transform:'translate(-50%,-50%)', width:300, height:300, borderRadius:'50%', background:`radial-gradient(circle, ${cfg.glow} 0%, transparent 65%)`, filter:'blur(24px)', zIndex:-1, pointerEvents:'none' }}
+            style={{ position:'absolute', top:'50%', left:'50%', transform:'translate(-50%,-50%)', width:180, height:180, borderRadius:'50%', background:`radial-gradient(circle, ${cfg.glow} 0%, transparent 65%)`, filter:'blur(24px)', zIndex:-1, pointerEvents:'none' }}
           />
           <motion.div
             animate={{ scaleX:[1,1.04,1], opacity:[0.25,0.35,0.25] }}
@@ -223,12 +223,12 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name }) {
               transition={{ type:'spring', damping:20, stiffness:300 }}
               onClick={handleTipClick}
               style={{
-                position:       'relative',
-                marginBottom:   40,
-                marginLeft:     -8,
+                position:       'absolute',
+                right:          16,
+                bottom:         60,
                 cursor:         'pointer',
-                maxWidth:       160,
-                flexShrink:     0,
+                maxWidth:       150,
+                zIndex:         6,
               }}
             >
               {/* Cola del bocadillo apuntando a Pandi */}

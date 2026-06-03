@@ -223,7 +223,7 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name }) {
               transition={{ type:'spring', damping:20, stiffness:300 }}
               onClick={handleTipClick}
               style={{
-                position:       'relative',
+                position:       'right',
                 marginBottom:   40,
                 marginLeft:     -8,
                 cursor:         'pointer',

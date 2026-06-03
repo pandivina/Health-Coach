@@ -159,7 +159,7 @@ export default function CoachFAB({ excludeRoutes = ['/coach'] }) {
             }}>
               {/* Avatar Pandi con indicador de semáforo */}
               <div style={{ position: 'relative', flexShrink: 0 }}>
-                <img src="/icons/icon-192.png" alt="Coach"
+                <img src="/icons/icon-192.png?v=2" alt="Coach"
                   style={{ width: 36, height: 36, borderRadius: 10 }} />
                 <div style={{
                   position:     'absolute',
@@ -320,7 +320,7 @@ export default function CoachFAB({ excludeRoutes = ['/coach'] }) {
         }}>
         {open
           ? <X size={20} color="#fff" />
-          : <img src="/icons/icon-192.png" alt="Coach"
+          : <img src="/icons/icon-192.png?v=2" alt="Coach"
               style={{ width: 32, height: 32, borderRadius: 8 }} />
         }
 

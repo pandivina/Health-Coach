@@ -49,35 +49,31 @@ const ALL_FRAMES = [
   STATE_CONFIG.RED.bg,
 ]
 
-// ─── SANTUARIO ────────────────────────────────────────────────────────────────
 function Sanctuary({ recoveryLight, profile, theme, greeting, name }) {
   const cfg = STATE_CONFIG[recoveryLight] || STATE_CONFIG.GREEN
-  const [frameIdx,  setFrameIdx]  = useState(0)
-  const [imgErr,    setImgErr]    = useState(false)
-  const [bgErr,     setBgErr]     = useState(false)
-  const [blinking,  setBlinking]  = useState(false)
-  const [tipOpen,   setTipOpen]   = useState(false)
-  const [tipVisible,setTipVisible]= useState(false)
+  const [frameIdx,   setFrameIdx]   = useState(0)
+  const [imgErr,     setImgErr]     = useState(false)
+  const [bgErr,      setBgErr]      = useState(false)
+  const [blinking,   setBlinking]   = useState(false)
+  const [tipOpen,    setTipOpen]    = useState(false)
+  const [tipVisible, setTipVisible] = useState(false)
+  const [tip,        setTip]        = useState('')
 
-  // Precargar
   useEffect(() => {
     ALL_FRAMES.forEach(src => { const i = new Image(); i.src = src })
   }, [])
 
-  // Resetear al cambiar estado
   useEffect(() => {
     setFrameIdx(0)
     setImgErr(false)
   }, [recoveryLight])
 
-  // Ciclar frames
   useEffect(() => {
     if (cfg.frames.length <= 1) return
     const t = setInterval(() => setFrameIdx(i => (i + 1) % cfg.frames.length), cfg.frameDuration)
     return () => clearInterval(t)
   }, [recoveryLight, cfg.frames.length, cfg.frameDuration])
 
-  // Parpadeo
   useEffect(() => {
     const schedule = () => setTimeout(() => {
       setBlinking(true)
@@ -87,18 +83,14 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name }) {
     return () => clearTimeout(t)
   }, [])
 
-  const [tip, setTip] = useState('')
-
-  // Cargar tip personalizado con IA (caché 4h en localStorage)
   useEffect(() => {
-    const cacheKey = `pandi_tip_ai_${new Date().toISOString().slice(0,13)}` // cada hora cambia
+    const cacheKey = `pandi_tip_ai_${new Date().toISOString().slice(0, 13)}`
     const cached   = localStorage.getItem(cacheKey)
     if (cached) {
       setTip(cached)
       setTimeout(() => setTipVisible(true), 2000)
       return
     }
-    // Llamar al backend
     import('../lib/supabase').then(({ supabase }) => {
       supabase.auth.getSession().then(({ data: { session } }) => {
         if (!session) return
@@ -116,31 +108,23 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name }) {
         .catch(() => {
           const fallbacks = [
             'Beber agua antes de comer reduce la ingesta calórica hasta un 13%. 💧',
-            'Una caminata de 10 min después de comer mejora la glucemia postprandial. 🚶',
+            'Una caminata de 10 min después de comer mejora la glucemia. 🚶',
             'Dormir menos de 7h aumenta el hambre hasta un 24%. 😴',
           ]
-          const t = fallbacks[Math.floor(Math.random() * fallbacks.length)]
-          setTip(t)
+          setTip(fallbacks[Math.floor(Math.random() * fallbacks.length)])
           setTimeout(() => setTipVisible(true), 2000)
         })
       })
     })
   }, [])
 
-  function handleTipClick() {
-    setTipOpen(o => !o)
-  }
+  function handleTipClick() { setTipOpen(o => !o) }
 
   function dismissTip() {
-    const key = `pandi_tip_home_${new Date().toISOString().split('T')[0]}`
-    localStorage.setItem(key, '1')
     setTipVisible(false)
     setTipOpen(false)
   }
 
-  const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0)) / 86400000)
-
-  // Frame actual — prioridad: blink > tip > normal
   const currentFrame = blinking
     ? '/panda/panda_blink.png'
     : tipOpen
@@ -148,14 +132,14 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name }) {
     : cfg.frames[frameIdx]
 
   return (
-    <div style={{ position: 'relative', height: 420, overflow: 'hidden' }}>
+    <div style={{ position:'relative', height:420, overflow:'hidden' }}>
 
       {/* FONDO */}
       <AnimatePresence mode="wait">
         <motion.div key={recoveryLight}
-          initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-          transition={{ duration: 1.2 }}
-          style={{ position: 'absolute', inset: 0, zIndex: 0 }}>
+          initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
+          transition={{ duration:1.2 }}
+          style={{ position:'absolute', inset:0, zIndex:0 }}>
           {bgErr
             ? <div style={{ width:'100%', height:'100%', background: recoveryLight==='GREEN' ? 'linear-gradient(180deg,#c8f5e8,#e0faf0,#f0fffe)' : recoveryLight==='YELLOW' ? 'linear-gradient(180deg,#fef3c7,#fffbeb,#fffff0)' : 'linear-gradient(180deg,#ffe4ec,#fff0f5,#fff5f7)' }} />
             : <img src={cfg.bg} alt="Santuario" style={{ width:'100%', height:'100%', objectFit:'cover', objectPosition:'center 60%' }} onError={() => setBgErr(true)} />
@@ -190,21 +174,13 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name }) {
         </div>
       </div>
 
-      {/* PANDI — centrada en la plataforma */}
+      {/* PANDI centrada */}
       <div style={{ position:'absolute', bottom:'8%', left:0, right:0, zIndex:5, display:'flex', alignItems:'flex-end', justifyContent:'center' }}>
-
-        {/* Pandi */}
         <div style={{ position:'relative', flexShrink:0 }}>
-          <motion.div
-            animate={{ opacity:[0.3,0.5,0.3] }}
-            transition={{ duration:3, repeat:Infinity, ease:'easeInOut' }}
-            style={{ position:'absolute', top:'50%', left:'50%', transform:'translate(-50%,-50%)', width:180, height:180, borderRadius:'50%', background:`radial-gradient(circle, ${cfg.glow} 0%, transparent 65%)`, filter:'blur(24px)', zIndex:-1, pointerEvents:'none' }}
-          />
-          <motion.div
-            animate={{ scaleX:[1,1.04,1], opacity:[0.25,0.35,0.25] }}
-            transition={{ duration:3, repeat:Infinity, ease:'easeInOut' }}
-            style={{ position:'absolute', bottom:-8, left:'50%', transform:'translateX(-50%)', width:110, height:14, borderRadius:'50%', background:'rgba(0,0,0,0.18)', filter:'blur(5px)', zIndex:-1 }}
-          />
+          <motion.div animate={{ opacity:[0.3,0.5,0.3] }} transition={{ duration:3, repeat:Infinity, ease:'easeInOut' }}
+            style={{ position:'absolute', top:'50%', left:'50%', transform:'translate(-50%,-50%)', width:180, height:180, borderRadius:'50%', background:`radial-gradient(circle, ${cfg.glow} 0%, transparent 65%)`, filter:'blur(24px)', zIndex:-1, pointerEvents:'none' }} />
+          <motion.div animate={{ scaleX:[1,1.04,1], opacity:[0.25,0.35,0.25] }} transition={{ duration:3, repeat:Infinity, ease:'easeInOut' }}
+            style={{ position:'absolute', bottom:-8, left:'50%', transform:'translateX(-50%)', width:110, height:14, borderRadius:'50%', background:'rgba(0,0,0,0.18)', filter:'blur(5px)', zIndex:-1 }} />
           <div style={{ filter:`drop-shadow(0 12px 20px ${cfg.glow})` }}>
             {imgErr
               ? <span style={{ fontSize:100, display:'block' }}>🐾</span>
@@ -212,89 +188,50 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name }) {
             }
           </div>
         </div>
-
-        {/* Bocadillo de tip — aparece a la derecha de Pandi */}
-        <AnimatePresence>
-          {tipVisible && (
-            <motion.div
-              initial={{ opacity:0, scale:0.8, x:-10 }}
-              animate={{ opacity:1, scale:1, x:0 }}
-              exit={{ opacity:0, scale:0.8, x:-10 }}
-              transition={{ type:'spring', damping:20, stiffness:300 }}
-              onClick={handleTipClick}
-              style={{
-                position:       'absolute',
-                right:          16,
-                bottom:         60,
-                cursor:         'pointer',
-                maxWidth:       150,
-                zIndex:         6,
-              }}
-            >
-              {/* Cola del bocadillo apuntando a Pandi */}
-              <div style={{
-                position:    'absolute',
-                left:        -8,
-                bottom:      20,
-                width:       0, height:0,
-                borderTop:   '7px solid transparent',
-                borderBottom:'7px solid transparent',
-                borderRight: `8px solid ${tipOpen ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.6)'}`,
-                transition:  'border-right-color 0.3s',
-              }} />
-
-              <motion.div
-                animate={{
-                  background: tipOpen ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.6)',
-                  boxShadow:  tipOpen ? '0 8px 24px rgba(0,0,0,0.15)' : '0 2px 8px rgba(0,0,0,0.08)',
-                }}
-                transition={{ duration:0.3 }}
-                style={{
-                  borderRadius:           16,
-                  borderBottomLeftRadius: 4,
-                  padding:                '10px 12px',
-                  backdropFilter:         'blur(12px)',
-                  border:                 `1px solid ${tipOpen ? 'rgba(46,196,182,0.3)' : 'rgba(255,255,255,0.4)'}`,
-                  transition:             'all 0.3s',
-                }}
-              >
-                <p style={{ fontSize:10, fontWeight:800, color:theme.primary || '#2EC4B6', margin:'0 0 4px', textTransform:'uppercase', letterSpacing:'.05em' }}>
-                  💡 Tip
-                </p>
-
-                <AnimatePresence mode="wait">
-                  {tipOpen ? (
-                    <motion.div key="open"
-                      initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
-                      transition={{ duration:0.2 }}>
-                      <p style={{ fontSize:12, color:'#1A2332', lineHeight:1.5, margin:'0 0 8px', fontWeight:500 }}>
-                        {tip}
-                      </p>
-                      <button
-                        onClick={e => { e.stopPropagation(); dismissTip() }}
-                        style={{ fontSize:10, color:theme.primary || '#2EC4B6', fontWeight:700, background:'none', border:'none', cursor:'pointer', padding:0 }}>
-                        Entendido ✓
-                      </button>
-                    </motion.div>
-                  ) : (
-                    <motion.div key="closed"
-                      initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
-                      transition={{ duration:0.2 }}>
-                      <p style={{ fontSize:11, color:'rgba(26,35,50,0.7)', lineHeight:1.4, margin:0,
-                        overflow:'hidden', display:'-webkit-box', WebkitLineClamp:2, WebkitBoxOrient:'vertical' }}>
-                        {tip}
-                      </p>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </motion.div>
-            </motion.div>
-          )}
-        </AnimatePresence>
       </div>
 
+      {/* BOCADILLO — position absolute independiente */}
+      <AnimatePresence>
+        {tipVisible && tip && (
+          <motion.div
+            initial={{ opacity:0, scale:0.8, x:10 }}
+            animate={{ opacity:1, scale:1, x:0 }}
+            exit={{ opacity:0, scale:0.8, x:10 }}
+            transition={{ type:'spring', damping:20, stiffness:300 }}
+            onClick={handleTipClick}
+            style={{ position:'absolute', right:16, bottom:80, cursor:'pointer', maxWidth:150, zIndex:6 }}
+          >
+            {/* Cola apuntando a Pandi */}
+            <div style={{ position:'absolute', left:-8, bottom:20, width:0, height:0, borderTop:'7px solid transparent', borderBottom:'7px solid transparent', borderRight:`8px solid ${tipOpen ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.6)'}`, transition:'border-right-color 0.3s' }} />
+
+            <motion.div
+              animate={{ background: tipOpen ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.6)', boxShadow: tipOpen ? '0 8px 24px rgba(0,0,0,0.15)' : '0 2px 8px rgba(0,0,0,0.08)' }}
+              transition={{ duration:0.3 }}
+              style={{ borderRadius:16, borderBottomLeftRadius:4, padding:'10px 12px', backdropFilter:'blur(12px)', border:`1px solid ${tipOpen ? 'rgba(46,196,182,0.3)' : 'rgba(255,255,255,0.4)'}` }}
+            >
+              <p style={{ fontSize:10, fontWeight:800, color:theme.primary||'#2EC4B6', margin:'0 0 4px', textTransform:'uppercase', letterSpacing:'.05em' }}>💡 Tip</p>
+              <AnimatePresence mode="wait">
+                {tipOpen ? (
+                  <motion.div key="open" initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }} transition={{ duration:0.2 }}>
+                    <p style={{ fontSize:12, color:'#1A2332', lineHeight:1.5, margin:'0 0 8px', fontWeight:500 }}>{tip}</p>
+                    <button onClick={e => { e.stopPropagation(); dismissTip() }}
+                      style={{ fontSize:10, color:theme.primary||'#2EC4B6', fontWeight:700, background:'none', border:'none', cursor:'pointer', padding:0 }}>
+                      Entendido ✓
+                    </button>
+                  </motion.div>
+                ) : (
+                  <motion.div key="closed" initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }} transition={{ duration:0.2 }}>
+                    <p style={{ fontSize:11, color:'rgba(26,35,50,0.7)', lineHeight:1.4, margin:0, overflow:'hidden', display:'-webkit-box', WebkitLineClamp:2, WebkitBoxOrient:'vertical' }}>{tip}</p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* BADGE SEMÁFORO */}
-      <div style={{ position:'absolute', bottom:16, left:'50%', transform:'translateX(-50%)', zIndex:10 }}>
+      <div style={{ position:'absolute', bottom:50, left:'50%', transform:'translateX(-50%)', zIndex:10 }}>
         <AnimatePresence mode="wait">
           <motion.div key={recoveryLight}
             initial={{ opacity:0, y:6 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0, y:-6 }}
@@ -306,25 +243,26 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name }) {
         </AnimatePresence>
       </div>
 
-     {/* XP BAR */}
-<div style={{ position:'absolute', bottom:14, left:20, right:20, zIndex:10 }}>
-  <div style={{ display:'flex', justifyContent:'space-between', fontSize:10, color:'rgba(255,255,255,0.8)', marginBottom:5 }}>
-    <span style={{ fontWeight:700 }}>{profile?.xp || 0} XP</span>
-    <span>Nivel {(profile?.level || 1) + 1} → {(profile?.level || 1) * 500} XP</span>
-  </div>
-  <div style={{ height:6, borderRadius:3, background:'rgba(0,0,0,0.2)', overflow:'hidden' }}>
-    <motion.div
-      style={{ height:'100%', borderRadius:3, background:cfg.dot, boxShadow:`0 0 8px ${cfg.dot}` }}
-      initial={{ width:0 }}
-      animate={{ width:`${((profile?.xp || 0) % 500) / 5}%` }}
-      transition={{ duration:0.8 }}
-    />
-  </div>
-</div>
+      {/* XP BAR */}
+      <div style={{ position:'absolute', bottom:16, left:20, right:20, zIndex:10 }}>
+        <div style={{ display:'flex', justifyContent:'space-between', fontSize:10, color:'rgba(255,255,255,0.8)', marginBottom:5 }}>
+          <span style={{ fontWeight:700 }}>{profile?.xp || 0} XP</span>
+          <span>Nivel {(profile?.level || 1) + 1} → {(profile?.level || 1) * 500} XP</span>
+        </div>
+        <div style={{ height:6, borderRadius:3, background:'rgba(0,0,0,0.2)', overflow:'hidden' }}>
+          <motion.div
+            style={{ height:'100%', borderRadius:3, background:cfg.dot, boxShadow:`0 0 8px ${cfg.dot}` }}
+            initial={{ width:0 }}
+            animate={{ width:`${((profile?.xp || 0) % 500) / 5}%` }}
+            transition={{ duration:0.8 }}
+          />
+        </div>
+      </div>
+
+    </div>
   )
 }
 
-// ─── TAREAS DEL DÍA ───────────────────────────────────────────────────────────
 function DayTask({ to, icon, label, sublabel, color, done }) {
   return (
     <Link to={to}>
@@ -343,7 +281,6 @@ function DayTask({ to, icon, label, sublabel, color, done }) {
   )
 }
 
-// ─── WATER WIDGET ─────────────────────────────────────────────────────────────
 function WaterWidget({ userId }) {
   const [glasses, setGlasses] = useState(0)
   const [goal,    setGoal]    = useState(8)
@@ -389,7 +326,6 @@ function WaterWidget({ userId }) {
   )
 }
 
-// ─── MINI RING ────────────────────────────────────────────────────────────────
 function MiniRing({ value, max, color, label }) {
   const r = 22, circ = 2 * Math.PI * r
   const pct = Math.min(value / max, 1)
@@ -411,7 +347,6 @@ function MiniRing({ value, max, color, label }) {
   )
 }
 
-// ─── MAIN HOME ────────────────────────────────────────────────────────────────
 export default function Home() {
   const { profile, user } = useStore()
   const { theme, loaded } = useTheme()

@@ -174,6 +174,19 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name }) {
         </div>
       </div>
 
+            {/* BADGE SEMÁFORO */}
+      <div style={{ position:'absolute', bottom:42, left:'50%', transform:'translateX(-50%)', zIndex:10 }}>
+        <AnimatePresence mode="wait">
+          <motion.div key={recoveryLight}
+            initial={{ opacity:0, y:6 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0, y:-6 }}
+            style={{ display:'inline-flex', alignItems:'center', gap:8, padding:'8px 18px', borderRadius:20, background:'rgba(255,255,255,0.9)', backdropFilter:'blur(12px)', border:`1.5px solid ${cfg.dot}35`, boxShadow:'0 4px 20px rgba(0,0,0,0.1)', whiteSpace:'nowrap' }}>
+            <motion.div animate={{ scale:[1,1.4,1] }} transition={{ duration:1.5, repeat:Infinity }}
+              style={{ width:8, height:8, borderRadius:'50%', background:cfg.dot, boxShadow:`0 0 8px ${cfg.dot}`, flexShrink:0 }} />
+            <span style={{ fontSize:12, fontWeight:700, color:'#1A2332' }}>{cfg.msg}</span>
+          </motion.div>
+        </AnimatePresence>
+      </div>
+      
       {/* PANDI centrada */}
       <div style={{ position:'absolute', bottom:'8%', left:0, right:0, zIndex:5, display:'flex', alignItems:'flex-end', justifyContent:'center' }}>
         <div style={{ position:'relative', flexShrink:0 }}>
@@ -229,19 +242,6 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name }) {
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* BADGE SEMÁFORO */}
-      <div style={{ position:'absolute', bottom:42, left:'50%', transform:'translateX(-50%)', zIndex:10 }}>
-        <AnimatePresence mode="wait">
-          <motion.div key={recoveryLight}
-            initial={{ opacity:0, y:6 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0, y:-6 }}
-            style={{ display:'inline-flex', alignItems:'center', gap:8, padding:'8px 18px', borderRadius:20, background:'rgba(255,255,255,0.9)', backdropFilter:'blur(12px)', border:`1.5px solid ${cfg.dot}35`, boxShadow:'0 4px 20px rgba(0,0,0,0.1)', whiteSpace:'nowrap' }}>
-            <motion.div animate={{ scale:[1,1.4,1] }} transition={{ duration:1.5, repeat:Infinity }}
-              style={{ width:8, height:8, borderRadius:'50%', background:cfg.dot, boxShadow:`0 0 8px ${cfg.dot}`, flexShrink:0 }} />
-            <span style={{ fontSize:12, fontWeight:700, color:'#1A2332' }}>{cfg.msg}</span>
-          </motion.div>
-        </AnimatePresence>
-      </div>
 
       {/* XP BAR */}
       <div style={{ position:'absolute', bottom:16, left:20, right:20, zIndex:10 }}>

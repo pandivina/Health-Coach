@@ -17,8 +17,8 @@ const STATE_CONFIG = {
     glow:          'rgba(46,196,182,0.4)',
     dot:           '#2EC4B6',
     msg:           'Hoy tienes energía para todo.',
-    frames:        ['/panda/panda_base.png','/panda/panda_happy.png','/panda/panda_base.png','/panda/panda_wink.png','/panda/panda_happy.png','/panda/panda_base.png'],
-    frameDuration: 2500,
+    frames:        ['/panda/panda_base.png','/panda/panda_happy.png','/panda/panda_base.png','/panda/panda_happy.png','/panda/panda_base.png'],
+    frameDuration: 1500,
   },
   YELLOW: {
     bg:            '/panda/sanctuary_yellow.png',

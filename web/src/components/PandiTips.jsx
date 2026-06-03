@@ -1,26 +1,61 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useTheme } from '../contexts/ThemeProvider'
-import { useStore } from '../store/useStore' // ✅ Añadido el import que causaba la pantalla blanca
-import { Lightbulb, X } from 'lucide-react' // ✅ Añadido para evitar futuros errores de iconos
+import { useStore } from '../store/useStore'
 
-// Supongo que tienes tu objeto TIPS definido aquí o importado. 
-// Si lo tienes en otro archivo, recuerda importarlo (ej: import { TIPS } from '../data/tips')
 const TIPS = {
   home: [
     "Beber agua en ayunas despierta tu metabolismo. 💧",
-    "Dar un pequeño paseo después de comer mejora tu digestión notablemente. 🚶",
-    "Intenta reducir las pantallas 30 minutos antes de ir a dormir. 😴"
-  ]
+    "Un paseo corto después de comer mejora tu digestión notablemente. 🚶",
+    "Reducir pantallas 30 min antes de dormir mejora la calidad del sueño. 😴",
+    "La constancia supera a la intensidad. Pequeños pasos cada día. 🐾",
+    "Tu racha es tu mejor activo. Un día a la vez. 🔥",
+  ],
+  nutrition: [
+    "La proteína en el desayuno reduce el hambre el resto del día. 🥚",
+    "Mastica despacio — tu cerebro tarda 20 min en registrar la saciedad. 🧠",
+    "El color en el plato indica variedad de nutrientes. 🥦",
+    "Hidratarte bien antes de comer evita confundir hambre con sed. 💧",
+  ],
+  workout: [
+    "El calentamiento reduce el riesgo de lesión hasta un 40%. 🔥",
+    "Descansar bien es parte del entrenamiento, no lo opuesto. 😴",
+    "La progresión gradual es más efectiva que el esfuerzo máximo constante. 📈",
+    "Escucha a tu cuerpo — el dolor y la fatiga son señales, no debilidad. 🐾",
+  ],
+  sleep: [
+    "Dormir menos de 7h reduce la síntesis de proteínas musculares. 💪",
+    "La temperatura ideal para dormir es entre 16-19°C. 🌡️",
+    "Evita cafeína después de las 14h — su efecto dura 6-8 horas. ☕",
+    "La luz azul suprime la melatonina. Modo nocturno al anochecer. 📱",
+  ],
+  mood: [
+    "3 respiraciones profundas activan el nervio vago y reducen el estrés. 🌬️",
+    "Escribir lo que agradeces cambia tu perspectiva en minutos. 📝",
+    "El movimiento genera dopamina — aunque sean 10 minutos. 🚶",
+    "Hablar de cómo te sientes reduce la activación de la amígdala. 🧠",
+  ],
+  hydration: [
+    "La orina clara o amarillo pálido indica buena hidratación. 💧",
+    "Pierdes hasta 500ml de agua mientras duermes. Bebe al despertar. 🌅",
+    "El café y el té cuentan para tu hidratación diaria. ☕",
+  ],
+  health: [
+    "El peso varía hasta 2kg en un día por agua y digestión. No te obsesiones. ⚖️",
+    "Medir en el mismo momento del día da datos más fiables. 📊",
+    "Los cambios reales de composición corporal se ven en semanas, no días. 🗓️",
+  ],
 }
 
-// Añade la propiedad 'variant' (por defecto "inline")
-export default function PandiTips({ section, variant = "inline" }) {
-  const { theme } = useTheme()
-  const { profile } = useStore() // ✅ Ahora sí funcionará perfectamente
-  const [tip, setTip] = useState(null)
-  const [visible, setVisible] = useState(false)
-  const [imgErr, setImgErr] = useState(false)
+export default function PandiTips({ section, variant = 'inline' }) {
+  const { theme }  = useTheme()
+  const { profile } = useStore()
+
+  const [tip,      setTip]      = useState(null)
+  const [visible,  setVisible]  = useState(false)
+  const [active,   setActive]   = useState(false) // true cuando el usuario clica
+  const [imgErr,   setImgErr]   = useState(false)
+  const [tipImgErr,setTipImgErr]= useState(false)
 
   const petName = profile?.pet_name || 'Pandi'
 
@@ -29,13 +64,13 @@ export default function PandiTips({ section, variant = "inline" }) {
     if (!sectionTips) return
 
     const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0)) / 86400000)
-    const tipIndex = (dayOfYear + section.length) % sectionTips.length
+    const tipIndex  = (dayOfYear + section.length) % sectionTips.length
     setTip(sectionTips[tipIndex])
 
     const key = `pandi_tip_${section}_${new Date().toISOString().split('T')[0]}`
     if (localStorage.getItem(key)) return
 
-    const t = setTimeout(() => setVisible(true), 1500) // Un pelín más rápido
+    const t = setTimeout(() => setVisible(true), 2000)
     return () => clearTimeout(t)
   }, [section])
 
@@ -43,81 +78,131 @@ export default function PandiTips({ section, variant = "inline" }) {
     const key = `pandi_tip_${section}_${new Date().toISOString().split('T')[0]}`
     localStorage.setItem(key, '1')
     setVisible(false)
+    setActive(false)
   }
 
-  if (!tip) return null
+  function handleClick() {
+    setActive(a => !a)
+  }
 
-  // Clases CSS dinámicas según la variante para evitar romper la UI
-  const containerClasses = variant === "fixed"
-    ? "fixed bottom-[80px] left-4 right-4 z-40 max-w-lg mx-auto" // Flotante: justo por encima de la Tab Bar (h-16 = 64px + 16px aire)
-    : "w-full my-4 relative" // Integrado: se mueve con el scroll de la página sin tapar nada
+  if (!tip || !visible) return null
 
   return (
     <AnimatePresence>
-      {visible && (
-        <motion.div
-          initial={{ opacity: 0, y: 15, scale: 0.96 }}
-          animate={{ opacity: 1, y: 0,  scale: 1    }}
-          exit={{    opacity: 0, y: -10, scale: 0.96 }}
-          transition={{ type: 'spring', damping: 25, stiffness: 320 }}
-          className={containerClasses}
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -8 }}
+        transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+        style={{ width: '100%', marginBottom: 12, position: 'relative' }}
+      >
+        <div
+          onClick={handleClick}
+          style={{
+            display:    'flex',
+            alignItems: 'flex-end',
+            gap:        12,
+            cursor:     'pointer',
+          }}
         >
-          <div 
-            className="rounded-2xl p-3.5 flex items-start gap-3 border transition-all duration-300"
-            style={{
-              background: theme.surface, // Cambio sutil a surface para que destaque sobre el fondo plano bg
-              borderColor: theme.border,
-              boxShadow: variant === "fixed" 
-                ? '0 12px 32px rgba(0,0,0,0.12)' 
-                : '0 4px 14px rgba(0,0,0,0.03)',
-            }}
+          {/* Pandi — cambia de frame al activar */}
+          <motion.div
+            animate={active ? { scale: [1, 1.05, 1] } : {}}
+            transition={{ duration: 0.3 }}
+            style={{ flexShrink: 0 }}
           >
-            {/* Pandi Animación */}
-            <motion.div
-              animate={{ rotate: [0, -6, 6, -6, 0] }}
-              transition={{ duration: 2, repeat: Infinity, repeatDelay: 4 }}
-              className="flex-shrink-0 pt-0.5"
-            >
-              {imgErr ? (
-                <div 
-                  className="w-10 h-10 rounded-xl flex items-center justify-center text-xl shadow-sm"
-                  style={{ background: `${theme.primary}15` }}
-                >
-                  🐼
-                </div>
-              ) : (
-                <img 
-                  src="/panda/talk_1.png" 
-                  alt={petName}
-                  onError={() => setImgErr(true)}
-                  style={{ width: 42, height: 42, objectFit: 'contain' }} 
-                />
-              )}
-            </motion.div>
+            <AnimatePresence mode="wait">
+              <motion.img
+                key={active ? 'tip' : 'base'}
+                src={active
+                  ? (tipImgErr ? '/panda/panda_base.png' : '/panda/panda_tip.png')
+                  : (imgErr    ? '/panda/panda_base.png' : '/panda/panda_base.png')
+                }
+                alt={petName}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                transition={{ duration: 0.25 }}
+                style={{ width: 64, height: 64, objectFit: 'contain', display: 'block' }}
+                onError={() => active ? setTipImgErr(true) : setImgErr(true)}
+              />
+            </AnimatePresence>
+          </motion.div>
 
-            {/* Contenido del Tip */}
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-1.5 mb-0.5">
-                <Lightbulb size={12} style={{ color: theme.primary, flexShrink: 0 }} />
-                <p className="text-[10px] font-black uppercase tracking-wider" style={{ color: theme.primary }}>
-                  Tip de {petName}
+          {/* Bocadillo */}
+          <div style={{ flex: 1, position: 'relative' }}>
+            {/* Cola del bocadillo */}
+            <div style={{
+              position:    'absolute',
+              left:        -8,
+              bottom:      14,
+              width:       0,
+              height:      0,
+              borderTop:   '7px solid transparent',
+              borderBottom:'7px solid transparent',
+              borderRight: `8px solid ${active ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.55)'}`,
+              transition:  'border-right-color 0.3s',
+            }} />
+
+            <motion.div
+              animate={{
+                background: active
+                  ? 'rgba(255,255,255,0.95)'
+                  : 'rgba(255,255,255,0.55)',
+                boxShadow: active
+                  ? '0 4px 20px rgba(0,0,0,0.1)'
+                  : '0 2px 8px rgba(0,0,0,0.05)',
+              }}
+              transition={{ duration: 0.3 }}
+              style={{
+                borderRadius:  16,
+                borderBottomLeftRadius: 4,
+                padding:       active ? '12px 14px' : '10px 14px',
+                border:        `1px solid ${active ? 'rgba(46,196,182,0.25)' : 'rgba(0,0,0,0.08)'}`,
+                backdropFilter:'blur(8px)',
+                transition:    'all 0.3s',
+              }}
+            >
+              {/* Label */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: active ? 6 : 4 }}>
+                <p style={{ fontSize: 10, fontWeight: 800, color: theme.primary, margin: 0, textTransform: 'uppercase', letterSpacing: '.06em' }}>
+                  💡 Tip de {petName}
                 </p>
+                {active && (
+                  <button
+                    onClick={e => { e.stopPropagation(); dismiss() }}
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2, color: theme.textMuted || '#9CA3AF', fontSize: 14, lineHeight: 1 }}
+                  >
+                    ✕
+                  </button>
+                )}
               </div>
-              <p className="text-xs font-medium leading-relaxed" style={{ color: theme.text }}>
+
+              {/* Tip — siempre visible pero más compacto cuando no está activo */}
+              <p style={{
+                fontSize:   active ? 13 : 12,
+                color:      active ? (theme.text || '#1A2332') : (theme.textMuted || '#6B7280'),
+                lineHeight: 1.55,
+                margin:     0,
+                transition: 'all 0.3s',
+                overflow:   active ? 'visible' : 'hidden',
+                display:    active ? 'block' : '-webkit-box',
+                WebkitLineClamp: active ? 'unset' : 1,
+                WebkitBoxOrient: 'vertical',
+              }}>
                 {tip}
               </p>
-            </div>
 
-            {/* Botón Cerrar */}
-            <button 
-              onClick={dismiss} 
-              className="flex-shrink-0 p-1 -mr-1 -mt-1 rounded-lg transition-colors hover:bg-black/5 dark:hover:bg-white/5"
-            >
-              <X size={14} style={{ color: theme.textMuted }} />
-            </button>
+              {/* Hint cuando está cerrado */}
+              {!active && (
+                <p style={{ fontSize: 10, color: theme.primary || '#2EC4B6', margin: '4px 0 0', fontWeight: 600 }}>
+                  Toca para leer →
+                </p>
+              )}
+            </motion.div>
           </div>
-        </motion.div>
-      )}
+        </div>
+      </motion.div>
     </AnimatePresence>
   )
 }

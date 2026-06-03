@@ -306,16 +306,21 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name }) {
         </AnimatePresence>
       </div>
 
-      {/* XP BAR */}
-      <div style={{ position:'absolute', bottom:14, left:20, right:20, zIndex:10 }}>
-        <div style={{ display:'flex', justifyContent:'space-between', fontSize:10, color:'rgba(255,255,255,0.7)', marginBottom:4 }}>
-          <span>{profile?.xp || 0} XP</span>
-          <span>Nivel {(profile?.level || 1) + 1} → {(profile?.level || 1) * 500} XP</span>
-        </div>
-        '/panda/panda_happy.png'
-            initial={{ width:0 }} animate={{ width:`${((profile?.xp || 0) % 500) / 5}%` }} transition={{ duration:0.8 }} />
-        </div>
-    </div>
+     {/* XP BAR */}
+<div style={{ position:'absolute', bottom:14, left:20, right:20, zIndex:10 }}>
+  <div style={{ display:'flex', justifyContent:'space-between', fontSize:10, color:'rgba(255,255,255,0.8)', marginBottom:5 }}>
+    <span style={{ fontWeight:700 }}>{profile?.xp || 0} XP</span>
+    <span>Nivel {(profile?.level || 1) + 1} → {(profile?.level || 1) * 500} XP</span>
+  </div>
+  <div style={{ height:6, borderRadius:3, background:'rgba(0,0,0,0.2)', overflow:'hidden' }}>
+    <motion.div
+      style={{ height:'100%', borderRadius:3, background:cfg.dot, boxShadow:`0 0 8px ${cfg.dot}` }}
+      initial={{ width:0 }}
+      animate={{ width:`${((profile?.xp || 0) % 500) / 5}%` }}
+      transition={{ duration:0.8 }}
+    />
+  </div>
+</div>
   )
 }
 

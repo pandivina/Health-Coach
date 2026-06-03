@@ -63,6 +63,7 @@ app.use('/api/achievements', achievementsRoutes);
 app.use('/api/email',        emailRoutes);
 app.use('/api/notifications', notificationsRoutes);
 app.use('/api/insights', insightsRoutes)
+app.use('/api/tip', tipRoutes);
 
 // Error handler
 app.use((err, req, res, next) => {

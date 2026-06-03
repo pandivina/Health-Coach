@@ -16,6 +16,7 @@ const emailRoutes        = require('./routes/email');
 const stripeRoutes       = require('./routes/stripe');
 const notificationsRoutes = require('./routes/notifications');
 const insightsRoutes = require('./routes/insights')
+const tipRoutes = require('./routes/tip');
 
 const app = express();
 const PORT = process.env.PORT || 3001;

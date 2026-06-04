@@ -229,7 +229,7 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name }) {
 
       {/* XP BAR */}
       <div style={{ position:'absolute', bottom:16, left:20, right:20, zIndex:10 }}>
-        <div style={{ display:'flex', justifyContent:'space-between', fontSize:10, color:'rgba(255,255,255,0.8)', marginBottom:5 }}>
+        <div style={{ display:'flex', justifyContent:'space-between', fontSize:10, color:'rgba(32,178,170,1)', marginBottom:5 }}>
           <span style={{ fontWeight:700 }}>{profile?.xp || 0} XP</span>
           <span>Nivel {(profile?.level || 1) + 1} → {(profile?.level || 1) * 500} XP</span>
         </div>

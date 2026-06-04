@@ -411,7 +411,7 @@ export default function Home() {
     <div style={{ minHeight:'100vh', background:'#f8fafa', paddingBottom:100 }}>
       <Sanctuary recoveryLight={recoveryLight} profile={profile} theme={theme} greeting={greeting} name={name} />
 
-      <div style={{ padding:'0 16px', marginTop:-8 }}>
+      <div style={{ padding:'0 16px', marginTop:-10 }}>
         {/* BADGE SEMÁFORO */}
         <motion.div initial={{ opacity:0, y:8 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.05 }}
           style={{ display:'flex', justifyContent:'center', marginBottom:12 }}>

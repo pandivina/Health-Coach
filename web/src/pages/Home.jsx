@@ -207,7 +207,7 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name }) {
               style={{ borderRadius:16, borderBottomLeftRadius:4, padding:'10px 12px', backdropFilter:'blur(12px)', border:`1px solid ${tipOpen ? 'rgba(46,196,182,0.3)' : 'rgba(255,255,255,0.4)'}` }}
             >
               <p style={{ fontSize:10, fontWeight:800, color:theme.primary||'#2EC4B6', margin:'0 0 4px', textTransform:'uppercase', letterSpacing:'.05em', textAlign:'center' }}>💡 Tip de Pandi</p>
-              <AnimatePresence mode="wait">
+              <AnimatePresence mode="sync">
                 {tipOpen ? (
                   <motion.div key="open" initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }} transition={{ duration:0.2 }}>
                     <p style={{ fontSize:12, color:'#1A2332', lineHeight:1.5, margin:'0 0 8px', fontWeight:500 }}>{tip}</p>
@@ -229,7 +229,7 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name }) {
 
       {/* XP BAR */}
       <div style={{ position:'absolute', bottom:16, left:20, right:20, zIndex:10 }}>
-        <div style={{ display:'flex', justifyContent:'space-between', fontSize:10, color:'rgba(255,255,255,0.8)', marginBottom:5 }}>
+        <div style={{ display:'flex', justifyContent:'space-between', fontSize:10, color:'rgba(32,178,170,1)', marginBottom:5 }}>
           <span style={{ fontWeight:700 }}>{profile?.xp || 0} XP</span>
           <span>Nivel {(profile?.level || 1) + 1} → {(profile?.level || 1) * 500} XP</span>
         </div>

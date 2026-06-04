@@ -75,7 +75,7 @@ async function updateMemory(userId, messages, lastReply) {
     ).join('\n');
 
     const summaryRes = await anthropic.messages.create({
-      model: process.env.ANTHROPIC_MODEL || 'claude-3-5-sonnet-latest',
+      model: process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-5',
       max_tokens: 400,
       messages: [{
         role: 'user',
@@ -275,7 +275,7 @@ REGLAS DEL COACH
 
     // ─── LLAMADA A CLAUDE ────────────────────────────────────────────────────────
     const response = await anthropic.messages.create({
-      model: process.env.ANTHROPIC_MODEL || 'claude-3-5-sonnet-latest',
+      model: process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-5',
       max_tokens: 800,
       system: systemPrompt,
       messages: messages.map(m => ({ role: m.role, content: m.content })),

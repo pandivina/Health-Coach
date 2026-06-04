@@ -149,7 +149,7 @@ router.get('/weekly', requireAuth, async (req, res) => {
 
     try {
       const aiRes = await anthropic.messages.create({
-        model: 'claude-sonnet-4-6',
+        model: 'claude-sonnet-4-5',
         max_tokens: 300,
         messages: [{
           role: 'user',

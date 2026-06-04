@@ -70,7 +70,7 @@ export function PandiStateProvider({ children }) {
           .limit(7),
         supabase
           .from('mood_logs')
-          .select('score, value, created_at, date')
+          .select('mood, created_at, date')
           .eq('user_id', user.id)
           .order('created_at', { ascending: false })
           .limit(10),

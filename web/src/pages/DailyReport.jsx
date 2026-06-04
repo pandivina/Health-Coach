@@ -38,7 +38,6 @@ function WeeklyBar({ label, value, max, color }) {
   return (
     <div>
       <div className="flex justify-between text-xs mb-1" style={{ color: theme.textMuted }}>
-        <PandiContextualBubble section="report" data={{ done: doneTodayCount, total: 6 }} />
         <span>{label}</span><span>{Math.round(value)}/{max}</span>
       </div>
       <div className="h-1.5 rounded-full overflow-hidden" style={{ background: theme.surface2 }}>

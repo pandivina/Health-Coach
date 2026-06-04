@@ -59,7 +59,7 @@ Sin texto extra, solo JSON.`
     })
 
     const response = await anthropic.messages.create({
-      model: process.env.ANTHROPIC_MODEL || 'claude-opus-4-6',
+      model: process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-5',
       max_tokens: 2000,
       messages: [{ role: 'user', content: userContent }],
     });

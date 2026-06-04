@@ -174,19 +174,6 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name }) {
         </div>
       </div>
 
-            {/* BADGE SEMÁFORO */}
-      <div style={{ position:'absolute', bottom:42, left:'50%', transform:'translateX(-50%)', zIndex:10 }}>
-        <AnimatePresence mode="wait">
-          <motion.div key={recoveryLight}
-            initial={{ opacity:0, y:6 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0, y:-6 }}
-            style={{ display:'inline-flex', alignItems:'center', gap:8, padding:'8px 18px', borderRadius:20, background:'rgba(255,255,255,0.9)', backdropFilter:'blur(12px)', border:`1.5px solid ${cfg.dot}35`, boxShadow:'0 4px 20px rgba(0,0,0,0.1)', whiteSpace:'nowrap' }}>
-            <motion.div animate={{ scale:[1,1.4,1] }} transition={{ duration:1.5, repeat:Infinity }}
-              style={{ width:8, height:8, borderRadius:'50%', background:cfg.dot, boxShadow:`0 0 8px ${cfg.dot}`, flexShrink:0 }} />
-            <span style={{ fontSize:12, fontWeight:700, color:'#1A2332' }}>{cfg.msg}</span>
-          </motion.div>
-        </AnimatePresence>
-      </div>
-      
       {/* PANDI centrada */}
       <div style={{ position:'absolute', bottom:'8%', left:0, right:0, zIndex:5, display:'flex', alignItems:'flex-end', justifyContent:'center' }}>
         <div style={{ position:'relative', flexShrink:0 }}>
@@ -197,7 +184,7 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name }) {
           <div style={{ filter:`drop-shadow(0 12px 20px ${cfg.glow})` }}>
             {imgErr
               ? <span style={{ fontSize:100, display:'block' }}>🐾</span>
-              : <img src={currentFrame} alt="Pandi" style={{ width:280, height:280, objectFit:'contain', display:'block' }} onError={() => setImgErr(true)} />
+              : <img src={currentFrame} alt="Pandi" style={{ width:220, height:220, objectFit:'contain', display:'block' }} onError={() => setImgErr(true)} />
             }
           </div>
         </div>
@@ -212,17 +199,14 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name }) {
             exit={{ opacity:0, scale:0.8, x:10 }}
             transition={{ type:'spring', damping:20, stiffness:300 }}
             onClick={handleTipClick}
-            style={{ position:'absolute', right:16, bottom:65, cursor:'pointer', maxWidth:150, zIndex:6 }}
+            style={{ position:'absolute', right:16, bottom:80, cursor:'pointer', maxWidth:150, zIndex:6 }}
           >
-            {/* Cola apuntando a Pandi */}
-            <div style={{ position:'absolute', left:-8, bottom:20, width:0, height:0, borderTop:'7px solid transparent', borderBottom:'7px solid transparent', borderRight:`8px solid ${tipOpen ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.6)'}`, transition:'border-right-color 0.3s' }} />
-
             <motion.div
               animate={{ background: tipOpen ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.6)', boxShadow: tipOpen ? '0 8px 24px rgba(0,0,0,0.15)' : '0 2px 8px rgba(0,0,0,0.08)' }}
               transition={{ duration:0.3 }}
               style={{ borderRadius:16, borderBottomLeftRadius:4, padding:'10px 12px', backdropFilter:'blur(12px)', border:`1px solid ${tipOpen ? 'rgba(46,196,182,0.3)' : 'rgba(255,255,255,0.4)'}` }}
             >
-              <p style={{ fontSize:10, fontWeight:800, color:theme.primary||'#2EC4B6', margin:'0 0 4px', textTransform:'uppercase', letterSpacing:'.05em' }}>💡 Tip</p>
+              <p style={{ fontSize:10, fontWeight:800, color:theme.primary||'#2EC4B6', margin:'0 0 4px', textTransform:'uppercase', letterSpacing:'.05em', textAlign:'center' }}>💡 Tip de Pandi</p>
               <AnimatePresence mode="wait">
                 {tipOpen ? (
                   <motion.div key="open" initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }} transition={{ duration:0.2 }}>
@@ -234,7 +218,7 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name }) {
                   </motion.div>
                 ) : (
                   <motion.div key="closed" initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }} transition={{ duration:0.2 }}>
-                    <p style={{ fontSize:11, color:'rgba(26,35,50,0.7)', lineHeight:1.4, margin:0, overflow:'hidden', display:'-webkit-box', WebkitLineClamp:2, WebkitBoxOrient:'vertical' }}>{tip}</p>
+                    <p style={{ fontSize:11, color:'rgba(26,35,50,0.75)', lineHeight:1.4, margin:0, textAlign:'center', overflow:'hidden', display:'-webkit-box', WebkitLineClamp:2, WebkitBoxOrient:'vertical' }}>{tip}</p>
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -243,9 +227,22 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name }) {
         )}
       </AnimatePresence>
 
+      {/* BADGE SEMÁFORO */}
+      <div style={{ position:'absolute', bottom:50, left:'50%', transform:'translateX(-50%)', zIndex:10 }}>
+        <AnimatePresence mode="wait">
+          <motion.div key={recoveryLight}
+            initial={{ opacity:0, y:6 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0, y:-6 }}
+            style={{ display:'inline-flex', alignItems:'center', gap:8, padding:'8px 18px', borderRadius:20, background:'rgba(255,255,255,0.9)', backdropFilter:'blur(12px)', border:`1.5px solid ${cfg.dot}35`, boxShadow:'0 4px 20px rgba(0,0,0,0.1)', whiteSpace:'nowrap' }}>
+            <motion.div animate={{ scale:[1,1.4,1] }} transition={{ duration:1.5, repeat:Infinity }}
+              style={{ width:8, height:8, borderRadius:'50%', background:cfg.dot, boxShadow:`0 0 8px ${cfg.dot}`, flexShrink:0 }} />
+            <span style={{ fontSize:12, fontWeight:700, color:'#1A2332' }}>{cfg.msg}</span>
+          </motion.div>
+        </AnimatePresence>
+      </div>
+
       {/* XP BAR */}
       <div style={{ position:'absolute', bottom:16, left:20, right:20, zIndex:10 }}>
-        <div style={{ display:'flex', justifyContent:'space-between', fontSize:10, color:'rgba(32,178,170,1)', marginBottom:5 }}>
+        <div style={{ display:'flex', justifyContent:'space-between', fontSize:10, color:'rgba(255,255,255,0.8)', marginBottom:5 }}>
           <span style={{ fontWeight:700 }}>{profile?.xp || 0} XP</span>
           <span>Nivel {(profile?.level || 1) + 1} → {(profile?.level || 1) * 500} XP</span>
         </div>
@@ -428,6 +425,18 @@ export default function Home() {
       <Sanctuary recoveryLight={recoveryLight} profile={profile} theme={theme} greeting={greeting} name={name} />
 
       <div style={{ padding:'0 16px', marginTop:-8 }}>
+        {/* BADGE SEMÁFORO */}
+        <motion.div initial={{ opacity:0, y:8 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.05 }}
+          style={{ display:'flex', justifyContent:'center', marginBottom:12 }}>
+          <div style={{ display:'inline-flex', alignItems:'center', gap:8, padding:'8px 20px', borderRadius:20, background:'white', border:`1.5px solid ${recoveryLight==='GREEN' ? '#2EC4B6' : recoveryLight==='YELLOW' ? '#F59E0B' : '#FF8FA3'}30`, boxShadow:'0 2px 12px rgba(0,0,0,0.06)', whiteSpace:'nowrap' }}>
+            <motion.div animate={{ scale:[1,1.4,1] }} transition={{ duration:1.5, repeat:Infinity }}
+              style={{ width:8, height:8, borderRadius:'50%', background: recoveryLight==='GREEN' ? '#2EC4B6' : recoveryLight==='YELLOW' ? '#F59E0B' : '#FF8FA3', boxShadow:`0 0 8px ${recoveryLight==='GREEN' ? '#2EC4B6' : recoveryLight==='YELLOW' ? '#F59E0B' : '#FF8FA3'}`, flexShrink:0 }} />
+            <span style={{ fontSize:12, fontWeight:700, color:'#1A2332' }}>
+              {recoveryLight==='GREEN' ? 'Hoy tienes energía para todo.' : recoveryLight==='YELLOW' ? 'Ritmo moderado. Ajustando tu plan.' : 'Hoy el descanso ES el entrenamiento.'}
+            </span>
+          </div>
+        </motion.div>
+
         <motion.div initial={{ opacity:0, y:16 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.1 }}
           style={{ background:'rgba(255,255,255,0.95)', borderRadius:20, padding:'14px 16px', marginBottom:16, border:'1px solid rgba(0,0,0,0.06)', boxShadow:'0 4px 20px rgba(0,0,0,0.06)' }}>
           <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:10 }}>

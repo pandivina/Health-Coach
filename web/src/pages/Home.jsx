@@ -132,7 +132,7 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name }) {
     : cfg.frames[frameIdx]
 
   return (
-    <div style={{ position:'relative', height:420, overflow:'hidden' }}>
+    <div style={{ position:'relative', height:'56vw', minHeight:340, maxHeight:480, overflow:'hidden' }}>
 
       {/* FONDO */}
       <AnimatePresence mode="wait">
@@ -175,7 +175,7 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name }) {
       </div>
 
       {/* PANDI centrada */}
-      <div style={{ position:'absolute', bottom:'8%', left:0, right:0, zIndex:5, display:'flex', alignItems:'flex-end', justifyContent:'center' }}>
+      <div style={{ position:'absolute', bottom:'12%', left:0, right:0, zIndex:5, display:'flex', alignItems:'flex-end', justifyContent:'center' }}>
         <div style={{ position:'relative', flexShrink:0 }}>
           <motion.div animate={{ opacity:[0.3,0.5,0.3] }} transition={{ duration:3, repeat:Infinity, ease:'easeInOut' }}
             style={{ position:'absolute', top:'50%', left:'50%', transform:'translate(-50%,-50%)', width:180, height:180, borderRadius:'50%', background:`radial-gradient(circle, ${cfg.glow} 0%, transparent 65%)`, filter:'blur(24px)', zIndex:-1, pointerEvents:'none' }} />
@@ -199,7 +199,7 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name }) {
             exit={{ opacity:0, scale:0.8, x:10 }}
             transition={{ type:'spring', damping:20, stiffness:300 }}
             onClick={handleTipClick}
-            style={{ position:'absolute', bottom:42, left:'50%', transform:'translateX(-50%)', cursor:'pointer', width:220, zIndex:6 }}
+            style={{ position:'absolute', bottom:42, left:16, right:16, cursor:'pointer', zIndex:6 }}
           >
             <motion.div
               animate={{ background: tipOpen ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.6)', boxShadow: tipOpen ? '0 8px 24px rgba(0,0,0,0.15)' : '0 2px 8px rgba(0,0,0,0.08)' }}

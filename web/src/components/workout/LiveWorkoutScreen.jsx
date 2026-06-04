@@ -207,6 +207,7 @@ export default function LiveWorkoutScreen({ session, onFinish, workoutPath = 'ti
     if (result?.is_pr) {
       setShowPR(true)
       setTimeout(() => setShowPR(false), 3000)
+      addXP(75)
     }
     // Descanso según el ejercicio
     const ex = exercises.find(e => e.id === data.workout_exercise_id)

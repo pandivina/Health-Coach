@@ -9,7 +9,7 @@ import { useTour } from '../hooks/useTour'
 import { useSectionContext } from '../hooks/useSectionContext'
 import TourHelpButton from '../components/tour/TourHelpButton'
 import PandiInsights from '../components/PandiInsights'
-import { Plus, Minus as MinusIcon, Droplets } from 'lucide-react
+import { Plus, Minus as MinusIcon, Droplets } from 'lucide-react'
 
 const STATE_CONFIG = {
   GREEN: {

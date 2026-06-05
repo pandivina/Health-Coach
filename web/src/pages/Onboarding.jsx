@@ -38,6 +38,15 @@ function useAudio() {
     let v = a.volume
     const id = setInterval(() => { v = Math.max(v-0.03,0); a.volume=v; if(v<=0){clearInterval(id);a.pause();ambientRef.current=null} }, 80)
   }
+
+  useEffect(() => {
+    function handleVisibility() {
+      const a = ambientRef.current; if (!a) return
+      if (document.hidden) { a.pause() } else { a.play().catch(()=>{}) }
+    }
+    document.addEventListener('visibilitychange', handleVisibility)
+    return () => document.removeEventListener('visibilitychange', handleVisibility)
+  }, [])
   function playHeartbeat() {
     try {
       const ctx=getCtx()
@@ -90,16 +99,30 @@ function useAudio() {
 function Glitter({ active, color }) {
   if (!active) return null
   return (
-    <div style={{ position:'fixed', inset:0, zIndex:30, pointerEvents:'none', overflow:'hidden' }}>
-      {[...Array(24)].map((_,i) => (
+    <div style={{
+      position:'fixed',
+      top:'50%', left:'50%',
+      transform:'translate(-50%, -50%)',
+      width:360, height:360,
+      zIndex:30, pointerEvents:'none',
+    }}>
+      {[...Array(28)].map((_,i) => (
         <motion.div key={i}
-          initial={{ x:`${25+Math.random()*50}%`, y:'45%', opacity:1, scale:1 }}
-          animate={{ y:`${65+Math.random()*25}%`, opacity:0, scale:0.2 }}
-          transition={{ duration:0.7+Math.random()*0.5, delay:Math.random()*0.25 }}
+          initial={{
+            x: 180 + (Math.random()-0.5)*80,
+            y: 180 + (Math.random()-0.5)*80,
+            opacity:1, scale:1
+          }}
+          animate={{
+            x: 180 + (Math.random()-0.5)*320,
+            y: 180 + (Math.random()-0.5)*320,
+            opacity:0, scale:0.2
+          }}
+          transition={{ duration:0.8+Math.random()*0.5, delay:Math.random()*0.2, ease:'easeOut' }}
           style={{
-            position:'absolute', width:3+Math.random()*5, height:3+Math.random()*5,
+            position:'absolute', width:4+Math.random()*5, height:4+Math.random()*5,
             borderRadius:'50%', background:color||'#F59E0B',
-            boxShadow:`0 0 8px ${color||'#F59E0B'}`,
+            boxShadow:`0 0 8px ${color||'#F59E0B'}, 0 0 16px ${color||'#F59E0B'}`,
           }}
         />
       ))}
@@ -171,67 +194,72 @@ function FullBackground({ phase, doorOpacity }) {
         onError={e=>{ e.target.style.display='none' }}
       />
 
-      {/* 5. ORB + DOOR */}
+      {/* 5. ORB + DOOR — fixed centrado en pantalla */}
       <AnimatePresence>
         {showOrb && (
           <motion.div
             key="orb"
-            initial={{ opacity:0, scale:0.75, y:60 }}
-            animate={{ opacity:1, scale:1, y:0 }}
+            initial={{ opacity:0, scale:0.75 }}
+            animate={{ opacity:1, scale:1 }}
             exit={{ opacity:0, scale:0.9 }}
             transition={{ duration:1.4, type:'spring', damping:18 }}
             style={{
-              position:'absolute', zIndex:4,
-              bottom:'8%', left:'50%', transform:'translateX(-50%)',
-              width:'60%', maxWidth:290,
+              position:'fixed', zIndex:4,
+              top:0, left:0, right:0, bottom:0,
+              display:'flex', alignItems:'center', justifyContent:'center',
+              pointerEvents:'none',
             }}>
-            {/* Glow */}
-            <motion.div
-              animate={{ scale:[1,1.1,1], opacity:[0.25,0.5,0.25] }}
-              transition={{ duration:4, repeat:Infinity }}
-              style={{
-                position:'absolute', inset:-40, borderRadius:'50%',
-                background:'radial-gradient(circle, rgba(255,220,140,0.55) 0%, transparent 70%)',
-                filter:'blur(28px)',
-              }}
-            />
-            {/* panda_orb — visible según doorOpacity inversa */}
-            <img
-              src="/panda/panda_orb.png" alt=""
-              style={{
-                position:'absolute', inset:0,
-                width:'100%', height:'100%',
-                objectFit:'contain',
-                opacity: Math.min(1 - doorOpacity + 0.05, 1),
-                transition:'opacity 0.9s ease',
-              }}
-              onError={e=>e.target.style.display='none'}
-            />
-            {/* onboarding_orb_door — encima, se va transparentando */}
-            <motion.img
-              src="/panda/onboarding_orb_door.png" alt=""
-              animate={{ opacity: doorOpacity }}
-              transition={{ duration:0.9 }}
-              style={{ position:'relative', zIndex:2, width:'100%', objectFit:'contain', display:'block' }}
-              onError={e=>e.target.style.display='none'}
-            />
+            <div style={{ position:'relative', width:'78vw', maxWidth:340, height:'78vw', maxHeight:340 }}>
+              {/* Glow */}
+              <motion.div
+                animate={{ scale:[1,1.1,1], opacity:[0.25,0.5,0.25] }}
+                transition={{ duration:4, repeat:Infinity }}
+                style={{
+                  position:'absolute', inset:-40, borderRadius:'50%',
+                  background:'radial-gradient(circle, rgba(255,220,140,0.55) 0%, transparent 70%)',
+                  filter:'blur(28px)',
+                }}
+              />
+              {/* panda_orb — visible según doorOpacity inversa */}
+              <img
+                src="/panda/panda_orb.png" alt=""
+                style={{
+                  position:'absolute', inset:0,
+                  width:'100%', height:'100%',
+                  objectFit:'contain',
+                  opacity: Math.min(1 - doorOpacity + 0.05, 1),
+                  transition:'opacity 0.9s ease',
+                }}
+                onError={e=>e.target.style.display='none'}
+              />
+              {/* onboarding_orb_door — encima, se va transparentando */}
+              <motion.img
+                src="/panda/onboarding_orb_door.png" alt=""
+                animate={{ opacity: doorOpacity }}
+                transition={{ duration:0.9 }}
+                style={{ position:'absolute', inset:0, width:'100%', height:'100%', objectFit:'contain', zIndex:2 }}
+                onError={e=>e.target.style.display='none'}
+              />
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* 6. panda_baby — tras destello, reemplaza el orb */}
+      {/* 6. panda_baby — fixed centrado tras destello */}
       <AnimatePresence>
         {showBorn && (
           <motion.div
             key="baby"
-            initial={{ opacity:0, scale:0.7, y:50 }}
+            initial={{ opacity:0, scale:0.7, y:30 }}
             animate={{ opacity:1, scale:1, y:0 }}
             transition={{ type:'spring', damping:14, stiffness:120, delay:0.3 }}
             style={{
-              position:'absolute', zIndex:4,
-              bottom:'18%', left:'50%', transform:'translateX(-50%)',
-              width:'52%', maxWidth:250,
+              position:'fixed', zIndex:4,
+              top:0, left:0, right:0, bottom:'15%',
+              display:'flex', alignItems:'center', justifyContent:'center',
+              pointerEvents:'none',
             }}>
+            <div style={{ position:'relative', width:'60vw', maxWidth:260 }}>
             <motion.div
               animate={{ scale:[1,1.12,1], opacity:[0.25,0.5,0.25] }}
               transition={{ duration:3, repeat:Infinity }}
@@ -248,7 +276,8 @@ function FullBackground({ phase, doorOpacity }) {
               style={{ width:'100%', objectFit:'contain', position:'relative', zIndex:1 }}
               onError={e=>e.target.style.display='none'}
             />
-          </motion.div>
+          </div>
+        </motion.div>
         )}
       </AnimatePresence>
     </div>
@@ -368,7 +397,7 @@ export default function Onboarding() {
 
   const qKeys        = ['mind','water','sleep','movement','food','intention']
   const waterAnswers = ['water','sleep','movement','food','intention'].filter(k=>form[k]).length
-  const doorOpacity  = Math.max(1 - waterAnswers * 0.25, 0)
+  const doorOpacity  = Math.max(0.85 - waterAnswers * 0.2, 0)
 
   useEffect(()=>{
     const t1=setTimeout(()=>setPhase('blur'),   800)
@@ -517,10 +546,12 @@ export default function Onboarding() {
             initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
             transition={{ duration:1.2 }}
             style={{ position:'absolute', inset:0, zIndex:20, display:'flex', alignItems:'center', justifyContent:'center' }}>
-            <p style={{ fontSize:22, fontWeight:900, color:'white', textAlign:'center', padding:'0 32px',
-              textShadow:'0 2px 20px rgba(0,0,0,0.4)', margin:0, lineHeight:1.3 }}>
-              Toda vida comienza<br/>con energía.
-            </p>
+            <div style={{ background:'rgba(255,252,245,0.55)', backdropFilter:'blur(12px)',
+              borderRadius:24, padding:'20px 32px', textAlign:'center', margin:'0 32px' }}>
+              <p style={{ fontSize:22, fontWeight:900, color:'#1A2332', margin:0, lineHeight:1.3 }}>
+                Toda vida comienza<br/>con energía.
+              </p>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -532,10 +563,12 @@ export default function Onboarding() {
             initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
             transition={{ duration:1.2 }}
             style={{ position:'absolute', inset:0, zIndex:20, display:'flex', alignItems:'center', justifyContent:'center' }}>
-            <p style={{ fontSize:16, color:'rgba(255,255,255,0.88)', textAlign:'center', padding:'0 40px',
-              textShadow:'0 2px 16px rgba(0,0,0,0.4)', margin:0, lineHeight:1.8, fontStyle:'italic' }}>
-              Antes de que existiera cualquier forma,<br/>había una intención.
-            </p>
+            <div style={{ background:'rgba(255,252,245,0.45)', backdropFilter:'blur(12px)',
+              borderRadius:24, padding:'20px 32px', textAlign:'center', margin:'0 32px' }}>
+              <p style={{ fontSize:16, color:'#374151', margin:0, lineHeight:1.8, fontStyle:'italic' }}>
+                Antes de que existiera cualquier forma,<br/>había una intención.
+              </p>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -591,23 +624,27 @@ export default function Onboarding() {
               padding:'0 0 44px',
             }}>
 
-            {/* Texto — sin ningún fondo, solo sombra para legibilidad */}
+            {/* Texto — pill glassmorphism muy sutil para legibilidad */}
             <div style={{ padding:'0 28px 18px', textAlign:'center' }}>
               <AnimatePresence mode="wait">
                 <motion.div key={`qt-${qStep}`}
                   initial={{ opacity:0, y:8 }} animate={{ opacity:1, y:0 }}
-                  exit={{ opacity:0, y:-8 }} transition={{ duration:0.35 }}>
+                  exit={{ opacity:0, y:-8 }} transition={{ duration:0.35 }}
+                  style={{
+                    display:'inline-block',
+                    background:'rgba(255,252,245,0.55)',
+                    backdropFilter:'blur(12px)',
+                    borderRadius:20, padding:'12px 20px',
+                  }}>
                   <p style={{
-                    fontSize:19, fontWeight:900, color:'white',
-                    margin:'0 0 6px', lineHeight:1.3, whiteSpace:'pre-line',
-                    textShadow:'0 2px 16px rgba(0,0,0,0.5)',
+                    fontSize:19, fontWeight:900, color:'#1A2332',
+                    margin:'0 0 4px', lineHeight:1.3, whiteSpace:'pre-line',
                   }}>
                     {Q_TEXT[currentKey]?.bold}
                   </p>
                   <p style={{
-                    fontSize:13, color:'rgba(255,255,255,0.78)',
+                    fontSize:13, color:'#4B5563',
                     margin:0, fontStyle:'italic',
-                    textShadow:'0 1px 10px rgba(0,0,0,0.5)',
                   }}>
                     {Q_TEXT[currentKey]?.sub}
                   </p>
@@ -633,8 +670,9 @@ export default function Onboarding() {
               <AnimatePresence>
                 {form[currentKey] && (
                   <motion.p initial={{ opacity:0,y:4 }} animate={{ opacity:1,y:0 }} exit={{ opacity:0 }}
-                    style={{ fontSize:12, color:'rgba(255,255,255,0.65)', fontStyle:'italic', textAlign:'center', margin:0,
-                      textShadow:'0 1px 8px rgba(0,0,0,0.5)' }}>
+                    style={{ fontSize:12, color:'#4B5563', fontStyle:'italic', textAlign:'center', margin:0,
+                      background:'rgba(255,252,245,0.5)', backdropFilter:'blur(8px)',
+                      borderRadius:12, padding:'6px 14px' }}>
                     {FEEDBACK[currentKey]}
                   </motion.p>
                 )}

@@ -205,9 +205,9 @@ function FullBackground({ phase, doorOpacity }) {
             transition={{ duration:1.4, type:'spring', damping:18 }}
             style={{
               position:'fixed', zIndex:4,
-              top:'38%', left:'50%',
+              top:'45%', left:'50%',
               transform:'translate(-50%, -50%)',
-              width:'52vw', maxWidth:220,
+              width:'62vw', maxWidth:260,
               pointerEvents:'none',
             }}>
             <div style={{ position:'relative', width:'100%', paddingBottom:'110%' }}>

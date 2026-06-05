@@ -205,8 +205,8 @@ function FullBackground({ phase, doorOpacity }) {
             transition={{ duration:1.4, type:'spring', damping:18 }}
             style={{
               position:'fixed', zIndex:4,
-              bottom:'22%', left:'50%',
-              transform:'translateX(-50%)',
+              top:'38%', left:'50%',
+              transform:'translate(-50%, -50%)',
               width:'52vw', maxWidth:220,
               pointerEvents:'none',
             }}>
@@ -351,6 +351,8 @@ function GlassSelect({ options, value, onChange, energyColor }) {
               backdropFilter:'blur(28px)',
               border:'1.5px solid rgba(255,255,255,0.8)',
               boxShadow:'0 8px 32px rgba(0,0,0,0.18)',
+              maxHeight:'45vh',
+              overflowY:'auto',
             }}>
             {options.map((o,i)=>(
               <motion.button key={o.v}

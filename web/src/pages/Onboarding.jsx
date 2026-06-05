@@ -8,11 +8,11 @@ import { api } from '../lib/api'
 
 // ─── ENERGÍAS ─────────────────────────────────────────────────────────────────
 const ENERGIES = {
-  water:     { color:'#3B82F6', glow:'rgba(59,130,246,0.7)',  tint:'rgba(59,130,246,0.25)',  emoji:'💧', freq:528 },
-  sleep:     { color:'#8B5CF6', glow:'rgba(139,92,246,0.7)',  tint:'rgba(139,92,246,0.25)',  emoji:'✨', freq:396 },
-  movement:  { color:'#F97316', glow:'rgba(249,115,22,0.7)',  tint:'rgba(249,115,22,0.25)',  emoji:'🔥', freq:741 },
-  food:      { color:'#22C55E', glow:'rgba(34,197,94,0.7)',   tint:'rgba(34,197,94,0.25)',   emoji:'🌱', freq:639 },
-  intention: { color:'#EC4899', glow:'rgba(236,72,153,0.7)',  tint:'rgba(236,72,153,0.25)',  emoji:'💜', freq:852 },
+  water:     { color:'#3B82F6', glow:'rgba(59,130,246,0.7)',  emoji:'💧', freq:528 },
+  sleep:     { color:'#8B5CF6', glow:'rgba(139,92,246,0.7)',  emoji:'✨', freq:396 },
+  movement:  { color:'#F97316', glow:'rgba(249,115,22,0.7)',  emoji:'🔥', freq:741 },
+  food:      { color:'#22C55E', glow:'rgba(34,197,94,0.7)',   emoji:'🌱', freq:639 },
+  intention: { color:'#EC4899', glow:'rgba(236,72,153,0.7)',  emoji:'💜', freq:852 },
 }
 
 // ─── AUDIO ────────────────────────────────────────────────────────────────────
@@ -24,27 +24,23 @@ function useAudio() {
     try {
       if (ambientRef.current) return
       const audio = new Audio('/audio/ambient-bowls.mp3')
-      audio.loop   = true
-      audio.volume = 0
+      audio.loop = true; audio.volume = 0
       audio.play().catch(() => {})
       ambientRef.current = audio
-      // Fade in
       let v = 0
       const id = setInterval(() => {
-        v = Math.min(v + 0.02, 0.28)
+        v = Math.min(v + 0.02, 0.3)
         audio.volume = v
-        if (v >= 0.28) clearInterval(id)
+        if (v >= 0.3) clearInterval(id)
       }, 100)
     } catch {}
   }
 
   function stopAmbient() {
-    const a = ambientRef.current
-    if (!a) return
+    const a = ambientRef.current; if (!a) return
     let v = a.volume
     const id = setInterval(() => {
-      v = Math.max(v - 0.03, 0)
-      a.volume = v
+      v = Math.max(v - 0.03, 0); a.volume = v
       if (v <= 0) { clearInterval(id); a.pause(); ambientRef.current = null }
     }, 80)
   }
@@ -53,32 +49,39 @@ function useAudio() {
     try {
       if (!ctxRef.current) ctxRef.current = new (window.AudioContext || window.webkitAudioContext)()
       const ctx = ctxRef.current
-      const osc = ctx.createOscillator()
-      const gain = ctx.createGain()
+      const osc = ctx.createOscillator(); const gain = ctx.createGain()
       osc.connect(gain); gain.connect(ctx.destination)
-      osc.type = 'sine'
-      osc.frequency.value = freq
+      osc.type = 'sine'; osc.frequency.value = freq
       gain.gain.setValueAtTime(0, ctx.currentTime)
       gain.gain.linearRampToValueAtTime(0.12, ctx.currentTime + 0.05)
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.8)
-      osc.start(ctx.currentTime)
-      osc.stop(ctx.currentTime + 0.8)
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.9)
+      osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.9)
     } catch {}
   }
 
-  function playBirth() {
+  function playHeartbeat() {
     try {
       if (!ctxRef.current) ctxRef.current = new (window.AudioContext || window.webkitAudioContext)()
       const ctx = ctxRef.current
-      ;[528, 639, 741, 852].forEach((f, i) => {
-        const osc  = ctx.createOscillator()
-        const gain = ctx.createGain()
+      const beat = (t) => {
+        const osc = ctx.createOscillator(); const gain = ctx.createGain()
         osc.connect(gain); gain.connect(ctx.destination)
-        osc.type = 'sine'
-        osc.frequency.value = f
-        const t = ctx.currentTime + i * 0.15
+        osc.type = 'sine'; osc.frequency.value = 80
         gain.gain.setValueAtTime(0, t)
-        gain.gain.linearRampToValueAtTime(0.15, t + 0.1)
+        gain.gain.linearRampToValueAtTime(0.3, t + 0.05)
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.3)
+        osc.start(t); osc.stop(t + 0.3)
+      }
+      beat(ctx.currentTime)
+      beat(ctx.currentTime + 0.25)
+      // Armonía
+      ;[528,639,741].forEach((f,i) => {
+        const osc = ctx.createOscillator(); const gain = ctx.createGain()
+        osc.connect(gain); gain.connect(ctx.destination)
+        osc.type = 'sine'; osc.frequency.value = f
+        const t = ctx.currentTime + 0.6 + i*0.2
+        gain.gain.setValueAtTime(0, t)
+        gain.gain.linearRampToValueAtTime(0.1, t + 0.1)
         gain.gain.exponentialRampToValueAtTime(0.001, t + 1.5)
         osc.start(t); osc.stop(t + 1.5)
       })
@@ -86,226 +89,118 @@ function useAudio() {
   }
 
   useEffect(() => () => stopAmbient(), [])
-
-  return { startAmbient, stopAmbient, playTone, playBirth }
+  return { startAmbient, stopAmbient, playTone, playHeartbeat }
 }
 
-// ─── ORB CON IMAGEN REAL ──────────────────────────────────────────────────────
-function EnergyOrb({ filledEnergies, activeEnergy, absorbing }) {
-  const [orbErr,   setOrbErr]   = useState(false)
-  const [babyErr,  setBabyErr]  = useState(false)
-  const fill     = filledEnergies.length / 5
-  const lastE    = filledEnergies[filledEnergies.length - 1]
-  const tint     = lastE ? ENERGIES[lastE]?.tint : 'rgba(255,220,100,0.15)'
-  const glowCol  = lastE ? ENERGIES[lastE]?.glow : 'rgba(255,220,140,0.4)'
-  const showBaby = filledEnergies.length >= 3
+// ─── ESCENA VISUAL DEL ORB ────────────────────────────────────────────────────
+// step 0: solo santuario cerrado
+// step 1-5: santuario abierto + orb con puerta que se va transparentando
+// step 6: nacimiento con latido
+function OrbScene({ step, filledCount, born }) {
+  // Opacidad de la puerta del orb: empieza en 1, baja 0.2 por cada energía
+  const doorOpacity = Math.max(1 - filledCount * 0.2, 0)
+  // Opacidad del bebé: inversa a la puerta
+  const babyOpacity = Math.min(filledCount * 0.22, 1)
 
   return (
-    <div style={{ position:'relative', width:260, height:300, margin:'0 auto' }}>
+    <div style={{ position:'relative', width:'100%', height:'100%' }}>
 
-      {/* Glow exterior pulsante */}
-      <motion.div
-        animate={{ scale:[1,1.1,1], opacity:[0.3,0.6,0.3] }}
-        transition={{ duration: absorbing ? 0.6 : 4, repeat:Infinity, ease:'easeInOut' }}
-        style={{
-          position:'absolute', inset:-40,
-          borderRadius:'50%',
-          background:`radial-gradient(circle, ${glowCol} 0%, transparent 65%)`,
-          filter:'blur(28px)',
-        }}
-      />
-
-      {/* Orb imagen */}
-      {orbErr ? (
-        <motion.div
-          animate={{ scale:[1,1.04,1] }}
-          transition={{ duration:3, repeat:Infinity }}
-          style={{
-            width:'100%', height:'100%',
-            borderRadius:'50%',
-            background:'radial-gradient(ellipse at 35% 30%, rgba(255,240,200,0.9), rgba(200,180,140,0.6))',
-            display:'flex', alignItems:'center', justifyContent:'center',
-            fontSize:80,
-          }}>
-          ✨
-        </motion.div>
-      ) : (
-        <motion.img
-          src="/panda/panda_orb.png"
-          alt="orb"
-          animate={{ scale: absorbing ? [1,1.06,1] : [1,1.02,1] }}
-          transition={{ duration: absorbing ? 0.4 : 4, repeat:Infinity, ease:'easeInOut' }}
-          style={{ width:'100%', height:'100%', objectFit:'contain', position:'relative', zIndex:1 }}
-          onError={() => setOrbErr(true)}
-        />
-      )}
-
-      {/* Tinte de energía sobre el orb */}
-      <motion.div
-        animate={{ opacity: fill > 0 ? 0.7 : 0 }}
-        transition={{ duration:0.8 }}
-        style={{
-          position:'absolute', inset:0, zIndex:2,
-          borderRadius:'50%',
-          background:`radial-gradient(ellipse at 50% 70%, ${tint} 0%, transparent 70%)`,
-          mixBlendMode:'multiply',
-          pointerEvents:'none',
-        }}
-      />
-
-      {/* Bebé dentro del orb — aparece borroso y se va aclarando */}
+      {/* 1. SANTUARIO CERRADO — solo en step 0 */}
       <AnimatePresence>
-        {showBaby && (
+        {step === 0 && (
+          <motion.img
+            key="closed"
+            src="/panda/onboarding_sanctuary_closed.png"
+            initial={{ opacity:0 }}
+            animate={{ opacity:1 }}
+            exit={{ opacity:0 }}
+            transition={{ duration:1.5 }}
+            style={{ position:'absolute', inset:0, width:'100%', height:'100%', objectFit:'cover', objectPosition:'center' }}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* 2. FONDO NUBES — aparece en step 1+ */}
+      <AnimatePresence>
+        {step >= 1 && (
+          <motion.img
+            key="clouds"
+            src="/panda/onboarding_clouds.png"
+            initial={{ opacity:0 }}
+            animate={{ opacity:1 }}
+            exit={{ opacity:0 }}
+            transition={{ duration:2 }}
+            style={{ position:'absolute', inset:0, width:'100%', height:'100%', objectFit:'cover', objectPosition:'center' }}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* 3. ORB — aparece en step 1+ */}
+      <AnimatePresence>
+        {step >= 1 && (
           <motion.div
-            initial={{ opacity:0, scale:0.6 }}
-            animate={{
-              opacity: 0.4 + fill * 0.5,
-              scale:   0.7 + fill * 0.15,
-              filter:  `blur(${Math.max(0, (1-fill)*8)}px)`,
-            }}
+            key="orb"
+            initial={{ opacity:0, scale:0.7 }}
+            animate={{ opacity:1, scale:1 }}
+            transition={{ duration:1.2, type:'spring', damping:20 }}
             style={{
               position:'absolute',
-              top:'55%', left:'50%',
-              transform:'translate(-50%,-50%)',
-              zIndex:3,
-              pointerEvents:'none',
-            }}>
-            {babyErr
-              ? <span style={{ fontSize:48 }}>🐾</span>
-              : <img src="/panda/panda_baby.png" alt=""
-                  style={{ width:90, height:90, objectFit:'contain' }}
-                  onError={() => setBabyErr(true)} />
-            }
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Partícula que absorbe al seleccionar */}
-      <AnimatePresence>
-        {absorbing && activeEnergy && (
-          <motion.div
-            initial={{ bottom:-20, left:'50%', scale:1, opacity:1 }}
-            animate={{ bottom:'60%', left:'50%', scale:0.2, opacity:0 }}
-            exit={{ opacity:0 }}
-            transition={{ duration:0.6, ease:'easeOut' }}
-            style={{
-              position:'absolute', zIndex:10,
-              fontSize:24,
+              bottom:'5%', left:'50%',
               transform:'translateX(-50%)',
+              width:'55%', maxWidth:280,
             }}>
-            {ENERGIES[activeEnergy]?.emoji}
-          </motion.div>
-        )}
-      </AnimatePresence>
 
-      {/* Indicador de energías acumuladas */}
-      <div style={{
-        position:'absolute', bottom:-16, left:'50%',
-        transform:'translateX(-50%)',
-        display:'flex', gap:6, zIndex:5,
-      }}>
-        {Object.keys(ENERGIES).map((k,i) => (
-          <motion.div key={k}
-            animate={{
-              scale:    filledEnergies.includes(k) ? 1 : 0.6,
-              opacity:  filledEnergies.includes(k) ? 1 : 0.25,
-              boxShadow: filledEnergies.includes(k) ? `0 0 8px ${ENERGIES[k].color}` : 'none',
-            }}
-            transition={{ duration:0.4 }}
-            style={{
-              width:10, height:10, borderRadius:'50%',
-              background: ENERGIES[k].color,
-            }}
-          />
-        ))}
-      </div>
-    </div>
-  )
-}
+            {/* Glow del orb */}
+            <motion.div
+              animate={{ scale:[1,1.08,1], opacity:[0.4,0.7,0.4] }}
+              transition={{ duration:3, repeat:Infinity, ease:'easeInOut' }}
+              style={{
+                position:'absolute', inset:-20,
+                borderRadius:'50%',
+                background:'radial-gradient(circle, rgba(255,220,140,0.5) 0%, transparent 70%)',
+                filter:'blur(20px)',
+              }}
+            />
 
-// ─── OPCIÓN CARD ──────────────────────────────────────────────────────────────
-function OptionCard({ selected, onSelect, emoji, label, theme, energyColor }) {
-  return (
-    <motion.button
-      whileTap={{ scale:0.97 }}
-      onClick={onSelect}
-      initial={{ opacity:0, y:10 }}
-      animate={{ opacity:1, y:0 }}
-      style={{
-        width:'100%',
-        display:'flex', alignItems:'center', gap:12,
-        padding:'12px 16px', borderRadius:16,
-        border:`1.5px solid ${selected ? energyColor : 'rgba(255,255,255,0.4)'}`,
-        background: selected
-          ? `${energyColor}22`
-          : 'rgba(255,255,255,0.45)',
-        backdropFilter:'blur(12px)',
-        textAlign:'left', cursor:'pointer',
-        boxShadow: selected
-          ? `0 4px 20px ${energyColor}30, inset 0 1px 0 rgba(255,255,255,0.5)`
-          : '0 2px 8px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.5)',
-        transition:'all 0.25s',
-      }}>
-      <span style={{ fontSize:20, flexShrink:0 }}>{emoji}</span>
-      <span style={{ fontSize:13, fontWeight:500, color: selected ? energyColor : '#374151', flex:1, textAlign:'left' }}>
-        {label}
-      </span>
-      {selected && (
-        <motion.div initial={{ scale:0 }} animate={{ scale:1 }}
-          style={{ width:18, height:18, borderRadius:'50%', background:energyColor,
-            display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-          <span style={{ fontSize:10, color:'white' }}>✓</span>
-        </motion.div>
-      )}
-    </motion.button>
-  )
-}
+            {/* Baby Pandi — debajo de la puerta */}
+            <motion.img
+              src="/panda/onboarding_orb_baby_clear.png"
+              animate={{ opacity: babyOpacity }}
+              transition={{ duration:0.8 }}
+              style={{
+                position:'absolute', inset:0,
+                width:'100%', height:'100%',
+                objectFit:'contain',
+                filter: `blur(${Math.max(0, (1-babyOpacity)*6)}px)`,
+              }}
+              onError={e => e.target.style.display='none'}
+            />
 
-// ─── ECLOSIÓN ─────────────────────────────────────────────────────────────────
-function BirthScene({ name, dominantEnergy, onContinue, playBirth }) {
-  const [phase, setPhase] = useState('glow')
-  const [babyErr, setBabyErr] = useState(false)
+            {/* Puerta del orb — se va haciendo transparente */}
+            <motion.img
+              src="/panda/onboarding_orb_door.png"
+              animate={{ opacity: doorOpacity }}
+              transition={{ duration:0.8 }}
+              style={{
+                position:'relative', zIndex:2,
+                width:'100%', height:'auto',
+                objectFit:'contain',
+                display:'block',
+              }}
+              onError={e => e.target.style.display='none'}
+            />
 
-  useEffect(() => {
-    playBirth()
-    const t1 = setTimeout(() => setPhase('crack'),   600)
-    const t2 = setTimeout(() => setPhase('explode'), 1400)
-    const t3 = setTimeout(() => setPhase('born'),    2200)
-    const t4 = setTimeout(() => setPhase('message'), 3400)
-    return () => { clearTimeout(t1);clearTimeout(t2);clearTimeout(t3);clearTimeout(t4) }
-  }, [])
-
-  const glowColor = dominantEnergy ? ENERGIES[dominantEnergy]?.glow : 'rgba(46,196,182,0.6)'
-
-  return (
-    <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }}
-      style={{
-        position:'fixed', inset:0, zIndex:200,
-        display:'flex', flexDirection:'column',
-        alignItems:'center', justifyContent:'center',
-        background:'radial-gradient(ellipse at 50% 40%, #fffbf0 0%, #e8f4fd 40%, #f0e8ff 100%)',
-        overflow:'hidden', padding:32,
-      }}>
-
-      {/* Grietas de luz */}
-      <AnimatePresence>
-        {(phase==='crack'||phase==='explode') && (
-          <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
-            style={{ position:'absolute', top:'40%', left:'50%', transform:'translate(-50%,-50%)' }}>
-            {[...Array(10)].map((_,i) => (
+            {/* Partículas de energía */}
+            {filledCount > 0 && [...Array(filledCount)].map((_,i) => (
               <motion.div key={i}
-                initial={{ scaleX:0, opacity:0.9 }}
-                animate={{ scaleX:1, opacity:0 }}
-                transition={{ duration:0.5, delay:i*0.06 }}
+                animate={{ y:[0,-(20+i*8),0], opacity:[0,0.7,0] }}
+                transition={{ duration:2+i*0.3, delay:i*0.4, repeat:Infinity }}
                 style={{
                   position:'absolute',
-                  width:80+i*15, height:1.5,
-                  background:`linear-gradient(90deg, transparent, ${glowColor.replace('0.7','1')}, transparent)`,
-                  top: Math.sin(i*36*Math.PI/180)*60,
-                  left: Math.cos(i*36*Math.PI/180)*60 - 40,
-                  transform:`rotate(${i*36}deg)`,
-                  transformOrigin:'left center',
-                  boxShadow:`0 0 6px ${glowColor}`,
+                  bottom:'30%', left:`${30+i*10}%`,
+                  width:6, height:6, borderRadius:'50%',
+                  background:Object.values(ENERGIES)[i]?.color,
+                  filter:'blur(1px)',
                 }}
               />
             ))}
@@ -313,64 +208,116 @@ function BirthScene({ name, dominantEnergy, onContinue, playBirth }) {
         )}
       </AnimatePresence>
 
-      {/* Explosión */}
+      {/* 4. LATIDO — born */}
       <AnimatePresence>
-        {phase==='explode' && (
+        {born && (
           <motion.div
-            initial={{ scale:0.2, opacity:1 }}
-            animate={{ scale:12, opacity:0 }}
-            transition={{ duration:0.6, ease:'easeOut' }}
+            initial={{ scale:0.8, opacity:0 }}
+            animate={{ scale:[1,1.06,1], opacity:1 }}
+            transition={{ scale:{ duration:1, repeat:Infinity }, opacity:{ duration:0.5 } }}
             style={{
-              position:'absolute', width:80, height:80, borderRadius:'50%',
-              background:`radial-gradient(circle, rgba(255,240,180,0.95) 0%, ${glowColor} 50%, transparent 70%)`,
+              position:'absolute', inset:0,
+              display:'flex', alignItems:'center', justifyContent:'center',
+            }}>
+            <motion.div
+              animate={{ scale:[1,1.15,1], opacity:[0.3,0.6,0.3] }}
+              transition={{ duration:1.2, repeat:Infinity }}
+              style={{
+                width:200, height:200, borderRadius:'50%',
+                background:'radial-gradient(circle, rgba(255,180,100,0.6) 0%, transparent 70%)',
+                filter:'blur(20px)',
+                position:'absolute',
+              }}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  )
+}
+
+// ─── ESCENA DE NACIMIENTO ─────────────────────────────────────────────────────
+function BirthScene({ name, onContinue, playHeartbeat }) {
+  const [phase, setPhase] = useState('heartbeat')
+  const [imgErr, setImgErr] = useState(false)
+
+  useEffect(() => {
+    playHeartbeat()
+    const t1 = setTimeout(() => setPhase('glow'),    800)
+    const t2 = setTimeout(() => setPhase('born'),   1800)
+    const t3 = setTimeout(() => setPhase('message'),3200)
+    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3) }
+  }, [])
+
+  return (
+    <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }}
+      style={{
+        position:'fixed', inset:0, zIndex:200,
+        display:'flex', flexDirection:'column',
+        alignItems:'center', justifyContent:'center',
+        overflow:'hidden', padding:'32px 24px',
+      }}>
+
+      {/* Fondo */}
+      <img src="/panda/onboarding_clouds.png" alt=""
+        style={{ position:'absolute', inset:0, width:'100%', height:'100%', objectFit:'cover', opacity:0.8 }} />
+      <div style={{ position:'absolute', inset:0, background:'rgba(255,248,235,0.4)' }} />
+
+      {/* Pulso de luz */}
+      <AnimatePresence>
+        {phase === 'glow' && (
+          <motion.div
+            initial={{ scale:0.5, opacity:0.8 }}
+            animate={{ scale:4, opacity:0 }}
+            transition={{ duration:1, ease:'easeOut' }}
+            style={{
+              position:'absolute',
+              width:120, height:120, borderRadius:'50%',
+              background:'radial-gradient(circle, rgba(255,220,140,0.9) 0%, rgba(255,180,80,0.4) 60%, transparent 80%)',
             }}
           />
         )}
       </AnimatePresence>
 
       {/* Partículas */}
-      {(phase==='born'||phase==='message') && (
-        [...Array(20)].map((_,i) => (
-          <motion.div key={i}
-            initial={{ x:0, y:0, opacity:1, scale:1 }}
-            animate={{ x:Math.cos(i*18*Math.PI/180)*200, y:Math.sin(i*18*Math.PI/180)*200, opacity:0, scale:0 }}
-            transition={{ duration:1.4, delay:i*0.03, ease:'easeOut' }}
-            style={{
-              position:'absolute', width:7, height:7, borderRadius:'50%',
-              background:['#2EC4B6','#FF8FA3','#F59E0B','#6366F1','#22C55E'][i%5],
-              boxShadow:`0 0 10px ${['#2EC4B6','#FF8FA3','#F59E0B','#6366F1','#22C55E'][i%5]}`,
-            }}
-          />
-        ))
-      )}
+      {(phase==='born'||phase==='message') && [...Array(16)].map((_,i) => (
+        <motion.div key={i}
+          initial={{ x:0, y:0, opacity:1 }}
+          animate={{ x:Math.cos(i*22.5*Math.PI/180)*160, y:Math.sin(i*22.5*Math.PI/180)*160, opacity:0 }}
+          transition={{ duration:1.2, delay:i*0.03 }}
+          style={{
+            position:'absolute', width:7, height:7, borderRadius:'50%',
+            background:['#2EC4B6','#FF8FA3','#F59E0B','#6366F1','#22C55E'][i%5],
+          }}
+        />
+      ))}
 
-      {/* Baby Pandi */}
+      {/* Resultado — orb con Pandi */}
       <AnimatePresence>
         {(phase==='born'||phase==='message') && (
           <motion.div
-            initial={{ scale:0, opacity:0, y:40 }}
+            initial={{ scale:0.6, opacity:0, y:20 }}
             animate={{ scale:1, opacity:1, y:0 }}
-            transition={{ type:'spring', damping:12, stiffness:160 }}
-            style={{ position:'relative', marginBottom:32 }}>
+            transition={{ type:'spring', damping:14, stiffness:160 }}
+            style={{ position:'relative', zIndex:1, width:'65%', maxWidth:300, marginBottom:32 }}>
             <motion.div
-              animate={{ scale:[1,1.15,1], opacity:[0.3,0.6,0.3] }}
-              transition={{ duration:3, repeat:Infinity }}
+              animate={{ scale:[1,1.1,1], opacity:[0.3,0.5,0.3] }}
+              transition={{ duration:2, repeat:Infinity }}
               style={{
-                position:'absolute', top:'50%', left:'50%',
-                transform:'translate(-50%,-50%)',
-                width:220, height:220, borderRadius:'50%',
-                background:`radial-gradient(circle, ${glowColor} 0%, transparent 70%)`,
-                filter:'blur(24px)',
+                position:'absolute', inset:-30, borderRadius:'50%',
+                background:'radial-gradient(circle, rgba(255,200,100,0.5) 0%, transparent 70%)',
+                filter:'blur(20px)',
               }}
             />
-            {babyErr
-              ? <span style={{ fontSize:120, display:'block', position:'relative', zIndex:1 }}>🐾</span>
+            {imgErr
+              ? <span style={{ fontSize:120, display:'block' }}>🐾</span>
               : <motion.img
-                  src="/panda/panda_baby.png" alt="Pandi"
-                  animate={phase==='message' ? { y:[0,-8,0] } : {}}
+                  src="/panda/onboarding_orb_baby_clear.png"
+                  alt="Pandi"
+                  animate={phase==='message' ? { y:[0,-6,0] } : {}}
                   transition={{ duration:3, repeat:Infinity, ease:'easeInOut' }}
-                  style={{ width:200, height:200, objectFit:'contain', position:'relative', zIndex:1 }}
-                  onError={() => setBabyErr(true)}
+                  style={{ width:'100%', objectFit:'contain', position:'relative', zIndex:1 }}
+                  onError={() => setImgErr(true)}
                 />
             }
           </motion.div>
@@ -380,16 +327,16 @@ function BirthScene({ name, dominantEnergy, onContinue, playBirth }) {
       {/* Mensaje */}
       <AnimatePresence>
         {phase==='message' && (
-          <motion.div initial={{ opacity:0, y:24 }} animate={{ opacity:1, y:0 }}
+          <motion.div initial={{ opacity:0, y:20 }} animate={{ opacity:1, y:0 }}
             transition={{ delay:0.3 }}
-            style={{ textAlign:'center', maxWidth:300 }}>
-            <p style={{ fontSize:12, color:'#9CA3AF', letterSpacing:'.08em', textTransform:'uppercase', margin:'0 0 10px', fontWeight:600 }}>
+            style={{ textAlign:'center', maxWidth:300, position:'relative', zIndex:1 }}>
+            <p style={{ fontSize:11, color:'#9CA3AF', letterSpacing:'.1em', textTransform:'uppercase', margin:'0 0 8px', fontWeight:700 }}>
               ha nacido
             </p>
             <h2 style={{ fontSize:24, fontWeight:900, color:'#1A2332', margin:'0 0 14px', lineHeight:1.2 }}>
               {name ? `${name},\nesta eres tú.` : 'Esta eres tú.'} 🐾
             </h2>
-            <p style={{ fontSize:13, color:'#6B7280', lineHeight:1.8, margin:'0 0 28px', fontStyle:'italic' }}>
+            <p style={{ fontSize:13, color:'#6B7280', lineHeight:1.9, margin:'0 0 28px', fontStyle:'italic' }}>
               "No soy una recompensa.<br/>
               Soy tu reflejo.<br/>
               Lo que ocurra conmigo<br/>
@@ -405,7 +352,7 @@ function BirthScene({ name, dominantEnergy, onContinue, playBirth }) {
                 background:'linear-gradient(135deg, #2EC4B6, #FF8FA3)',
                 border:'none', color:'white',
                 fontSize:16, fontWeight:800, cursor:'pointer',
-                boxShadow:'0 8px 32px rgba(46,196,182,0.45)',
+                boxShadow:'0 8px 32px rgba(46,196,182,0.4)',
               }}>
               Empezar a crecer juntos 🐾
             </motion.button>
@@ -413,6 +360,34 @@ function BirthScene({ name, dominantEnergy, onContinue, playBirth }) {
         )}
       </AnimatePresence>
     </motion.div>
+  )
+}
+
+// ─── OPCIÓN CARD ──────────────────────────────────────────────────────────────
+function OptionCard({ selected, onSelect, emoji, label, energyColor }) {
+  return (
+    <motion.button whileTap={{ scale:0.97 }} onClick={onSelect}
+      style={{
+        width:'100%', display:'flex', alignItems:'center', gap:12,
+        padding:'12px 16px', borderRadius:16,
+        border:`1.5px solid ${selected ? energyColor : 'rgba(255,255,255,0.5)'}`,
+        background: selected ? `${energyColor}20` : 'rgba(255,255,255,0.55)',
+        backdropFilter:'blur(16px)',
+        textAlign:'left', cursor:'pointer',
+        boxShadow: selected
+          ? `0 4px 20px ${energyColor}30, inset 0 1px 0 rgba(255,255,255,0.6)`
+          : '0 2px 8px rgba(0,0,0,0.05), inset 0 1px 0 rgba(255,255,255,0.6)',
+        transition:'all 0.2s',
+      }}>
+      <span style={{ fontSize:20 }}>{emoji}</span>
+      <span style={{ fontSize:13, fontWeight:500, color: selected ? energyColor : '#374151', flex:1 }}>{label}</span>
+      {selected && (
+        <motion.div initial={{ scale:0 }} animate={{ scale:1 }}
+          style={{ width:18, height:18, borderRadius:'50%', background:energyColor, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+          <span style={{ fontSize:10, color:'white' }}>✓</span>
+        </motion.div>
+      )}
+    </motion.button>
   )
 }
 
@@ -424,9 +399,9 @@ export default function Onboarding() {
   const [showBirth, setShowBirth] = useState(false)
   const [absorbing, setAbsorbing] = useState(false)
   const { user, fetchProfile }    = useStore()
-  const navigate = useNavigate()
-  const audio    = useAudio()
-  const started  = useRef(false)
+  const navigate  = useNavigate()
+  const audio     = useAudio()
+  const started   = useRef(false)
 
   const [form, setForm] = useState({
     name:'', birth_date:'', sex:'other',
@@ -443,16 +418,12 @@ export default function Onboarding() {
     form.intention ? 'intention' : null,
   ].filter(Boolean)
 
-  const stepEnergyKey = ['water','sleep','movement','food','intention'][step-1] || null
-  const activeEnergy  = stepEnergyKey
-  const energyColor   = stepEnergyKey ? ENERGIES[stepEnergyKey]?.color : '#2EC4B6'
-  const dominantEnergy = filledEnergies[filledEnergies.length-1] || null
+  const filledCount    = filledEnergies.length
+  const stepEnergyKey  = ['water','sleep','movement','food','intention'][step-1] || null
+  const energyColor    = stepEnergyKey ? ENERGIES[stepEnergyKey]?.color : '#D4A847'
 
   function handleFirstInteraction() {
-    if (!started.current) {
-      started.current = true
-      audio.startAmbient()
-    }
+    if (!started.current) { started.current = true; audio.startAmbient() }
   }
 
   function selectOption(key, value) {
@@ -482,7 +453,7 @@ export default function Onboarding() {
     setLoading(true)
     try {
       const userId = user.id
-      const sleepHours  = { low:4, irregular:5.5, enough:7, deep:8 }[form.sleep] || 7
+      const sleepHours   = { low:4, irregular:5.5, enough:7, deep:8 }[form.sleep] || 7
       const trainingDays = { never:0, sometimes:1, regular:3, daily:5 }[form.movement] || 2
       const motivation   = form.intention==='custom' ? form.intentionCustom : form.intention
 
@@ -508,44 +479,36 @@ export default function Onboarding() {
   }
 
   if (showBirth) {
-    return <BirthScene name={form.name} dominantEnergy={dominantEnergy}
-      onContinue={() => navigate('/')} playBirth={audio.playBirth} />
+    return <BirthScene name={form.name} onContinue={() => navigate('/')} playHeartbeat={audio.playHeartbeat} />
   }
 
+  // ── PASOS ──────────────────────────────────────────────────────────────────
   const STEPS = [
     {
       title: 'Toda vida\ncomienza con energía.',
       subtitle: 'Antes de que existiera cualquier forma,\nhabía una intención.\n\nDime cómo llamarte.',
       content: (
         <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
-          <input className="input"
-            placeholder="Mi nombre es…"
-            value={form.name}
+          <input className="input" placeholder="Mi nombre es…" value={form.name}
             onChange={e => { handleFirstInteraction(); set('name', e.target.value) }}
-            style={{ fontSize:16, fontWeight:500, background:'rgba(255,255,255,0.6)', backdropFilter:'blur(12px)' }}
-            autoFocus
-          />
+            style={{ fontSize:16, fontWeight:500, background:'rgba(255,255,255,0.7)', backdropFilter:'blur(16px)' }}
+            autoFocus />
           {form.name && (
             <motion.p initial={{ opacity:0 }} animate={{ opacity:1 }}
-              style={{ fontSize:12, color:'#6366F1', fontStyle:'italic', margin:0, paddingLeft:4 }}>
+              style={{ fontSize:12, color:'#D4A847', fontStyle:'italic', margin:0, paddingLeft:4 }}>
               "{form.name}". Ese nombre será el primer latido. ✨
             </motion.p>
           )}
           <div style={{ display:'flex', gap:10 }}>
             <div style={{ flex:1 }}>
-              <label style={{ fontSize:11, color:'#9CA3AF', fontWeight:600, display:'block', marginBottom:6, textTransform:'uppercase', letterSpacing:'.05em' }}>
-                Naciste en
-              </label>
-              <input className="input" type="date" value={form.birth_date}
-                onChange={e => set('birth_date', e.target.value)}
-                style={{ background:'rgba(255,255,255,0.6)', backdropFilter:'blur(12px)' }} />
+              <label style={{ fontSize:11, color:'#9CA3AF', fontWeight:600, display:'block', marginBottom:6, textTransform:'uppercase', letterSpacing:'.05em' }}>Naciste en</label>
+              <input className="input" type="date" value={form.birth_date} onChange={e => set('birth_date', e.target.value)}
+                style={{ background:'rgba(255,255,255,0.7)', backdropFilter:'blur(16px)' }} />
             </div>
             <div style={{ flex:1 }}>
-              <label style={{ fontSize:11, color:'#9CA3AF', fontWeight:600, display:'block', marginBottom:6, textTransform:'uppercase', letterSpacing:'.05em' }}>
-                Te identificas
-              </label>
+              <label style={{ fontSize:11, color:'#9CA3AF', fontWeight:600, display:'block', marginBottom:6, textTransform:'uppercase', letterSpacing:'.05em' }}>Te identificas</label>
               <select className="input" value={form.sex} onChange={e => set('sex', e.target.value)}
-                style={{ background:'rgba(255,255,255,0.6)', backdropFilter:'blur(12px)' }}>
+                style={{ background:'rgba(255,255,255,0.7)', backdropFilter:'blur(16px)' }}>
                 <option value="male">Hombre</option>
                 <option value="female">Mujer</option>
                 <option value="other">Prefiero no decir</option>
@@ -557,7 +520,7 @@ export default function Onboarding() {
     },
     {
       title: 'El agua es el canal.',
-      subtitle: 'Siento el primer canal abrirse.\nEl agua no me llena — me conecta.\n¿Cuánto fluye a través de ti cada día?',
+      subtitle: 'El agua no me llena — me conecta.\n¿Cuánto fluye a través de ti cada día?',
       feedback: form.water ? '"Este canal será nuestro punto de encuentro."' : null,
       content: (
         <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
@@ -567,9 +530,9 @@ export default function Onboarding() {
             {v:'enough',  emoji:'🌊', label:'Bien — 1.5 a 2 litros'},
             {v:'flowing', emoji:'🌀', label:'Fluyo — más de 2 litros'},
           ].map((o,i) => (
-            <motion.div key={o.v} initial={{ opacity:0, y:12 }} animate={{ opacity:1, y:0 }} transition={{ delay:i*0.06 }}>
+            <motion.div key={o.v} initial={{ opacity:0, y:10 }} animate={{ opacity:1, y:0 }} transition={{ delay:i*0.06 }}>
               <OptionCard selected={form.water===o.v} onSelect={() => selectOption('water',o.v)}
-                emoji={o.emoji} label={o.label} theme={theme} energyColor={energyColor} />
+                emoji={o.emoji} label={o.label} energyColor={energyColor} />
             </motion.div>
           ))}
         </div>
@@ -577,7 +540,7 @@ export default function Onboarding() {
     },
     {
       title: 'El silencio es\ndonde integramos.',
-      subtitle: 'El silencio no es ausencia.\nEs donde el cuerpo reconstruye\nlo que el día deshizo.',
+      subtitle: 'El silencio no es ausencia.\nEs donde el cuerpo reconstruye lo que el día deshizo.',
       feedback: form.sleep ? '"Siento tu ritmo nocturno. Aprenderé a respirar con él."' : null,
       content: (
         <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
@@ -587,9 +550,9 @@ export default function Onboarding() {
             {v:'enough',    emoji:'🌕', label:'Suficiente — 6 a 7 horas'},
             {v:'deep',      emoji:'✨', label:'Profundo — más de 7 horas'},
           ].map((o,i) => (
-            <motion.div key={o.v} initial={{ opacity:0, y:12 }} animate={{ opacity:1, y:0 }} transition={{ delay:i*0.06 }}>
+            <motion.div key={o.v} initial={{ opacity:0, y:10 }} animate={{ opacity:1, y:0 }} transition={{ delay:i*0.06 }}>
               <OptionCard selected={form.sleep===o.v} onSelect={() => selectOption('sleep',o.v)}
-                emoji={o.emoji} label={o.label} theme={theme} energyColor={energyColor} />
+                emoji={o.emoji} label={o.label} energyColor={energyColor} />
             </motion.div>
           ))}
         </div>
@@ -597,7 +560,7 @@ export default function Onboarding() {
     },
     {
       title: 'El movimiento es\nel fuego que transforma.',
-      subtitle: 'El movimiento no desgasta.\nTransforma.\n¿Con qué frecuencia enciendes ese fuego?',
+      subtitle: 'El movimiento no desgasta. Transforma.\n¿Con qué frecuencia enciendes ese fuego?',
       feedback: form.movement ? '"Tu fuego dará forma a lo que soy."' : null,
       content: (
         <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
@@ -607,17 +570,17 @@ export default function Onboarding() {
             {v:'regular',   emoji:'🔥', label:'Tres o cuatro veces'},
             {v:'daily',     emoji:'⚡', label:'Cada día es una oportunidad'},
           ].map((o,i) => (
-            <motion.div key={o.v} initial={{ opacity:0, y:12 }} animate={{ opacity:1, y:0 }} transition={{ delay:i*0.06 }}>
+            <motion.div key={o.v} initial={{ opacity:0, y:10 }} animate={{ opacity:1, y:0 }} transition={{ delay:i*0.06 }}>
               <OptionCard selected={form.movement===o.v} onSelect={() => selectOption('movement',o.v)}
-                emoji={o.emoji} label={o.label} theme={theme} energyColor={energyColor} />
+                emoji={o.emoji} label={o.label} energyColor={energyColor} />
             </motion.div>
           ))}
         </div>
       ),
     },
     {
-      title: 'Somos lo que\negimos nutrir.',
-      subtitle: 'Ya tengo agua, silencio y fuego.\nAhora necesito saber\nde qué tierra vienes.',
+      title: 'Somos lo que\nelegimos nutrir.',
+      subtitle: 'Ya tengo agua, silencio y fuego.\nAhora necesito saber de qué tierra vienes.',
       feedback: form.food ? '"Esta es la base. Desde aquí construimos."' : null,
       content: (
         <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
@@ -631,22 +594,19 @@ export default function Onboarding() {
           ].map((o,i) => (
             <motion.button key={o.v}
               initial={{ opacity:0, scale:0.9 }} animate={{ opacity:1, scale:1 }} transition={{ delay:i*0.05 }}
-              whileTap={{ scale:0.96 }}
-              onClick={() => selectOption('food',o.v)}
+              whileTap={{ scale:0.96 }} onClick={() => selectOption('food',o.v)}
               style={{
                 padding:'14px 8px', borderRadius:16,
-                border:`1.5px solid ${form.food===o.v ? energyColor : 'rgba(255,255,255,0.4)'}`,
-                background: form.food===o.v ? `${energyColor}22` : 'rgba(255,255,255,0.45)',
-                backdropFilter:'blur(12px)',
+                border:`1.5px solid ${form.food===o.v ? energyColor : 'rgba(255,255,255,0.5)'}`,
+                background: form.food===o.v ? `${energyColor}22` : 'rgba(255,255,255,0.55)',
+                backdropFilter:'blur(16px)',
                 display:'flex', flexDirection:'column', alignItems:'center', gap:6,
                 cursor:'pointer',
                 boxShadow: form.food===o.v ? `0 4px 16px ${energyColor}30` : '0 2px 8px rgba(0,0,0,0.05)',
                 transition:'all 0.2s',
               }}>
-              <span style={{ fontSize:24 }}>{o.emoji}</span>
-              <span style={{ fontSize:11, fontWeight:500, color: form.food===o.v ? energyColor : '#374151', textAlign:'center' }}>
-                {o.label}
-              </span>
+              <span style={{ fontSize:22 }}>{o.emoji}</span>
+              <span style={{ fontSize:11, fontWeight:500, color: form.food===o.v ? energyColor : '#374151', textAlign:'center' }}>{o.label}</span>
             </motion.button>
           ))}
         </div>
@@ -654,7 +614,7 @@ export default function Onboarding() {
     },
     {
       title: 'La intención\nes el alma.',
-      subtitle: 'Tengo forma. Tengo energía.\nSolo me falta saber por qué existo.\n¿Qué te trajo hasta aquí?',
+      subtitle: 'Tengo forma. Tengo energía.\nSolo me falta saber por qué existo.',
       feedback: form.intention ? '"Esa es la razón por la que latiré."' : null,
       content: (
         <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
@@ -668,20 +628,20 @@ export default function Onboarding() {
           ].map((o,i) => (
             <motion.div key={o.v} initial={{ opacity:0, y:10 }} animate={{ opacity:1, y:0 }} transition={{ delay:i*0.05 }}>
               <OptionCard selected={form.intention===o.v} onSelect={() => selectOption('intention',o.v)}
-                emoji={o.emoji} label={o.label} theme={theme} energyColor={energyColor} />
+                emoji={o.emoji} label={o.label} energyColor={energyColor} />
             </motion.div>
           ))}
-          {form.intention && form.intention !== 'custom' && (
+          {form.intention && form.intention!=='custom' && (
             <button onClick={() => set('intention','custom')}
               style={{ background:'none', border:'none', color:'#9CA3AF', fontSize:12, cursor:'pointer', padding:'4px 0' }}>
               ✍️ Escribir mi propia razón
             </button>
           )}
-          {form.intention === 'custom' && (
+          {form.intention==='custom' && (
             <motion.input initial={{ opacity:0 }} animate={{ opacity:1 }}
               className="input" placeholder="Mi razón es…"
               value={form.intentionCustom} onChange={e => set('intentionCustom',e.target.value)}
-              style={{ background:'rgba(255,255,255,0.6)' }} autoFocus />
+              style={{ background:'rgba(255,255,255,0.7)' }} autoFocus />
           )}
         </div>
       ),
@@ -692,169 +652,126 @@ export default function Onboarding() {
   const isLast  = step === STEPS.length - 1
 
   return (
-    <div style={{ minHeight:'100vh', position:'relative', display:'flex', flexDirection:'column', overflow:'hidden' }}>
+    <div style={{ position:'fixed', inset:0, display:'flex', flexDirection:'column', overflow:'hidden' }}>
 
-      {/* Fondo santuario */}
-      <motion.div key={step} initial={{ opacity:0 }} animate={{ opacity:1 }} transition={{ duration:1.2 }}
-        style={{ position:'fixed', inset:0, zIndex:0, overflow:'hidden' }}>
-        <img
-          src={[
-            '/panda/sanctuary_green.png',
-            '/panda/sanctuary_green.png',
-            '/panda/sanctuary_red.png',
-            '/panda/sanctuary_yellow.png',
-            '/panda/sanctuary_green.png',
-            '/panda/sanctuary_red.png',
-          ][step] || '/panda/sanctuary_green.png'}
-          alt=""
-          style={{ width:'100%', height:'100%', objectFit:'cover', objectPosition:'center 60%', opacity:0.45 }}
-        />
-        {/* Overlay glassmorphism en la mitad inferior */}
-        <div style={{
-          position:'absolute', bottom:0, left:0, right:0, height:'55%',
-          background:'linear-gradient(to top, rgba(255,255,255,0.75) 0%, rgba(255,255,255,0.3) 60%, transparent 100%)',
-          backdropFilter:'blur(0px)',
-        }} />
-      </motion.div>
+      {/* ── FONDO COMPLETO — ocupa toda la pantalla ── */}
+      <div style={{ position:'absolute', inset:0, zIndex:0 }}>
+        <OrbScene step={step} filledCount={filledCount} born={false} />
+      </div>
 
-      {/* Contenido */}
+      {/* ── TRANSICIÓN INICIAL: blanco → imagen ── */}
+      <AnimatePresence>
+        {step === 0 && (
+          <motion.div
+            initial={{ opacity:1 }}
+            animate={{ opacity:0 }}
+            transition={{ duration:2, delay:0.3 }}
+            style={{ position:'absolute', inset:0, zIndex:5, background:'white', pointerEvents:'none' }}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* ── PANEL INFERIOR GLASSMORPHISM ── */}
       <div style={{
-        position:'relative', zIndex:1,
-        display:'flex', flexDirection:'column',
-        minHeight:'100vh',
-        maxWidth:440, margin:'0 auto', width:'100%',
+        position:'absolute', bottom:0, left:0, right:0, zIndex:10,
+        background:'rgba(255,252,245,0.82)',
+        backdropFilter:'blur(24px)',
+        borderTop:'1px solid rgba(255,255,255,0.8)',
+        borderRadius:'28px 28px 0 0',
+        padding:'20px 20px 40px',
+        maxHeight:'55vh',
+        overflowY:'auto',
+        boxShadow:'0 -8px 40px rgba(0,0,0,0.08)',
+        maxWidth:440,
+        margin:'0 auto',
+        width:'100%',
       }}>
 
-        {/* Zona superior — ORB (55% pantalla) */}
-        <div style={{
-          flex:'0 0 auto',
-          display:'flex', flexDirection:'column',
-          alignItems:'center', justifyContent:'center',
-          paddingTop:32, paddingBottom:16,
-          minHeight:'45vh',
-        }}>
-          <EnergyOrb
-            filledEnergies={filledEnergies}
-            activeEnergy={activeEnergy}
-            absorbing={absorbing}
-          />
+        {/* Pill decorativo */}
+        <div style={{ width:40, height:4, borderRadius:2, background:'rgba(0,0,0,0.1)', margin:'0 auto 16px' }} />
+
+        {/* Título */}
+        <AnimatePresence mode="wait">
+          <motion.div key={`t-${step}`}
+            initial={{ opacity:0, y:8 }} animate={{ opacity:1, y:0 }}
+            exit={{ opacity:0, y:-8 }} transition={{ duration:0.25 }}
+            style={{ marginBottom:14 }}>
+            <h2 style={{ fontSize:19, fontWeight:900, color:'#1A2332', margin:'0 0 6px', lineHeight:1.25, whiteSpace:'pre-line' }}>
+              {current.title}
+            </h2>
+            <p style={{ fontSize:12, color:'#6B7280', margin:0, lineHeight:1.6, whiteSpace:'pre-line' }}>
+              {current.subtitle}
+            </p>
+          </motion.div>
+        </AnimatePresence>
+
+        {/* Contenido */}
+        <AnimatePresence mode="wait">
+          <motion.div key={`c-${step}`}
+            initial={{ opacity:0, x:16 }} animate={{ opacity:1, x:0 }}
+            exit={{ opacity:0, x:-16 }} transition={{ duration:0.2 }}>
+            {current.content}
+            <AnimatePresence>
+              {current.feedback && (
+                <motion.div initial={{ opacity:0, y:6 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0 }}
+                  style={{ marginTop:10, padding:'10px 14px', borderRadius:14,
+                    background:`${energyColor}14`, border:`1px solid ${energyColor}30` }}>
+                  <p style={{ fontSize:12, color:energyColor, margin:0, fontStyle:'italic', lineHeight:1.5 }}>
+                    {current.feedback}
+                  </p>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.div>
+        </AnimatePresence>
+
+        {/* Progreso */}
+        <div style={{ display:'flex', gap:5, margin:'16px 0 12px' }}>
+          {STEPS.map((_,i) => (
+            <motion.div key={i}
+              animate={{
+                flex: i===step ? 2 : 1,
+                background: i<step ? '#2EC4B6' : i===step ? energyColor : 'rgba(0,0,0,0.1)',
+                opacity: i<=step ? 1 : 0.3,
+              }}
+              transition={{ duration:0.4 }}
+              style={{ height:3, borderRadius:3 }}
+            />
+          ))}
         </div>
 
-        {/* Zona inferior — contenido con glassmorphism */}
-        <div style={{
-          flex:1,
-          background:'rgba(255,255,255,0.72)',
-          backdropFilter:'blur(20px)',
-          borderTop:'1px solid rgba(255,255,255,0.8)',
-          borderRadius:'28px 28px 0 0',
-          padding:'24px 20px 36px',
-          display:'flex', flexDirection:'column',
-          boxShadow:'0 -8px 32px rgba(0,0,0,0.06)',
-        }}>
-
-          {/* Título */}
-          <AnimatePresence mode="wait">
-            <motion.div key={`title-${step}`}
-              initial={{ opacity:0, y:10 }} animate={{ opacity:1, y:0 }}
-              exit={{ opacity:0, y:-10 }} transition={{ duration:0.25 }}
-              style={{ marginBottom:16 }}>
-              <h2 style={{
-                fontSize:20, fontWeight:900, color:'#1A2332',
-                margin:'0 0 8px', lineHeight:1.25, whiteSpace:'pre-line',
-              }}>
-                {current.title}
-              </h2>
-              <p style={{ fontSize:12, color:'#6B7280', margin:0, lineHeight:1.6, whiteSpace:'pre-line' }}>
-                {current.subtitle}
-              </p>
-            </motion.div>
-          </AnimatePresence>
-
-          {/* Opciones */}
-          <div style={{ flex:1, overflowY:'auto' }}>
-            <AnimatePresence mode="wait">
-              <motion.div key={`content-${step}`}
-                initial={{ opacity:0, x:16 }} animate={{ opacity:1, x:0 }}
-                exit={{ opacity:0, x:-16 }} transition={{ duration:0.2 }}>
-                {current.content}
-
-                {/* Feedback de la criatura */}
-                <AnimatePresence>
-                  {current.feedback && (
-                    <motion.div
-                      initial={{ opacity:0, y:8 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0 }}
-                      style={{
-                        marginTop:12, padding:'10px 16px',
-                        borderRadius:14,
-                        background:`${energyColor}12`,
-                        border:`1px solid ${energyColor}30`,
-                      }}>
-                      <p style={{ fontSize:12, color: energyColor, margin:0, fontStyle:'italic', lineHeight:1.5 }}>
-                        {current.feedback}
-                      </p>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </motion.div>
-            </AnimatePresence>
-          </div>
-
-          {/* Progreso */}
-          <div style={{ display:'flex', gap:5, margin:'16px 0 14px' }}>
-            {STEPS.map((_,i) => (
-              <motion.div key={i}
-                animate={{
-                  flex: i===step ? 2 : 1,
-                  background: i<step ? '#2EC4B6' : i===step ? energyColor : 'rgba(0,0,0,0.1)',
-                  opacity: i<=step ? 1 : 0.35,
-                }}
-                transition={{ duration:0.4 }}
-                style={{ height:3, borderRadius:3 }}
-              />
-            ))}
-          </div>
-
-          {/* Botones */}
-          <div style={{ display:'flex', gap:10 }}>
-            {step > 0 && (
-              <motion.button whileTap={{ scale:0.97 }}
-                onClick={() => setStep(s=>s-1)}
-                style={{
-                  padding:'14px 18px', borderRadius:16,
-                  border:'1.5px solid rgba(0,0,0,0.1)',
-                  background:'rgba(255,255,255,0.7)',
-                  color:'#6B7280', fontSize:14, fontWeight:600,
-                  cursor:'pointer',
-                }}>
-                ←
-              </motion.button>
-            )}
-            <motion.button
-              whileTap={{ scale: canNext() ? 0.97 : 1 }}
-              onClick={isLast ? finish : goNext}
-              disabled={!canNext() || loading}
-              style={{
-                flex:1, padding:'14px 20px', borderRadius:16,
-                background: canNext()
-                  ? isLast
-                    ? 'linear-gradient(135deg, #2EC4B6, #FF8FA3)'
-                    : `linear-gradient(135deg, ${energyColor}, ${energyColor}bb)`
-                  : 'rgba(0,0,0,0.1)',
-                border:'none', color:'white',
-                fontSize:15, fontWeight:700,
-                cursor: canNext() ? 'pointer' : 'default',
-                opacity: canNext() ? 1 : 0.45,
-                boxShadow: canNext() ? `0 6px 24px ${energyColor}40` : 'none',
-                transition:'all 0.3s',
-              }}>
-              {loading
-                ? '✨ Dando vida…'
-                : isLast
-                ? '✨ Despertar a Pandi'
-                : 'Continuar →'
-              }
+        {/* Botones */}
+        <div style={{ display:'flex', gap:10 }}>
+          {step > 0 && (
+            <motion.button whileTap={{ scale:0.97 }} onClick={() => setStep(s=>s-1)}
+              style={{ padding:'13px 18px', borderRadius:14, border:'1.5px solid rgba(0,0,0,0.1)',
+                background:'rgba(255,255,255,0.8)', color:'#6B7280', fontSize:14, fontWeight:600, cursor:'pointer' }}>
+              ←
             </motion.button>
-          </div>
+          )}
+          <motion.button
+            whileTap={{ scale: canNext() ? 0.97 : 1 }}
+            onClick={isLast ? finish : goNext}
+            disabled={!canNext() || loading}
+            style={{
+              flex:1, padding:'13px 20px', borderRadius:14,
+              background: canNext()
+                ? isLast
+                  ? 'linear-gradient(135deg, #2EC4B6, #FF8FA3)'
+                  : `linear-gradient(135deg, ${energyColor}, ${energyColor}cc)`
+                : 'rgba(0,0,0,0.1)',
+              border:'none', color:'white',
+              fontSize:15, fontWeight:700,
+              cursor: canNext() ? 'pointer' : 'default',
+              opacity: canNext() ? 1 : 0.45,
+              boxShadow: canNext() ? `0 6px 20px ${energyColor}40` : 'none',
+              transition:'all 0.3s',
+            }}>
+            {loading
+              ? <motion.span animate={{ opacity:[1,0.5,1] }} transition={{ duration:1, repeat:Infinity }}>Dando vida…</motion.span>
+              : isLast ? '✨ Despertar a Pandi' : 'Continuar →'
+            }
+          </motion.button>
         </div>
       </div>
     </div>

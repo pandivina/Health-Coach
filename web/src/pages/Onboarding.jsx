@@ -346,13 +346,14 @@ function GlassSelect({ options, value, onChange, energyColor }) {
             exit={{ opacity:0, y:-8, scaleY:0.9 }} transition={{ duration:0.18 }}
             style={{
               position:'absolute', top:'calc(100% + 8px)', left:0, right:0, zIndex:50,
-              borderRadius:16, overflow:'hidden',
+              borderRadius:16,
               background:'rgba(255,252,245,0.94)',
               backdropFilter:'blur(28px)',
               border:'1.5px solid rgba(255,255,255,0.8)',
               boxShadow:'0 8px 32px rgba(0,0,0,0.18)',
-              maxHeight:'45vh',
-              overflowY:'auto',
+              maxHeight:'42vh',
+              overflowY:'scroll',
+              WebkitOverflowScrolling:'touch',
             }}>
             {options.map((o,i)=>(
               <motion.button key={o.v}
@@ -639,12 +640,12 @@ export default function Onboarding() {
             style={{
               position:'absolute', inset:0, zIndex:20,
               display:'flex', flexDirection:'column',
-              justifyContent:'flex-end',
+              justifyContent:'space-between',
               padding:'0 0 44px',
             }}>
 
-            {/* Texto — pill glassmorphism muy sutil para legibilidad */}
-            <div style={{ padding:'0 28px 18px', textAlign:'center' }}>
+            {/* Texto arriba — justo donde empieza el arco */}
+            <div style={{ padding:'12% 28px 0', textAlign:'center' }}>
               <AnimatePresence mode="wait">
                 <motion.div key={`qt-${qStep}`}
                   initial={{ opacity:0, y:8 }} animate={{ opacity:1, y:0 }}
@@ -655,16 +656,10 @@ export default function Onboarding() {
                     backdropFilter:'blur(12px)',
                     borderRadius:20, padding:'12px 20px',
                   }}>
-                  <p style={{
-                    fontSize:19, fontWeight:900, color:'#1A2332',
-                    margin:'0 0 4px', lineHeight:1.3, whiteSpace:'pre-line',
-                  }}>
+                  <p style={{ fontSize:19, fontWeight:900, color:'#1A2332', margin:'0 0 4px', lineHeight:1.3, whiteSpace:'pre-line' }}>
                     {Q_TEXT[currentKey]?.bold}
                   </p>
-                  <p style={{
-                    fontSize:13, color:'#4B5563',
-                    margin:0, fontStyle:'italic',
-                  }}>
+                  <p style={{ fontSize:13, color:'#4B5563', margin:0, fontStyle:'italic' }}>
                     {Q_TEXT[currentKey]?.sub}
                   </p>
                 </motion.div>

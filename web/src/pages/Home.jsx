@@ -284,7 +284,13 @@ function WaterWidget({ userId }) {
   async function update(delta) {
   const next = Math.max(0, Math.min(glasses + delta, goal + 4))
   setGlasses(next)
-  supabase.from('hydration_logs').upsert({ user_id: userId, date: today, glasses: next, goal }, { onConflict: 'user_id,date' })
+  const { error } = await supabase
+    .from('hydration_logs')
+    .upsert(
+      { user_id: userId, date: today, glasses: next, goal },
+      { onConflict: 'user_id,date' }
+    )
+  if (error) console.error('Hydration error:', error.message)
   if (next === goal && glasses < goal) {
     useStore.getState().addXP(20)
   }

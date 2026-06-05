@@ -205,12 +205,12 @@ function FullBackground({ phase, doorOpacity }) {
             transition={{ duration:1.4, type:'spring', damping:18 }}
             style={{
               position:'fixed', zIndex:4,
-              top:'45%', left:'50%',
+              top:'50%', left:'50%',
               transform:'translate(-50%, -50%)',
-              width:'62vw', maxWidth:260,
+              width:'55vw', maxWidth:240,
               pointerEvents:'none',
             }}>
-            <div style={{ position:'relative', width:'100%', paddingBottom:'110%' }}>
+            <div style={{ position:'relative', width:'100%', height:'68vw', maxHeight:295 }}>
               {/* Glow */}
               <motion.div
                 animate={{ scale:[1,1.1,1], opacity:[0.25,0.5,0.25] }}

@@ -261,8 +261,6 @@ function FullBackground({ phase, doorOpacity }) {
           </motion.div>
         )}
       </AnimatePresence>
-        )}
-      </AnimatePresence>
 
       {/* 6. panda_baby — fixed centrado tras destello */}
       <AnimatePresence>
@@ -279,24 +277,24 @@ function FullBackground({ phase, doorOpacity }) {
               pointerEvents:'none',
             }}>
             <div style={{ position:'relative', width:'60vw', maxWidth:260 }}>
-            <motion.div
-              animate={{ scale:[1,1.12,1], opacity:[0.25,0.5,0.25] }}
-              transition={{ duration:3, repeat:Infinity }}
-              style={{
-                position:'absolute', inset:-24, borderRadius:'50%',
-                background:'radial-gradient(circle, rgba(255,180,100,0.55) 0%, transparent 70%)',
-                filter:'blur(22px)',
-              }}
-            />
-            <motion.img
-              src="/panda/panda_baby.png" alt="Pandi"
-              animate={{ y:[0,-10,0] }}
-              transition={{ duration:3.5, repeat:Infinity, ease:'easeInOut' }}
-              style={{ width:'100%', objectFit:'contain', position:'relative', zIndex:1 }}
-              onError={e=>e.target.style.display='none'}
-            />
-          </div>
-        </motion.div>
+              <motion.div
+                animate={{ scale:[1,1.12,1], opacity:[0.25,0.5,0.25] }}
+                transition={{ duration:3, repeat:Infinity }}
+                style={{
+                  position:'absolute', inset:-24, borderRadius:'50%',
+                  background:'radial-gradient(circle, rgba(255,180,100,0.55) 0%, transparent 70%)',
+                  filter:'blur(22px)',
+                }}
+              />
+              <motion.img
+                src="/panda/panda_baby.png" alt="Pandi"
+                animate={{ y:[0,-10,0] }}
+                transition={{ duration:3.5, repeat:Infinity, ease:'easeInOut' }}
+                style={{ width:'100%', objectFit:'contain', position:'relative', zIndex:1 }}
+                onError={e=>e.target.style.display='none'}
+              />
+            </div>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>

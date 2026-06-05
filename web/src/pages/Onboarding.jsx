@@ -226,7 +226,7 @@ function FullBackground({ phase, doorOpacity }) {
                 src="/panda/panda_orb.png" alt=""
                 style={{
                   position:'absolute', inset:0,
-                  width:'200%', height:'200%',
+                  width:'1000%', height:'1000%',
                   objectFit:'contain', zIndex:1,
                 }}
                 onError={e=>e.target.style.display='none'}

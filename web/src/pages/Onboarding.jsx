@@ -150,7 +150,7 @@ function FullBackground({ phase, doorOpacity }) {
 
       {/* Blanco inicial */}
       <motion.div
-        animate={{ opacity: phase==='white' ? 1 : 0 }}
+        animate={{ opacity: ['blur','intro1','intro2','name'].includes(phase) ? 1 : 0 }}
         transition={{ duration:1.5 }}
         style={{ position:'absolute', inset:0, background:'white', zIndex:5 }}
       />
@@ -165,7 +165,7 @@ function FullBackground({ phase, doorOpacity }) {
 
       {/* sanctuary open */}
       <motion.img src="/panda/onboarding_sanctuary_open.png" alt=""
-        animate={{ opacity: ['open','clouds','orb','born'].includes(phase) ? 1 : 0 }}
+        animate={{ opacity: ['open','clouds','orb','questions','born'].includes(phase) ? 1 : 0 }}
         transition={{ duration:1.8 }}
         style={{ position:'absolute', inset:0, width:'100%', height:'100%', objectFit:'cover', objectPosition:'center', zIndex:3 }}
         onError={e=>e.target.style.display='none'}
@@ -173,7 +173,7 @@ function FullBackground({ phase, doorOpacity }) {
 
       {/* clouds — se solapa encima */}
       <motion.img src="/panda/onboarding_clouds.png" alt=""
-        animate={{ opacity: ['clouds','orb','born'].includes(phase) ? 1 : 0 }}
+        animate={{ opacity: ['clouds','orb','questions','born'].includes(phase) ? 1 : 0 }}
         transition={{ duration:2 }}
         style={{ position:'absolute', inset:0, width:'100%', height:'100%', objectFit:'cover', objectPosition:'center', zIndex:4 }}
         onError={e=>e.target.style.display='none'}

@@ -122,7 +122,7 @@ export default function OnboardingDemo() {
                 width:'372vw',
                 height:'480vw',
                 flexShrink:15,
-                marginTop:'-10%',
+                marginTop:'25%',
               }}>
 
               {/* Glow */}

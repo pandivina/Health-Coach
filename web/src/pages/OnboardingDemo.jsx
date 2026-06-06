@@ -123,7 +123,7 @@ export default function OnboardingDemo() {
                 height:'480vw',
                 maxWidth:260,
                 maxHeight:334,
-                flexShrink:0,
+                flexShrink:15,
                 marginTop:'0%',
               }}>
 

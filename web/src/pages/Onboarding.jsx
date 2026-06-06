@@ -154,7 +154,7 @@ function FullBackground({ phase, doorOpacity }) {
   const showBlur     = ['blur','intro1','intro2','name','open','clouds','orb','questions'].includes(phase)
   const showOpen     = ['open','clouds','orb','questions','born'].includes(phase)
   const showClouds   = ['clouds','orb','questions','born'].includes(phase)
-  const showOrb      = ['orb','questions'].includes(phase)
+  const showOrb      = ['open','clouds','orb','questions'].includes(phase)
   const showBorn     = phase === 'born'
 
   return (
@@ -194,40 +194,40 @@ function FullBackground({ phase, doorOpacity }) {
         onError={e=>{ e.target.style.display='none' }}
       />
 
-{/* 5. ORB — Ajustado para estar centrado y más grande */}
-<AnimatePresence>
-  {showOrb && (
-    <motion.div
-      key="orb"
-      initial={{ opacity:0, scale:0.75 }}
-      animate={{ opacity:1, scale:1 }}
-      exit={{ opacity:0, scale:0.9 }}
-      transition={{ duration:1.4, type:'spring', damping:18 }}
-      style={{
-        position:'fixed', zIndex:4,
-        top:'15%', left:'25%', // Centrado absoluto
-        transform:'translate(-50%, -50%)', // Ajuste fino del centro
-        width:'360vw', maxWidth:1120, // Tamaño aumentado (ancho y máximo)
-        pointerEvents:'none',
-      }}>
-      {/* Glow */}
-      <motion.div
-        animate={{ scale:[1,1.08,1], opacity:[0.2,0.45,0.2] }}
-        transition={{ duration:4, repeat:Infinity }}
-        style={{
-          position:'absolute', inset:-20,
-          background:'radial-gradient(circle, rgba(255,220,140,0.5) 0%, transparent 70%)',
-          filter:'blur(20px)',
-        }}
-      />
-      <img
-        src="/panda/panda_orb.png" alt=""
-        style={{ width:'100%', objectFit:'contain', display:'block', position:'relative', zIndex:1 }}
-        onError={e=>e.target.style.display='none'}
-      />
-    </motion.div>
-  )}
-</AnimatePresence>
+      {/* 5. ORB — solo panda_orb, centrado en la parte inferior del portal */}
+      <AnimatePresence>
+        {showOrb && (
+          <motion.div
+            key="orb"
+            initial={{ opacity:0, scale:0.75 }}
+            animate={{ opacity:1, scale:1 }}
+            exit={{ opacity:0, scale:0.9 }}
+            transition={{ duration:1.4, type:'spring', damping:18 }}
+            style={{
+              position:'fixed', zIndex:4,
+              bottom:'22%', left:'50%',
+              transform:'translateX(-50%)',
+              width:'42vw', maxWidth:180,
+              pointerEvents:'none',
+            }}>
+            {/* Glow */}
+            <motion.div
+              animate={{ scale:[1,1.08,1], opacity:[0.2,0.45,0.2] }}
+              transition={{ duration:4, repeat:Infinity }}
+              style={{
+                position:'absolute', inset:-20,
+                background:'radial-gradient(circle, rgba(255,220,140,0.5) 0%, transparent 70%)',
+                filter:'blur(20px)',
+              }}
+            />
+            <img
+              src="/panda/panda_orb.png" alt=""
+              style={{ width:'100%', objectFit:'contain', display:'block', position:'relative', zIndex:1 }}
+              onError={e=>e.target.style.display='none'}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* 6. panda_baby — fixed centrado tras destello */}
       <AnimatePresence>
@@ -402,9 +402,9 @@ export default function Onboarding() {
     handleFirstInteraction()
     if (!form.name.trim()) return
     setPhase('open')
-    setTimeout(()=>setPhase('clouds'), 2000)
-    setTimeout(()=>setPhase('orb'),    3800)
-    setTimeout(()=>setPhase('questions'), 5200)
+    setTimeout(()=>setPhase('clouds'),    1200)
+    setTimeout(()=>setPhase('orb'),       2400)
+    setTimeout(()=>setPhase('questions'), 3600)
   }
 
   function handleAnswer(key, value) {

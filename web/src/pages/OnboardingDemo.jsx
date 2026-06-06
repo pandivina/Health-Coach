@@ -124,6 +124,7 @@ export default function OnboardingDemo() {
                 maxWidth:260,
                 maxHeight:334,
                 flexShrink:0,
+                marginTop:'-10%',
               }}>
 
               {/* Glow */}

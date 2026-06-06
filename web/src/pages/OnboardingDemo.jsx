@@ -147,7 +147,7 @@ export default function OnboardingDemo() {
               <img src="/panda/panda_baby.png" alt=""
                 style={{
                   position:'absolute',
-                  top:'30%', left:'28%', width:'44%', height:'38%',
+                  top:'32%', left:'28%', width:'44%', height:'38%',
                   objectFit:'contain', zIndex:2,
                 }}
                 onError={()=>setImgErrs(e=>({...e,baby_inner:true}))}
@@ -160,7 +160,7 @@ export default function OnboardingDemo() {
                style={{ 
   position:'absolute', 
   inset:0,
-  width:'200%', height:'200%', 
+  top:'32%', left:'28%', width:'50%', height:'50%',
   objectFit:'contain', zIndex:3 
 }}
                 onError={()=>setImgErrs(e=>({...e,door:true}))}

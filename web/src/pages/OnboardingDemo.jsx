@@ -119,8 +119,8 @@ export default function OnboardingDemo() {
               transition={{ duration:1.4, type:'spring', damping:18, stiffness:100 }}
               style={{
                 position:'relative',
-                width:'62vw',
-                height:'80vw',
+                width:'186vw',
+                height:'240vw',
                 maxWidth:260,
                 maxHeight:334,
                 flexShrink:0,

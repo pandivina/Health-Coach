@@ -103,10 +103,11 @@ export default function OnboardingDemo() {
             exit={{ opacity:0, scale:0.8 }}
             transition={{ duration:1.4, type:'spring', damping:18, stiffness:100 }}
             style={{
-              position:'fixed', zIndex:10,
+              position:'fixed', zIndex:15,
               top:'50%', left:'50%',
               transform:'translate(-50%, -52%)',
               width:'min(64vw, 280px)',
+              height:'min(82vw, 360px)',
               pointerEvents:'none',
             }}>
 

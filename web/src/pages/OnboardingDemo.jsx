@@ -159,7 +159,7 @@ export default function OnboardingDemo() {
                 transition={{ duration:0.9 }}
                 style={{ 
   position:'absolute', 
-  top:'32%', left:'5%', 
+  top:'31%', left:'5%', 
   width:'100%', height:'100%', 
   objectFit:'contain', zIndex:3 
 }}

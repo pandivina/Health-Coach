@@ -9,7 +9,7 @@ import Layout from './components/Layout'
 import CookieBanner from './components/legal/CookieBanner'
 import { PrivacyPolicy, TermsOfUse, MedicalDisclaimerPage } from './pages/Legal'
 import UpdateBanner from './components/UpdateBanner'
-import WorkoutView from './pages/WorkoutView'ç
+import WorkoutView from './pages/WorkoutView'
 import OnboardingDemo from './pages/OnboardingDemo'
 
 // Public

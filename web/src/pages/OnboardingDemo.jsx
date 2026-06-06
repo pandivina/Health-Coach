@@ -121,10 +121,8 @@ export default function OnboardingDemo() {
                 position:'relative',
                 width:'372vw',
                 height:'480vw',
-                maxWidth:260,
-                maxHeight:334,
                 flexShrink:15,
-                marginTop:'0%',
+                marginTop:'-10%',
               }}>
 
               {/* Glow */}

@@ -93,60 +93,76 @@ export default function OnboardingDemo() {
         onError={()=>setImgErrs(e=>({...e,clouds:true}))}
       />
 
-      {/* ── ORB — aparece en fase 3, centrado ── */}
+      {/* ── ORB — wrapper pantalla completa con flex centrado ── */}
       <AnimatePresence>
         {showOrb && (
           <motion.div
             key="orb"
-            initial={{ opacity:0, scale:0.6, y:80 }}
-            animate={{ opacity:1, scale:1, y:0 }}
-            exit={{ opacity:0, scale:0.8 }}
-            transition={{ duration:1.4, type:'spring', damping:18, stiffness:100 }}
+            initial={{ opacity:0 }}
+            animate={{ opacity:1 }}
+            exit={{ opacity:0 }}
+            transition={{ duration:1.2 }}
             style={{
-              position:'fixed', zIndex:15,
-              top:'50%', left:'50%',
-              transform:'translate(-50%, -52%)',
-              width:'min(64vw, 280px)',
-              height:'min(82vw, 360px)',
+              position:'fixed',
+              top:0, left:0, right:0, bottom:0,
+              zIndex:15,
+              display:'flex',
+              alignItems:'center',
+              justifyContent:'center',
               pointerEvents:'none',
             }}>
 
-            {/* Glow */}
+            {/* El orbe en sí */}
             <motion.div
-              animate={{ scale:[1,1.08,1], opacity:[0.3,0.6,0.3] }}
-              transition={{ duration:3.5, repeat:Infinity }}
+              initial={{ scale:0.6, y:60 }}
+              animate={{ scale:1, y:0 }}
+              transition={{ duration:1.4, type:'spring', damping:18, stiffness:100 }}
               style={{
-                position:'absolute', inset:'-18%',
-                borderRadius:'50%',
-                background:'radial-gradient(circle, rgba(255,220,140,0.65) 0%, transparent 65%)',
-                filter:'blur(32px)',
-              }}
-            />
+                position:'relative',
+                width:'62vw',
+                height:'80vw',
+                maxWidth:260,
+                maxHeight:334,
+                flexShrink:0,
+              }}>
 
-            {/* CAPA A: panda_orb — contenedor cristal, siempre visible */}
-            <img src="/panda/panda_orb.png" alt=""
-              style={{ position:'absolute', inset:0, width:'100%', height:'100%', objectFit:'contain', zIndex:1 }}
-              onError={()=>setImgErrs(e=>({...e,orb:true}))}
-            />
+              {/* Glow */}
+              <motion.div
+                animate={{ scale:[1,1.08,1], opacity:[0.3,0.6,0.3] }}
+                transition={{ duration:3.5, repeat:Infinity }}
+                style={{
+                  position:'absolute', inset:'-15%',
+                  borderRadius:'50%',
+                  background:'radial-gradient(circle, rgba(255,220,140,0.65) 0%, transparent 65%)',
+                  filter:'blur(32px)',
+                }}
+              />
 
-            {/* CAPA B: panda_baby — dentro, siempre presente */}
-            <img src="/panda/panda_baby.png" alt=""
-              style={{
-                position:'absolute',
-                top:'12%', left:'15%', width:'70%', height:'72%',
-                objectFit:'contain', zIndex:2,
-              }}
-              onError={()=>setImgErrs(e=>({...e,baby_inner:true}))}
-            />
+              {/* CAPA A: panda_orb */}
+              <img src="/panda/panda_orb.png" alt=""
+                style={{ position:'absolute', inset:0, width:'100%', height:'100%', objectFit:'contain', zIndex:1 }}
+                onError={()=>setImgErrs(e=>({...e,orb:true}))}
+              />
 
-            {/* CAPA C: onboarding_orb_door — encima de todo, se transparenta */}
-            <motion.img src="/panda/onboarding_orb_door.png" alt=""
-              animate={{ opacity: doorOpacity }}
-              transition={{ duration: 0.9 }}
-              style={{ position:'absolute', inset:0, width:'100%', height:'100%', objectFit:'contain', zIndex:3 }}
-              onError={()=>setImgErrs(e=>({...e,door:true}))}
-            />
+              {/* CAPA B: panda_baby dentro */}
+              <img src="/panda/panda_baby.png" alt=""
+                style={{
+                  position:'absolute',
+                  top:'12%', left:'15%', width:'70%', height:'72%',
+                  objectFit:'contain', zIndex:2,
+                }}
+                onError={()=>setImgErrs(e=>({...e,baby_inner:true}))}
+              />
 
+              {/* CAPA C: door encima */}
+              <motion.img src="/panda/onboarding_orb_door.png" alt=""
+                animate={{ opacity: doorOpacity }}
+                transition={{ duration:0.9 }}
+                style={{ position:'absolute', inset:0, width:'100%', height:'100%', objectFit:'contain', zIndex:3 }}
+                onError={()=>setImgErrs(e=>({...e,door:true}))}
+              />
+
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>

@@ -147,7 +147,7 @@ export default function OnboardingDemo() {
               <img src="/panda/panda_baby.png" alt=""
                 style={{
                   position:'absolute',
-                  top:'38%', left:'8%', width:'44%', height:'38%',
+                  top:'18%', left:'28%', width:'44%', height:'38%',
                   objectFit:'contain', zIndex:2,
                 }}
                 onError={()=>setImgErrs(e=>({...e,baby_inner:true}))}

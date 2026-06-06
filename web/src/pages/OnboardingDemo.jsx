@@ -138,31 +138,28 @@ export default function OnboardingDemo() {
                 }}
               />
 
-              {/* CAPA 1 (fondo): onboarding_orb_door — la semilla/energía base */}
-              <motion.img src="/panda/onboarding_orb_door.png" alt=""
-                animate={{ opacity: doorOpacity }}
-                transition={{ duration:0.9 }}
+              {/* CAPA 1: panda_orb — contenedor cristal, siempre visible */}
+              <img src="/panda/panda_orb.png" alt=""
                 style={{ position:'absolute', inset:0, width:'100%', height:'100%', objectFit:'contain', zIndex:1 }}
-                onError={()=>setImgErrs(e=>({...e,door:true}))}
+                onError={()=>setImgErrs(e=>({...e,orb:true}))}
               />
 
-              {/* CAPA 2: panda_baby — dentro del orbe, aparece al bajar la puerta */}
+              {/* CAPA 2: panda_baby — dentro del orbe */}
               <img src="/panda/panda_baby.png" alt=""
                 style={{
                   position:'absolute',
                   top:'18%', left:'18%', width:'64%', height:'58%',
                   objectFit:'contain', zIndex:2,
-                  opacity: Math.min(1 - doorOpacity + 0.1, 1),
-                  filter: `blur(${doorOpacity * 2}px)`,
-                  transition:'opacity 0.9s ease, filter 0.9s ease',
                 }}
                 onError={()=>setImgErrs(e=>({...e,baby_inner:true}))}
               />
 
-              {/* CAPA 3 (frente): panda_orb — el cristal contenedor, siempre encima */}
-              <img src="/panda/panda_orb.png" alt=""
+              {/* CAPA 3: onboarding_orb_door — encima de panda_baby, se va transparentando */}
+              <motion.img src="/panda/onboarding_orb_door.png" alt=""
+                animate={{ opacity: doorOpacity }}
+                transition={{ duration:0.9 }}
                 style={{ position:'absolute', inset:0, width:'100%', height:'100%', objectFit:'contain', zIndex:3 }}
-                onError={()=>setImgErrs(e=>({...e,orb:true}))}
+                onError={()=>setImgErrs(e=>({...e,door:true}))}
               />
 
             </motion.div>

@@ -168,7 +168,7 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name }) {
             <p style={{ fontSize:9, color:'#6B7280', margin:0, textAlign:'center' }}>Racha</p>
             <p style={{ fontSize:14, fontWeight:900, color:'#F97316', margin:0, textAlign:'center' }}>🔥{profile?.streak || 0}</p>
           </div>
-          <Link to="/onboardingdemo">
+          <Link to="/onboarding-demo">
   <div style={{ width:36, height:36, borderRadius:12, background:'rgba(255,255,255,0.88)', backdropFilter:'blur(8px)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:16 }}>
     ✨
   </div>

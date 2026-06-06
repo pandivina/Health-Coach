@@ -205,7 +205,7 @@ function FullBackground({ phase, doorOpacity }) {
       transition={{ duration:1.4, type:'spring', damping:18 }}
       style={{
         position:'fixed', zIndex:4,
-        top:'15%', left:'50%', // Centrado absoluto
+        top:'15%', left:'25%', // Centrado absoluto
         transform:'translate(-50%, -50%)', // Ajuste fino del centro
         width:'360vw', maxWidth:1120, // Tamaño aumentado (ancho y máximo)
         pointerEvents:'none',

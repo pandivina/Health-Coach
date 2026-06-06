@@ -140,7 +140,7 @@ export default function OnboardingDemo() {
 
               {/* CAPA 1: panda_orb — contenedor cristal, siempre visible */}
               <img src="/panda/panda_orb.png" alt=""
-                style={{ position:'absolute', inset:0, width:'200%', height:'200%', objectFit:'contain', zIndex:1 }}
+                style={{ position:'absolute', inset:0, width:'400%', height:'400%', objectFit:'contain', zIndex:1 }}
                 onError={()=>setImgErrs(e=>({...e,orb:true}))}
               />
 

@@ -194,40 +194,40 @@ function FullBackground({ phase, doorOpacity }) {
         onError={e=>{ e.target.style.display='none' }}
       />
 
-      {/* 5. ORB — solo panda_orb, centrado en la parte inferior del portal */}
-      <AnimatePresence>
-        {showOrb && (
-          <motion.div
-            key="orb"
-            initial={{ opacity:0, scale:0.75 }}
-            animate={{ opacity:1, scale:1 }}
-            exit={{ opacity:0, scale:0.9 }}
-            transition={{ duration:1.4, type:'spring', damping:18 }}
-            style={{
-              position:'fixed', zIndex:4,
-              bottom:'22%', left:'50%',
-              transform:'translateX(-50%)',
-              width:'42vw', maxWidth:180,
-              pointerEvents:'none',
-            }}>
-            {/* Glow */}
-            <motion.div
-              animate={{ scale:[1,1.08,1], opacity:[0.2,0.45,0.2] }}
-              transition={{ duration:4, repeat:Infinity }}
-              style={{
-                position:'absolute', inset:-20,
-                background:'radial-gradient(circle, rgba(255,220,140,0.5) 0%, transparent 70%)',
-                filter:'blur(20px)',
-              }}
-            />
-            <img
-              src="/panda/panda_orb.png" alt=""
-              style={{ width:'100%', objectFit:'contain', display:'block', position:'relative', zIndex:1 }}
-              onError={e=>e.target.style.display='none'}
-            />
-          </motion.div>
-        )}
-      </AnimatePresence>
+{/* 5. ORB — Ajustado para estar centrado y más grande */}
+<AnimatePresence>
+  {showOrb && (
+    <motion.div
+      key="orb"
+      initial={{ opacity:0, scale:0.75 }}
+      animate={{ opacity:1, scale:1 }}
+      exit={{ opacity:0, scale:0.9 }}
+      transition={{ duration:1.4, type:'spring', damping:18 }}
+      style={{
+        position:'fixed', zIndex:4,
+        top:'50%', left:'50%', // Centrado absoluto
+        transform:'translate(-50%, -50%)', // Ajuste fino del centro
+        width:'60vw', maxWidth:280, // Tamaño aumentado (ancho y máximo)
+        pointerEvents:'none',
+      }}>
+      {/* Glow */}
+      <motion.div
+        animate={{ scale:[1,1.08,1], opacity:[0.2,0.45,0.2] }}
+        transition={{ duration:4, repeat:Infinity }}
+        style={{
+          position:'absolute', inset:-20,
+          background:'radial-gradient(circle, rgba(255,220,140,0.5) 0%, transparent 70%)',
+          filter:'blur(20px)',
+        }}
+      />
+      <img
+        src="/panda/panda_orb.png" alt=""
+        style={{ width:'100%', objectFit:'contain', display:'block', position:'relative', zIndex:1 }}
+        onError={e=>e.target.style.display='none'}
+      />
+    </motion.div>
+  )}
+</AnimatePresence>
 
       {/* 6. panda_baby — fixed centrado tras destello */}
       <AnimatePresence>

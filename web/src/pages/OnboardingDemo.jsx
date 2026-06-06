@@ -160,7 +160,7 @@ export default function OnboardingDemo() {
                style={{ 
   position:'absolute', 
   inset:0,
-  width:'100%', height:'100%', 
+  width:'150%', height:'150%', 
   objectFit:'contain', zIndex:3 
 }}
                 onError={()=>setImgErrs(e=>({...e,door:true}))}

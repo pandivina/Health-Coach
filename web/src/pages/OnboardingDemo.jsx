@@ -140,7 +140,7 @@ export default function OnboardingDemo() {
 
               {/* CAPA 1: panda_orb — contenedor cristal, siempre visible */}
               <img src="/panda/panda_orb.png" alt=""
-                style={{ position:'absolute', inset:0, width:'200%', height:'200%', objectFit:'contain', zIndex:1 }}
+                style={{ position:'absolute', inset:0, width:'300%', height:'300%', objectFit:'contain', zIndex:1 }}
                 onError={()=>setImgErrs(e=>({...e,orb:true}))}
               />
 
@@ -148,7 +148,7 @@ export default function OnboardingDemo() {
               <img src="/panda/panda_baby.png" alt=""
                 style={{
                   position:'absolute',
-                  top:'18%', left:'18%', width:'64%', height:'58%',
+                  top:'10%', left:'18%', width:'64%', height:'58%',
                   objectFit:'contain', zIndex:2,
                 }}
                 onError={()=>setImgErrs(e=>({...e,baby_inner:true}))}

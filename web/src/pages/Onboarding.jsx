@@ -205,9 +205,9 @@ function FullBackground({ phase, doorOpacity }) {
       transition={{ duration:1.4, type:'spring', damping:18 }}
       style={{
         position:'fixed', zIndex:4,
-        top:'50%', left:'50%', // Centrado absoluto
+        top:'50%', left:'25%', // Centrado absoluto
         transform:'translate(-50%, -50%)', // Ajuste fino del centro
-        width:'60vw', maxWidth:280, // Tamaño aumentado (ancho y máximo)
+        width:'180vw', maxWidth:560, // Tamaño aumentado (ancho y máximo)
         pointerEvents:'none',
       }}>
       {/* Glow */}

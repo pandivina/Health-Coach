@@ -157,7 +157,7 @@ export default function OnboardingDemo() {
               <motion.img src="/panda/onboarding_orb_door.png" alt=""
                 animate={{ opacity: doorOpacity }}
                 transition={{ duration:0.9 }}
-                style={{ position:'absolute', inset:0, width:'100%', height:'100%', objectFit:'contain', zIndex:3 }}
+                style={{ position:'absolute', inset:0, width:'150%', height:'150%', objectFit:'contain', zIndex:3 }}
                 onError={()=>setImgErrs(e=>({...e,door:true}))}
               />
 

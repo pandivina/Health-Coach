@@ -8,27 +8,17 @@ export default function OnboardingDemo() {
   const [doorOp,     setDoorOp]     = useState(1)
   const [imgErrs,    setImgErrs]    = useState({})
 
-  const isLast = phase === 6
+  const isLast = phase === 8
 
   function next() {
-    if (phase === 5) {
+    if (phase === 7) {
       setFlash(true)
-      setTimeout(() => { setFlash(false); setPhase(6) }, 700)
+      setTimeout(() => { setFlash(false); setPhase(8) }, 700)
       return
     }
     if (phase === 2) {
       setOpenFading(true)
       setTimeout(() => { setOpenFading(false); setPhase(3) }, 1200)
-      return
-    }
-    if (phase === 3) {
-      setDoorOp(0.6)
-      setPhase(4)
-      return
-    }
-    if (phase === 4) {
-      setDoorOp(0)
-      setPhase(5)
       return
     }
     setPhase(p => p + 1)
@@ -40,15 +30,17 @@ export default function OnboardingDemo() {
     'Las nubes llegan',
     'El orbe aparece',
     'La energía fluye',
+    'Tomando forma',
+    'Casi despierta',
     'Ha despertado',
     'Nace',
   ]
 
-  const showBlur  = phase <= 1
-  const showOpen  = phase === 1 || (phase === 2 && !openFading)
+  const showBlur   = phase <= 1
+  const showOpen   = phase === 1 || (phase === 2 && !openFading)
   const showClouds = phase >= 2
-  const showOrb   = phase >= 3 && phase <= 5
-  const showBorn  = phase === 6
+  const showOrb    = phase >= 3 && phase <= 7
+  const showBorn   = phase === 8
 
   return (
     <div style={{ position:'fixed', inset:0, overflow:'hidden', background:'#f5f0e8' }}>
@@ -112,13 +104,28 @@ export default function OnboardingDemo() {
                 }}
               />
 
-              {/* Frames pre-compuestos — uno por fase */}
+              {/* Frames pre-compuestos — crossfade entre fases */}
               {[
-                { src:'/panda/95453.png', p:3 }, // vacío
-                { src:'/panda/95454.png', p:4 }, // 25%
-                { src:'/panda/95456.png', p:5 }, // 75% — más visible
-                { src:'/panda/95457.png', p:6 }, // 100% — completo (fase born usa este)
-              ].map(({ src, p }, i) => (
+                '/panda/orb_frame_0.png', // fase 3 — vacío
+                '/panda/orb_frame_1.png', // fase 4 — 25%
+                '/panda/orb_frame_2.png', // fase 5 — 50%
+                '/panda/orb_frame_3.png', // fase 5b — 75% (antes destello)
+                '/panda/orb_frame_4.png', // fase 5c — 100%
+              ].map((src, i) => (
+                <motion.img
+                  key={src}
+                  src={src}
+                  alt=""
+                  animate={{ opacity: phase - 3 === i ? 1 : 0 }}
+                  transition={{ duration:0.9 }}
+                  style={{
+                    position:'absolute', inset:0,
+                    width:'100%', height:'100%',
+                    objectFit:'contain', zIndex:1,
+                  }}
+                  onError={()=>setImgErrs(e=>({...e,[`f${i}`]:true}))}
+                />
+              ))}
                 <motion.img
                   key={src}
                   src={src}

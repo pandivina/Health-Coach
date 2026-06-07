@@ -106,15 +106,15 @@ export default function OnboardingDemo() {
 
               {/* Frames pre-compuestos — crossfade entre fases */}
               {[
-                '/panda/orb_frame_0.png', // fase 3 — vacío
-                '/panda/orb_frame_1.png', // fase 4 — 25%
-                '/panda/orb_frame_2.png', // fase 5 — 50%
-                '/panda/orb_frame_3.png', // fase 5b — 75% (antes destello)
-                '/panda/orb_frame_4.png', // fase 5c — 100%
-              ].map((src, i) => (
+                '/panda/orb_frame_0.png',
+                '/panda/orb_frame_1.png',
+                '/panda/orb_frame_2.png',
+                '/panda/orb_frame_3.png',
+                '/panda/orb_frame_4.png',
+              ].map((frameSrc, i) => (
                 <motion.img
-                  key={src}
-                  src={src}
+                  key={frameSrc}
+                  src={frameSrc}
                   alt=""
                   animate={{ opacity: phase - 3 === i ? 1 : 0 }}
                   transition={{ duration:0.9 }}

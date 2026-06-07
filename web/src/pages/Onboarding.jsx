@@ -209,6 +209,7 @@ function GlassSelect({ options, value, onChange, energyColor }) {
               boxShadow:'0 8px 32px rgba(0,0,0,0.18)',
               maxHeight:'42vh', overflowY:'scroll',
               WebkitOverflowScrolling:'touch',
+              zIndex:200,
             }}>
             {options.map((o, i) => (
               <motion.button key={o.v}
@@ -409,7 +410,7 @@ export default function Onboarding() {
                   filter:'blur(32px)',
                 }}
               />
-              {/* Frames */}
+              {/* Frames — exactamente igual que en el demo */}
               {[
                 '/panda/orb_frame_0.png',
                 '/panda/orb_frame_1.png',
@@ -426,7 +427,8 @@ export default function Onboarding() {
                   style={{
                     position:'fixed', inset:0, zIndex:15,
                     width:'100vw', height:'150vw',
-                    flexShrink:15, marginTop:'32%',
+                    marginTop:'32%',
+                    pointerEvents:'none',
                   }}
                   onError={()=>setImgErrs(e=>({...e,[`f${i}`]:true}))}
                 />
@@ -456,7 +458,7 @@ export default function Onboarding() {
                   filter:'blur(24px)',
                 }}
               />
-              <motion.img src="/panda/pandi_new_born.png" alt="Pandi"
+              <motion.img src="/panda/panda_baby.png" alt="Pandi"
                 animate={{ y:[0,-10,0] }}
                 transition={{ duration:3.5, repeat:Infinity, ease:'easeInOut' }}
                 style={{ width:'100%', objectFit:'contain', position:'relative', zIndex:1 }}

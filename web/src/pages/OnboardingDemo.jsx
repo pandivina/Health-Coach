@@ -120,10 +120,10 @@ export default function OnboardingDemo() {
                   transition={{ duration:0.9 }}
                   style={{
                 position:'relative',
-                width:'186vw',
-                height:'240vw',
+                width:'100vw',
+                height:'100vw',
                 flexShrink:15,
-                marginTop:'32%',
+                marginTop:'25%',
                   }}
                   onError={()=>setImgErrs(e=>({...e,[`f${i}`]:true}))}
                 />

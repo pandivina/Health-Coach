@@ -458,7 +458,7 @@ export default function Onboarding() {
                   filter:'blur(24px)',
                 }}
               />
-              <motion.img src="/panda/panda_baby.png" alt="Pandi"
+              <motion.img src="/panda/pandi_new_born_cloud.png" alt="Pandi"
                 animate={{ y:[0,-10,0] }}
                 transition={{ duration:3.5, repeat:Infinity, ease:'easeInOut' }}
                 style={{ width:'100%', objectFit:'contain', position:'relative', zIndex:1 }}

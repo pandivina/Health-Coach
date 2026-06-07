@@ -121,9 +121,9 @@ export default function OnboardingDemo() {
                   style={{
                 position:'relative',
                 width:'186vw',
-                height:'200vw',
+                height:'190vw',
                 flexShrink:15,
-                marginTop:'25%',
+                marginTop:'10%',
                   }}
                   onError={()=>setImgErrs(e=>({...e,[`f${i}`]:true}))}
                 />

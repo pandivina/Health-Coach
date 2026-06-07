@@ -119,10 +119,12 @@ export default function OnboardingDemo() {
                   animate={{ opacity: phase - 3 === i ? 1 : 0 }}
                   transition={{ duration:0.9 }}
                   style={{
-                    position:'absolute', inset:0,
-                    width:'100%', height:'100%',
-                    objectFit:'contain', zIndex:1,
-                  }}
+                position:'relative',
+                width:'372vw',
+                height:'480vw',
+                flexShrink:15,
+                marginTop:'55%',
+              }}>
                   onError={()=>setImgErrs(e=>({...e,[`f${i}`]:true}))}
                 />
               ))}

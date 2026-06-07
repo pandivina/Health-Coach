@@ -123,7 +123,7 @@ export default function OnboardingDemo() {
                 width:'100vw',
                 height:'150vw',
                 flexShrink:15,
-                marginTop:'0%',
+                marginTop:'5%',
                   }}
                   onError={()=>setImgErrs(e=>({...e,[`f${i}`]:true}))}
                 />

@@ -121,7 +121,7 @@ export default function OnboardingDemo() {
                   style={{
                 position:'relative',
                 width:'186vw',
-                height:'240vw',
+                height:'200vw',
                 flexShrink:15,
                 marginTop:'25%',
                   }}

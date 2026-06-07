@@ -119,9 +119,9 @@ export default function OnboardingDemo() {
                   animate={{ opacity: phase - 3 === i ? 1 : 0 }}
                   transition={{ duration:0.9 }}
                   style={{
-                position:'relative',
-                width:'580vw',
-                height:'190vw',
+                position:'fixed', inset:0, zIndex:15,
+                width:'100vw',
+                height:'100vw',
                 flexShrink:15,
                 marginTop:'-10%',
                   }}

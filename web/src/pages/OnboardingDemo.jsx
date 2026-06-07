@@ -126,20 +126,6 @@ export default function OnboardingDemo() {
                   onError={()=>setImgErrs(e=>({...e,[`f${i}`]:true}))}
                 />
               ))}
-                <motion.img
-                  key={frameSrc}
-                  src={src}
-                  alt=""
-                  animate={{ opacity: phase === p ? 1 : 0 }}
-                  transition={{ duration:0.9 }}
-                  style={{
-                    position:'absolute', inset:0,
-                    width:'100%', height:'100%',
-                    objectFit:'contain', zIndex:1,
-                  }}
-                  onError={()=>setImgErrs(e=>({...e,[`f${i}`]:true}))}
-                />
-              ))}
 
             </motion.div>
           </motion.div>

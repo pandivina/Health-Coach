@@ -119,13 +119,16 @@ export default function OnboardingDemo() {
                   animate={{ opacity: phase - 3 === i ? 1 : 0 }}
                   transition={{ duration:0.9 }}
                   style={{
+                    style={{
                 position:'relative',
                 width:'372vw',
                 height:'480vw',
                 flexShrink:15,
                 marginTop:'55%',
-              }}>
+                  }}
                   onError={()=>setImgErrs(e=>({...e,[`f${i}`]:true}))}
+                />
+              ))}
 
             </motion.div>
           </motion.div>

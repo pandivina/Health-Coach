@@ -10,7 +10,7 @@ import CookieBanner from './components/legal/CookieBanner'
 import { PrivacyPolicy, TermsOfUse, MedicalDisclaimerPage } from './pages/Legal'
 import UpdateBanner from './components/UpdateBanner'
 import WorkoutView from './pages/WorkoutView'
-import OnboardingDemo from './pages/OnboardingDemo'
+
 
 // Public
 import Landing from './pages/Landing'
@@ -111,7 +111,7 @@ export default function App() {
           <Route path="/" element={<SmartRoot />} />
 
           <Route path="/auth"        element={<Auth />} />
-          <Route path="/onboarding-demo" element={<OnboardingDemo />} />
+        
           
           <Route path="/privacy"     element={<PrivacyPolicy />} />
           <Route path="/terms"       element={<TermsOfUse />} />

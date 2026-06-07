@@ -127,7 +127,7 @@ export default function OnboardingDemo() {
                 />
               ))}
                 <motion.img
-                  key={src}
+                  key={frameSrc}
                   src={src}
                   alt=""
                   animate={{ opacity: phase === p ? 1 : 0 }}

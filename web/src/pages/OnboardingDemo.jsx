@@ -120,8 +120,8 @@ export default function OnboardingDemo() {
                   transition={{ duration:0.9 }}
                   style={{
                 position:'relative',
-                width:'100vw',
-                height:'100vw',
+                width:'150vw',
+                height:'150vw',
                 flexShrink:15,
                 marginTop:'25%',
                   }}

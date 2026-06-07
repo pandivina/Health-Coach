@@ -126,8 +126,6 @@ export default function OnboardingDemo() {
                 marginTop:'55%',
               }}>
                   onError={()=>setImgErrs(e=>({...e,[`f${i}`]:true}))}
-                />
-              ))}
 
             </motion.div>
           </motion.div>

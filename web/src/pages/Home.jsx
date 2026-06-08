@@ -11,11 +11,20 @@ export default function Home() {
   const { profile, user } = useStore()
   const { loaded } = useTheme()
   const pandiContext = usePandiState()
+  const [waterGlasses, setWaterGlasses] = useState(0);
   
   // 2. ESTADO DE CARGA: Si no ha cargado el tema, mostramos esto
-  if (!loaded) {
-    return <div style={{ height: '100dvh', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>🐾</div>
-  }
+ if (!loaded) return <div>Cargando...</div>;
+
+  return (
+    <div style={{ minHeight: '100dvh', background: '#f8fafa', paddingBottom: '100px' }}>
+      <h1>Bienvenido, {profile?.name?.split(' ')[0] || 'Compi'}</h1>
+      
+      {/* Ahora waterGlasses existe y no dará error */}
+      <p>Vasos de agua: {waterGlasses}</p>
+    </div>
+  )
+}
 
   // 3. DATOS PREVIOS PARA EL SANTUARIO
   const recoveryLight = pandiContext?.recoveryLight || 'GREEN'

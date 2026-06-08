@@ -67,7 +67,7 @@ export default function DailyReport() {
   async function loadDailyData() {
     const [mealsRes, workoutRes, sleepRes, moodRes, hydrationRes, goalsRes] = await Promise.all([
       supabase.from('meal_logs').select('calories,protein_g').eq('user_id', user.id).eq('date', today),
-      supabase.from('workout_sessions').select('calories_burned,name').eq('user_id', user.id).eq('date', today).eq('status','completed'),
+      supabase.from('workout_sessions').select('calories_burned,name').eq('user_id', user.id).gte('created_at', today + 'T00:00:00').lt('created_at', today + 'T23:59:59').eq('status','completed'),
       supabase.from('sleep_logs').select('hours,quality').eq('user_id', user.id).eq('date', today).single(),
       supabase.from('mood_logs').select('mood').eq('user_id', user.id).eq('date', today).single(),
       supabase.from('hydration_logs').select('glasses,goal').eq('user_id', user.id).eq('date', today).single(),
@@ -91,7 +91,7 @@ export default function DailyReport() {
     const days = [...Array(7)].map((_, i) => { const d = new Date(); d.setDate(d.getDate() - (6 - i)); return d.toISOString().split('T')[0] })
     const [mealsRes, workoutsRes, sleepRes] = await Promise.all([
       supabase.from('meal_logs').select('date,calories').eq('user_id', user.id).in('date', days),
-      supabase.from('workout_sessions').select('date').eq('user_id', user.id).eq('status','completed').in('date', days),
+      supabase.from('workout_sessions').select('created_at').eq('user_id', user.id).eq('status','completed').gte('created_at', days[0] + 'T00:00:00'),
       supabase.from('sleep_logs').select('date,hours').eq('user_id', user.id).in('date', days),
     ])
     const meals = mealsRes.data || []; const workouts = workoutsRes.data || []; const sleepLogs = sleepRes.data || []

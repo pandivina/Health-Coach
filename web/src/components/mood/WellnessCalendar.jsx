@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
-const { user, profile, saveDailyGoals } = useStore() // Asegúrate de traer saveDailyGoals
-const [showNightly, setShowNightly] = useState(false)
+import { useStore } from '../../store/useStore' // Asegúrate de importar tu store
+import NightlyPlanner from './NightlyPlanner' // Asegúrate de importar el componente
 
 const MONTHS = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
 const DAYS   = ['L','M','X','J','V','S','D']
@@ -20,13 +20,19 @@ function getDaysInMonth(y, m) { return new Date(y, m + 1, 0).getDate() }
 function getFirstDay(y, m) { const d = new Date(y, m, 1).getDay(); return d === 0 ? 6 : d - 1 }
 
 export default function WellnessCalendar({ theme, userId }) {
-  const [year,     setYear]     = useState(new Date().getFullYear())
-  const [month,    setMonth]    = useState(new Date().getMonth())
-  const [logs,     setLogs]     = useState({})
+  const { saveDailyGoals } = useStore() // Traemos la función del store
+  const [year, setYear] = useState(new Date().getFullYear())
+  const [month, setMonth] = useState(new Date().getMonth())
+  const [logs, setLogs] = useState({})
   const [selected, setSelected] = useState(null)
+  const [showNightly, setShowNightly] = useState(false) // Estado local para el modal
   const today = new Date().toISOString().split('T')[0]
 
   useEffect(() => {
+    // Proactividad: mostrar modal a las 22:00
+    const hour = new Date().getHours()
+    if (hour === 22) setShowNightly(true)
+
     if (!userId) return
     // Cargar últimos 90 días de mood + sueño + agua
     const from = new Date(); from.setDate(from.getDate() - 90)
@@ -189,39 +195,11 @@ export default function WellnessCalendar({ theme, userId }) {
         </div>
       </div>
 
-      {/* Detalle día seleccionado */}
+     {/* Detalle día seleccionado */}
       {selected && selectedLog && (
         <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
           className="card" style={{ border: `1px solid ${theme.border}` }}>
-          <p className="font-bold text-sm mb-3" style={{ color: theme.text }}>
-            {new Date(selected + 'T12:00:00').toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}
-          </p>
-          <div className="grid grid-cols-3 gap-2">
-            {selectedLog.mood && (
-              <div className="text-center p-2 rounded-xl" style={{ background: `${MOODS[selectedLog.mood].color}15` }}>
-                <p className="text-2xl">{MOODS[selectedLog.mood].emoji}</p>
-                <p className="text-[10px] mt-1 font-semibold" style={{ color: MOODS[selectedLog.mood].color }}>
-                  {MOODS[selectedLog.mood].label}
-                </p>
-              </div>
-            )}
-            {selectedLog.sleep && (
-              <div className="text-center p-2 rounded-xl" style={{ background: '#EDE9FE' }}>
-                <p className="text-2xl">😴</p>
-                <p className="text-[10px] mt-1 font-semibold" style={{ color: '#7C3AED' }}>
-                  {selectedLog.sleep}h sueño
-                </p>
-              </div>
-            )}
-            {selectedLog.water !== undefined && (
-              <div className="text-center p-2 rounded-xl" style={{ background: '#EFF6FF' }}>
-                <p className="text-2xl">💧</p>
-                <p className="text-[10px] mt-1 font-semibold" style={{ color: '#3B82F6' }}>
-                  {selectedLog.water}/{selectedLog.waterGoal} vasos
-                </p>
-              </div>
-            )}
-          </div>
+          {/* ... contenido del detalle ... */}
         </motion.div>
       )}
 
@@ -233,6 +211,19 @@ export default function WellnessCalendar({ theme, userId }) {
           </p>
         </motion.div>
       )}
+
+      {/* MODAL: Ahora está DENTRO del div principal y ANTES del cierre del return */}
+      {showNightly && (
+        <NightlyPlanner 
+          theme={theme} 
+          onClose={() => setShowNightly(false)}
+          onSave={async (goals) => {
+            const { error } = await saveDailyGoals(goals)
+            if (!error) {
+              setShowNightly(false)
+            }
+          }} 
+        />
+      )}
+      
     </div>
-  )
-}

@@ -3,7 +3,7 @@ import { motion } from 'framer-motion'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { useStore } from '../../store/useStore'
-import NightlyPlanner from './NightlyPlanner'
+// import NightlyPlanner from './NightlyPlanner'
 
 const MONTHS = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
 const DAYS   = ['L','M','X','J','V','S','D']
@@ -134,16 +134,14 @@ export default function WellnessCalendar({ theme, userId }) {
         </motion.div>
       )}
 
-      {showNightly && (
-        <NightlyPlanner 
-          theme={theme} 
-          onClose={() => setShowNightly(false)}
-          onSave={async (goals) => {
-            const { error } = await saveDailyGoals(goals)
-            if (!error) setShowNightly(false)
-          }} 
-        />
-      )}
-    </div>
-  )
-}
+     {/* {showNightly && (
+    <NightlyPlanner 
+      theme={theme} 
+      onClose={() => setShowNightly(false)}
+      onSave={async (goals) => {
+        const { error } = await saveDailyGoals(goals)
+        if (!error) setShowNightly(false)
+      }} 
+    />
+  )}
+*/}

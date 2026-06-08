@@ -4,7 +4,7 @@ import { useStore } from '../store/useStore'
 import { useTheme } from '../contexts/ThemeProvider'
 import { usePandiState } from '../contexts/PandiStateContext'
 // IMPORTANTE: Asegúrate de que esta ruta sea la correcta para tu archivo Sanctuary
-import Sanctuary from '../components/Sanctuary' 
+import Sanctuary from '../components/PandiSanctuary3D'
 
 export default function Home() {
   // 1. DATOS DEL USUARIO

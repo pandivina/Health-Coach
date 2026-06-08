@@ -8,11 +8,11 @@ export const useStore = create((set, get) => ({
   healthProfile: null,
   loading:       true,
 
-  setSession:       (session)       => set({ session }),
-  setUser:          (user)          => set({ user }),
-  setProfile:       (profile)       => set({ profile }),
-  setHealthProfile: (healthProfile) => set({ healthProfile }),
-  setLoading:       (loading)       => set({ loading }),
+  setSession:        (session)       => set({ session }),
+  setUser:           (user)          => set({ user }),
+  setProfile:        (profile)       => set({ profile }),
+  setHealthProfile:  (healthProfile) => set({ healthProfile }),
+  setLoading:        (loading)       => set({ loading }),
 
   fetchProfile: async (userId) => {
     try {
@@ -113,7 +113,7 @@ export const useStore = create((set, get) => ({
     const yesterday    = new Date()
     yesterday.setDate(yesterday.getDate() - 1)
     const yesterdayStr = yesterday.toISOString().split('T')[0]
-    let newStreak  = profile.streak         || 0
+    let newStreak  = profile.streak          || 0
     let newShields = profile.streak_shields || 0
     let shieldUsed = false
     if (lastActive === yesterdayStr) {
@@ -151,9 +151,8 @@ export const useStore = create((set, get) => ({
     set({ session: null, user: null, profile: null, healthProfile: null })
     try { localStorage.removeItem('pandi_workout_history_cache') } catch {}
   },
-}))
 
-saveDailyGoals: async (goals) => {
+  saveDailyGoals: async (goals) => {
     const { user } = get()
     if (!user) return { data: null, error: 'No user found' }
 
@@ -178,6 +177,7 @@ saveDailyGoals: async (goals) => {
     return { data, error: null }
   },
 }))
+
 if (typeof window !== 'undefined') {
   useStore.subscribe((state) => {
     window.__store_workout_state__ = state

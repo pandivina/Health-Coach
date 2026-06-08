@@ -11,58 +11,75 @@ import TourHelpButton from '../components/tour/TourHelpButton'
 import PandiInsights from '../components/PandiInsights'
 import { Plus, Minus as MinusIcon, Droplets } from 'lucide-react'
 
-// ... [El resto de tu código inicial, STATE_CONFIG y ALL_FRAMES igual] ...
-// (Mantenemos tus configuraciones exactas)
-
-// ... [Sanctuary component] ...
-// He añadido la protección de localStorage dentro del useEffect de los tips:
-
-  useEffect(() => {
-    const cacheKey = `pandi_tip_ai_${new Date().toISOString().slice(0, 13)}`
-    let cached = null;
-    try { cached = localStorage.getItem(cacheKey); } catch (e) { console.warn("LocalStorage bloqueado"); }
-    
-    if (cached) {
-      setTip(cached)
-      setTimeout(() => setTipVisible(true), 2000)
-      return
-    }
-    // ... [Tu fetch original] ...
-            try { localStorage.setItem(cacheKey, data.tip); } catch (e) {}
-    // ...
-  }, [])
-
-// ... [DayTask y WaterWidget sin cambios] ...
+// (Mantén tus constantes STATE_CONFIG y ALL_FRAMES aquí arriba como las tenías)
 
 export default function Home() {
+  // 1. HOOKS: Deben declararse SIEMPRE al inicio y sin interrupciones
   const { profile, user } = useStore()
   const { theme, loaded } = useTheme()
-  const pandiContext = usePandiState();
-  const recoveryLight = pandiContext?.recoveryLight || 'GREEN';
+  const pandiContext = usePandiState()
+  
+  const [todayMeals, setTodayMeals] = useState([])
+  const [todayWorkout, setTodayWorkout] = useState(null)
+  const [goals, setGoals] = useState({ calories: 2000, protein_g: 150 })
+  const [weightLogs, setWeightLogs] = useState([])
+  const [todaySleep, setTodaySleep] = useState(null)
+  const [todayMood, setTodayMood] = useState(null)
+  const [waterGlasses, setWaterGlasses] = useState(0)
 
-  // ... [Tus estados y useEffects originales] ...
+  // 2. EFECTOS: Declarados después de los estados
+  useTour('home')
 
-  // Si no ha cargado, spinner
-  if (!loaded) return (
-    <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'100dvh', background:'#f0fffe' }}>
-      <motion.div animate={{ scale:[1,1.1,1] }} transition={{ duration:1.5, repeat:Infinity }}>
-        <span style={{ fontSize:48 }}>🐾</span>
-      </motion.div>
-    </div>
-  )
+  useEffect(() => {
+    if (!user) return
+    const fetchData = async () => {
+      const today = new Date().toISOString().split('T')[0]
+      try {
+        const [m, w, g, l, s, mnd, h] = await Promise.all([
+          supabase.from('meal_logs').select('calories,protein_g').eq('user_id', user.id).eq('date', today),
+          supabase.from('workout_sessions').select('calories_burned').eq('user_id', user.id).eq('status', 'completed').gte('created_at', today+'T00:00:00'),
+          supabase.from('nutrition_goals').select('*').eq('user_id', user.id).maybeSingle(),
+          supabase.from('weight_logs').select('weight_kg,date').eq('user_id', user.id).order('date', { ascending: false }).limit(5),
+          supabase.from('sleep_logs').select('hours,quality').eq('user_id', user.id).eq('date', today).maybeSingle(),
+          supabase.from('mood_logs').select('mood').eq('user_id', user.id).eq('date', today).maybeSingle(),
+          supabase.from('hydration_logs').select('glasses').eq('user_id', user.id).eq('date', today).maybeSingle(),
+        ])
+        setTodayMeals(m.data || [])
+        setTodayWorkout(w.data?.[0] || null)
+        if (g.data) setGoals(g.data)
+        setWeightLogs(l.data || [])
+        setTodaySleep(s.data || null)
+        setTodayMood(mnd.data || null)
+        setWaterGlasses(h.data?.glasses || 0)
+      } catch (err) { console.error(err) }
+    }
+    fetchData()
+  }, [user])
 
-  // ... [Lógica de cálculos, const tasks, etc, igual] ...
+  // 3. LÓGICA DE DATOS
+  const recoveryLight = pandiContext?.recoveryLight || 'GREEN'
+  const cals = todayMeals.reduce((s, m) => s + (m.calories || 0), 0)
+  const hour = new Date().getHours()
+  const greeting = hour < 12 ? '¡Buenos días' : hour < 20 ? '¡Buenas tardes' : '¡Buenas noches'
+  const name = profile?.name?.split(' ')[0] || 'Compi'
 
-  return (
-    // CAMBIO CLAVE: minHeight: '100dvh' en lugar de 100vh
-    <div style={{ minHeight:'100dvh', background:'#f8fafa', paddingBottom:100 }}>
-      <Sanctuary recoveryLight={recoveryLight} profile={profile} theme={theme} greeting={greeting} name={name} />
-
-      <div style={{ padding:'0 16px', marginTop:-8 }}>
-        {/* ... [Todo tu contenido original] ... */}
-        
-        {/* ... */}
+  // 4. CONTROL DE CARGA (Después de todos los hooks)
+  if (!loaded) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100dvh', background: '#f8fafa' }}>
+        <motion.div animate={{ scale: [1, 1.1, 1] }} transition={{ duration: 1.5, repeat: Infinity }}>🐾</motion.div>
       </div>
+    )
+  }
+
+  // 5. RENDERIZADO FINAL
+  return (
+    <div style={{ minHeight: '100dvh', background: '#f8fafa', paddingBottom: 100 }}>
+      {/* 
+         Aquí iría tu componente Sanctuary y el resto de los componentes
+         que llamaban a los datos calculados arriba.
+      */}
+      <p>Bienvenido, {name}</p>
     </div>
   )
 }

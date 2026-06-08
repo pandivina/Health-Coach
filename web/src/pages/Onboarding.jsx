@@ -214,7 +214,7 @@ function GlassSelect({ options, value, onChange, energyColor }) {
   overflowY: 'scroll',
   WebkitOverflowScrolling: 'touch',
   zIndex: 200, // Se mantiene el valor más alto
-}}> 
+}}>
             {options.map((o, i) => (
               <motion.button key={o.v}
                 initial={{ opacity:0, x:-8 }} animate={{ opacity:1, x:0 }}

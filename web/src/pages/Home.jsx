@@ -66,10 +66,23 @@ export default function Home() {
   // 4. CONTROL DE CARGA (Después de todos los hooks)
   if (!loaded) {
     return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100dvh', background: '#f8fafa' }}>
-        <motion.div animate={{ scale: [1, 1.1, 1] }} transition={{ duration: 1.5, repeat: Infinity }}>🐾</motion.div>
+    <div style={{ minHeight:'100dvh', background:'#f8fafa', paddingBottom:100 }}>
+      {/* 1. Mantenemos el componente que SÍ se ve */}
+      <Sanctuary recoveryLight={recoveryLight} profile={profile} theme={theme} greeting={greeting} name={name} />
+
+      {/* 2. COMENTA TODO LO QUE SIGUE PARA PROBAR */}
+      {/* 
+      <div style={{ padding:'0 16px', marginTop:-8 }}>
+         ... todo tu código de tareas, anillos, etc ...
       </div>
-    )
+      */}
+      
+      {/* Añade esto temporalmente para ver si renderiza */}
+      <div style={{ padding: 20 }}>
+        <p style={{ color: 'black' }}>Si ves este texto, el error está en los componentes de abajo.</p>
+      </div>
+    </div>
+  )
   }
 
   // 5. RENDERIZADO FINAL

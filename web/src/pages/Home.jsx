@@ -349,8 +349,9 @@ export default function Home() {
   const { profile, user } = useStore()
   const { theme, loaded } = useTheme()
 
-  let recoveryLight = 'GREEN'
-  try { const ctx = usePandiState(); recoveryLight = ctx.recoveryLight || 'GREEN' } catch {}
+  // Mejora: Acceso seguro al contexto sin try-catch silencioso
+  const pandiContext = usePandiState();
+  const recoveryLight = pandiContext?.recoveryLight || 'GREEN';
 
   const [todayMeals,   setTodayMeals]   = useState([])
   const [todayWorkout, setTodayWorkout] = useState(null)
@@ -362,27 +363,37 @@ export default function Home() {
 
   useTour('home')
 
+  // Versión corregida y robusta del useEffect
   useEffect(() => {
     if (!user) return
-    const today = new Date().toISOString().split('T')[0]
-    const safe  = p => Promise.resolve(p).catch(() => ({ data:null }))
-    Promise.all([
-      safe(supabase.from('meal_logs').select('calories,protein_g').eq('user_id',user.id).eq('date',today)),
-      safe(supabase.from('workout_sessions').select('calories_burned').eq('user_id',user.id).eq('status','completed').gte('created_at',today+'T00:00:00').limit(1)),
-      safe(supabase.from('nutrition_goals').select('*').eq('user_id',user.id).maybeSingle()),
-      safe(supabase.from('weight_logs').select('weight_kg,date').eq('user_id',user.id).order('date',{ascending:false}).limit(5)),
-      safe(supabase.from('sleep_logs').select('hours,quality').eq('user_id',user.id).eq('date',today).maybeSingle()),
-      safe(supabase.from('mood_logs').select('mood').eq('user_id',user.id).eq('date',today).maybeSingle()),
-      safe(supabase.from('hydration_logs').select('glasses').eq('user_id',user.id).eq('date',today).maybeSingle()),
-    ]).then(([mealsR,workoutR,goalsR,weightR,sleepR,moodR,waterR]) => {
-      setTodayMeals(mealsR.data || [])
-      setTodayWorkout(workoutR.data?.[0] || null)
-      if (goalsR.data) setGoals(goalsR.data)
-      setWeightLogs(weightR.data || [])
-      setTodaySleep(sleepR.data || null)
-      setTodayMood(moodR.data || null)
-      setWaterGlasses(waterR.data?.glasses || 0)
-    })
+
+    const fetchData = async () => {
+      const today = new Date().toISOString().split('T')[0]
+      
+      try {
+        const [mealsR, workoutR, goalsR, weightR, sleepR, moodR, waterR] = await Promise.all([
+          supabase.from('meal_logs').select('calories,protein_g').eq('user_id', user.id).eq('date', today),
+          supabase.from('workout_sessions').select('calories_burned').eq('user_id', user.id).eq('status', 'completed').gte('created_at', today+'T00:00:00').limit(1),
+          supabase.from('nutrition_goals').select('*').eq('user_id', user.id).maybeSingle(),
+          supabase.from('weight_logs').select('weight_kg,date').eq('user_id', user.id).order('date', { ascending: false }).limit(5),
+          supabase.from('sleep_logs').select('hours,quality').eq('user_id', user.id).eq('date', today).maybeSingle(),
+          supabase.from('mood_logs').select('mood').eq('user_id', user.id).eq('date', today).maybeSingle(),
+          supabase.from('hydration_logs').select('glasses').eq('user_id', user.id).eq('date', today).maybeSingle(),
+        ])
+
+        setTodayMeals(mealsR.data || [])
+        setTodayWorkout(workoutR.data?.[0] || null)
+        if (goalsR.data) setGoals(goalsR.data)
+        setWeightLogs(weightR.data || [])
+        setTodaySleep(sleepR.data || null)
+        setTodayMood(moodR.data || null)
+        setWaterGlasses(waterR.data?.glasses || 0)
+      } catch (err) {
+        console.error('Error crítico cargando datos del Home:', err)
+      }
+    }
+
+    fetchData()
   }, [user])
 
   const cals    = todayMeals.reduce((s,m) => s+(m.calories||0), 0)
@@ -404,6 +415,8 @@ export default function Home() {
       </motion.div>
     </div>
   )
+  
+  // ... resto del componente igual que lo tenías
 
   const hour           = new Date().getHours()
   const greeting       = hour<12 ? '¡Buenos días' : hour<20 ? '¡Buenas tardes' : '¡Buenas noches'

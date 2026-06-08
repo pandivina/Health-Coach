@@ -201,15 +201,20 @@ function GlassSelect({ options, value, onChange, energyColor }) {
             exit={{ opacity:0, y:-8, scaleY:0.9 }}
             transition={{ duration:0.18 }}
             style={{
-              position:'absolute', top:'calc(100% + 8px)', left:0, right:0, zIndex:50,
-              borderRadius:16,
-              background:'rgba(255,252,245,0.96)',
-              backdropFilter:'blur(28px)',
-              border:'1.5px solid rgba(255,255,255,0.8)',
-              boxShadow:'0 8px 32px rgba(0,0,0,0.18)',
-              maxHeight:'42vh', overflowY:'scroll',
-              WebkitOverflowScrolling:'touch',
-              zIndex:200,
+  position: 'absolute',
+  top: 'calc(100% + 8px)',
+  left: 0,
+  right: 0,
+  borderRadius: 16,
+  background: 'rgba(255,252,245,0.96)',
+  backdropFilter: 'blur(28px)',
+  border: '1.5px solid rgba(255,255,255,0.8)',
+  boxShadow: '0 8px 32px rgba(0,0,0,0.18)',
+  maxHeight: '42vh',
+  overflowY: 'scroll',
+  WebkitOverflowScrolling: 'touch',
+  zIndex: 200, // Se mantiene el valor más alto
+}}
             }}>
             {options.map((o, i) => (
               <motion.button key={o.v}

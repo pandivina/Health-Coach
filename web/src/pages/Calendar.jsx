@@ -47,10 +47,10 @@ function PandaGreeting({ profile, theme, eventCount }) {
   const petName  = profile?.pet_name || 'Pandi'
 
   const msg = eventCount > 0
-    ? `Tienes ${eventCount} evento${eventCount > 1 ? 's' : ''} hoy. ¡A por ello! 💪`
-    : hour < 12 ? `Buenos días, ${profile?.name?.split(' ')[0] || ''}. ¿Qué tienes planeado hoy?`
-    : hour < 20 ? `¿Cómo va el día, ${profile?.name?.split(' ')[0] || ''}?`
-    : `Buenas noches. Revisa lo de mañana antes de dormir 🌙`
+  ? `Tienes ${eventCount} evento${eventCount > 1 ? 's' : ''} hoy. ¡A por ello! 💪`
+  : hour < 12 ? `Buenos días, ${profile?.name?.split(' ')[0] || 'amigo'}. ¿Qué tienes planeado hoy?`
+  : hour < 20 ? `¿Cómo va el día, ${profile?.name?.split(' ')[0] || 'amigo'}?`
+  : `Buenas noches. Revisa lo de mañana antes de dormir 🌙`
 
   return (
     <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }}
@@ -124,7 +124,13 @@ export default function Calendar() {
   const todayEventCount = events.filter(e => e.date === today).length
 
   function eventsForDay(dateStr) { return events.filter(e => e.date === dateStr) }
-
+  
+useEffect(() => {
+    let isMounted = true;
+    if (isMounted) load();
+    return () => { isMounted = false; };
+  }, [load]);
+  
   // ─── GUARDAR EVENTO ───────────────────────────────────────────────────────
 
   async function saveEvent(data) {

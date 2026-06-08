@@ -25,7 +25,7 @@ const STATE_CONFIG = {
     glow:          'rgba(245,158,11,0.4)',
     dot:           '#F59E0B',
     msg:           'Ritmo moderado. Ajustando tu plan.',
-    frames:        ['/panda/panda_base.png','/panda/avatar_thinking.png','/panda/panda_base.png','/panda/curious_1.png'],
+    frames:        ['/panda/panda_base.png','/panda/thinking_1','/panda/panda_base.png','/panda/thinking_1'],
     frameDuration: 3000,
   },
   RED: {

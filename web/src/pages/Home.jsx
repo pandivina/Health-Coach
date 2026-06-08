@@ -50,7 +50,7 @@ const ALL_FRAMES = [
 ]
 
 function Sanctuary({ recoveryLight, profile, theme, greeting, name }) {
-  const cfg = STATE_CONFIG[recoveryLight] || STATE_CONFIG.GREEN
+  const cfg = STATE_CONFIG[recoveryLight] ? STATE_CONFIG[recoveryLight] : STATE_CONFIG.GREEN;
   const [frameIdx,   setFrameIdx]   = useState(0)
   const [imgErr,     setImgErr]     = useState(false)
   const [bgErr,      setBgErr]      = useState(false)

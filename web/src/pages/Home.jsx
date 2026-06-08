@@ -33,7 +33,7 @@ const STATE_CONFIG = {
     glow:          'rgba(255,143,163,0.4)',
     dot:           '#FF8FA3',
     msg:           'Hoy el descanso ES el entrenamiento.',
-    frames:        ['/panda/panda_base.png','/panda/avatar_neutro.png','/panda/avatar_sleep.png','/panda/avatar_neutro.png'],
+    frames:        ['/panda/panda_base.png','/panda/thinking_1','/panda/panda_base.png','/panda/thinking_1'],
     frameDuration: 3500,
   },
 }

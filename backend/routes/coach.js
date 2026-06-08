@@ -109,23 +109,53 @@ Solo el texto del resumen, sin introducción.`
   }
 }
 
+// ─── SYSTEM PROMPT EVOLUTIVO ──────────────────────────────────────────────────
+function buildEvolutivePersonality(fase, profileName) {
+  const name = profileName || 'Usuario';
+
+  if (fase >= 2) {
+    return {
+      identity: `Eres Pandi, mentor analítico y científico de salud de ${name}. Tu conocimiento es profundo, técnico y basado en evidencia sólida. Eres el compañero de optimización del rendimiento humano de ${name}.`,
+      tone: `Utiliza terminología técnica precisa: mecanismos biológicos, endocrinos y psicológicos. Cita evidencia científica cuando sea relevante. Eres riguroso pero siempre de apoyo. Usa "nosotros" — estamos construyendo esto juntos.`,
+      rules: `
+- Relaciona cada consejo con la rama del sistema que corresponda (sueño, nutrición, movimiento, mente, hidratación, intención).
+- Si el usuario propone algo sin base científica, explica el porqué con rigor, manteniendo siempre apoyo.
+- Termina siempre con una llamada a la acción específica y medible.
+- Rechaza pseudociencia. Todo consejo debe estar fundamentado en evidencia sólida.`,
+      maxParagraphs: 3,
+    };
+  }
+
+  // Fase 1 — Bebé/Onboarding
+  return {
+    identity: `Eres Pandi, el guía tierno y protector de ${name} en su primer viaje de salud. Acabas de nacer gracias a la energía de ${name} y estás creciendo juntos.`,
+    tone: `Tu lenguaje es sencillo, cálido, motivador y directo. Celebra cada pequeño logro. Invita suavemente a usar las herramientas de la app. Usa "nosotros" — estamos construyendo esto juntos.`,
+    rules: `
+- Si ${name} no ha completado una función, invítale suavemente: "Pandi necesita que registres tu hidratación para tener energía y crecer".
+- Si ${name} pregunta algo complejo, responde con claridad pero añade: "Esto es algo que profundizaremos cuando hayamos desbloqueado tu nivel de mentoría avanzado".
+- Prioriza enseñar a usar la app sobre dar consejos técnicos complejos.
+- Termina siempre con una pequeña invitación a la siguiente tarea o reflexión.`,
+    maxParagraphs: 2,
+  };
+}
+
 // ─── POST /api/coach ──────────────────────────────────────────────────────────
 router.post('/', requireAuth, checkCoachLimit, async (req, res) => {
   try {
-    const { messages, context } = req.body; // <-- Capturamos el contexto del entrenamiento activo enviado desde el front
+    const { messages, context } = req.body;
     const userId = req.user.id;
     const today = new Date().toISOString().split('T')[0];
 
     const safe = async fn => { try { return await fn } catch { return { data: null } } };
 
-    // Cargar datos del usuario y memoria en paralelo (Corregido solapamiento de health_profiles)
     const [
       healthRes, profileRes, goalsRes, mealsRes, sleepRes,
       moodRes, workoutRes, weightRes, treatmentsRes, labsRes,
       memory
     ] = await Promise.all([
       safe(supabaseAdmin.from('health_profiles').select('*').eq('user_id', userId).maybeSingle()),
-      safe(supabaseAdmin.from('user_profiles').select('name,xp,level,streak,motivation_why').eq('id', userId).single()),
+      // ← Añadido fase_evolutiva y level al select
+      safe(supabaseAdmin.from('user_profiles').select('name,xp,level,streak,motivation_why,fase_evolutiva').eq('id', userId).single()),
       safe(supabaseAdmin.from('nutrition_goals').select('*').eq('user_id', userId).maybeSingle()),
       safe(supabaseAdmin.from('meal_logs').select('calories,protein_g,food_name').eq('user_id', userId).eq('date', today)),
       safe(supabaseAdmin.from('sleep_logs').select('hours,quality').eq('user_id', userId).order('date', { ascending: false }).limit(3)),
@@ -141,12 +171,17 @@ router.post('/', requireAuth, checkCoachLimit, async (req, res) => {
     const profile     = profileRes.data    || {};
     const goals       = goalsRes.data      || {};
     const meals       = mealsRes.data      || [];
-    const sleepLogs  = sleepRes.data      || [];
-    const mood       = moodRes.data       || {};
-    const workouts   = workoutRes.data    || [];
-    const weightLogs = weightRes.data     || [];
-    const treatments = treatmentsRes.data || [];
-    const lastLab    = labsRes.data       || {};
+    const sleepLogs   = sleepRes.data      || [];
+    const mood        = moodRes.data       || {};
+    const workouts    = workoutRes.data    || [];
+    const weightLogs  = weightRes.data     || [];
+    const treatments  = treatmentsRes.data || [];
+    const lastLab     = labsRes.data       || {};
+
+    // ─── FASE EVOLUTIVA ───────────────────────────────────────────────────────
+    // Si level >= 10 y no tiene fase_evolutiva=2, consideramos que está en fase 2
+    const faseEvolutiva = profile.fase_evolutiva || (profile.level >= 10 ? 2 : 1);
+    const personality   = buildEvolutivePersonality(faseEvolutiva, profile.name);
 
     // Métricas calculadas
     const caloriesConsumed = meals.reduce((s, m) => s + (m.calories || 0), 0);
@@ -161,15 +196,14 @@ router.post('/', requireAuth, checkCoachLimit, async (req, res) => {
       ? Math.floor((new Date() - new Date(health.birth_date)) / (365.25 * 24 * 3600 * 1000))
       : null;
 
-    // ─── 🦍 PROCESAMIENTO DINÁMICO DEL CONTEXTO EN EL GIMNASIO ───────────────────
+    // ─── CONTEXTO DE ENTRENAMIENTO ACTIVO ─────────────────────────────────────
     let workoutContextSection = '';
-    let behaviorInstruction = 'Adopta una postura de consultoría híbrida de salud, empática y clínica.';
+    let behaviorInstruction = personality.tone;
 
     if (context?.activeWorkout) {
       const { routineName, senda, elapsedTime, progress, currentExercise } = context.activeWorkout;
       const elapsedMinutes = Math.floor(elapsedTime / 60);
 
-      // Determinar tono de voz e identidad según la Senda mística del entrenamiento actual
       let sendaStyle = '';
       if (senda === 'titan') {
         sendaStyle = 'SENDA TITÁN: Tu tono debe ser épico, exigente, hiper-motivador y energético. Habla de forjar fuerza.';
@@ -189,13 +223,13 @@ router.post('/', requireAuth, checkCoachLimit, async (req, res) => {
 
 INSTRUCCIONES EXTRAURGENTES PARA ESTE ESTADO:
 1. Si el usuario te pregunta cosas rápidas ("no puedo más", "ayuda", "¿cómo coloco los pies?"), asume DIRECTAMENTE que se refiere al ejercicio actual (${currentExercise}).
-2. El usuario está cansado y entre series. Reduce drásticamente tus respuestas a 1 o 2 párrafos ultra condensados, directos e impactantes. No tiene tiempo de leer textos largos en el móvil.
+2. El usuario está cansado y entre series. Reduce drásticamente tus respuestas a 1 o 2 párrafos ultra condensados, directos e impactantes.
 3. Incorpora consejos anatómicos o biomecánicos aplicados al ${currentExercise} de inmediato.
 `;
       behaviorInstruction = `Prioriza la arenga deportiva instantánea, la técnica de levantamiento y el soporte bajo fatiga. ${sendaStyle}`;
     }
 
-    // Adaptación horaria basada en el cliente
+    // Adaptación horaria
     let clientTimeStr = 'No provista';
     if (context?.clientTime && context?.timezone) {
       try {
@@ -207,8 +241,8 @@ INSTRUCCIONES EXTRAURGENTES PARA ESTE ESTADO:
       } catch (e) {}
     }
 
-    // ─── CONSTRUCCIÓN DEL SYSTEM PROMPT CENTRALIZADO ─────────────────────────────
-    const systemPrompt = `Eres el Coach IA de Health Coach, un asistente de salud personalizado, empático, motivador y con conocimiento clínico. Conoces bien a este usuario y recuerdas vuestras conversaciones anteriores.
+    // ─── SYSTEM PROMPT ────────────────────────────────────────────────────────
+    const systemPrompt = `${personality.identity}
 
 ${memory?.summary ? `═══════════════════════════════════
 MEMORIA DE CONVERSACIONES ANTERIORES
@@ -216,6 +250,11 @@ MEMORIA DE CONVERSACIONES ANTERIORES
 ${memory.summary}
 
 ` : ''}═══════════════════════════════════
+FASE EVOLUTIVA: ${faseEvolutiva === 1 ? '1 — Guía Tierno (Bebé)' : '2 — Mentor Científico (Experto)'}
+NIVEL: ${profile.level || 1} | XP: ${profile.xp || 0} | RACHA: ${profile.streak || 0} días
+═══════════════════════════════════
+
+═══════════════════════════════════
 PERFIL DEL USUARIO (datos reales)
 ═══════════════════════════════════
 Nombre: ${profile.name || 'Usuario'}
@@ -254,26 +293,26 @@ ${treatments.length ? treatments.map(t => `• ${t.name} (${t.type})${t.affects_
 ANALÍTICAS (últimas recomendaciones)
 ${lastLab.ai_recommendations || 'Sin analíticas subidas'}
 
-GAMIFICACIÓN
-Nivel: ${profile.level || 1} | XP: ${profile.xp || 0} | Racha: ${profile.streak || 0} días
-
 HORA ACTUAL DISPOSITIVO DEL USUARIO: ${clientTimeStr}
 ${workoutContextSection}
 
 ═══════════════════════════════════
-REGLAS DEL COACH
+PERSONALIDAD Y REGLAS
 ═══════════════════════════════════
+TONO: ${behaviorInstruction}
+${personality.rules}
+
+REGLAS GENERALES:
 1. USA SOLO los datos reales del perfil. Nunca inventes valores.
 2. Usa la MEMORIA para dar continuidad — recuerda lo que se ha hablado antes.
 3. Ten en cuenta los TRATAMIENTOS MÉDICOS al dar consejos nutricionales.
 4. Si hay analíticas, considera las recomendaciones en tus respuestas.
 5. Adapta los consejos al HORARIO LABORAL del usuario.
-6. Sé empático, directo y motivador. ${behaviorInstruction}
-7. Responde siempre en español.
-8. Máximo 3 párrafos por respuesta (si está entrenando activamente, redúcelo obligatoriamente a 1 o 2 párrafos cortos).
-9. Usa emojis con moderación.`;
+6. Responde siempre en español.
+7. Máximo ${personality.maxParagraphs} párrafos por respuesta${context?.activeWorkout ? ' (entrenando: máximo 2 párrafos cortos)' : ''}.
+8. Usa emojis con moderación.`;
 
-    // ─── LLAMADA A CLAUDE ────────────────────────────────────────────────────────
+    // ─── LLAMADA A CLAUDE ─────────────────────────────────────────────────────
     const response = await anthropic.messages.create({
       model: process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-5',
       max_tokens: 800,
@@ -284,7 +323,7 @@ REGLAS DEL COACH
     const reply = response.content[0].text;
     res.json({ reply });
 
-    // Actualizar memoria en background (sin bloquear la respuesta de la UI)
+    // Actualizar memoria en background
     const allMessages = [...messages, { role: 'assistant', content: reply }];
     updateMemory(userId, allMessages, reply).catch(() => {});
 

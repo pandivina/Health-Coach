@@ -44,6 +44,22 @@ export default function Home() {
       </section>
 
       {/* 
+      {/* --- WIDGET DE PRUEBA: HIDRATACIÓN --- */}
+<div style={{ 
+  background: 'white', 
+  padding: '16px', 
+  borderRadius: '20px', 
+  boxShadow: '0 4px 12px rgba(0,0,0,0.05)', 
+  marginTop: '20px',
+  marginRight: '16px',
+  marginLeft: '16px'
+}}>
+  <h3 style={{ margin: '0 0 10px 0', fontSize: '16px' }}>Hidratación</h3>
+  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+    <span style={{ fontSize: '24px' }}>💧</span>
+    <p style={{ margin: 0 }}>Llevas registrados: <strong>{waterGlasses || 0}</strong> vasos</p>
+  </div>
+</div>
          SECCIÓN: Navegación inferior
          Nota: Si tu navegación es un componente separado (ej: <Navbar />), colócalo aquí abajo.
       */}

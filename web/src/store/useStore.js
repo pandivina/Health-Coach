@@ -153,6 +153,31 @@ export const useStore = create((set, get) => ({
   },
 }))
 
+saveDailyGoals: async (goals) => {
+    const { user } = get()
+    if (!user) return { data: null, error: 'No user found' }
+
+    const today = new Date().toISOString().split('T')[0]
+    
+    const { data, error } = await supabase
+      .from('daily_goals')
+      .upsert({ 
+        user_id: user.id, 
+        date: today, 
+        goals: goals, 
+        completed: [false, false, false] 
+      })
+      .select()
+      .single()
+
+    if (error) {
+      console.error('[Store] Error saving daily goals:', error)
+      return { data: null, error }
+    }
+    
+    return { data, error: null }
+  },
+
 if (typeof window !== 'undefined') {
   useStore.subscribe((state) => {
     window.__store_workout_state__ = state

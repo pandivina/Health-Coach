@@ -177,7 +177,7 @@ saveDailyGoals: async (goals) => {
     
     return { data, error: null }
   },
-
+}))
 if (typeof window !== 'undefined') {
   useStore.subscribe((state) => {
     window.__store_workout_state__ = state

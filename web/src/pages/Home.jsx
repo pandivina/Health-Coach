@@ -353,8 +353,7 @@ export default function Home() {
   let recoveryLight = 'GREEN'
   try { const ctx = usePandiState(); recoveryLight = ctx.recoveryLight || 'GREEN' } catch {}
 
-  const recoveryLight = pandiContext?.recoveryLight || 'GREEN'
-  const [todayMeals, setTodayMeals] = useState([])
+    const [todayMeals, setTodayMeals] = useState([])
   const [todayWorkout, setTodayWorkout] = useState(null)
   const [goals, setGoals] = useState({ calories: 2000, protein_g: 150 })
   const [weightLogs, setWeightLogs] = useState([])
@@ -399,15 +398,17 @@ export default function Home() {
     streak:profile?.streak||0, level:profile?.level||1,
   })
 
-  if (!loaded) return <div>Cargando...</div>
-    <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'100vh', background:'#f0fffe' }}>
-      <motion.div animate={{ scale:[1,1.1,1] }} transition={{ duration:1.5, repeat:Infinity }}>
-        <span style={{ fontSize:48 }}>🐾</span>
-      </motion.div>
-    </div>
-  )
+if (!loaded) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: '#f0fffe' }}>
+        <motion.div animate={{ scale: [1, 1.1, 1] }} transition={{ duration: 1.5, repeat: Infinity }}>
+          <span style={{ fontSize: 48 }}>🐾</span>
+        </motion.div>
+      </div>
+    );
+  }
 
-  const hour           = new Date().getHours()
+  const hour = new Date().getHours();
   const greeting       = hour<12 ? '¡Buenos días' : hour<20 ? '¡Buenas tardes' : '¡Buenas noches'
   const name           = profile?.name?.split(' ')[0] || 'Compi'
   const MOODS          = {1:'😩',2:'😞',3:'😐',4:'😊',5:'🤩'}

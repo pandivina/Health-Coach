@@ -24,7 +24,6 @@ export default function Home() {
       <p>Vasos de agua: {waterGlasses}</p>
     </div>
   )
-}
 
   // 3. DATOS PREVIOS PARA EL SANTUARIO
   const recoveryLight = pandiContext?.recoveryLight || 'GREEN'

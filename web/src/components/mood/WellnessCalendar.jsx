@@ -134,7 +134,7 @@ export default function WellnessCalendar({ theme, userId }) {
         </motion.div>
       )}
 
-     { {showNightly && (
+ {showNightly && (
     <NightlyPlanner 
       theme={theme} 
       onClose={() => setShowNightly(false)}
@@ -142,5 +142,5 @@ export default function WellnessCalendar({ theme, userId }) {
         const { error } = await saveDailyGoals(goals)
         if (!error) setShowNightly(false)
       }} 
-    ></NightlyPlanner>
+    />
   )}

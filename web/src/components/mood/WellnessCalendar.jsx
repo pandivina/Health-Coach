@@ -142,5 +142,5 @@ export default function WellnessCalendar({ theme, userId }) {
         const { error } = await saveDailyGoals(goals)
         if (!error) setShowNightly(false)
       }} 
-    />
+    */>
   )}

@@ -135,12 +135,15 @@ export default function WellnessCalendar({ theme, userId }) {
       )}
 
  {showNightly && (
-    <NightlyPlanner 
-      theme={theme} 
-      onClose={() => setShowNightly(false)}
-      onSave={async (goals) => {
-        const { error } = await saveDailyGoals(goals)
-        if (!error) setShowNightly(false)
-      }} 
-    />
-  )}
+        <NightlyPlanner
+          theme={theme}
+          onClose={() => setShowNightly(false)}
+          onSave={async (goals) => {
+            const { error } = await saveDailyGoals(goals)
+            if (!error) setShowNightly(false)
+          }}
+        />
+      )}
+    </div>
+  )
+}

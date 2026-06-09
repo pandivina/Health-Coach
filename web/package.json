@@ -19,7 +19,7 @@
     "zustand": "^4.5.0",
     "@react-three/drei": "^9.109.0",
     "@react-three/fiber": "^8.17.0",
-    "three": "^0.167.0"
+    "three": "^0.167.0",
     "workbox-precaching": "^7.0.0",
 "workbox-routing": "^7.0.0",
 "workbox-strategies": "^7.0.0",

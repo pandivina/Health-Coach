@@ -10,6 +10,7 @@ import { useTour } from '../hooks/useTour'
 import TourHelpButton from '../components/tour/TourHelpButton'
 import PandiContextualBubble from '../components/PandiContextualBubble'
 import PandiTips from '../components/PandiTips'
+import { toast } from '../lib/toast'
 
 function ModuleStatus({ icon: Icon, label, value, status, to }) {
   const { theme } = useTheme()
@@ -111,6 +112,7 @@ export default function DailyReport() {
   async function generateReport() {
     setLoading(true)
     try { const data = await api.report.today(); setReport(data); addXP(5) }
+    catch (err) { alert('Error: ' + err.message) }
     catch (err) { toast.error('Algo salió mal. Inténtalo de nuevo.') }
     finally { setLoading(false) }
   }

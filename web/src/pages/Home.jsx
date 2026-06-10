@@ -10,6 +10,7 @@ import { useSectionContext } from '../hooks/useSectionContext'
 import TourHelpButton from '../components/tour/TourHelpButton'
 import PandiInsights from '../components/PandiInsights'
 import { Plus, Minus as MinusIcon, Droplets } from 'lucide-react'
+import DailyCheckin from '../components/DailyCheckin'
 
 const STATE_CONFIG = {
   GREEN: {
@@ -193,6 +194,7 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name }) {
             }
           </div>
         </div>
+        <DailyCheckin />
       </div>
 
       {/* BOCADILLO — position absolute independiente */}

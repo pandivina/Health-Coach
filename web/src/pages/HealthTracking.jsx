@@ -8,6 +8,7 @@ import { useTheme } from '../contexts/ThemeProvider'
 import { MedicalDisclaimerBanner } from '../components/legal/MedicalDisclaimer'
 import PandiContextualBubble from '../components/PandiContextualBubble'
 import PandiTips from '../components/PandiTips'
+import { toast } from '../lib/toast'
 
 const TABS = [
   { id: 'weight',     icon: Scale,        label: 'Peso' },

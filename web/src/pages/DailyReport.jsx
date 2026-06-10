@@ -111,7 +111,7 @@ export default function DailyReport() {
   async function generateReport() {
     setLoading(true)
     try { const data = await api.report.today(); setReport(data); addXP(5) }
-    catch (err) { alert('Error: ' + err.message) }
+    catch (err) { toast.error('Algo salió mal. Inténtalo de nuevo.') }
     finally { setLoading(false) }
   }
 

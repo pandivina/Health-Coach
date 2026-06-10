@@ -88,6 +88,11 @@ export default function App() {
         setHealthProfile(null)   // ← limpiar health profile en logout
         setLoading(false)
       }
+      if (session?.user) {
+  fetchProfile(session.user.id)
+    .then(() => useStore.getState().initCoach())
+    .finally(() => setLoading(false))
+}
     })
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {

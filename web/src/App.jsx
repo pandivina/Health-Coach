@@ -10,6 +10,7 @@ import CookieBanner from './components/legal/CookieBanner'
 import { PrivacyPolicy, TermsOfUse, MedicalDisclaimerPage } from './pages/Legal'
 import UpdateBanner from './components/UpdateBanner'
 import WorkoutView from './pages/WorkoutView'
+import { ToastProvider } from './components/ToastProvider'
 
 
 // Public
@@ -110,7 +111,8 @@ export default function App() {
   }, [])
 
   return (
-    <AchievementToastProvider>
+    <ToastProvider>
+  <AchievementToastProvider>
       <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <Routes>
           <Route path="/" element={<SmartRoot />} />
@@ -151,6 +153,7 @@ export default function App() {
         <CookieBanner />
         <UpdateBanner />
       </BrowserRouter>
-    </AchievementToastProvider>
+      </AchievementToastProvider>
+    </ToastProvider>
   )
 }

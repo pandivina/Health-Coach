@@ -49,7 +49,7 @@ function WeightTab() {
       await addXP(10)
       setForm({ weight_kg: '', body_fat_pct: '', notes: '' })
       load()
-    } catch (err) { alert(err.message) }
+    } catch (err) { toast.error('Algo salió mal. Inténtalo de nuevo.') }
     finally { setSaving(false) }
   }
 
@@ -157,7 +157,7 @@ function MeasuresTab() {
       setForm({ waist_cm:'', hip_cm:'', chest_cm:'', left_arm_cm:'', left_thigh_cm:'', energy_level:'7', hunger_level:'5', adherence_pct:'80', notes:'' })
       const { data } = await supabase.from('body_measurements').select('*').eq('user_id', user.id).order('date', { ascending: false }).limit(6)
       setLogs(data || [])
-    } catch (err) { alert(err.message) }
+    } catch (err) { toast.error('Algo salió mal. Inténtalo de nuevo.') }
     finally { setSaving(false) }
   }
 
@@ -228,7 +228,7 @@ function LabsTab() {
     try {
       await api.labs.analyze({ rawText, imageBase64, mediaType, title: reportTitle || 'Analítica' })
       setRawText(''); setReportTitle(''); load()
-    } catch (err) { alert('Error: ' + err.message) }
+    } catch (err) { toast.error('Algo salió mal. Inténtalo de nuevo.') }
     finally { setAnalyzing(false) }
   }
 

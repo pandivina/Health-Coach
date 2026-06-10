@@ -39,7 +39,6 @@ const STATE_CONFIG = {
     frameDuration: 3500,
   },
 }
-<CoachSuggestion />
 
 const ALL_FRAMES = [
   '/panda/panda_blink.png',
@@ -122,11 +121,7 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name }) {
   }, [])
 
   function handleTipClick() { setTipOpen(o => !o) }
-
-  function dismissTip() {
-    setTipVisible(false)
-    setTipOpen(false)
-  }
+  function dismissTip() { setTipVisible(false); setTipOpen(false) }
 
   const currentFrame = blinking
     ? '/panda/panda_blink.png'
@@ -196,10 +191,9 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name }) {
             }
           </div>
         </div>
-        <DailyCheckin />
       </div>
 
-      {/* BOCADILLO — position absolute independiente */}
+      {/* BOCADILLO */}
       <AnimatePresence>
         {tipVisible && tip && (
           <motion.div
@@ -208,13 +202,11 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name }) {
             exit={{ opacity:0, scale:0.8, x:10 }}
             transition={{ type:'spring', damping:20, stiffness:300 }}
             onClick={handleTipClick}
-            style={{ position:'absolute', bottom:42, left:16, right:16, cursor:'pointer', zIndex:6 }}
-          >
+            style={{ position:'absolute', bottom:42, left:16, right:16, cursor:'pointer', zIndex:6 }}>
             <motion.div
               animate={{ background: tipOpen ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.6)', boxShadow: tipOpen ? '0 8px 24px rgba(0,0,0,0.15)' : '0 2px 8px rgba(0,0,0,0.08)' }}
               transition={{ duration:0.3 }}
-              style={{ borderRadius:16, borderBottomLeftRadius:4, padding:'10px 12px', backdropFilter:'blur(12px)', border:`1px solid ${tipOpen ? 'rgba(46,196,182,0.3)' : 'rgba(255,255,255,0.4)'}` }}
-            >
+              style={{ borderRadius:16, borderBottomLeftRadius:4, padding:'10px 12px', backdropFilter:'blur(12px)', border:`1px solid ${tipOpen ? 'rgba(46,196,182,0.3)' : 'rgba(255,255,255,0.4)'}` }}>
               <p style={{ fontSize:10, fontWeight:800, color:theme.primary||'#2EC4B6', margin:'0 0 4px', textTransform:'uppercase', letterSpacing:'.05em', textAlign:'center' }}>💡 Tip de Pandi</p>
               <AnimatePresence mode="sync">
                 {tipOpen ? (
@@ -290,14 +282,9 @@ function WaterWidget({ userId }) {
     setGlasses(next)
     const { error } = await supabase
       .from('hydration_logs')
-      .upsert(
-        { user_id: userId, date: today, glasses: next, goal },
-        { onConflict: 'user_id,date' }
-      )
+      .upsert({ user_id: userId, date: today, glasses: next, goal }, { onConflict: 'user_id,date' })
     if (error) console.error('Hydration error:', error.message)
-    if (next === goal && glasses < goal) {
-      useStore.getState().addXP(20)
-    }
+    if (next === goal && glasses < goal) useStore.getState().addXP(20)
   }
 
   const pct = Math.min(glasses / goal, 1)
@@ -352,19 +339,24 @@ function MiniRing({ value, max, color, label }) {
 export default function Home() {
   const { profile, user } = useStore()
   const { theme, loaded } = useTheme()
-  // ✅ CORRECCIÓN: hook llamado correctamente, sin try/catch ni duplicado
   const { recoveryLight: recoveryLightCtx } = usePandiState()
   const recoveryLight = recoveryLightCtx || 'GREEN'
 
-  const [todayMeals, setTodayMeals] = useState([])
+  const [todayMeals,   setTodayMeals]   = useState([])
   const [todayWorkout, setTodayWorkout] = useState(null)
-  const [goals, setGoals] = useState({ calories: 2000, protein_g: 150 })
-  const [weightLogs, setWeightLogs] = useState([])
-  const [todaySleep, setTodaySleep] = useState(null)
-  const [todayMood, setTodayMood] = useState(null)
+  const [goals,        setGoals]        = useState({ calories: 2000, protein_g: 150 })
+  const [weightLogs,   setWeightLogs]   = useState([])
+  const [todaySleep,   setTodaySleep]   = useState(null)
+  const [todayMood,    setTodayMood]    = useState(null)
   const [waterGlasses, setWaterGlasses] = useState(0)
 
   useTour('home')
+
+  useEffect(() => {
+    if (!user) return
+    // Inicializar coach al cargar el home
+    useStore.getState().initCoach()
+  }, [user])
 
   useEffect(() => {
     if (!user) return
@@ -389,9 +381,9 @@ export default function Home() {
     })
   }, [user])
 
-  const cals = todayMeals?.reduce((s, m) => s + (m.calories || 0), 0) || 0
-  const protein = todayMeals?.reduce((s, m) => s + (m.protein_g || 0), 0) || 0
-  const burned = todayWorkout?.calories_burned || 0
+  const cals    = todayMeals?.reduce((s,m) => s+(m.calories||0), 0) || 0
+  const protein = todayMeals?.reduce((s,m) => s+(m.protein_g||0), 0) || 0
+  const burned  = todayWorkout?.calories_burned || 0
 
   useSectionContext('home', {
     caloriesConsumed:Math.round(cals), caloriesTarget:goals.calories,
@@ -401,17 +393,15 @@ export default function Home() {
     streak:profile?.streak||0, level:profile?.level||1,
   })
 
-  if (!loaded) {
-    return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: '#f0fffe' }}>
-        <motion.div animate={{ scale: [1, 1.1, 1] }} transition={{ duration: 1.5, repeat: Infinity }}>
-          <span style={{ fontSize: 48 }}>🐾</span>
-        </motion.div>
-      </div>
-    )
-  }
+  if (!loaded) return (
+    <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'100vh', background:'#f0fffe' }}>
+      <motion.div animate={{ scale:[1,1.1,1] }} transition={{ duration:1.5, repeat:Infinity }}>
+        <span style={{ fontSize:48 }}>🐾</span>
+      </motion.div>
+    </div>
+  )
 
-  const hour = new Date().getHours()
+  const hour           = new Date().getHours()
   const greeting       = hour<12 ? '¡Buenos días' : hour<20 ? '¡Buenas tardes' : '¡Buenas noches'
   const name           = profile?.name?.split(' ')[0] || 'Compi'
   const MOODS          = {1:'😩',2:'😞',3:'😐',4:'😊',5:'🤩'}
@@ -428,10 +418,11 @@ export default function Home() {
   ]
 
   return (
-    <div style={{ minHeight: '100vh', background: '#f8fafa', paddingBottom: 100 }}>
+    <div style={{ minHeight:'100vh', background:'#f8fafa', paddingBottom:100 }}>
       <Sanctuary recoveryLight={recoveryLight} profile={profile} theme={theme} greeting={greeting} name={name} />
 
-      <div style={{ padding: '0 16px', marginTop: '-8px' }}>
+      <div style={{ padding:'0 16px', marginTop:'-8px' }}>
+
         {/* BADGE SEMÁFORO */}
         <motion.div initial={{ opacity:0, y:8 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.05 }}
           style={{ display:'flex', justifyContent:'center', marginBottom:12 }}>
@@ -444,6 +435,10 @@ export default function Home() {
           </div>
         </motion.div>
 
+        {/* SUGERENCIA DEL COACH */}
+        <CoachSuggestion />
+
+        {/* PLAN DE HOY */}
         <motion.div initial={{ opacity:0, y:16 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.1 }}
           style={{ background:'rgba(255,255,255,0.95)', borderRadius:20, padding:'14px 16px', marginBottom:16, border:'1px solid rgba(0,0,0,0.06)', boxShadow:'0 4px 20px rgba(0,0,0,0.06)' }}>
           <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:10 }}>
@@ -472,6 +467,7 @@ export default function Home() {
           </div>
         </motion.div>
 
+        {/* TAREAS */}
         <motion.div initial={{ opacity:0, y:16 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.2 }}>
           <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:12 }}>
             <p style={{ fontSize:15, fontWeight:800, color:'#1A2332', margin:0 }}>Tareas del día</p>
@@ -494,6 +490,9 @@ export default function Home() {
 
         <TourHelpButton tourKey="home" />
       </div>
+
+      {/* DAILY CHECKIN — bottom sheet, fuera del scroll */}
+      <DailyCheckin />
     </div>
   )
 }

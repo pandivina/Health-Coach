@@ -11,6 +11,7 @@ import TourHelpButton from '../components/tour/TourHelpButton'
 import PandiInsights from '../components/PandiInsights'
 import { Plus, Minus as MinusIcon, Droplets } from 'lucide-react'
 import DailyCheckin from '../components/DailyCheckin'
+import CoachSuggestion from '../components/CoachSuggestion'
 
 const STATE_CONFIG = {
   GREEN: {
@@ -38,6 +39,7 @@ const STATE_CONFIG = {
     frameDuration: 3500,
   },
 }
+<CoachSuggestion />
 
 const ALL_FRAMES = [
   '/panda/panda_blink.png',

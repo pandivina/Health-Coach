@@ -336,10 +336,18 @@ export default function Onboarding() {
       const trainingDays = { never:0, sometimes:1, regular:3, daily:5 }[form.movement] || 2
 
       await supabase.from('user_profiles').update({
-        name: form.name,
-        onboarding_done: true,
-        motivation_why: form.intention || null,
-      }).eq('id', userId)
+  name: form.name,
+  onboarding_done: true,
+  motivation_why: form.intention || null,
+  onboarding_data: {          // ← NUEVO
+    mind:      form.mind,
+    water:     form.water,
+    sleep:     form.sleep,
+    movement:  form.movement,
+    food:      form.food,
+    intention: form.intention,
+  },
+}).eq('id', userId)
 
       await supabase.from('health_profiles').upsert({
         user_id: userId,

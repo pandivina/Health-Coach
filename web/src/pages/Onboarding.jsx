@@ -558,7 +558,7 @@ export default function Onboarding() {
                       position:'fixed', top:0, left:0, right:0, zIndex:15,
                       width:'100vw',
                       height:'62vh',
-                      marginTop:30,
+                      marginTop:40,
                       pointerEvents:'none',
                       objectFit:'contain',
                       objectPosition:'top center',
@@ -576,7 +576,7 @@ export default function Onboarding() {
                   onClick={activateOrb}
                   style={{
                     position:'fixed',
-                    margintop:'100%', left:'45%',
+                    margintop:'115%', left:'42%',
                     transform:'translate(-50%, -50%)',
                     background:'transparent', border:'none',
                     cursor:'pointer', zIndex:25,

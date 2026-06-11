@@ -558,7 +558,7 @@ export default function Onboarding() {
                       position:'fixed', top:0, left:0, right:0, zIndex:15,
                       width:'100vw',
                       height:'62vh',
-                      marginTop:20,
+                      marginTop:30,
                       pointerEvents:'none',
                       objectFit:'contain',
                       objectPosition:'top center',

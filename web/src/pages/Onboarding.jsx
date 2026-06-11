@@ -110,6 +110,8 @@ function useAudio() {
 
   function playFlash() {
     try {
+      const ctx = getCtx()
+      ;[528,639,741,852,963].forEach((f,i) => {
         const osc = ctx.createOscillator(); const gain = ctx.createGain()
         osc.connect(gain); gain.connect(ctx.destination)
         osc.type = 'sine'; osc.frequency.value = f
@@ -437,7 +439,7 @@ export default function Onboarding() {
             transition={{ duration:1.2 }}
             style={{ position:'fixed', inset:0, zIndex:15,
               display:'flex', alignItems:'center', justifyContent:'center',
-              pointerEvents:'none' }}>
+              pointerEvents: orbActivated ? 'none' : 'all' }}>
 
             {/* COLUMNA DE LUZ desde arriba */}
             <motion.div
@@ -628,6 +630,7 @@ export default function Onboarding() {
                     background:'transparent', border:'none',
                     cursor:'pointer', zIndex:20,
                     display:'flex', alignItems:'center', justifyContent:'center',
+                    pointerEvents:'all',
                   }}>
                   <motion.div
                     animate={{ scale:[1,1.2,1], opacity:[0.5,1,0.5] }}

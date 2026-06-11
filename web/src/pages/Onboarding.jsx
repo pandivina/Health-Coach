@@ -607,14 +607,14 @@ export default function Onboarding() {
                   onClick={activateOrb}
                   style={{
                     position:'fixed',
-                    top:'50%', left:'50%',
+                    top:'32%', left:'50%',
                     transform:'translate(-50%, -50%)',
                     background:'transparent', border:'none',
                     cursor:'pointer', zIndex:25,
                     pointerEvents:'all',
                   }}>
                   <img src="/panda/boton_1.png" alt="Despertar"
-                    style={{ width:80, height:80, objectFit:'contain' }}
+                    style={{ width:300, height:300, objectFit:'contain' }}
                     onError={e => {
                       e.target.style.display='none'
                     }}
@@ -685,7 +685,7 @@ export default function Onboarding() {
                   src="/panda/boton_1.png" alt="Despertar"
                   animate={{ scale:[1,1.04,1], opacity:[0.85,1,0.85] }}
                   transition={{ duration:2, repeat:Infinity }}
-                  style={{ width:180, objectFit:'contain' }}
+                  style={{ width:300, objectFit:'contain' }}
                   onError={e => {
                     e.target.style.display='none'
                     // Fallback si no carga la imagen del botón
@@ -695,7 +695,7 @@ export default function Onboarding() {
                   animate={{ opacity:[0.7,1,0.7] }}
                   transition={{ duration:2, repeat:Infinity }}
                   style={{ fontSize:14, fontWeight:700, color:'#D4A847',
-                    margin:'8px 0 0', textShadow:'0 2px 12px rgba(0,0,0,0.3)' }}>
+                    margin:'32px 0 0', textShadow:'0 2px 12px rgba(0,0,0,0.3)' }}>
                   Dale clic para despertarla ✨
                 </motion.p>
               </motion.button>

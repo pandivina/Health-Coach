@@ -1,7 +1,8 @@
 import { supabase } from './supabase'
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001'
-const REQUEST_TIMEOUT_MS = 7000 // 7 segundos máximos de espera en el gimnasio
+const REQUEST_TIMEOUT_MS = 7000
+const COACH_TIMEOUT_MS   = 25000 // El coach necesita más tiempo
 const OFFLINE_QUEUE_KEY = 'pandi_offline_workout_queue'
 
 // ─── HELPER DE AUTENTICACIÓN ─────────────────────────────────────────────────
@@ -78,11 +79,11 @@ if (typeof window !== 'undefined') {
 
 // ─── PETICIÓN CENTRALIZADA CON CONTROL DE REINTENTOS Y TIMEOUTS ──────────────
 async function request(method, path, body, options = {}) {
-  const { bypassQueue = false, retries = 3, delay = 1500 } = options
+  const { bypassQueue = false, retries = 3, delay = 1500, timeout = REQUEST_TIMEOUT_MS } = options
   const headers = await getHeaders()
   
   const controller = new AbortController()
-  const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS)
+  const timeoutId = setTimeout(() => controller.abort(), timeout)
 
   try {
     const res = await fetch(`${BASE_URL}${path}`, {
@@ -156,7 +157,7 @@ export const api = {
           activeWorkout: activeContext,
           clientTime:    new Date().toISOString(),
           timezone:      Intl.DateTimeFormat().resolvedOptions().timeZone
-        }
+        }, { timeout: COACH_TIMEOUT_MS, retries: 1 }) // Solo 1 reintento para el coach
       })
     },
     getQuickTip: (exerciseName, senda) => 

@@ -63,48 +63,34 @@ function useAudio() {
   }
 
   function playDoor() {
-    // SUSTITUIR: cargar '/audio/door_open.mp3' cuando esté disponible
     try {
-      const ctx = getCtx()
-      // Crujido de puerta — ruido + tono descendente
-      const bufferSize = ctx.sampleRate * 0.8
-      const buffer     = ctx.createBuffer(1, bufferSize, ctx.sampleRate)
-      const data       = buffer.getChannelData(0)
-      for (let i = 0; i < bufferSize; i++) {
-        data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufferSize, 2) * 0.3
-      }
-      const noise = ctx.createBufferSource()
-      noise.buffer = buffer
-      const noiseGain = ctx.createGain()
-      noiseGain.gain.setValueAtTime(0.4, ctx.currentTime)
-      noiseGain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.8)
-      noise.connect(noiseGain)
-      noiseGain.connect(ctx.destination)
-      noise.start(ctx.currentTime)
+      const a = new Audio('/audio/apertura.wav')
+      a.volume = 0.8
+      a.play().catch(() => {})
+    } catch {}
+  }
 
-      // Tono bajo — resonancia de la puerta
-      ;[120, 90, 60].forEach((freq, i) => {
-        const osc  = ctx.createOscillator()
-        const gain = ctx.createGain()
-        osc.connect(gain); gain.connect(ctx.destination)
-        osc.type = 'sine'; osc.frequency.value = freq
-        const t = ctx.currentTime + i * 0.1
-        gain.gain.setValueAtTime(0, t)
-        gain.gain.linearRampToValueAtTime(0.15, t + 0.05)
-        gain.gain.exponentialRampToValueAtTime(0.001, t + 1.2)
-        osc.start(t); osc.stop(t + 1.2)
-      })
+  function playButton() {
+    try {
+      const a = new Audio('/audio/boton.wav')
+      a.volume = 0.9
+      a.play().catch(() => {})
+    } catch {}
+  }
 
-      // Whoosh — aire saliendo
-      const osc2  = ctx.createOscillator()
-      const gain2 = ctx.createGain()
-      osc2.connect(gain2); gain2.connect(ctx.destination)
-      osc2.type = 'sawtooth'
-      osc2.frequency.setValueAtTime(300, ctx.currentTime)
-      osc2.frequency.exponentialRampToValueAtTime(80, ctx.currentTime + 0.6)
-      gain2.gain.setValueAtTime(0.08, ctx.currentTime)
-      gain2.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.6)
-      osc2.start(ctx.currentTime); osc2.stop(ctx.currentTime + 0.6)
+  function playDestello() {
+    try {
+      const a = new Audio('/audio/destello.wav')
+      a.volume = 0.85
+      a.play().catch(() => {})
+    } catch {}
+  }
+
+  function playBrillo() {
+    try {
+      const a = new Audio('/audio/brillo.flac')
+      a.volume = 0.8
+      a.play().catch(() => {})
     } catch {}
   }
 
@@ -134,7 +120,7 @@ function useAudio() {
   }, [])
 
   useEffect(() => () => stopAmbient(), [])
-  return { startAmbient, stopAmbient, playHeartbeat, playTone, playFlash, playDoor }
+  return { startAmbient, stopAmbient, playHeartbeat, playTone, playFlash, playDoor, playButton, playDestello, playBrillo }
 }
 
 // ─── PREGUNTAS ────────────────────────────────────────────────────────────────
@@ -340,19 +326,16 @@ export default function Onboarding() {
     if (orbActivated) return
     handleFirstInteraction()
 
-    // Vibración del móvil
     try { navigator.vibrate?.([40, 30, 60]) } catch {}
 
-    // Sonido de puerta
-    audio.playDoor()
+    audio.playButton()
+    setTimeout(() => audio.playDoor(), 200)
 
-    // Humo
     setSmoke(true)
     setTimeout(() => setSmoke(false), 2000)
 
-    // Activar orbe — mostrar preguntas
     setOrbActivated(true)
-    setTimeout(() => setPhase(p => p), 300) // trigger re-render
+    setTimeout(() => setPhase(p => p), 300)
   }
 
   function nextQuestion() {
@@ -367,10 +350,10 @@ export default function Onboarding() {
     if (qStep < QUESTIONS.length - 1) {
       setQStep(q => q + 1)
     } else {
-      // Última respuesta — llenar completamente y mostrar panda_orb
       setFillLevel(6)
       setTimeout(() => {
-        audio.playFlash()
+        audio.playBrillo()
+        audio.playDestello()
         setFlash(true)
         setTimeout(() => { setFlash(false); setPhase(11) }, 700)
       }, 600)
@@ -378,10 +361,12 @@ export default function Onboarding() {
   }
 
   function awakenPandi() {
-    // Usuario toca panda_orb — destello y aparece sobre la nube
-    audio.playFlash()
-    setFlash(true)
-    setTimeout(() => { setFlash(false); setPhase(12) }, 700)
+    audio.playButton()
+    setTimeout(() => {
+      audio.playDestello()
+      setFlash(true)
+      setTimeout(() => { setFlash(false); setPhase(12) }, 700)
+    }, 100)
   }
 
   async function finish() {

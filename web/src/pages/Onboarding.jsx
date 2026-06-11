@@ -400,19 +400,19 @@ export default function Onboarding() {
       <motion.img src="/panda/onboarding_orb_baby_blur.png" alt=""
         animate={{ opacity: showBlur ? 1 : 0 }}
         transition={{ duration:1.5 }}
-        style={{ position:'absolute', inset:0, width:'100%', height:'100%', objectFit:'cover', zIndex:1 }}
+        style={{ position:'absolute', inset:0, width:'100%', height:'100%', objectFit:'cover', objectPosition:'top center', zIndex:1 }}
         onError={()=>setImgErrs(e=>({...e,blur:true}))}
       />
       <motion.img src="/panda/onboarding_sanctuary_open.png" alt=""
         animate={{ opacity: showOpen ? 1 : 0 }}
         transition={{ duration: openFading ? 1.2 : 1.8 }}
-        style={{ position:'absolute', inset:0, width:'100%', height:'100%', objectFit:'cover', zIndex:2 }}
+        style={{ position:'absolute', inset:0, width:'100%', height:'100%', objectFit:'cover', objectPosition:'top center', zIndex:2 }}
         onError={()=>setImgErrs(e=>({...e,open:true}))}
       />
       <motion.img src="/panda/onboarding_clouds.png" alt=""
         animate={{ opacity: showClouds ? 1 : 0 }}
         transition={{ duration:1.8, delay: showClouds ? 0.5 : 0 }}
-        style={{ position:'absolute', inset:0, width:'100%', height:'100%', objectFit:'cover', zIndex:3 }}
+        style={{ position:'absolute', inset:0, width:'100%', height:'100%', objectFit:'cover', objectPosition:'top center', zIndex:3 }}
         onError={()=>setImgErrs(e=>({...e,clouds:true}))}
       />
 
@@ -561,11 +561,13 @@ export default function Onboarding() {
                     animate={{ opacity: activeFrame === i ? 1 : 0 }}
                     transition={{ duration:0.8 }}
                     style={{
-                      position:'fixed', inset:0, zIndex:15,
+                      position:'fixed', top:0, left:0, right:0, zIndex:15,
                       width:'100vw',
-                      height:'110vw',        // FIX: era '150vw' → imagen más compacta
-                      marginTop:'10%',       // FIX: era '32%' → sube la imagen
-                      pointerEvents:'none', objectFit:'contain',
+                      height:'62vh',
+                      marginTop:0,
+                      pointerEvents:'none',
+                      objectFit:'contain',
+                      objectPosition:'top center',
                     }}
                     onError={()=>setImgErrs(e=>({...e,[`f${i}`]:true}))}
                   />

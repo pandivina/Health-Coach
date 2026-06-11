@@ -62,7 +62,51 @@ function useAudio() {
     } catch {}
   }
 
-  function playFlash() {
+  function playDoor() {
+    // SUSTITUIR: cargar '/audio/door_open.mp3' cuando esté disponible
+    try {
+      const ctx = getCtx()
+      // Crujido de puerta — ruido + tono descendente
+      const bufferSize = ctx.sampleRate * 0.8
+      const buffer     = ctx.createBuffer(1, bufferSize, ctx.sampleRate)
+      const data       = buffer.getChannelData(0)
+      for (let i = 0; i < bufferSize; i++) {
+        data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufferSize, 2) * 0.3
+      }
+      const noise = ctx.createBufferSource()
+      noise.buffer = buffer
+      const noiseGain = ctx.createGain()
+      noiseGain.gain.setValueAtTime(0.4, ctx.currentTime)
+      noiseGain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.8)
+      noise.connect(noiseGain)
+      noiseGain.connect(ctx.destination)
+      noise.start(ctx.currentTime)
+
+      // Tono bajo — resonancia de la puerta
+      ;[120, 90, 60].forEach((freq, i) => {
+        const osc  = ctx.createOscillator()
+        const gain = ctx.createGain()
+        osc.connect(gain); gain.connect(ctx.destination)
+        osc.type = 'sine'; osc.frequency.value = freq
+        const t = ctx.currentTime + i * 0.1
+        gain.gain.setValueAtTime(0, t)
+        gain.gain.linearRampToValueAtTime(0.15, t + 0.05)
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 1.2)
+        osc.start(t); osc.stop(t + 1.2)
+      })
+
+      // Whoosh — aire saliendo
+      const osc2  = ctx.createOscillator()
+      const gain2 = ctx.createGain()
+      osc2.connect(gain2); gain2.connect(ctx.destination)
+      osc2.type = 'sawtooth'
+      osc2.frequency.setValueAtTime(300, ctx.currentTime)
+      osc2.frequency.exponentialRampToValueAtTime(80, ctx.currentTime + 0.6)
+      gain2.gain.setValueAtTime(0.08, ctx.currentTime)
+      gain2.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.6)
+      osc2.start(ctx.currentTime); osc2.stop(ctx.currentTime + 0.6)
+    } catch {}
+  }
     try {
       const ctx = getCtx()
       ;[528,639,741,852,963].forEach((f,i) => {
@@ -88,7 +132,7 @@ function useAudio() {
   }, [])
 
   useEffect(() => () => stopAmbient(), [])
-  return { startAmbient, stopAmbient, playHeartbeat, playTone, playFlash }
+  return { startAmbient, stopAmbient, playHeartbeat, playTone, playFlash, playDoor }
 }
 
 // ─── PREGUNTAS ────────────────────────────────────────────────────────────────
@@ -241,6 +285,10 @@ export default function Onboarding() {
   })
   const set = (k, v) => setForm(f => ({...f, [k]:v}))
 
+  const [orbActivated, setOrbActivated] = useState(false) // true cuando el usuario toca el orbe
+  const [smoke,        setSmoke]        = useState(false)  // humo saliendo del orbe
+  const [fillLevel,    setFillLevel]    = useState(0)      // 0-6 nivel de llenado del contenedor
+
   // Fase de orbe: 4 = frame_0 (vacío), 5..9 = frames 1-5 según respuestas
   const orbFrame = phase >= 4 && phase <= 9 ? phase - 4 : -1
 
@@ -278,19 +326,39 @@ export default function Onboarding() {
     audio.playTone(440 + qStep * 80)
   }
 
+  function activateOrb() {
+    if (orbActivated) return
+    handleFirstInteraction()
+
+    // Vibración del móvil
+    try { navigator.vibrate?.([40, 30, 60]) } catch {}
+
+    // Sonido de puerta
+    audio.playDoor()
+
+    // Humo
+    setSmoke(true)
+    setTimeout(() => setSmoke(false), 2000)
+
+    // Activar orbe — mostrar preguntas
+    setOrbActivated(true)
+    setTimeout(() => setPhase(p => p), 300) // trigger re-render
+  }
+
   function nextQuestion() {
     handleFirstInteraction()
     const currentQ = QUESTIONS[qStep]
     if (!form[currentQ.key]) return
 
     audio.playHeartbeat()
+    setFillLevel(f => f + 1)
 
     if (qStep < QUESTIONS.length - 1) {
       setQStep(q => q + 1)
-      setPhase(p => Math.min(p + 1, 9)) // avanza frame del orbe
+      setPhase(p => Math.min(p + 1, 9))
     } else {
-      // Última pregunta — destello y nacimiento
-      setPhase(9) // último frame
+      setPhase(9)
+      setFillLevel(6)
       setTimeout(() => {
         audio.playFlash()
         setFlash(true)
@@ -441,6 +509,7 @@ export default function Onboarding() {
               animate={{ scale:1, y:0 }}
               transition={{ duration:1.4, type:'spring', damping:18 }}
               style={{ position:'relative', flexShrink:0 }}>
+
               {/* Glow */}
               <motion.div
                 animate={{ scale:[1,1.08,1], opacity:[0.3,0.6,0.3] }}
@@ -451,7 +520,80 @@ export default function Onboarding() {
                   filter:'blur(32px)',
                 }}
               />
-              {/* Frames — exactamente igual que en el demo */}
+
+              {/* HUMO saliendo — SUSTITUIR por partículas reales si se tiene asset */}
+              <AnimatePresence>
+                {smoke && (
+                  <>
+                    {[...Array(8)].map((_, i) => (
+                      <motion.div key={`smoke-${i}`}
+                        initial={{ opacity:0.7, scale:0.3, x:(Math.random()-0.5)*40, y:0 }}
+                        animate={{ opacity:0, scale:2+Math.random(), x:(Math.random()-0.5)*80, y:-60-Math.random()*60 }}
+                        exit={{ opacity:0 }}
+                        transition={{ duration:1.2+Math.random()*0.8, delay:i*0.08, ease:'easeOut' }}
+                        style={{
+                          position:'absolute',
+                          top:'30%', left:'50%',
+                          width:20+Math.random()*20, height:20+Math.random()*20,
+                          borderRadius:'50%',
+                          background:'rgba(255,250,240,0.6)',
+                          filter:'blur(8px)',
+                          pointerEvents:'none',
+                        }}
+                      />
+                    ))}
+                  </>
+                )}
+              </AnimatePresence>
+
+              {/* CONTENEDOR que se llena — visible tras activar */}
+              <AnimatePresence>
+                {orbActivated && (
+                  <motion.div
+                    initial={{ opacity:0 }} animate={{ opacity:1 }}
+                    style={{
+                      position:'absolute',
+                      bottom:'15%', left:'22%',
+                      width:'56%', height:'45%',
+                      borderRadius:16,
+                      overflow:'hidden',
+                      border:'1px solid rgba(255,220,140,0.3)',
+                      zIndex:2,
+                    }}>
+                    {/* Fondo del contenedor */}
+                    <div style={{
+                      position:'absolute', inset:0,
+                      background:'rgba(255,240,200,0.08)',
+                    }} />
+                    {/* Líquido que sube */}
+                    <motion.div
+                      animate={{ height:`${(fillLevel/6)*100}%` }}
+                      transition={{ duration:0.8, type:'spring', damping:20 }}
+                      style={{
+                        position:'absolute', bottom:0, left:0, right:0,
+                        background:'linear-gradient(to top, rgba(255,200,80,0.6), rgba(255,230,140,0.3))',
+                        boxShadow:'0 -4px 12px rgba(255,200,80,0.4)',
+                      }}
+                    />
+                    {/* Brillo superior del líquido */}
+                    {fillLevel > 0 && (
+                      <motion.div
+                        animate={{ opacity:[0.4,0.8,0.4] }}
+                        transition={{ duration:2, repeat:Infinity }}
+                        style={{
+                          position:'absolute',
+                          bottom:`${(fillLevel/6)*100}%`,
+                          left:0, right:0, height:3,
+                          background:'rgba(255,240,180,0.9)',
+                          filter:'blur(2px)',
+                        }}
+                      />
+                    )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* Frames del orbe */}
               {[
                 '/panda/orb_frame_0.png',
                 '/panda/orb_frame_1.png',
@@ -474,6 +616,34 @@ export default function Onboarding() {
                   onError={()=>setImgErrs(e=>({...e,[`f${i}`]:true}))}
                 />
               ))}
+
+              {/* BOTÓN DE TOQUE — solo antes de activar */}
+              {!orbActivated && (
+                <motion.button
+                  animate={{ scale:[1,1.05,1], opacity:[0.7,1,0.7] }}
+                  transition={{ duration:2, repeat:Infinity }}
+                  onClick={activateOrb}
+                  style={{
+                    position:'absolute', inset:0,
+                    background:'transparent', border:'none',
+                    cursor:'pointer', zIndex:20,
+                    display:'flex', alignItems:'center', justifyContent:'center',
+                  }}>
+                  <motion.div
+                    animate={{ scale:[1,1.2,1], opacity:[0.5,1,0.5] }}
+                    transition={{ duration:1.5, repeat:Infinity }}
+                    style={{
+                      width:44, height:44, borderRadius:'50%',
+                      background:'rgba(255,220,140,0.3)',
+                      border:'2px solid rgba(255,220,140,0.6)',
+                      display:'flex', alignItems:'center', justifyContent:'center',
+                      fontSize:20,
+                    }}>
+                    ✨
+                  </motion.div>
+                </motion.button>
+              )}
+
             </motion.div>
           </motion.div>
         )}
@@ -613,9 +783,29 @@ export default function Onboarding() {
         )}
       </AnimatePresence>
 
-      {/* ── PREGUNTAS ── */}
+      {/* ── INVITACIÓN A TOCAR — antes de activar ── */}
       <AnimatePresence>
-        {phase >= 4 && phase <= 9 && (
+        {phase >= 4 && !orbActivated && (
+          <motion.div
+            initial={{ opacity:0, y:10 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0 }}
+            transition={{ duration:0.8, delay:1 }}
+            style={{
+              position:'fixed', bottom:80, left:0, right:0, zIndex:20,
+              display:'flex', justifyContent:'center', pointerEvents:'none',
+            }}>
+            <div style={{
+              background:'rgba(255,252,245,0.5)', backdropFilter:'blur(12px)',
+              borderRadius:20, padding:'10px 24px', textAlign:'center',
+            }}>
+              <p style={{ fontSize:13, color:'#1A2332', margin:0, fontStyle:'italic' }}>
+                Toca el orbe para despertarlo ✨
+              </p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      <AnimatePresence>
+        {phase >= 4 && phase <= 9 && orbActivated && (
           <motion.div key="questions"
             initial={{ opacity:0 }} animate={{ opacity:1 }}
             style={{ position:'absolute', inset:0, zIndex:20,

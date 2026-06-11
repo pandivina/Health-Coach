@@ -46,7 +46,13 @@ export default function DailyCheckin() {
     // Solo mostrar si no se ha hecho el check-in hoy
     if (coachState.checkinDone) return
 
-    // Esperar 4 segundos después de cargar el home — no ser intrusivo
+    // Verificar localStorage por si ya se hizo hoy
+    try {
+      const lastCheckin = localStorage.getItem('pandi_checkin_date')
+      const today = new Date().toISOString().split('T')[0]
+      if (lastCheckin === today) return
+    } catch {}
+
     const t = setTimeout(() => setShow(true), 4000)
     return () => clearTimeout(t)
   }, [coachState.checkinDone])
@@ -59,6 +65,9 @@ export default function DailyCheckin() {
     if (!energy || !stress) return
     setSaving(true)
     await saveCheckin({ energy_level: energy, stress_level: stress, mood: moodValue || mood })
+    try {
+      localStorage.setItem('pandi_checkin_date', new Date().toISOString().split('T')[0])
+    } catch {}
     setSaving(false)
     setDone(true)
     setTimeout(() => setShow(false), 1800)

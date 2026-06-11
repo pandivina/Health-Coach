@@ -275,9 +275,10 @@ export default function Onboarding() {
   })
   const set = (k, v) => setForm(f => ({...f, [k]:v}))
 
-  const [orbActivated, setOrbActivated] = useState(false) // true cuando el usuario toca el orbe
-  const [smoke,        setSmoke]        = useState(false)  // humo saliendo del orbe
-  const [fillLevel,    setFillLevel]    = useState(0)      // 0-6 nivel de llenado del contenedor
+  const [orbActivated, setOrbActivated] = useState(false)
+  const [orbOpened,    setOrbOpened]    = useState(false) // true tras animación de apertura
+  const [smoke,        setSmoke]        = useState(false)
+  const [fillLevel,    setFillLevel]    = useState(0)
 
   // Fases:
   // 0 = blur solo
@@ -330,14 +331,19 @@ export default function Onboarding() {
 
     try { navigator.vibrate?.([40, 30, 60]) } catch {}
 
+    // Sonido botón → luego apertura
     audio.playButton()
     setTimeout(() => audio.playDoor(), 200)
 
+    // Humo
     setSmoke(true)
     setTimeout(() => setSmoke(false), 2000)
 
+    // orb_door_closed aparece primero
     setOrbActivated(true)
-    setTimeout(() => setPhase(p => p), 300)
+
+    // Después de la animación de apertura → orb_door_open + preguntas
+    setTimeout(() => setOrbOpened(true), 1800)
   }
 
   function nextQuestion() {
@@ -550,19 +556,32 @@ export default function Onboarding() {
                 )}
               </AnimatePresence>
 
-              {/* FRAMES DEL ORBE — usando assets reales */}
+              {/* FRAMES DEL ORBE */}
               {showOrb && (() => {
                 const frames = [
-                  '/panda/orb_door_closed.png',   // 0 — sin activar
-                  '/panda/orb_door_open.png',      // 1 — activado, vacío
-                  '/panda/orb_door_open_1.png',    // 2 — nivel 1
-                  '/panda/orb_door_open_2.png',    // 3 — nivel 2
-                  '/panda/orb_door_open_3.png',    // 4 — nivel 3
-                  '/panda/orb_door_open_4.png',    // 5 — nivel 4
-                  '/panda/orb_door_open_5.png',    // 6 — nivel 5
-                  '/panda/orb_door_open_6.png',    // 7 — nivel 6 (lleno)
+                  '/panda/orb_frame_0.png',       // 0 — inicial, sin activar
+                  '/panda/orb_door_closed.png',    // 1 — puerta cerrada (tras toque, antes de abrir)
+                  '/panda/orb_door_open.png',      // 2 — puerta abierta vacía
+                  '/panda/orb_door_open_1.png',    // 3 — nivel 1
+                  '/panda/orb_door_open_2.png',    // 4 — nivel 2
+                  '/panda/orb_door_open_3.png',    // 5 — nivel 3
+                  '/panda/orb_door_open_4.png',    // 6 — nivel 4
+                  '/panda/orb_door_open_5.png',    // 7 — nivel 5
+                  '/panda/orb_door_open_6.png',    // 8 — nivel 6 lleno
                 ]
-                const activeFrame = !orbActivated ? 0 : fillLevel === 0 ? 1 : Math.min(fillLevel + 1, 7)
+
+                // Lógica de frame activo:
+                // Sin activar → orb_frame_0
+                // Activado, fillLevel 0 → orb_door_closed (transición apertura)
+                // Tras apertura (orbOpened) → orb_door_open
+                // fillLevel 1-6 → orb_door_open_1 a _6
+                const activeFrame = !orbActivated
+                  ? 0
+                  : !orbOpened
+                  ? 1
+                  : fillLevel === 0
+                  ? 2
+                  : Math.min(fillLevel + 2, 8)
 
                 return frames.map((src, i) => (
                   <motion.img
@@ -580,31 +599,26 @@ export default function Onboarding() {
                 ))
               })()}
 
-              {/* BOTÓN DE TOQUE — solo antes de activar */}
+              {/* BOTÓN boton_1 — solo en fase inicial sin activar */}
               {!orbActivated && (
                 <motion.button
-                  animate={{ scale:[1,1.05,1], opacity:[0.7,1,0.7] }}
+                  animate={{ scale:[1,1.06,1], opacity:[0.8,1,0.8] }}
                   transition={{ duration:2, repeat:Infinity }}
                   onClick={activateOrb}
                   style={{
-                    position:'absolute', inset:0,
+                    position:'fixed',
+                    top:'50%', left:'50%',
+                    transform:'translate(-50%, -50%)',
                     background:'transparent', border:'none',
-                    cursor:'pointer', zIndex:20,
-                    display:'flex', alignItems:'center', justifyContent:'center',
+                    cursor:'pointer', zIndex:25,
                     pointerEvents:'all',
                   }}>
-                  <motion.div
-                    animate={{ scale:[1,1.2,1], opacity:[0.5,1,0.5] }}
-                    transition={{ duration:1.5, repeat:Infinity }}
-                    style={{
-                      width:44, height:44, borderRadius:'50%',
-                      background:'rgba(255,220,140,0.3)',
-                      border:'2px solid rgba(255,220,140,0.6)',
-                      display:'flex', alignItems:'center', justifyContent:'center',
-                      fontSize:20,
-                    }}>
-                    ✨
-                  </motion.div>
+                  <img src="/panda/boton_1.png" alt="Despertar"
+                    style={{ width:80, height:80, objectFit:'contain' }}
+                    onError={e => {
+                      e.target.style.display='none'
+                    }}
+                  />
                 </motion.button>
               )}
 
@@ -846,7 +860,7 @@ export default function Onboarding() {
         )}
       </AnimatePresence>
       <AnimatePresence>
-        {phase >= 4 && phase <= 10 && orbActivated && (
+        {phase >= 4 && phase <= 10 && orbOpened && (
           <motion.div key="questions"
             initial={{ opacity:0, y:20 }} animate={{ opacity:1, y:0 }}
             style={{

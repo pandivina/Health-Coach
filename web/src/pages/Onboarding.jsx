@@ -607,14 +607,14 @@ export default function Onboarding() {
                   onClick={activateOrb}
                   style={{
                     position:'fixed',
-                    margintop:'32%', left:'0%',
+                    margintop:'50%', left:'0%',
                     transform:'translate(-50%, -50%)',
                     background:'transparent', border:'none',
                     cursor:'pointer', zIndex:25,
                     pointerEvents:'all',
                   }}>
                   <img src="/panda/boton_1.png" alt="Despertar"
-                    style={{ width:650, height:650, objectFit:'contain' }}
+                    style={{ width:700, height:700, objectFit:'contain' }}
                     onError={e => {
                       e.target.style.display='none'
                     }}

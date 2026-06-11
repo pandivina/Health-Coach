@@ -201,20 +201,16 @@ function GlassSelect({ options, value, onChange, energyColor }) {
             exit={{ opacity:0, y:-8, scaleY:0.9 }}
             transition={{ duration:0.18 }}
             style={{
-  position: 'absolute',
-  top: 'calc(100% + 8px)',
-  left: 0,
-  right: 0,
-  borderRadius: 16,
-  background: 'rgba(255,252,245,0.96)',
-  backdropFilter: 'blur(28px)',
-  border: '1.5px solid rgba(255,255,255,0.8)',
-  boxShadow: '0 8px 32px rgba(0,0,0,0.18)',
-  maxHeight: '42vh',
-  overflowY: 'scroll',
-  WebkitOverflowScrolling: 'touch',
-  zIndex: 200, // Se mantiene el valor más alto
-}}>
+              position:'absolute', top:'calc(100% + 8px)', left:0, right:0, zIndex:50,
+              borderRadius:16,
+              background:'rgba(255,252,245,0.96)',
+              backdropFilter:'blur(28px)',
+              border:'1.5px solid rgba(255,255,255,0.8)',
+              boxShadow:'0 8px 32px rgba(0,0,0,0.18)',
+              maxHeight:'42vh', overflowY:'scroll',
+              WebkitOverflowScrolling:'touch',
+              zIndex:200,
+            }}>
             {options.map((o, i) => (
               <motion.button key={o.v}
                 initial={{ opacity:0, x:-8 }} animate={{ opacity:1, x:0 }}
@@ -275,7 +271,7 @@ export default function Onboarding() {
 
   const showBlur   = phase <= 2
   const showOpen   = phase === 1 || (phase === 2 && !openFading)
-  const showClouds = phase >= 2
+  const showClouds = phase >= 4
   const showOrb    = phase >= 4 && phase <= 9
   const showBorn   = phase === 10
 
@@ -336,18 +332,10 @@ export default function Onboarding() {
       const trainingDays = { never:0, sometimes:1, regular:3, daily:5 }[form.movement] || 2
 
       await supabase.from('user_profiles').update({
-  name: form.name,
-  onboarding_done: true,
-  motivation_why: form.intention || null,
-  onboarding_data: {          // ← NUEVO
-    mind:      form.mind,
-    water:     form.water,
-    sleep:     form.sleep,
-    movement:  form.movement,
-    food:      form.food,
-    intention: form.intention,
-  },
-}).eq('id', userId)
+        name: form.name,
+        onboarding_done: true,
+        motivation_why: form.intention || null,
+      }).eq('id', userId)
 
       await supabase.from('health_profiles').upsert({
         user_id: userId,
@@ -470,7 +458,7 @@ export default function Onboarding() {
                   filter:'blur(24px)',
                 }}
               />
-              <motion.img src="/panda/pandi_new_born_cloud.png" alt="Pandi"
+              <motion.img src="/panda/panda_baby.png" alt="Pandi"
                 animate={{ y:[0,-10,0] }}
                 transition={{ duration:3.5, repeat:Infinity, ease:'easeInOut' }}
                 style={{ width:'100%', objectFit:'contain', position:'relative', zIndex:1 }}

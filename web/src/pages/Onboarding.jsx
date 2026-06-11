@@ -400,19 +400,19 @@ export default function Onboarding() {
       <motion.img src="/panda/onboarding_orb_baby_blur.png" alt=""
         animate={{ opacity: showBlur ? 1 : 0 }}
         transition={{ duration:1.5 }}
-        style={{ position:'absolute', inset:0, width:'75%', height:'75%', objectFit:'cover', objectPosition:'top center', zIndex:1 }}
+        style={{ position:'absolute', inset:0, width:'85%', height:'85%', objectFit:'cover', objectPosition:'top center', zIndex:1 }}
         onError={()=>setImgErrs(e=>({...e,blur:true}))}
       />
       <motion.img src="/panda/onboarding_sanctuary_open.png" alt=""
         animate={{ opacity: showOpen ? 1 : 0 }}
         transition={{ duration: openFading ? 1.2 : 1.8 }}
-        style={{ position:'absolute', inset:0, width:'75%', height:'75%', objectFit:'cover', objectPosition:'top center', zIndex:2 }}
+        style={{ position:'absolute', inset:0, width:'85%', height:'85%', objectFit:'cover', objectPosition:'top center', zIndex:2 }}
         onError={()=>setImgErrs(e=>({...e,open:true}))}
       />
       <motion.img src="/panda/onboarding_clouds.png" alt=""
         animate={{ opacity: showClouds ? 1 : 0 }}
         transition={{ duration:1.8, delay: showClouds ? 0.5 : 0 }}
-        style={{ position:'absolute', inset:0, width:'75%', height:'75%', objectFit:'cover', objectPosition:'top center', zIndex:3 }}
+        style={{ position:'relative', inset:0, width:'85%', height:'85%', objectFit:'cover', objectPosition:'top center', zIndex:3 }}
         onError={()=>setImgErrs(e=>({...e,clouds:true}))}
       />
 

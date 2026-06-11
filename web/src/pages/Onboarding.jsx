@@ -291,14 +291,22 @@ export default function Onboarding() {
   const [smoke,        setSmoke]        = useState(false)  // humo saliendo del orbe
   const [fillLevel,    setFillLevel]    = useState(0)      // 0-6 nivel de llenado del contenedor
 
-  // Fase de orbe: 4 = frame_0 (vacío), 5..9 = frames 1-5 según respuestas
-  const orbFrame = phase >= 4 && phase <= 9 ? phase - 4 : -1
+  // Fases:
+  // 0 = blur solo
+  // 1 = blur + sanctuary_open (intro texto 1)
+  // 2 = clouds + sanctuary_open fade out (intro texto 2)
+  // 3 = nombre
+  // 4 = orbe cerrado esperando toque
+  // 5-10 = orbe abriéndose + llenándose (orb_door_open_0 a _6)
+  // 11 = panda_orb con panda_bebe dentro — "Dale clic para despertarla"
+  // 12 = destello → pandi_new_born_cloud flotando
 
   const showBlur   = phase <= 3
   const showOpen   = phase === 1 || (phase === 2 && !openFading)
   const showClouds = phase >= 4
-  const showOrb    = phase >= 4 && phase <= 9
-  const showBorn   = phase === 10
+  const showOrb    = phase >= 4 && phase <= 10
+  const showAwaken = phase === 11
+  const showBorn   = phase === 12
 
   // Secuencia automática inicial
   useEffect(() => {
@@ -353,20 +361,27 @@ export default function Onboarding() {
     if (!form[currentQ.key]) return
 
     audio.playHeartbeat()
-    setFillLevel(f => f + 1)
+    const newFill = fillLevel + 1
+    setFillLevel(newFill)
 
     if (qStep < QUESTIONS.length - 1) {
       setQStep(q => q + 1)
-      setPhase(p => Math.min(p + 1, 9))
     } else {
-      setPhase(9)
+      // Última respuesta — llenar completamente y mostrar panda_orb
       setFillLevel(6)
       setTimeout(() => {
         audio.playFlash()
         setFlash(true)
-        setTimeout(() => { setFlash(false); setPhase(10) }, 700)
+        setTimeout(() => { setFlash(false); setPhase(11) }, 700)
       }, 600)
     }
+  }
+
+  function awakenPandi() {
+    // Usuario toca panda_orb — destello y aparece sobre la nube
+    audio.playFlash()
+    setFlash(true)
+    setTimeout(() => { setFlash(false); setPhase(12) }, 700)
   }
 
   async function finish() {
@@ -523,7 +538,7 @@ export default function Onboarding() {
                 }}
               />
 
-              {/* HUMO saliendo — SUSTITUIR por partículas reales si se tiene asset */}
+              {/* HUMO saliendo al activar */}
               <AnimatePresence>
                 {smoke && (
                   <>
@@ -548,76 +563,35 @@ export default function Onboarding() {
                 )}
               </AnimatePresence>
 
-              {/* CONTENEDOR que se llena — visible tras activar */}
-              <AnimatePresence>
-                {orbActivated && (
-                  <motion.div
-                    initial={{ opacity:0 }} animate={{ opacity:1 }}
-                    style={{
-                      position:'absolute',
-                      bottom:'15%', left:'22%',
-                      width:'56%', height:'45%',
-                      borderRadius:16,
-                      overflow:'hidden',
-                      border:'1px solid rgba(255,220,140,0.3)',
-                      zIndex:2,
-                    }}>
-                    {/* Fondo del contenedor */}
-                    <div style={{
-                      position:'absolute', inset:0,
-                      background:'rgba(255,240,200,0.08)',
-                    }} />
-                    {/* Líquido que sube */}
-                    <motion.div
-                      animate={{ height:`${(fillLevel/6)*100}%` }}
-                      transition={{ duration:0.8, type:'spring', damping:20 }}
-                      style={{
-                        position:'absolute', bottom:0, left:0, right:0,
-                        background:'linear-gradient(to top, rgba(255,200,80,0.6), rgba(255,230,140,0.3))',
-                        boxShadow:'0 -4px 12px rgba(255,200,80,0.4)',
-                      }}
-                    />
-                    {/* Brillo superior del líquido */}
-                    {fillLevel > 0 && (
-                      <motion.div
-                        animate={{ opacity:[0.4,0.8,0.4] }}
-                        transition={{ duration:2, repeat:Infinity }}
-                        style={{
-                          position:'absolute',
-                          bottom:`${(fillLevel/6)*100}%`,
-                          left:0, right:0, height:3,
-                          background:'rgba(255,240,180,0.9)',
-                          filter:'blur(2px)',
-                        }}
-                      />
-                    )}
-                  </motion.div>
-                )}
-              </AnimatePresence>
+              {/* FRAMES DEL ORBE — usando assets reales */}
+              {showOrb && (() => {
+                const frames = [
+                  '/panda/orb_door_closed.png',   // 0 — sin activar
+                  '/panda/orb_door_open.png',      // 1 — activado, vacío
+                  '/panda/orb_door_open_1.png',    // 2 — nivel 1
+                  '/panda/orb_door_open_2.png',    // 3 — nivel 2
+                  '/panda/orb_door_open_3.png',    // 4 — nivel 3
+                  '/panda/orb_door_open_4.png',    // 5 — nivel 4
+                  '/panda/orb_door_open_5.png',    // 6 — nivel 5
+                  '/panda/orb_door_open_6.png',    // 7 — nivel 6 (lleno)
+                ]
+                const activeFrame = !orbActivated ? 0 : fillLevel === 0 ? 1 : Math.min(fillLevel + 1, 7)
 
-              {/* Frames del orbe — solo se renderizan cuando el orbe está visible */}
-              {showOrb && [
-                '/panda/orb_frame_0.png',
-                '/panda/orb_frame_1.png',
-                '/panda/orb_frame_2.png',
-                '/panda/orb_frame_3.png',
-                '/panda/orb_frame_4.png',
-              ].map((frameSrc, i) => (
-                <motion.img
-                  key={frameSrc}
-                  src={frameSrc}
-                  alt=""
-                  animate={{ opacity: orbFrame === i ? 1 : 0 }}
-                  transition={{ duration:0.9 }}
-                  style={{
-                    position:'fixed', inset:0, zIndex:15,
-                    width:'100vw', height:'150vw',
-                    marginTop:'32%',
-                    pointerEvents:'none',
-                  }}
-                  onError={()=>setImgErrs(e=>({...e,[`f${i}`]:true}))}
-                />
-              ))}
+                return frames.map((src, i) => (
+                  <motion.img
+                    key={src} src={src} alt=""
+                    animate={{ opacity: activeFrame === i ? 1 : 0 }}
+                    transition={{ duration:0.8 }}
+                    style={{
+                      position:'fixed', inset:0, zIndex:15,
+                      width:'100vw', height:'150vw',
+                      marginTop:'32%',
+                      pointerEvents:'none', objectFit:'contain',
+                    }}
+                    onError={()=>setImgErrs(e=>({...e,[`f${i}`]:true}))}
+                  />
+                ))
+              })()}
 
               {/* BOTÓN DE TOQUE — solo antes de activar */}
               {!orbActivated && (
@@ -652,7 +626,84 @@ export default function Onboarding() {
         )}
       </AnimatePresence>
 
-      {/* ── PANDA BABY LIBRE ── */}
+      {/* ── PANDA ORB — fase 11: despertar ── */}
+      <AnimatePresence>
+        {showAwaken && (
+          <motion.div key="awaken"
+            initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
+            transition={{ duration:1 }}
+            style={{ position:'fixed', inset:0, zIndex:15,
+              display:'flex', alignItems:'center', justifyContent:'center',
+              flexDirection:'column', gap:0 }}>
+
+            {/* panda_orb con panda_bebe dentro */}
+            <motion.div
+              initial={{ scale:0.8 }} animate={{ scale:1 }}
+              transition={{ type:'spring', damping:18 }}
+              style={{ position:'relative', width:'80vw', maxWidth:320 }}>
+              <motion.div
+                animate={{ scale:[1,1.08,1], opacity:[0.3,0.6,0.3] }}
+                transition={{ duration:3, repeat:Infinity }}
+                style={{
+                  position:'absolute', inset:-30, borderRadius:'50%',
+                  background:'radial-gradient(circle, rgba(255,220,140,0.6) 0%, transparent 65%)',
+                  filter:'blur(28px)',
+                }}
+              />
+              <img src="/panda/panda_orb.png" alt=""
+                style={{ width:'100%', objectFit:'contain', position:'relative', zIndex:1 }}
+                onError={()=>setImgErrs(e=>({...e,panda_orb:true}))}
+              />
+              <img src="/panda/panda_bebe.png" alt="Pandi"
+                style={{
+                  position:'absolute', top:'20%', left:'15%',
+                  width:'70%', height:'65%',
+                  objectFit:'contain', zIndex:2,
+                }}
+                onError={()=>setImgErrs(e=>({...e,panda_bebe:true}))}
+              />
+            </motion.div>
+
+            {/* Texto y botón despertar */}
+            <motion.div
+              initial={{ opacity:0, y:20 }} animate={{ opacity:1, y:0 }}
+              transition={{ delay:0.8 }}
+              style={{
+                position:'fixed', bottom:48, left:0, right:0,
+                padding:'0 28px', textAlign:'center',
+              }}>
+              <p style={{ fontSize:13, color:'rgba(255,255,255,0.85)', fontStyle:'italic',
+                marginBottom:16, textShadow:'0 2px 12px rgba(0,0,0,0.4)', lineHeight:1.6 }}>
+                Hemos creado esta vida a partir de tus decisiones.
+              </p>
+              <motion.button
+                whileTap={{ scale:0.97 }}
+                onClick={awakenPandi}
+                style={{ padding:0, background:'none', border:'none', cursor:'pointer' }}>
+                <motion.img
+                  src="/panda/boton_1.png" alt="Despertar"
+                  animate={{ scale:[1,1.04,1], opacity:[0.85,1,0.85] }}
+                  transition={{ duration:2, repeat:Infinity }}
+                  style={{ width:180, objectFit:'contain' }}
+                  onError={e => {
+                    e.target.style.display='none'
+                    // Fallback si no carga la imagen del botón
+                  }}
+                />
+                <motion.p
+                  animate={{ opacity:[0.7,1,0.7] }}
+                  transition={{ duration:2, repeat:Infinity }}
+                  style={{ fontSize:14, fontWeight:700, color:'#D4A847',
+                    margin:'8px 0 0', textShadow:'0 2px 12px rgba(0,0,0,0.3)' }}>
+                  Dale clic para despertarla ✨
+                </motion.p>
+              </motion.button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── PANDA SOBRE LA NUBE — fase 12 ── */}
       <AnimatePresence>
         {showBorn && (
           <motion.div key="born"
@@ -662,7 +713,7 @@ export default function Onboarding() {
             style={{ position:'fixed', inset:0, zIndex:15,
               display:'flex', alignItems:'center', justifyContent:'center',
               pointerEvents:'none' }}>
-            <motion.div style={{ position:'relative', width:220 }}>
+            <motion.div style={{ position:'relative', width:260 }}>
               <motion.div
                 animate={{ scale:[1,1.1,1], opacity:[0.3,0.55,0.3] }}
                 transition={{ duration:3, repeat:Infinity }}
@@ -672,11 +723,11 @@ export default function Onboarding() {
                   filter:'blur(24px)',
                 }}
               />
-              <motion.img src="/panda/panda_baby.png" alt="Pandi"
+              <motion.img src="/panda/pandi_new_born_cloud.png" alt="Pandi"
                 animate={{ y:[0,-10,0] }}
                 transition={{ duration:3.5, repeat:Infinity, ease:'easeInOut' }}
                 style={{ width:'100%', objectFit:'contain', position:'relative', zIndex:1 }}
-                onError={()=>setImgErrs(e=>({...e,baby:true}))}
+                onError={()=>setImgErrs(e=>({...e,born:true}))}
               />
             </motion.div>
           </motion.div>
@@ -788,7 +839,7 @@ export default function Onboarding() {
 
       {/* ── INVITACIÓN A TOCAR — antes de activar ── */}
       <AnimatePresence>
-        {phase >= 4 && !orbActivated && (
+        {phase === 4 && !orbActivated && (
           <motion.div
             initial={{ opacity:0, y:10 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0 }}
             transition={{ duration:0.8, delay:1 }}
@@ -808,7 +859,7 @@ export default function Onboarding() {
         )}
       </AnimatePresence>
       <AnimatePresence>
-        {phase >= 4 && phase <= 9 && orbActivated && (
+        {phase >= 4 && phase <= 10 && orbActivated && (
           <motion.div key="questions"
             initial={{ opacity:0, y:20 }} animate={{ opacity:1, y:0 }}
             style={{
@@ -894,7 +945,7 @@ export default function Onboarding() {
 
       {/* ── NACIMIENTO ── */}
       <AnimatePresence>
-        {phase === 10 && (
+        {phase === 12 && (
           <motion.div key="born-text"
             initial={{ opacity:0 }} animate={{ opacity:1 }}
             transition={{ duration:0.8, delay:0.5 }}

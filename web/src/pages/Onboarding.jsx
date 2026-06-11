@@ -220,8 +220,8 @@ const QUESTIONS = [
 function OptionCarousel({ options, value, onChange, energyColor }) {
   return (
     <div style={{
-      display:'flex', flexDirection:'column', gap:8,
-      maxHeight:'38vh', overflowY:'auto',
+      display:'flex', flexDirection:'column', gap:6,
+      maxHeight:'25vh', overflowY:'auto',
       WebkitOverflowScrolling:'touch',
       paddingRight:4,
     }}>
@@ -294,7 +294,7 @@ export default function Onboarding() {
   // Fase de orbe: 4 = frame_0 (vacío), 5..9 = frames 1-5 según respuestas
   const orbFrame = phase >= 4 && phase <= 9 ? phase - 4 : -1
 
-  const showBlur   = phase <= 2
+  const showBlur   = phase <= 3
   const showOpen   = phase === 1 || (phase === 2 && !openFading)
   const showClouds = phase >= 4
   const showOrb    = phase >= 4 && phase <= 9
@@ -810,90 +810,84 @@ export default function Onboarding() {
       <AnimatePresence>
         {phase >= 4 && phase <= 9 && orbActivated && (
           <motion.div key="questions"
-            initial={{ opacity:0 }} animate={{ opacity:1 }}
-            style={{ position:'absolute', inset:0, zIndex:20,
-              display:'flex', flexDirection:'column',
-              justifyContent:'space-between', padding:'0 0 44px' }}>
+            initial={{ opacity:0, y:20 }} animate={{ opacity:1, y:0 }}
+            style={{
+              position:'fixed', bottom:0, left:0, right:0, zIndex:20,
+              padding:'16px 20px 44px',
+              background:'linear-gradient(to top, rgba(245,240,232,0.95) 60%, transparent 100%)',
+              backdropFilter:'blur(8px)',
+            }}>
 
-            {/* Texto arriba */}
-            <div style={{ padding:'10% 28px 0', textAlign:'center' }}>
-              <AnimatePresence mode="wait">
-                <motion.div key={`qt-${qStep}`}
-                  initial={{ opacity:0, y:8 }} animate={{ opacity:1, y:0 }}
-                  exit={{ opacity:0, y:-8 }} transition={{ duration:0.35 }}
-                  style={{ display:'inline-block',
-                    background:'rgba(255,252,245,0.55)', backdropFilter:'blur(12px)',
-                    borderRadius:20, padding:'12px 20px' }}>
-                  <p style={{ fontSize:19, fontWeight:900, color:'#1A2332',
-                    margin:'0 0 4px', lineHeight:1.3, whiteSpace:'pre-line' }}>
-                    {currentQ.bold}
-                  </p>
-                  <p style={{ fontSize:13, color:'#4B5563', margin:0, fontStyle:'italic' }}>
-                    {currentQ.sub}
-                  </p>
-                </motion.div>
-              </AnimatePresence>
+            {/* Texto pregunta */}
+            <AnimatePresence mode="wait">
+              <motion.div key={`qt-${qStep}`}
+                initial={{ opacity:0, y:6 }} animate={{ opacity:1, y:0 }}
+                exit={{ opacity:0, y:-6 }} transition={{ duration:0.3 }}
+                style={{ marginBottom:12, textAlign:'center' }}>
+                <p style={{ fontSize:16, fontWeight:900, color:'#1A2332',
+                  margin:'0 0 2px', lineHeight:1.3, whiteSpace:'pre-line' }}>
+                  {currentQ.bold}
+                </p>
+                <p style={{ fontSize:12, color:'#6B7280', margin:0, fontStyle:'italic' }}>
+                  {currentQ.sub}
+                </p>
+              </motion.div>
+            </AnimatePresence>
+
+            {/* Opciones */}
+            <AnimatePresence mode="wait">
+              <motion.div key={`qs-${qStep}`}
+                initial={{ opacity:0, y:8 }} animate={{ opacity:1, y:0 }}
+                exit={{ opacity:0 }} transition={{ duration:0.25 }}>
+                <OptionCarousel
+                  options={currentQ.options}
+                  value={form[currentQ.key]}
+                  onChange={v => handleAnswer(currentQ.key, v)}
+                  energyColor={energyColor}
+                />
+              </motion.div>
+            </AnimatePresence>
+
+            {/* Feedback */}
+            <AnimatePresence>
+              {form[currentQ.key] && (
+                <motion.p initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
+                  style={{ fontSize:11, color:'#6B7280', fontStyle:'italic',
+                    textAlign:'center', margin:'8px 0 0' }}>
+                  {currentQ.feedback}
+                </motion.p>
+              )}
+            </AnimatePresence>
+
+            {/* Progreso + botón */}
+            <div style={{ display:'flex', gap:5, justifyContent:'center', margin:'10px 0 8px' }}>
+              {QUESTIONS.map((_, i) => (
+                <motion.div key={i}
+                  animate={{
+                    width: i===qStep ? 22 : 6,
+                    background: i<qStep ? '#2EC4B6' : i===qStep ? energyColor : 'rgba(0,0,0,0.15)',
+                  }}
+                  style={{ height:3, borderRadius:2 }}
+                  transition={{ duration:0.3 }}
+                />
+              ))}
             </div>
 
-            {/* Selector + feedback + botón */}
-            <div style={{ padding:'0 20px', display:'flex', flexDirection:'column',
-              gap:10, maxWidth:440, margin:'0 auto', width:'100%' }}>
-
-              <AnimatePresence mode="wait">
-                <motion.div key={`qs-${qStep}`}
-                  initial={{ opacity:0, y:10 }} animate={{ opacity:1, y:0 }}
-                  exit={{ opacity:0 }} transition={{ duration:0.25 }}>
-                  <OptionCarousel
-                    options={currentQ.options}
-                    value={form[currentQ.key]}
-                    onChange={v => handleAnswer(currentQ.key, v)}
-                    energyColor={energyColor}
-                  />
-                </motion.div>
-              </AnimatePresence>
-
-              <AnimatePresence>
-                {form[currentQ.key] && (
-                  <motion.p initial={{ opacity:0, y:4 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0 }}
-                    style={{ fontSize:12, color:'#4B5563', fontStyle:'italic', textAlign:'center', margin:0,
-                      background:'rgba(255,252,245,0.5)', backdropFilter:'blur(8px)',
-                      borderRadius:12, padding:'6px 14px' }}>
-                    {currentQ.feedback}
-                  </motion.p>
-                )}
-              </AnimatePresence>
-
-              {/* Progreso */}
-              <div style={{ display:'flex', gap:5, justifyContent:'center' }}>
-                {QUESTIONS.map((_, i) => (
-                  <motion.div key={i}
-                    animate={{
-                      width: i===qStep ? 22 : 6,
-                      background: i<qStep ? '#2EC4B6' : i===qStep ? energyColor : 'rgba(255,255,255,0.25)',
-                    }}
-                    style={{ height:3, borderRadius:2 }}
-                    transition={{ duration:0.3 }}
-                  />
-                ))}
-              </div>
-
-              <motion.button whileTap={{ scale: form[currentQ.key] ? 0.97 : 1 }}
-                onClick={nextQuestion}
-                disabled={!form[currentQ.key]}
-                style={{
-                  width:'100%', padding:'14px 20px', borderRadius:16,
-                  border:`1.5px solid ${form[currentQ.key] ? energyColor+'60' : 'rgba(255,255,255,0.2)'}`,
-                  background: form[currentQ.key] ? `${energyColor}25` : 'rgba(255,255,255,0.08)',
-                  backdropFilter:'blur(20px)',
-                  color: form[currentQ.key] ? energyColor : 'rgba(255,255,255,0.3)',
-                  fontSize:15, fontWeight:700,
-                  cursor: form[currentQ.key] ? 'pointer' : 'default',
-                  boxShadow: form[currentQ.key] ? `0 4px 20px ${energyColor}30` : 'none',
-                  transition:'all 0.3s',
-                }}>
-                {qStep === QUESTIONS.length - 1 ? '✨ Despertar a Pandi' : 'Continuar →'}
-              </motion.button>
-            </div>
+            <motion.button whileTap={{ scale: form[currentQ.key] ? 0.97 : 1 }}
+              onClick={nextQuestion}
+              disabled={!form[currentQ.key]}
+              style={{
+                width:'100%', padding:'13px 20px', borderRadius:16,
+                border:`1.5px solid ${form[currentQ.key] ? energyColor+'60' : 'rgba(0,0,0,0.1)'}`,
+                background: form[currentQ.key] ? `${energyColor}20` : 'rgba(0,0,0,0.05)',
+                color: form[currentQ.key] ? energyColor : 'rgba(0,0,0,0.25)',
+                fontSize:15, fontWeight:700,
+                cursor: form[currentQ.key] ? 'pointer' : 'default',
+                boxShadow: form[currentQ.key] ? `0 4px 20px ${energyColor}30` : 'none',
+                transition:'all 0.3s',
+              }}>
+              {qStep === QUESTIONS.length - 1 ? '✨ Despertar a Pandi' : 'Continuar →'}
+            </motion.button>
           </motion.div>
         )}
       </AnimatePresence>

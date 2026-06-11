@@ -403,12 +403,6 @@ export default function Onboarding() {
         style={{ position:'absolute', inset:0, width:'100%', height:'100%', objectFit:'cover', objectPosition:'top center', zIndex:1 }}
         onError={()=>setImgErrs(e=>({...e,blur:true}))}
       />
-      <motion.img src="/panda/onboarding_sanctuary_open.png" alt=""
-        animate={{ opacity: showOpen ? 1 : 0 }}
-        transition={{ duration: openFading ? 1.2 : 1.8 }}
-        style={{ position:'absolute', inset:0, width:'100%', height:'100%', objectFit:'cover', objectPosition:'top center', zIndex:2 }}
-        onError={()=>setImgErrs(e=>({...e,open:true}))}
-      />
       <motion.img src="/panda/onboarding_clouds.png" alt=""
         animate={{ opacity: showClouds ? 1 : 0 }}
         transition={{ duration:1.8, delay: showClouds ? 0.5 : 0 }}

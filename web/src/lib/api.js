@@ -157,8 +157,8 @@ export const api = {
           activeWorkout: activeContext,
           clientTime:    new Date().toISOString(),
           timezone:      Intl.DateTimeFormat().resolvedOptions().timeZone
-        }, { timeout: COACH_TIMEOUT_MS, retries: 1 }) // Solo 1 reintento para el coach
-      })
+         }
+      }, { timeout: COACH_TIMEOUT_MS, retries: 1 })
     },
     getQuickTip: (exerciseName, senda) => 
       request('POST', '/api/coach/quick-tip', { exerciseName, senda }),

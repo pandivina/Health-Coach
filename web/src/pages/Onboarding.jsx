@@ -207,7 +207,9 @@ function OptionCarousel({ options, value, onChange, energyColor }) {
   return (
     <div style={{
       display:'flex', flexDirection:'column', gap:6,
-      maxHeight:'25vh', overflowY:'auto',
+      maxHeight:'22vw',
+      minHeight: 0,
+      overflowY:'auto',
       WebkitOverflowScrolling:'touch',
       paddingRight:4,
     }}>
@@ -217,27 +219,27 @@ function OptionCarousel({ options, value, onChange, energyColor }) {
           whileTap={{ scale:0.97 }}
           onClick={() => onChange(o.v)}
           style={{
-            width:'100%', padding:'12px 16px',
+            width:'100%', padding:'11px 14px',
             borderRadius:14, flexShrink:0,
-            display:'flex', alignItems:'center', gap:12,
-            border:`1.5px solid ${value===o.v ? energyColor+'80' : 'rgba(255,255,255,0.25)'}`,
-            background: value===o.v ? `${energyColor}22` : 'rgba(255,255,255,0.12)',
-            backdropFilter:'blur(16px)',
+            display:'flex', alignItems:'center', gap:10,
+            border:`1.5px solid ${value===o.v ? energyColor : 'rgba(0,0,0,0.1)'}`,
+            background: value===o.v ? `${energyColor}18` : 'rgba(255,255,255,0.88)',
             cursor:'pointer', textAlign:'left',
             transition:'all 0.2s',
+            boxShadow:'0 1px 4px rgba(0,0,0,0.06)',
           }}>
-          <span style={{ fontSize:22, flexShrink:0 }}>{o.emoji}</span>
+          <span style={{ fontSize:20, flexShrink:0 }}>{o.emoji}</span>
           <span style={{
             fontSize:13, flex:1,
-            fontWeight: value===o.v ? 700 : 400,
-            color: value===o.v ? energyColor : 'rgba(255,255,255,0.85)',
+            fontWeight: value===o.v ? 700 : 500,
+            color: value===o.v ? energyColor : '#1A2332',
           }}>
             {o.label}
           </span>
           {value===o.v && (
             <motion.span
               initial={{ scale:0 }} animate={{ scale:1 }}
-              style={{ fontSize:16, color:energyColor, flexShrink:0 }}>✓</motion.span>
+              style={{ fontSize:14, color:energyColor, flexShrink:0 }}>✓</motion.span>
           )}
         </motion.button>
       ))}
@@ -551,8 +553,8 @@ export default function Onboarding() {
               {/* FRAMES DEL ORBE — usando assets reales */}
               {showOrb && (() => {
                 const frames = [
-                  '/panda/orb_frame_0.png',   // 0 — sin activar
-                  '/panda/orb_door_closed',      // 1 — activado, vacío
+                  '/panda/orb_door_closed.png',   // 0 — sin activar
+                  '/panda/orb_door_open.png',      // 1 — activado, vacío
                   '/panda/orb_door_open_1.png',    // 2 — nivel 1
                   '/panda/orb_door_open_2.png',    // 3 — nivel 2
                   '/panda/orb_door_open_3.png',    // 4 — nivel 3
@@ -635,7 +637,7 @@ export default function Onboarding() {
                   filter:'blur(28px)',
                 }}
               />
-              <img src="/panda/panda_orb_baby.png" alt=""
+              <img src="/panda/panda_orb.png" alt=""
                 style={{ width:'100%', objectFit:'contain', position:'relative', zIndex:1 }}
                 onError={()=>setImgErrs(e=>({...e,panda_orb:true}))}
               />
@@ -849,8 +851,8 @@ export default function Onboarding() {
             initial={{ opacity:0, y:20 }} animate={{ opacity:1, y:0 }}
             style={{
               position:'fixed', bottom:0, left:0, right:0, zIndex:20,
-              padding:'16px 20px 44px',
-              background:'linear-gradient(to top, rgba(245,240,232,0.95) 60%, transparent 100%)',
+              padding:'12px 16px 36px',
+              background:'linear-gradient(to top, rgba(245,240,232,0.97) 70%, transparent 100%)',
               backdropFilter:'blur(8px)',
             }}>
 

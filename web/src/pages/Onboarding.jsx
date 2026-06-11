@@ -576,7 +576,7 @@ export default function Onboarding() {
                   onClick={activateOrb}
                   style={{
                     position:'fixed',
-                    margintop:'-20%', left:'43%',
+                    margintop:'-50%', left:'44%',
                     transform:'translate(-50%, -50%)',
                     background:'transparent', border:'none',
                     cursor:'pointer', zIndex:25,

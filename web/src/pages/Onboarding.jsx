@@ -558,7 +558,7 @@ export default function Onboarding() {
                       position:'fixed', top:0, left:0, right:0, zIndex:15,
                       width:'100vw',
                       height:'62vh',
-                      marginTop:0,
+                      marginTop:10,
                       pointerEvents:'none',
                       objectFit:'contain',
                       objectPosition:'top center',
@@ -583,7 +583,7 @@ export default function Onboarding() {
                     pointerEvents:'all',
                   }}>
                   <img src="/panda/boton_1.png" alt="Despertar"
-                    style={{ width:700, height:700, objectFit:'contain' }}
+                    style={{ width:90, height:90, objectFit:'contain' }}
                     onError={e => {
                       e.target.style.display='none'
                     }}

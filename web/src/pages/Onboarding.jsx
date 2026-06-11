@@ -170,70 +170,45 @@ const QUESTIONS = [
   },
 ]
 
-// ─── SELECTOR DESPLEGABLE ─────────────────────────────────────────────────────
-function GlassSelect({ options, value, onChange, energyColor }) {
-  const [open, setOpen] = useState(false)
-  const selected = options.find(o => o.v === value)
-
+// ─── CARRUSEL VERTICAL DE OPCIONES ───────────────────────────────────────────
+function OptionCarousel({ options, value, onChange, energyColor }) {
   return (
-    <div style={{ position:'relative', width:'100%' }}>
-      <motion.button whileTap={{ scale:0.98 }} onClick={() => setOpen(o => !o)}
-        style={{
-          width:'100%', padding:'13px 18px', borderRadius:16,
-          border:`1.5px solid ${value ? energyColor+'70' : 'rgba(255,255,255,0.35)'}`,
-          background: value ? `${energyColor}20` : 'rgba(255,255,255,0.15)',
-          backdropFilter:'blur(20px)',
-          display:'flex', alignItems:'center', justifyContent:'space-between',
-          cursor:'pointer', boxSizing:'border-box',
-        }}>
-        <span style={{ fontSize:14, fontWeight:value?700:400, color: value ? energyColor : 'rgba(255,255,255,0.6)' }}>
-          {selected ? `${selected.emoji} ${selected.label}` : 'Selecciona una opción…'}
-        </span>
-        <motion.span animate={{ rotate: open?180:0 }} transition={{ duration:0.2 }}
-          style={{ color:'rgba(255,255,255,0.5)', fontSize:12 }}>▾</motion.span>
-      </motion.button>
-
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            initial={{ opacity:0, y:-8, scaleY:0.9 }}
-            animate={{ opacity:1, y:0, scaleY:1 }}
-            exit={{ opacity:0, y:-8, scaleY:0.9 }}
-            transition={{ duration:0.18 }}
-            style={{
-              position:'absolute', top:'calc(100% + 8px)', left:0, right:0, zIndex:50,
-              borderRadius:16,
-              background:'rgba(255,252,245,0.96)',
-              backdropFilter:'blur(28px)',
-              border:'1.5px solid rgba(255,255,255,0.8)',
-              boxShadow:'0 8px 32px rgba(0,0,0,0.18)',
-              maxHeight:'42vh', overflowY:'scroll',
-              WebkitOverflowScrolling:'touch',
-              zIndex:200,
-            }}>
-            {options.map((o, i) => (
-              <motion.button key={o.v}
-                initial={{ opacity:0, x:-8 }} animate={{ opacity:1, x:0 }}
-                transition={{ delay:i*0.04 }}
-                whileTap={{ scale:0.98 }}
-                onClick={() => { onChange(o.v); setOpen(false) }}
-                style={{
-                  width:'100%', padding:'12px 18px',
-                  display:'flex', alignItems:'center', gap:12,
-                  background: value===o.v ? `${energyColor}18` : 'transparent',
-                  border:'none', cursor:'pointer', textAlign:'left',
-                  borderBottom: i<options.length-1 ? '1px solid rgba(0,0,0,0.05)' : 'none',
-                }}>
-                <span style={{ fontSize:20 }}>{o.emoji}</span>
-                <span style={{ fontSize:13, fontWeight:value===o.v?700:400, color: value===o.v?energyColor:'#374151' }}>
-                  {o.label}
-                </span>
-                {value===o.v && <span style={{ marginLeft:'auto', color:energyColor, fontSize:12 }}>✓</span>}
-              </motion.button>
-            ))}
-          </motion.div>
-        )}
-      </AnimatePresence>
+    <div style={{
+      display:'flex', flexDirection:'column', gap:8,
+      maxHeight:'38vh', overflowY:'auto',
+      WebkitOverflowScrolling:'touch',
+      paddingRight:4,
+    }}>
+      {options.map((o) => (
+        <motion.button
+          key={o.v}
+          whileTap={{ scale:0.97 }}
+          onClick={() => onChange(o.v)}
+          style={{
+            width:'100%', padding:'12px 16px',
+            borderRadius:14, flexShrink:0,
+            display:'flex', alignItems:'center', gap:12,
+            border:`1.5px solid ${value===o.v ? energyColor+'80' : 'rgba(255,255,255,0.25)'}`,
+            background: value===o.v ? `${energyColor}22` : 'rgba(255,255,255,0.12)',
+            backdropFilter:'blur(16px)',
+            cursor:'pointer', textAlign:'left',
+            transition:'all 0.2s',
+          }}>
+          <span style={{ fontSize:22, flexShrink:0 }}>{o.emoji}</span>
+          <span style={{
+            fontSize:13, flex:1,
+            fontWeight: value===o.v ? 700 : 400,
+            color: value===o.v ? energyColor : 'rgba(255,255,255,0.85)',
+          }}>
+            {o.label}
+          </span>
+          {value===o.v && (
+            <motion.span
+              initial={{ scale:0 }} animate={{ scale:1 }}
+              style={{ fontSize:16, color:energyColor, flexShrink:0 }}>✓</motion.span>
+          )}
+        </motion.button>
+      ))}
     </div>
   )
 }
@@ -395,6 +370,72 @@ export default function Onboarding() {
             style={{ position:'fixed', inset:0, zIndex:15,
               display:'flex', alignItems:'center', justifyContent:'center',
               pointerEvents:'none' }}>
+
+            {/* COLUMNA DE LUZ desde arriba */}
+            <motion.div
+              initial={{ opacity:0, scaleY:0 }}
+              animate={{ opacity:[0,0.6,0.4], scaleY:1 }}
+              transition={{ duration:2, ease:'easeOut' }}
+              style={{
+                position:'absolute',
+                top:0, left:'50%',
+                transform:'translateX(-50%)',
+                width:'45vw', maxWidth:200,
+                height:'60%',
+                background:'linear-gradient(to bottom, rgba(255,240,180,0.5) 0%, rgba(255,220,140,0.2) 60%, transparent 100%)',
+                filter:'blur(18px)',
+                transformOrigin:'top center',
+                pointerEvents:'none',
+              }}
+            />
+
+            {/* HALO exterior pulsante */}
+            <motion.div
+              animate={{ scale:[1,1.15,1], opacity:[0.15,0.35,0.15] }}
+              transition={{ duration:3, repeat:Infinity, ease:'easeInOut' }}
+              style={{
+                position:'absolute',
+                width:'80vw', maxWidth:340,
+                height:'80vw', maxWidth2:340,
+                borderRadius:'50%',
+                background:'radial-gradient(circle, rgba(255,220,140,0.4) 0%, rgba(255,180,80,0.1) 50%, transparent 70%)',
+                filter:'blur(20px)',
+                pointerEvents:'none',
+              }}
+            />
+
+            {/* PARTÍCULAS flotantes */}
+            {[...Array(12)].map((_, i) => (
+              <motion.div
+                key={`spark-${i}`}
+                initial={{
+                  x: (Math.random() - 0.5) * 160,
+                  y: (Math.random() - 0.5) * 200,
+                  opacity: 0, scale: 0,
+                }}
+                animate={{
+                  y: [(Math.random()-0.5)*200, (Math.random()-0.5)*200 - 40],
+                  opacity: [0, 0.8, 0],
+                  scale: [0, 1, 0],
+                }}
+                transition={{
+                  duration: 2.5 + Math.random() * 2,
+                  repeat: Infinity,
+                  delay: Math.random() * 3,
+                  ease: 'easeInOut',
+                }}
+                style={{
+                  position:'absolute',
+                  width: 3 + Math.random() * 4,
+                  height: 3 + Math.random() * 4,
+                  borderRadius:'50%',
+                  background: i % 3 === 0 ? '#FFD97D' : i % 3 === 1 ? '#FFB347' : '#FFF5CC',
+                  boxShadow: `0 0 6px 2px ${i % 2 === 0 ? 'rgba(255,220,140,0.8)' : 'rgba(255,180,80,0.6)'}`,
+                  pointerEvents:'none',
+                }}
+              />
+            ))}
+
             <motion.div
               initial={{ scale:0.7, y:40 }}
               animate={{ scale:1, y:0 }}
@@ -609,7 +650,7 @@ export default function Onboarding() {
                 <motion.div key={`qs-${qStep}`}
                   initial={{ opacity:0, y:10 }} animate={{ opacity:1, y:0 }}
                   exit={{ opacity:0 }} transition={{ duration:0.25 }}>
-                  <GlassSelect
+                  <OptionCarousel
                     options={currentQ.options}
                     value={form[currentQ.key]}
                     onChange={v => handleAnswer(currentQ.key, v)}

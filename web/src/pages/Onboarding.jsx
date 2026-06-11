@@ -551,8 +551,8 @@ export default function Onboarding() {
               {/* FRAMES DEL ORBE — usando assets reales */}
               {showOrb && (() => {
                 const frames = [
-                  '/panda/orb_door_closed.png',   // 0 — sin activar
-                  '/panda/orb_door_open.png',      // 1 — activado, vacío
+                  '/panda/orb_frame_0.png',   // 0 — sin activar
+                  '/panda/orb_door_closed',      // 1 — activado, vacío
                   '/panda/orb_door_open_1.png',    // 2 — nivel 1
                   '/panda/orb_door_open_2.png',    // 3 — nivel 2
                   '/panda/orb_door_open_3.png',    // 4 — nivel 3
@@ -635,7 +635,7 @@ export default function Onboarding() {
                   filter:'blur(28px)',
                 }}
               />
-              <img src="/panda/panda_orb.png" alt=""
+              <img src="/panda/panda_orb_baby.png" alt=""
                 style={{ width:'100%', objectFit:'contain', position:'relative', zIndex:1 }}
                 onError={()=>setImgErrs(e=>({...e,panda_orb:true}))}
               />

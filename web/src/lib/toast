@@ -1,0 +1,18 @@
+// src/lib/toast.js
+// Toast genérico reutilizable — mismo patrón que AchievementToastProvider
+// Uso: import { toast } from '../lib/toast'
+//      toast.error('Algo salió mal')
+//      toast.success('Guardado correctamente')
+//      toast.info('Ten en cuenta que...')
+
+let _showToast = null
+
+export function _registerToast(fn) {
+  _showToast = fn
+}
+
+export const toast = {
+  error:   (msg) => _showToast?.({ type:'error',   message: msg }),
+  success: (msg) => _showToast?.({ type:'success', message: msg }),
+  info:    (msg) => _showToast?.({ type:'info',    message: msg }),
+}

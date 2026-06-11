@@ -105,11 +105,13 @@ function useAudio() {
       gain2.gain.setValueAtTime(0.08, ctx.currentTime)
       gain2.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.6)
       osc2.start(ctx.currentTime); osc2.stop(ctx.currentTime + 0.6)
-    } catch {}
+       } catch {}
   }
 
   function playFlash() {
     try {
+      const ctx = getCtx()
+      ;[528,639,741,852,963].forEach((f,i) => {
         const osc = ctx.createOscillator(); const gain = ctx.createGain()
         osc.connect(gain); gain.connect(ctx.destination)
         osc.type = 'sine'; osc.frequency.value = f

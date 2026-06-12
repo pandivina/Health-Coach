@@ -127,7 +127,7 @@ function useAudio() {
 const QUESTIONS = [
   {
     key: 'mind',
-    bold: '¿Tu mente está lista\npara esta aventura?',
+    bold: '¿Tu mente está lista para esta aventura?',
     sub: 'La mente debe dar lugar a este nacimiento...',
     feedback: '"La mente abre el primer espacio."',
     options: [
@@ -162,7 +162,7 @@ const QUESTIONS = [
   },
   {
     key: 'movement',
-    bold: 'El movimiento es el fuego\nque transforma.',
+    bold: 'El movimiento es el fuego que transforma.',
     sub: 'El movimiento no desgasta. Transforma.',
     feedback: '"Tu fuego dará forma a lo que soy."',
     options: [
@@ -206,8 +206,8 @@ const QUESTIONS = [
 function OptionCarousel({ options, value, onChange, energyColor }) {
   return (
     <div style={{
-      display:'flex', flexDirection:'column', gap:6,
-      maxHeight:'30vh',          // FIX: era '22vw' (~86px) → ahora relativo a altura real
+      display:'flex', flexDirection:'column', gap:5,
+      maxHeight:'26vh',          // ajustado: cajas más bajas, cabe más en menos espacio
       minHeight: 0,
       overflowY:'auto',
       WebkitOverflowScrolling:'touch',
@@ -219,7 +219,7 @@ function OptionCarousel({ options, value, onChange, energyColor }) {
           whileTap={{ scale:0.97 }}
           onClick={() => onChange(o.v)}
           style={{
-            width:'100%', padding:'11px 14px',
+            width:'100%', padding:'9px 14px',
             borderRadius:14, flexShrink:0,
             display:'flex', alignItems:'center', gap:10,
             border:`1.5px solid ${value===o.v ? energyColor : 'rgba(0,0,0,0.1)'}`,
@@ -228,7 +228,7 @@ function OptionCarousel({ options, value, onChange, energyColor }) {
             transition:'all 0.2s',
             boxShadow:'0 1px 4px rgba(0,0,0,0.06)',
           }}>
-          <span style={{ fontSize:20, flexShrink:0 }}>{o.emoji}</span>
+          <span style={{ fontSize:18, flexShrink:0 }}>{o.emoji}</span>
           <span style={{
             fontSize:13, flex:1,
             fontWeight: value===o.v ? 700 : 500,
@@ -403,6 +403,12 @@ export default function Onboarding() {
         style={{ position:'absolute', inset:0, width:'100%', height:'100%', objectFit:'cover', objectPosition:'top center', zIndex:1 }}
         onError={()=>setImgErrs(e=>({...e,blur:true}))}
       />
+      <motion.img src="/panda/onboarding_sanctuary_open.png" alt=""
+        animate={{ opacity: showOpen ? 1 : 0 }}
+        transition={{ duration: openFading ? 1.2 : 1.8 }}
+        style={{ position:'absolute', inset:0, width:'100%', height:'100%', objectFit:'cover', objectPosition:'top center', zIndex:2 }}
+        onError={()=>setImgErrs(e=>({...e,open:true}))}
+      />
       <motion.img src="/panda/onboarding_clouds.png" alt=""
         animate={{ opacity: showClouds ? 1 : 0 }}
         transition={{ duration:1.8, delay: showClouds ? 0.5 : 0 }}
@@ -558,7 +564,7 @@ export default function Onboarding() {
                       position:'fixed', top:0, left:0, right:0, zIndex:15,
                       width:'100vw',
                       height:'62vh',
-                      marginTop:40,
+                      marginTop:0,
                       pointerEvents:'none',
                       objectFit:'contain',
                       objectPosition:'top center',
@@ -576,14 +582,14 @@ export default function Onboarding() {
                   onClick={activateOrb}
                   style={{
                     position:'fixed',
-                    margintop:'-50%', left:'44%',
+                    margintop:'20%', left:'0%',
                     transform:'translate(-50%, -50%)',
                     background:'transparent', border:'none',
                     cursor:'pointer', zIndex:25,
                     pointerEvents:'all',
                   }}>
                   <img src="/panda/boton_1.png" alt="Despertar"
-                    style={{ width:70, height:70, objectFit:'contain' }}
+                    style={{ width:700, height:700, objectFit:'contain' }}
                     onError={e => {
                       e.target.style.display='none'
                     }}
@@ -833,7 +839,7 @@ export default function Onboarding() {
             initial={{ opacity:0, y:20 }} animate={{ opacity:1, y:0 }}
             style={{
               position:'fixed', bottom:0, left:0, right:0, zIndex:20,
-              padding:'10px 16px calc(env(safe-area-inset-bottom) + 20px)',  // FIX: respeta barra sistema iOS/Android
+              padding:'8px 16px calc(env(safe-area-inset-bottom) + 20px)',
               background:'linear-gradient(to top, rgba(245,240,232,0.97) 70%, transparent 100%)',
               backdropFilter:'blur(8px)',
             }}>
@@ -843,12 +849,12 @@ export default function Onboarding() {
               <motion.div key={`qt-${qStep}`}
                 initial={{ opacity:0, y:6 }} animate={{ opacity:1, y:0 }}
                 exit={{ opacity:0, y:-6 }} transition={{ duration:0.3 }}
-                style={{ marginBottom:12, textAlign:'center' }}>
-                <p style={{ fontSize:16, fontWeight:900, color:'#1A2332',
-                  margin:'0 0 2px', lineHeight:1.3, whiteSpace:'pre-line' }}>
+                style={{ marginBottom:8, textAlign:'center' }}>
+                <p style={{ fontSize:14, fontWeight:900, color:'#1A2332',
+                  margin:'0 0 2px', lineHeight:1.2, whiteSpace:'pre-line' }}>
                   {currentQ.bold}
                 </p>
-                <p style={{ fontSize:12, color:'#6B7280', margin:0, fontStyle:'italic' }}>
+                <p style={{ fontSize:11, color:'#6B7280', margin:0, fontStyle:'italic' }}>
                   {currentQ.sub}
                 </p>
               </motion.div>

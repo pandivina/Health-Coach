@@ -6,11 +6,14 @@ import { useTheme } from '../contexts/ThemeProvider'
 // Rutas donde el FAB no aparece (el coach ya tiene su propia UI ahí)
 const FAB_EXCLUDED = ['/coach', '/onboarding', '/auth', '/']
 
+// Rutas a pantalla completa: sin BottomNav ni chrome del layout
+const NAV_EXCLUDED = ['/onboarding', '/auth']
+
 export default function Layout() {
   const { theme }    = useTheme()
   const { pathname } = useLocation()
-
   const showFAB = !FAB_EXCLUDED.includes(pathname)
+  const showNav = !NAV_EXCLUDED.includes(pathname)
 
   return (
     <div className="min-h-screen flex flex-col max-w-lg mx-auto relative"
@@ -18,7 +21,7 @@ export default function Layout() {
       <main className="flex-1 overflow-y-auto">
         <Outlet />
       </main>
-      <BottomNav />
+      {showNav && <BottomNav />}
       {showFAB && <CoachFAB />}
     </div>
   )

@@ -269,6 +269,7 @@ export default function Onboarding() {
 
   const [orbActivated, setOrbActivated] = useState(false)
   const [orbOpened,    setOrbOpened]    = useState(false)
+  const [orbClosing,   setOrbClosing]   = useState(false)
   const [smoke,        setSmoke]        = useState(false)
   const [fillLevel,    setFillLevel]    = useState(0)
 
@@ -337,10 +338,14 @@ export default function Onboarding() {
     } else {
       setFillLevel(6)
       setTimeout(() => {
-        audio.playBrillo()
-        audio.playDestello()
-        setFlash(true)
-        setTimeout(() => { setFlash(false); setPhase(11) }, 700)
+        // El orbe se cierra antes del destello final
+        setOrbClosing(true)
+        setTimeout(() => {
+          audio.playBrillo()
+          audio.playDestello()
+          setFlash(true)
+          setTimeout(() => { setFlash(false); setPhase(11) }, 700)
+        }, 900)
       }, 600)
     }
   }
@@ -556,6 +561,8 @@ export default function Onboarding() {
 
                 const activeFrame = !orbActivated
                   ? 0
+                  : orbClosing
+                  ? 1
                   : !orbOpened
                   ? 1
                   : fillLevel === 0
@@ -608,7 +615,7 @@ export default function Onboarding() {
             {/* ── FIN ZONA IMAGEN ── */}
 
             {/* ── ZONA PREGUNTAS — flujo normal, scrollable, sin fixed/safe-area ── */}
-            {orbOpened && (
+            {orbOpened && !orbClosing && (
               <div style={{
                 flex:1, minHeight:0, overflowY:'auto',
                 padding:'8px 16px 24px',
@@ -716,17 +723,12 @@ export default function Onboarding() {
                   filter:'blur(28px)',
                 }}
               />
-              <img src="/panda/panda_orb.png" alt=""
+              <motion.img src="/panda/panda_orb_baby.png" alt="Pandi"
+                initial={{ opacity:0, scale:0.85 }}
+                animate={{ opacity:1, scale:1 }}
+                transition={{ duration:0.8 }}
                 style={{ width:'100%', objectFit:'contain', position:'relative', zIndex:1 }}
-                onError={()=>setImgErrs(e=>({...e,panda_orb:true}))}
-              />
-              <img src="/panda/panda_bebe.png" alt="Pandi"
-                style={{
-                  position:'absolute', top:'20%', left:'15%',
-                  width:'70%', height:'65%',
-                  objectFit:'contain', zIndex:2,
-                }}
-                onError={()=>setImgErrs(e=>({...e,panda_bebe:true}))}
+                onError={()=>setImgErrs(e=>({...e,panda_orb_baby:true}))}
               />
             </motion.div>
 

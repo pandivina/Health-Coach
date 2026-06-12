@@ -127,7 +127,7 @@ function useAudio() {
 const QUESTIONS = [
   {
     key: 'mind',
-    bold: '¿Tu mente está lista\npara esta aventura?',
+    bold: '¿Tu mente está lista para esta aventura?',
     sub: 'La mente debe dar lugar a este nacimiento...',
     feedback: '"La mente abre el primer espacio."',
     options: [
@@ -162,7 +162,7 @@ const QUESTIONS = [
   },
   {
     key: 'movement',
-    bold: 'El movimiento es el fuego\nque transforma.',
+    bold: 'El movimiento es el fuego que transforma.',
     sub: 'El movimiento no desgasta. Transforma.',
     feedback: '"Tu fuego dará forma a lo que soy."',
     options: [
@@ -206,8 +206,8 @@ const QUESTIONS = [
 function OptionCarousel({ options, value, onChange, energyColor }) {
   return (
     <div style={{
-      display:'flex', flexDirection:'column', gap:6,
-      maxHeight:'22vw',
+      display:'flex', flexDirection:'column', gap:5,
+      maxHeight:'26vh',          // ajustado: cajas más bajas, cabe más en menos espacio
       minHeight: 0,
       overflowY:'auto',
       WebkitOverflowScrolling:'touch',
@@ -219,7 +219,7 @@ function OptionCarousel({ options, value, onChange, energyColor }) {
           whileTap={{ scale:0.97 }}
           onClick={() => onChange(o.v)}
           style={{
-            width:'100%', padding:'11px 14px',
+            width:'100%', padding:'9px 14px',
             borderRadius:14, flexShrink:0,
             display:'flex', alignItems:'center', gap:10,
             border:`1.5px solid ${value===o.v ? energyColor : 'rgba(0,0,0,0.1)'}`,
@@ -228,7 +228,7 @@ function OptionCarousel({ options, value, onChange, energyColor }) {
             transition:'all 0.2s',
             boxShadow:'0 1px 4px rgba(0,0,0,0.06)',
           }}>
-          <span style={{ fontSize:20, flexShrink:0 }}>{o.emoji}</span>
+          <span style={{ fontSize:18, flexShrink:0 }}>{o.emoji}</span>
           <span style={{
             fontSize:13, flex:1,
             fontWeight: value===o.v ? 700 : 500,
@@ -249,18 +249,10 @@ function OptionCarousel({ options, value, onChange, energyColor }) {
 
 // ─── MAIN ─────────────────────────────────────────────────────────────────────
 export default function Onboarding() {
-  // Fases:
-  // 0 = blur solo
-  // 1 = blur + sanctuary_open (intro texto 1)
-  // 2 = clouds + sanctuary_open fade out (intro texto 2)
-  // 3 = nombre
-  // 4-9 = orbe con frames (fase 4 = frame 0 vacío, incrementando)
-  // 10 = nacimiento
-
   const [phase,      setPhase]      = useState(0)
   const [flash,      setFlash]      = useState(false)
   const [openFading, setOpenFading] = useState(false)
-  const [qStep,      setQStep]      = useState(0) // pregunta actual dentro de fases 4-9
+  const [qStep,      setQStep]      = useState(0)
   const [loading,    setLoading]    = useState(false)
   const [started,    setStarted]    = useState(false)
   const [imgErrs,    setImgErrs]    = useState({})
@@ -276,19 +268,9 @@ export default function Onboarding() {
   const set = (k, v) => setForm(f => ({...f, [k]:v}))
 
   const [orbActivated, setOrbActivated] = useState(false)
-  const [orbOpened,    setOrbOpened]    = useState(false) // true tras animación de apertura
+  const [orbOpened,    setOrbOpened]    = useState(false)
   const [smoke,        setSmoke]        = useState(false)
   const [fillLevel,    setFillLevel]    = useState(0)
-
-  // Fases:
-  // 0 = blur solo
-  // 1 = blur + sanctuary_open (intro texto 1)
-  // 2 = clouds + sanctuary_open fade out (intro texto 2)
-  // 3 = nombre
-  // 4 = orbe cerrado esperando toque
-  // 5-10 = orbe abriéndose + llenándose (orb_door_open_0 a _6)
-  // 11 = panda_orb con panda_bebe dentro — "Dale clic para despertarla"
-  // 12 = destello → pandi_new_born_cloud flotando
 
   const showBlur   = phase <= 3
   const showOpen   = phase === 1 || (phase === 2 && !openFading)
@@ -297,7 +279,6 @@ export default function Onboarding() {
   const showAwaken = phase === 11
   const showBorn   = phase === 12
 
-  // Secuencia automática inicial
   useEffect(() => {
     const t1 = setTimeout(() => setPhase(1), 800)
     const t2 = setTimeout(() => setPhase(2), 5000)
@@ -315,7 +296,7 @@ export default function Onboarding() {
   function proceedFromName() {
     handleFirstInteraction()
     if (!form.name.trim()) return
-    setPhase(4) // orbe vacío
+    setPhase(4)
     setQStep(0)
   }
 
@@ -331,18 +312,14 @@ export default function Onboarding() {
 
     try { navigator.vibrate?.([40, 30, 60]) } catch {}
 
-    // Sonido botón → luego apertura
     audio.playButton()
     setTimeout(() => audio.playDoor(), 200)
 
-    // Humo
     setSmoke(true)
     setTimeout(() => setSmoke(false), 2000)
 
-    // orb_door_closed aparece primero
     setOrbActivated(true)
 
-    // Después de la animación de apertura → orb_door_open + preguntas
     setTimeout(() => setOrbOpened(true), 1800)
   }
 
@@ -423,19 +400,19 @@ export default function Onboarding() {
       <motion.img src="/panda/onboarding_orb_baby_blur.png" alt=""
         animate={{ opacity: showBlur ? 1 : 0 }}
         transition={{ duration:1.5 }}
-        style={{ position:'absolute', inset:0, width:'100%', height:'100%', objectFit:'cover', zIndex:1 }}
+        style={{ position:'absolute', inset:0, width:'100%', height:'100%', objectFit:'cover', objectPosition:'top center', zIndex:1 }}
         onError={()=>setImgErrs(e=>({...e,blur:true}))}
       />
       <motion.img src="/panda/onboarding_sanctuary_open.png" alt=""
         animate={{ opacity: showOpen ? 1 : 0 }}
         transition={{ duration: openFading ? 1.2 : 1.8 }}
-        style={{ position:'absolute', inset:0, width:'100%', height:'100%', objectFit:'cover', zIndex:2 }}
+        style={{ position:'absolute', inset:0, width:'100%', height:'100%', objectFit:'cover', objectPosition:'top center', zIndex:2 }}
         onError={()=>setImgErrs(e=>({...e,open:true}))}
       />
       <motion.img src="/panda/onboarding_clouds.png" alt=""
         animate={{ opacity: showClouds ? 1 : 0 }}
         transition={{ duration:1.8, delay: showClouds ? 0.5 : 0 }}
-        style={{ position:'absolute', inset:0, width:'100%', height:'100%', objectFit:'cover', zIndex:3 }}
+        style={{ position:'absolute', inset:0, width:'100%', height:'100%', objectFit:'cover', objectPosition:'top center', zIndex:3 }}
         onError={()=>setImgErrs(e=>({...e,clouds:true}))}
       />
 
@@ -445,9 +422,16 @@ export default function Onboarding() {
           <motion.div key="orb"
             initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
             transition={{ duration:1.2 }}
-            style={{ position:'fixed', inset:0, zIndex:15,
-              display:'flex', alignItems:'center', justifyContent:'center',
+            style={{ position:'absolute', inset:0, zIndex:15,
+              display:'flex', flexDirection:'column',
               pointerEvents: orbActivated ? 'none' : 'all' }}>
+
+            {/* ── ZONA IMAGEN — altura fija, mismo patrón que Sanctuary del Home ── */}
+            <div style={{
+              position:'relative', height:'56vh', minHeight:300, maxHeight:480,
+              flexShrink:0, overflow:'hidden',
+              display:'flex', alignItems:'center', justifyContent:'center',
+            }}>
 
             {/* COLUMNA DE LUZ desde arriba */}
             <motion.div
@@ -559,22 +543,17 @@ export default function Onboarding() {
               {/* FRAMES DEL ORBE */}
               {showOrb && (() => {
                 const frames = [
-                  '/panda/orb_frame_0.png',       // 0 — inicial, sin activar
-                  '/panda/orb_door_closed.png',    // 1 — puerta cerrada (tras toque, antes de abrir)
-                  '/panda/orb_door_open.png',      // 2 — puerta abierta vacía
-                  '/panda/orb_door_open_1.png',    // 3 — nivel 1
-                  '/panda/orb_door_open_2.png',    // 4 — nivel 2
-                  '/panda/orb_door_open_3.png',    // 5 — nivel 3
-                  '/panda/orb_door_open_4.png',    // 6 — nivel 4
-                  '/panda/orb_door_open_5.png',    // 7 — nivel 5
-                  '/panda/orb_door_open_6.png',    // 8 — nivel 6 lleno
+                  '/panda/orb_frame_0.png',
+                  '/panda/orb_door_closed.png',
+                  '/panda/orb_door_open.png',
+                  '/panda/orb_door_open_1.png',
+                  '/panda/orb_door_open_2.png',
+                  '/panda/orb_door_open_3.png',
+                  '/panda/orb_door_open_4.png',
+                  '/panda/orb_door_open_5.png',
+                  '/panda/orb_door_open_6.png',
                 ]
 
-                // Lógica de frame activo:
-                // Sin activar → orb_frame_0
-                // Activado, fillLevel 0 → orb_door_closed (transición apertura)
-                // Tras apertura (orbOpened) → orb_door_open
-                // fillLevel 1-6 → orb_door_open_1 a _6
                 const activeFrame = !orbActivated
                   ? 0
                   : !orbOpened
@@ -589,10 +568,11 @@ export default function Onboarding() {
                     animate={{ opacity: activeFrame === i ? 1 : 0 }}
                     transition={{ duration:0.8 }}
                     style={{
-                      position:'fixed', inset:0, zIndex:15,
-                      width:'100vw', height:'150vw',
-                      marginTop:'32%',
-                      pointerEvents:'none', objectFit:'contain',
+                      position:'absolute', inset:0, zIndex:15,
+                      width:'100%', height:'100%',
+                      pointerEvents:'none',
+                      objectFit:'contain',
+                      objectPosition:'center',
                     }}
                     onError={()=>setImgErrs(e=>({...e,[`f${i}`]:true}))}
                   />
@@ -623,6 +603,92 @@ export default function Onboarding() {
               )}
 
             </motion.div>
+
+            </div>
+            {/* ── FIN ZONA IMAGEN ── */}
+
+            {/* ── ZONA PREGUNTAS — flujo normal, scrollable, sin fixed/safe-area ── */}
+            {orbOpened && (
+              <div style={{
+                flex:1, minHeight:0, overflowY:'auto',
+                padding:'8px 16px 24px',
+                background:'linear-gradient(to top, rgba(245,240,232,0.97) 70%, transparent 100%)',
+                backdropFilter:'blur(8px)',
+              }}>
+
+                {/* Texto pregunta */}
+                <AnimatePresence mode="wait">
+                  <motion.div key={`qt-${qStep}`}
+                    initial={{ opacity:0, y:6 }} animate={{ opacity:1, y:0 }}
+                    exit={{ opacity:0, y:-6 }} transition={{ duration:0.3 }}
+                    style={{ marginBottom:8, textAlign:'center' }}>
+                    <p style={{ fontSize:14, fontWeight:900, color:'#1A2332',
+                      margin:'0 0 2px', lineHeight:1.2, whiteSpace:'pre-line' }}>
+                      {currentQ.bold}
+                    </p>
+                    <p style={{ fontSize:11, color:'#6B7280', margin:0, fontStyle:'italic' }}>
+                      {currentQ.sub}
+                    </p>
+                  </motion.div>
+                </AnimatePresence>
+
+                {/* Opciones */}
+                <AnimatePresence mode="wait">
+                  <motion.div key={`qs-${qStep}`}
+                    initial={{ opacity:0, y:8 }} animate={{ opacity:1, y:0 }}
+                    exit={{ opacity:0 }} transition={{ duration:0.25 }}>
+                    <OptionCarousel
+                      options={currentQ.options}
+                      value={form[currentQ.key]}
+                      onChange={v => handleAnswer(currentQ.key, v)}
+                      energyColor={energyColor}
+                    />
+                  </motion.div>
+                </AnimatePresence>
+
+                {/* Feedback */}
+                <AnimatePresence>
+                  {form[currentQ.key] && (
+                    <motion.p initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
+                      style={{ fontSize:11, color:'#6B7280', fontStyle:'italic',
+                        textAlign:'center', margin:'8px 0 0' }}>
+                      {currentQ.feedback}
+                    </motion.p>
+                  )}
+                </AnimatePresence>
+
+                {/* Progreso + botón */}
+                <div style={{ display:'flex', gap:5, justifyContent:'center', margin:'10px 0 8px' }}>
+                  {QUESTIONS.map((_, i) => (
+                    <motion.div key={i}
+                      animate={{
+                        width: i===qStep ? 22 : 6,
+                        background: i<qStep ? '#2EC4B6' : i===qStep ? energyColor : 'rgba(0,0,0,0.15)',
+                      }}
+                      style={{ height:3, borderRadius:2 }}
+                      transition={{ duration:0.3 }}
+                    />
+                  ))}
+                </div>
+
+                <motion.button whileTap={{ scale: form[currentQ.key] ? 0.97 : 1 }}
+                  onClick={nextQuestion}
+                  disabled={!form[currentQ.key]}
+                  style={{
+                    width:'100%', padding:'13px 20px', borderRadius:16,
+                    border:`1.5px solid ${form[currentQ.key] ? energyColor+'60' : 'rgba(0,0,0,0.1)'}`,
+                    background: form[currentQ.key] ? `${energyColor}20` : 'rgba(0,0,0,0.05)',
+                    color: form[currentQ.key] ? energyColor : 'rgba(0,0,0,0.25)',
+                    fontSize:15, fontWeight:700,
+                    cursor: form[currentQ.key] ? 'pointer' : 'default',
+                    boxShadow: form[currentQ.key] ? `0 4px 20px ${energyColor}30` : 'none',
+                    transition:'all 0.3s',
+                    marginBottom: 'calc(env(safe-area-inset-bottom) + 4px)',
+                  }}>
+                  {qStep === QUESTIONS.length - 1 ? '✨ Despertar a Pandi' : 'Continuar →'}
+                </motion.button>
+              </div>
+            )}
           </motion.div>
         )}
       </AnimatePresence>
@@ -637,7 +703,6 @@ export default function Onboarding() {
               display:'flex', alignItems:'center', justifyContent:'center',
               flexDirection:'column', gap:0 }}>
 
-            {/* panda_orb con panda_bebe dentro */}
             <motion.div
               initial={{ scale:0.8 }} animate={{ scale:1 }}
               transition={{ type:'spring', damping:18 }}
@@ -665,7 +730,6 @@ export default function Onboarding() {
               />
             </motion.div>
 
-            {/* Texto y botón despertar */}
             <motion.div
               initial={{ opacity:0, y:20 }} animate={{ opacity:1, y:0 }}
               transition={{ delay:0.8 }}
@@ -688,7 +752,6 @@ export default function Onboarding() {
                   style={{ width:300, objectFit:'contain' }}
                   onError={e => {
                     e.target.style.display='none'
-                    // Fallback si no carga la imagen del botón
                   }}
                 />
                 <motion.p
@@ -856,90 +919,6 @@ export default function Onboarding() {
                 Toca el orbe para despertarlo ✨
               </p>
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-      <AnimatePresence>
-        {phase >= 4 && phase <= 10 && orbOpened && (
-          <motion.div key="questions"
-            initial={{ opacity:0, y:20 }} animate={{ opacity:1, y:0 }}
-            style={{
-              position:'fixed', bottom:0, left:0, right:0, zIndex:20,
-              padding:'12px 16px 36px',
-              background:'linear-gradient(to top, rgba(245,240,232,0.97) 70%, transparent 100%)',
-              backdropFilter:'blur(8px)',
-            }}>
-
-            {/* Texto pregunta */}
-            <AnimatePresence mode="wait">
-              <motion.div key={`qt-${qStep}`}
-                initial={{ opacity:0, y:6 }} animate={{ opacity:1, y:0 }}
-                exit={{ opacity:0, y:-6 }} transition={{ duration:0.3 }}
-                style={{ marginBottom:12, textAlign:'center' }}>
-                <p style={{ fontSize:16, fontWeight:900, color:'#1A2332',
-                  margin:'0 0 2px', lineHeight:1.3, whiteSpace:'pre-line' }}>
-                  {currentQ.bold}
-                </p>
-                <p style={{ fontSize:12, color:'#6B7280', margin:0, fontStyle:'italic' }}>
-                  {currentQ.sub}
-                </p>
-              </motion.div>
-            </AnimatePresence>
-
-            {/* Opciones */}
-            <AnimatePresence mode="wait">
-              <motion.div key={`qs-${qStep}`}
-                initial={{ opacity:0, y:8 }} animate={{ opacity:1, y:0 }}
-                exit={{ opacity:0 }} transition={{ duration:0.25 }}>
-                <OptionCarousel
-                  options={currentQ.options}
-                  value={form[currentQ.key]}
-                  onChange={v => handleAnswer(currentQ.key, v)}
-                  energyColor={energyColor}
-                />
-              </motion.div>
-            </AnimatePresence>
-
-            {/* Feedback */}
-            <AnimatePresence>
-              {form[currentQ.key] && (
-                <motion.p initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
-                  style={{ fontSize:11, color:'#6B7280', fontStyle:'italic',
-                    textAlign:'center', margin:'8px 0 0' }}>
-                  {currentQ.feedback}
-                </motion.p>
-              )}
-            </AnimatePresence>
-
-            {/* Progreso + botón */}
-            <div style={{ display:'flex', gap:5, justifyContent:'center', margin:'10px 0 8px' }}>
-              {QUESTIONS.map((_, i) => (
-                <motion.div key={i}
-                  animate={{
-                    width: i===qStep ? 22 : 6,
-                    background: i<qStep ? '#2EC4B6' : i===qStep ? energyColor : 'rgba(0,0,0,0.15)',
-                  }}
-                  style={{ height:3, borderRadius:2 }}
-                  transition={{ duration:0.3 }}
-                />
-              ))}
-            </div>
-
-            <motion.button whileTap={{ scale: form[currentQ.key] ? 0.97 : 1 }}
-              onClick={nextQuestion}
-              disabled={!form[currentQ.key]}
-              style={{
-                width:'100%', padding:'13px 20px', borderRadius:16,
-                border:`1.5px solid ${form[currentQ.key] ? energyColor+'60' : 'rgba(0,0,0,0.1)'}`,
-                background: form[currentQ.key] ? `${energyColor}20` : 'rgba(0,0,0,0.05)',
-                color: form[currentQ.key] ? energyColor : 'rgba(0,0,0,0.25)',
-                fontSize:15, fontWeight:700,
-                cursor: form[currentQ.key] ? 'pointer' : 'default',
-                boxShadow: form[currentQ.key] ? `0 4px 20px ${energyColor}30` : 'none',
-                transition:'all 0.3s',
-              }}>
-              {qStep === QUESTIONS.length - 1 ? '✨ Despertar a Pandi' : 'Continuar →'}
-            </motion.button>
           </motion.div>
         )}
       </AnimatePresence>

@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase'
 import { useStore } from '../store/useStore'
 import { useTheme } from '../contexts/ThemeProvider'
 import CycleTab from '../components/mood/CycleTab'
+import { toast } from '../lib/toast'
 
 // ─── CONSTANTES ───────────────────────────────────────────────────────────────
 
@@ -109,6 +110,11 @@ export default function Calendar() {
         .eq('user_id', user.id).gte('date', from).lte('date', to),
     ])
 
+    if (eventsR.error) {
+      console.error('Calendar load error:', eventsR.error.message)
+      toast.error('No se pudieron cargar los eventos: ' + eventsR.error.message)
+    }
+
     setEvents(eventsR.data || [])
     const moodMap = {}; (moodR.data || []).forEach(l => { moodMap[l.date] = l.mood })
     const sleepMap = {}; (sleepR.data || []).forEach(l => { sleepMap[l.date] = l.hours })
@@ -124,27 +130,39 @@ export default function Calendar() {
   const todayEventCount = events.filter(e => e.date === today).length
 
   function eventsForDay(dateStr) { return events.filter(e => e.date === dateStr) }
-  
-useEffect(() => {
-    let isMounted = true;
-    if (isMounted) load();
-    return () => { isMounted = false; };
-  }, [load]);
-  
+
   // ─── GUARDAR EVENTO ───────────────────────────────────────────────────────
 
   async function saveEvent(data) {
+    let error
     if (data.id) {
-      await supabase.from('calendar_events').update(data).eq('id', data.id)
+      const res = await supabase.from('calendar_events').update(data).eq('id', data.id)
+      error = res.error
     } else {
-      await supabase.from('calendar_events').insert({ ...data, user_id: user.id })
+      const res = await supabase.from('calendar_events').insert({ ...data, user_id: user.id })
+      error = res.error
     }
+
+    if (error) {
+      console.error('saveEvent error:', error.message)
+      toast.error('No se pudo guardar el evento: ' + error.message)
+      return false
+    }
+
+    toast.success(data.id ? 'Evento actualizado' : 'Evento guardado')
     await load()
     scheduleNotification(data)
+    return true
   }
 
   async function deleteEvent(id) {
-    await supabase.from('calendar_events').delete().eq('id', id)
+    const { error } = await supabase.from('calendar_events').delete().eq('id', id)
+    if (error) {
+      console.error('deleteEvent error:', error.message)
+      toast.error('No se pudo eliminar el evento: ' + error.message)
+      return
+    }
+    toast.success('Evento eliminado')
     await load()
   }
 
@@ -341,7 +359,7 @@ useEffect(() => {
             theme={theme}
             date={selected}
             event={editEvent}
-            onSave={async (data) => { await saveEvent(data); setShowForm(false) }}
+            onSave={async (data) => { const ok = await saveEvent(data); if (ok) setShowForm(false) }}
             onClose={() => setShowForm(false)}
           />
         )}

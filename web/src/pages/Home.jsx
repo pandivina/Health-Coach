@@ -177,23 +177,7 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name }) {
         </div>
       </div>
 
-      {/* PANDI centrada */}
-      <div style={{ position:'absolute', bottom:'12%', left:0, right:0, zIndex:5, display:'flex', alignItems:'flex-end', justifyContent:'center' }}>
-        <div style={{ position:'relative', flexShrink:0 }}>
-          <motion.div animate={{ opacity:[0.3,0.5,0.3] }} transition={{ duration:3, repeat:Infinity, ease:'easeInOut' }}
-            style={{ position:'absolute', top:'50%', left:'50%', transform:'translate(-50%,-50%)', width:180, height:180, borderRadius:'50%', background:`radial-gradient(circle, ${cfg.glow} 0%, transparent 65%)`, filter:'blur(24px)', zIndex:-1, pointerEvents:'none' }} />
-          <motion.div animate={{ scaleX:[1,1.04,1], opacity:[0.25,0.35,0.25] }} transition={{ duration:3, repeat:Infinity, ease:'easeInOut' }}
-            style={{ position:'absolute', bottom:-8, left:'50%', transform:'translateX(-50%)', width:110, height:14, borderRadius:'50%', background:'rgba(0,0,0,0.18)', filter:'blur(5px)', zIndex:-1 }} />
-          <div style={{ filter:`drop-shadow(0 12px 20px ${cfg.glow})` }}>
-            {imgErr
-              ? <span style={{ fontSize:100, display:'block' }}>🐾</span>
-              : <img src={currentFrame} alt="Pandi" style={{ width:220, height:220, objectFit:'contain', display:'block' }} onError={() => setImgErr(true)} />
-            }
-          </div>
-        </div>
-      </div>
-
-      {/* BOCADILLO */}
+{/* BOCADILLO */}
       <AnimatePresence>
         {tipVisible && tip && (
           <motion.div
@@ -228,6 +212,24 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name }) {
         )}
       </AnimatePresence>
 
+      
+      {/* PANDI centrada */}
+      <div style={{ position:'absolute', bottom:'12%', left:0, right:0, zIndex:5, display:'flex', alignItems:'flex-end', justifyContent:'center' }}>
+        <div style={{ position:'relative', flexShrink:0 }}>
+          <motion.div animate={{ opacity:[0.3,0.5,0.3] }} transition={{ duration:3, repeat:Infinity, ease:'easeInOut' }}
+            style={{ position:'absolute', top:'50%', left:'50%', transform:'translate(-50%,-50%)', width:180, height:180, borderRadius:'50%', background:`radial-gradient(circle, ${cfg.glow} 0%, transparent 65%)`, filter:'blur(24px)', zIndex:-1, pointerEvents:'none' }} />
+          <motion.div animate={{ scaleX:[1,1.04,1], opacity:[0.25,0.35,0.25] }} transition={{ duration:3, repeat:Infinity, ease:'easeInOut' }}
+            style={{ position:'absolute', bottom:-8, left:'50%', transform:'translateX(-50%)', width:110, height:14, borderRadius:'50%', background:'rgba(0,0,0,0.18)', filter:'blur(5px)', zIndex:-1 }} />
+          <div style={{ filter:`drop-shadow(0 12px 20px ${cfg.glow})` }}>
+            {imgErr
+              ? <span style={{ fontSize:100, display:'block' }}>🐾</span>
+              : <img src={currentFrame} alt="Pandi" style={{ width:220, height:220, objectFit:'contain', display:'block' }} onError={() => setImgErr(true)} />
+            }
+          </div>
+        </div>
+      </div>
+
+      
       {/* XP BAR */}
       <div style={{ position:'absolute', bottom:16, left:20, right:20, zIndex:10 }}>
         <div style={{ display:'flex', justifyContent:'space-between', fontSize:10, color:'rgba(32,178,170,1)', marginBottom:5 }}>

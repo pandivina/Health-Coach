@@ -139,7 +139,9 @@ export default function Calendar() {
       const res = await supabase.from('calendar_events').update(data).eq('id', data.id)
       error = res.error
     } else {
-      const res = await supabase.from('calendar_events').insert({ ...data, user_id: user.id })
+      // eliminar id:null — dejar que la DB genere el id por defecto
+      const { id, ...insertData } = data
+      const res = await supabase.from('calendar_events').insert({ ...insertData, user_id: user.id })
       error = res.error
     }
 

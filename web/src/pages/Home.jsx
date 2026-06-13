@@ -51,7 +51,7 @@ const ALL_FRAMES = [
   STATE_CONFIG.RED.bg,
 ]
 
-function Sanctuary({ recoveryLight, profile, theme, greeting, name }) {
+function Sanctuary({ recoveryLight, profile, theme, greeting, name, onXpBarRef }) {
   const cfg = STATE_CONFIG[recoveryLight] || STATE_CONFIG.GREEN
   const [frameIdx,   setFrameIdx]   = useState(0)
   const [imgErr,     setImgErr]     = useState(false)
@@ -148,8 +148,8 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name }) {
       {/* Overlay top */}
       <div style={{ position:'absolute', top:0, left:0, right:0, height:110, zIndex:1, background:'linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, transparent 100%)', pointerEvents:'none' }} />
 
-      {/* Overlay bottom */}
-      <div style={{ position:'absolute', bottom:0, left:0, right:0, height:100, zIndex:1, background:'linear-gradient(to top, #f8fafa 0%, transparent 100%)', pointerEvents:'none' }} />
+      {/* Overlay bottom — más alto para que tape el fondo bajo Pandi */}
+      <div style={{ position:'absolute', bottom:0, left:0, right:0, height:120, zIndex:1, background:'linear-gradient(to top, #f8fafa 0%, transparent 100%)', pointerEvents:'none' }} />
 
       {/* HEADER */}
       <div style={{ position:'absolute', top:0, left:0, right:0, zIndex:10, padding:'16px 20px', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
@@ -177,7 +177,7 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name }) {
         </div>
       </div>
 
-{/* BOCADILLO */}
+      {/* BOCADILLO — encima de Pandi, anclado más arriba */}
       <AnimatePresence>
         {tipVisible && tip && (
           <motion.div
@@ -186,7 +186,7 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name }) {
             exit={{ opacity:0, scale:0.8, x:10 }}
             transition={{ type:'spring', damping:20, stiffness:300 }}
             onClick={handleTipClick}
-            style={{ position:'absolute', bottom:65, left:16, right:16, cursor:'pointer', zIndex:6 }}>
+            style={{ position:'absolute', bottom:100, left:16, right:16, cursor:'pointer', zIndex:6 }}>
             <motion.div
               animate={{ background: tipOpen ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.6)', boxShadow: tipOpen ? '0 8px 24px rgba(0,0,0,0.15)' : '0 2px 8px rgba(0,0,0,0.08)' }}
               transition={{ duration:0.3 }}
@@ -212,9 +212,8 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name }) {
         )}
       </AnimatePresence>
 
-      
       {/* PANDI centrada */}
-      <div style={{ position:'absolute', bottom:'12%', left:0, right:0, zIndex:5, display:'flex', alignItems:'flex-end', justifyContent:'center' }}>
+      <div style={{ position:'absolute', bottom:'16%', left:0, right:0, zIndex:5, display:'flex', alignItems:'flex-end', justifyContent:'center' }}>
         <div style={{ position:'relative', flexShrink:0 }}>
           <motion.div animate={{ opacity:[0.3,0.5,0.3] }} transition={{ duration:3, repeat:Infinity, ease:'easeInOut' }}
             style={{ position:'absolute', top:'50%', left:'50%', transform:'translate(-50%,-50%)', width:180, height:180, borderRadius:'50%', background:`radial-gradient(circle, ${cfg.glow} 0%, transparent 65%)`, filter:'blur(24px)', zIndex:-1, pointerEvents:'none' }} />
@@ -229,23 +228,27 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name }) {
         </div>
       </div>
 
-      
-      {/* XP BAR */}
-      <div style={{ position:'absolute', bottom:16, left:20, right:20, zIndex:10 }}>
-        <div style={{ display:'flex', justifyContent:'space-between', fontSize:10, color:'rgba(32,178,170,1)', marginBottom:5 }}>
-          <span style={{ fontWeight:700 }}>{profile?.xp || 0} XP</span>
-          <span>Nivel {(profile?.level || 1) + 1} → {(profile?.level || 1) * 500} XP</span>
-        </div>
-        <div style={{ height:6, borderRadius:3, background:'rgba(0,0,0,0.2)', overflow:'hidden' }}>
-          <motion.div
-            style={{ height:'100%', borderRadius:3, background:cfg.dot, boxShadow:`0 0 8px ${cfg.dot}` }}
-            initial={{ width:0 }}
-            animate={{ width:`${((profile?.xp || 0) % 500) / 5}%` }}
-            transition={{ duration:0.8 }}
-          />
-        </div>
-      </div>
+      {/* XP BAR — eliminada de aquí, se renderiza en el scroll */}
+    </div>
+  )
+}
 
+// ── XP BAR como componente independiente en el scroll ────────────────────────
+function XPBar({ profile, cfg }) {
+  return (
+    <div style={{ padding:'10px 20px 0', marginTop:-4 }}>
+      <div style={{ display:'flex', justifyContent:'space-between', fontSize:10, color:'rgba(32,178,170,1)', marginBottom:5 }}>
+        <span style={{ fontWeight:700 }}>{profile?.xp || 0} XP</span>
+        <span>Nivel {(profile?.level || 1) + 1} → {(profile?.level || 1) * 500} XP</span>
+      </div>
+      <div style={{ height:6, borderRadius:3, background:'rgba(0,0,0,0.1)', overflow:'hidden' }}>
+        <motion.div
+          style={{ height:'100%', borderRadius:3, background: cfg?.dot || '#2EC4B6', boxShadow:`0 0 8px ${cfg?.dot || '#2EC4B6'}` }}
+          initial={{ width:0 }}
+          animate={{ width:`${((profile?.xp || 0) % 500) / 5}%` }}
+          transition={{ duration:0.8 }}
+        />
+      </div>
     </div>
   )
 }
@@ -356,7 +359,6 @@ export default function Home() {
 
   useEffect(() => {
     if (!user) return
-    // Inicializar coach al cargar el home
     useStore.getState().initCoach()
   }, [user])
 
@@ -410,6 +412,7 @@ export default function Home() {
   const MOOD_LABELS    = {1:'Muy mal',2:'Mal',3:'Regular',4:'Bien',5:'Genial'}
   const currentWeight  = weightLogs[0]?.weight_kg
   const doneTodayCount = [cals>0, !!todayWorkout, !!todaySleep, !!todayMood, waterGlasses>0].filter(Boolean).length
+  const cfg            = STATE_CONFIG[recoveryLight] || STATE_CONFIG.GREEN
 
   const tasks = [
     { to:'/nutrition', icon:'🍎', label:'Nutrición',     sublabel: cals>0 ? `${Math.round(cals)} / ${goals.calories} kcal` : 'Sin registro hoy',                                          color:'#F97316', done:cals>0 },
@@ -421,9 +424,14 @@ export default function Home() {
 
   return (
     <div style={{ minHeight:'100vh', background:'#f8fafa', paddingBottom:100 }}>
+
+      {/* SANCTUARY — sin XP bar dentro */}
       <Sanctuary recoveryLight={recoveryLight} profile={profile} theme={theme} greeting={greeting} name={name} />
 
-      <div style={{ padding:'0 16px', marginTop:'-8px' }}>
+      {/* XP BAR — fuera del sanctuary, en el scroll, pegada al borde inferior del sanctuary */}
+      <XPBar profile={profile} cfg={cfg} />
+
+      <div style={{ padding:'0 16px', marginTop:8 }}>
 
         {/* BADGE SEMÁFORO */}
         <motion.div initial={{ opacity:0, y:8 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.05 }}

@@ -428,14 +428,14 @@ export default function Onboarding() {
             initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
             transition={{ duration:1.2 }}
             style={{ position:'absolute', inset:0, zIndex:15,
-              display:'flex', flexDirection:'column',
-              pointerEvents: orbActivated ? 'none' : 'all' }}>
+              display:'flex', flexDirection:'column' }}>
 
             {/* ── ZONA IMAGEN — altura fija, mismo patrón que Sanctuary del Home ── */}
             <div style={{
               position:'relative', height:'56vh', minHeight:300, maxHeight:480,
               flexShrink:0, overflow:'hidden',
               display:'flex', alignItems:'center', justifyContent:'center',
+              pointerEvents: orbActivated ? 'none' : 'all',
             }}>
 
             {/* COLUMNA DE LUZ desde arriba */}
@@ -507,7 +507,8 @@ export default function Onboarding() {
               initial={{ scale:0.7, y:40 }}
               animate={{ scale:1, y:0 }}
               transition={{ duration:1.4, type:'spring', damping:18 }}
-              style={{ position:'relative', flexShrink:0 }}>
+              style={{ position:'absolute', inset:0,
+                display:'flex', alignItems:'center', justifyContent:'center' }}>
 
               {/* Glow */}
               <motion.div

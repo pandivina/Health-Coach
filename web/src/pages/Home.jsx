@@ -67,7 +67,6 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name, onXpBarRef }
   const isMobile = useIsMobile()
   const [frameIdx,   setFrameIdx]   = useState(0)
   const [imgErr,     setImgErr]     = useState(false)
-  const [bgErr,      setBgErr]      = useState(false)
   const [blinking,   setBlinking]   = useState(false)
   const [tipOpen,    setTipOpen]    = useState(false)
   const [tipVisible, setTipVisible] = useState(false)
@@ -143,93 +142,99 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name, onXpBarRef }
 
   return (
     <div style={{
-      position:'relative',
-      width:'100%',
-      height: isMobile ? '75vw' : '45vw',
-      maxHeight: isMobile ? 500 : 400,
-      overflow:'hidden',
-      background:'#f8fafa',
+      position: 'relative',
+      width: '100%',
+      height: isMobile ? '80vw' : '42vw',
+      maxHeight: isMobile ? 480 : 420,
+      overflow: 'hidden',
+      // background-image CSS — no se deforma nunca
+      backgroundImage: `url(${cfg.bg})`,
+      backgroundSize: 'cover',
+      backgroundPosition: 'center 30%',
+      backgroundRepeat: 'no-repeat',
+      // Fallback si no carga la imagen
+      backgroundColor: recoveryLight==='GREEN' ? '#e8f5ee'
+                      : recoveryLight==='YELLOW' ? '#fef3c7'
+                      : '#ffe4ec',
     }}>
 
-      {/* FONDO */}
-      <AnimatePresence mode="wait">
-        <motion.div key={recoveryLight}
-          initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
-          transition={{ duration:1.2 }}
-          style={{ position:'absolute', inset:0, zIndex:0 }}>
-          {bgErr
-            ? <div style={{ width:'100%', height:'100%', background: recoveryLight==='GREEN' ? 'linear-gradient(180deg,#c8f5e8,#e0faf0,#f0fffe)' : recoveryLight==='YELLOW' ? 'linear-gradient(180deg,#fef3c7,#fffbeb,#fffff0)' : 'linear-gradient(180deg,#ffe4ec,#fff0f5,#fff5f7)' }} />
-            : <img src={cfg.bg} alt="Santuario" style={{ width:'100%', height:'100%', objectFit:'contain', objectPosition:'center bottom' }} onError={() => setBgErr(true)} />
-          }
-        </motion.div>
-      </AnimatePresence>
+      {/* Overlay top — oscurece ligeramente para que el header se lea */}
+      <div style={{ position:'absolute', top:0, left:0, right:0, height:'35%', zIndex:1,
+        background:'linear-gradient(to bottom, rgba(0,0,0,0.22) 0%, transparent 100%)',
+        pointerEvents:'none' }} />
 
-      {/* Overlay top */}
-      <div style={{ position:'absolute', top:0, left:0, right:0, height:'28%', zIndex:1, background:'linear-gradient(to bottom, rgba(0,0,0,0.28) 0%, transparent 100%)', pointerEvents:'none' }} />
-
-      {/* Overlay bottom */}
-      <div style={{ position:'absolute', bottom:0, left:0, right:0, height:'30%', zIndex:1, background:'linear-gradient(to top, #f8fafa 0%, transparent 100%)', pointerEvents:'none' }} />
+      {/* Overlay bottom — funde con el scroll */}
+      <div style={{ position:'absolute', bottom:0, left:0, right:0, height:'32%', zIndex:1,
+        background:'linear-gradient(to top, #f8fafa 0%, transparent 100%)',
+        pointerEvents:'none' }} />
 
       {/* HEADER */}
-      <div style={{ position:'absolute', top:0, left:0, right:0, zIndex:10, padding:'14px 16px', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+      <div style={{ position:'absolute', top:0, left:0, right:0, zIndex:10,
+        padding:'14px 16px', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
 
-        {/* Perfil + Onboarding — izquierda */}
         <div style={{ display:'flex', alignItems:'center', gap:8 }}>
           <Link to="/profile">
-            <div style={{ width:36, height:36, borderRadius:12, background:'rgba(255,255,255,0.88)', backdropFilter:'blur(8px)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18 }}>☰</div>
+            <div style={{ width:36, height:36, borderRadius:12, background:'rgba(255,255,255,0.88)',
+              backdropFilter:'blur(8px)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18 }}>☰</div>
           </Link>
           <Link to="/onboarding">
-            <div style={{ width:36, height:36, borderRadius:12, background:'rgba(255,255,255,0.88)', backdropFilter:'blur(8px)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:16 }}>✨</div>
+            <div style={{ width:36, height:36, borderRadius:12, background:'rgba(255,255,255,0.88)',
+              backdropFilter:'blur(8px)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:16 }}>✨</div>
           </Link>
         </div>
 
-        {/* Saludo — centro */}
         <div style={{ textAlign:'center' }}>
-          <p style={{ fontSize:11, color:'rgba(255,255,255,0.85)', margin:0, fontWeight:600 }}>{greeting},</p>
-          <h1 style={{ fontSize:20, fontWeight:900, color:'white', margin:0, letterSpacing:'-.02em', textShadow:'0 2px 8px rgba(0,0,0,0.25)' }}>{name} 👋</h1>
+          <p style={{ fontSize:11, color:'rgba(255,255,255,0.9)', margin:0, fontWeight:600 }}>{greeting},</p>
+          <h1 style={{ fontSize:20, fontWeight:900, color:'white', margin:0,
+            letterSpacing:'-.02em', textShadow:'0 2px 8px rgba(0,0,0,0.3)' }}>{name} 👋</h1>
         </div>
 
-        {/* Notificaciones — derecha */}
         <Link to="/calendar">
-          <div style={{ width:36, height:36, borderRadius:12, background:'rgba(255,255,255,0.88)', backdropFilter:'blur(8px)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18, position:'relative' }}>
+          <div style={{ width:36, height:36, borderRadius:12, background:'rgba(255,255,255,0.88)',
+            backdropFilter:'blur(8px)', display:'flex', alignItems:'center', justifyContent:'center',
+            fontSize:18, position:'relative' }}>
             🔔
-            {/* Badge — pendiente conectar a notificaciones reales */}
-            <div style={{ position:'absolute', top:-3, right:-3, width:10, height:10, borderRadius:'50%', background:'#EF4444', border:'2px solid white' }} />
+            <div style={{ position:'absolute', top:-3, right:-3, width:10, height:10,
+              borderRadius:'50%', background:'#EF4444', border:'2px solid white' }} />
           </div>
         </Link>
       </div>
 
-      {/* BOCADILLO — justo debajo del header, descartable */}
+      {/* TIP DE PANDI — debajo del header */}
       <AnimatePresence>
         {tipVisible && tip && (
           <motion.div
-            initial={{ opacity:0, y:-10 }}
-            animate={{ opacity:1, y:0 }}
+            initial={{ opacity:0, y:-10 }} animate={{ opacity:1, y:0 }}
             exit={{ opacity:0, y:-10 }}
             transition={{ type:'spring', damping:20, stiffness:300 }}
             onClick={handleTipClick}
             style={{ position:'absolute', top:72, left:16, right:16, cursor:'pointer', zIndex:8 }}>
             <motion.div
-              animate={{ background: tipOpen ? 'rgba(255,255,255,0.97)' : 'rgba(255,255,255,0.75)', boxShadow: tipOpen ? '0 8px 24px rgba(0,0,0,0.15)' : '0 2px 8px rgba(0,0,0,0.08)' }}
+              animate={{ background: tipOpen ? 'rgba(255,255,255,0.97)' : 'rgba(255,255,255,0.78)',
+                boxShadow: tipOpen ? '0 8px 24px rgba(0,0,0,0.15)' : '0 2px 8px rgba(0,0,0,0.08)' }}
               transition={{ duration:0.3 }}
-              style={{ borderRadius:16, padding:'10px 12px', backdropFilter:'blur(16px)', border:`1px solid ${tipOpen ? 'rgba(46,196,182,0.3)' : 'rgba(255,255,255,0.5)'}` }}>
+              style={{ borderRadius:16, padding:'10px 12px', backdropFilter:'blur(16px)',
+                border:`1px solid ${tipOpen ? 'rgba(46,196,182,0.3)' : 'rgba(255,255,255,0.5)'}` }}>
               <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:4 }}>
-                <p style={{ fontSize:10, fontWeight:800, color:theme.primary||'#2EC4B6', margin:0, textTransform:'uppercase', letterSpacing:'.05em' }}>💡 Tip de Pandi</p>
+                <p style={{ fontSize:10, fontWeight:800, color:theme.primary||'#2EC4B6',
+                  margin:0, textTransform:'uppercase', letterSpacing:'.05em' }}>💡 Tip de Pandi</p>
                 <button onClick={e => { e.stopPropagation(); dismissTip() }}
-                  style={{ fontSize:10, color:'#9CA3AF', background:'none', border:'none', cursor:'pointer', padding:0, lineHeight:1 }}>✕</button>
+                  style={{ fontSize:10, color:'#9CA3AF', background:'none', border:'none', cursor:'pointer', padding:0 }}>✕</button>
               </div>
               <AnimatePresence mode="sync">
                 {tipOpen ? (
                   <motion.div key="open" initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }} transition={{ duration:0.2 }}>
                     <p style={{ fontSize:12, color:'#1A2332', lineHeight:1.5, margin:'0 0 8px', fontWeight:500 }}>{tip}</p>
                     <button onClick={e => { e.stopPropagation(); dismissTip() }}
-                      style={{ fontSize:10, color:theme.primary||'#2EC4B6', fontWeight:700, background:'none', border:'none', cursor:'pointer', padding:0 }}>
+                      style={{ fontSize:10, color:theme.primary||'#2EC4B6', fontWeight:700,
+                        background:'none', border:'none', cursor:'pointer', padding:0 }}>
                       Entendido ✓
                     </button>
                   </motion.div>
                 ) : (
                   <motion.div key="closed" initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }} transition={{ duration:0.2 }}>
-                    <p style={{ fontSize:11, color:'rgba(26,35,50,0.75)', lineHeight:1.4, margin:0, overflow:'hidden', display:'-webkit-box', WebkitLineClamp:2, WebkitBoxOrient:'vertical' }}>{tip}</p>
+                    <p style={{ fontSize:11, color:'rgba(26,35,50,0.75)', lineHeight:1.4, margin:0,
+                      overflow:'hidden', display:'-webkit-box', WebkitLineClamp:2, WebkitBoxOrient:'vertical' }}>{tip}</p>
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -238,31 +243,45 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name, onXpBarRef }
         )}
       </AnimatePresence>
 
-      {/* PANDI — en % para escalar con el contenedor */}
+      {/* PANDI — capa independiente, animada, centrada sobre la plataforma */}
       <div style={{
-        position:'absolute',
-        bottom: isMobile ? '14%' : '12%',
-        left:'50%',
-        transform:'translateX(-50%)',
-        zIndex:5,
-        width: isMobile ? '42%' : '20%',
-        maxWidth: isMobile ? 190 : 200,
+        position: 'absolute',
+        bottom: '14%',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        zIndex: 5,
+        width: isMobile ? '48%' : '22%',
+        maxWidth: 200,
       }}>
         <div style={{ position:'relative' }}>
-          <motion.div animate={{ opacity:[0.3,0.5,0.3] }} transition={{ duration:3, repeat:Infinity, ease:'easeInOut' }}
-            style={{ position:'absolute', top:'50%', left:'50%', transform:'translate(-50%,-50%)', width:'80%', height:'80%', borderRadius:'50%', background:`radial-gradient(circle, ${cfg.glow} 0%, transparent 65%)`, filter:'blur(24px)', zIndex:-1, pointerEvents:'none' }} />
-          <motion.div animate={{ scaleX:[1,1.04,1], opacity:[0.25,0.35,0.25] }} transition={{ duration:3, repeat:Infinity, ease:'easeInOut' }}
-            style={{ position:'absolute', bottom:-4, left:'50%', transform:'translateX(-50%)', width:'50%', height:10, borderRadius:'50%', background:'rgba(0,0,0,0.18)', filter:'blur(5px)', zIndex:-1 }} />
+          {/* Glow bajo Pandi */}
+          <motion.div
+            animate={{ opacity:[0.3,0.5,0.3] }}
+            transition={{ duration:3, repeat:Infinity, ease:'easeInOut' }}
+            style={{ position:'absolute', top:'50%', left:'50%',
+              transform:'translate(-50%,-50%)', width:'80%', height:'80%',
+              borderRadius:'50%', background:`radial-gradient(circle, ${cfg.glow} 0%, transparent 65%)`,
+              filter:'blur(24px)', zIndex:-1, pointerEvents:'none' }} />
+          {/* Sombra suelo */}
+          <motion.div
+            animate={{ scaleX:[1,1.04,1], opacity:[0.2,0.3,0.2] }}
+            transition={{ duration:3, repeat:Infinity, ease:'easeInOut' }}
+            style={{ position:'absolute', bottom:-4, left:'50%',
+              transform:'translateX(-50%)', width:'50%', height:8,
+              borderRadius:'50%', background:'rgba(0,0,0,0.15)',
+              filter:'blur(4px)', zIndex:-1 }} />
+          {/* Imagen Pandi */}
           <div style={{ filter:`drop-shadow(0 12px 20px ${cfg.glow})` }}>
             {imgErr
               ? <span style={{ fontSize:'15vw', display:'block', textAlign:'center' }}>🐾</span>
-              : <img src={currentFrame} alt="Pandi" style={{ width:'100%', height:'auto', objectFit:'contain', display:'block' }} onError={() => setImgErr(true)} />
+              : <img src={currentFrame} alt="Pandi"
+                  style={{ width:'100%', height:'auto', objectFit:'contain', display:'block' }}
+                  onError={() => setImgErr(true)} />
             }
           </div>
         </div>
       </div>
 
-      {/* XP BAR — eliminada de aquí, se renderiza en el scroll */}
     </div>
   )
 }

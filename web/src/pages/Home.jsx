@@ -12,6 +12,7 @@ import PandiInsights from '../components/PandiInsights'
 import { Plus, Minus as MinusIcon, Droplets } from 'lucide-react'
 import DailyCheckin from '../components/DailyCheckin'
 import CoachSuggestion from '../components/CoachSuggestion'
+import { useModuleAwareness, useCoachAwareness } from '../contexts/CoachAwarenessContext'
 
 const STATE_CONFIG = {
   GREEN: {
@@ -71,6 +72,7 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name, onXpBarRef }
   const [tipOpen,    setTipOpen]    = useState(false)
   const [tipVisible, setTipVisible] = useState(false)
   const [tip,        setTip]        = useState('')
+  const { recoveryLight, pandiMood, pandiStage, tomorrowPlan } = useCoachAwareness()
 
   useEffect(() => {
     ALL_FRAMES.forEach(src => { const i = new Image(); i.src = src })

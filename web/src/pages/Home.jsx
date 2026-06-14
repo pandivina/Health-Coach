@@ -154,10 +154,15 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name, onXpBarRef }
       {/* HEADER */}
       <div style={{ position:'absolute', top:0, left:0, right:0, zIndex:10, padding:'14px 16px', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
 
-        {/* Perfil — izquierda */}
-        <Link to="/profile">
-          <div style={{ width:36, height:36, borderRadius:12, background:'rgba(255,255,255,0.88)', backdropFilter:'blur(8px)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18 }}>☰</div>
-        </Link>
+        {/* Perfil + Onboarding — izquierda */}
+        <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+          <Link to="/profile">
+            <div style={{ width:36, height:36, borderRadius:12, background:'rgba(255,255,255,0.88)', backdropFilter:'blur(8px)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18 }}>☰</div>
+          </Link>
+          <Link to="/onboarding">
+            <div style={{ width:36, height:36, borderRadius:12, background:'rgba(255,255,255,0.88)', backdropFilter:'blur(8px)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:16 }}>✨</div>
+          </Link>
+        </div>
 
         {/* Saludo — centro */}
         <div style={{ textAlign:'center' }}>

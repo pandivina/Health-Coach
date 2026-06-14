@@ -145,8 +145,8 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name, onXpBarRef }
     <div style={{
       position:'relative',
       width:'100%',
-      aspectRatio: isMobile ? '4/3' : '16/6',
-      maxHeight: isMobile ? 520 : 480,
+      height: isMobile ? '75vw' : '45vw',
+      maxHeight: isMobile ? 500 : 400,
       overflow:'hidden',
       background:'#f8fafa',
     }}>
@@ -159,7 +159,7 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name, onXpBarRef }
           style={{ position:'absolute', inset:0, zIndex:0 }}>
           {bgErr
             ? <div style={{ width:'100%', height:'100%', background: recoveryLight==='GREEN' ? 'linear-gradient(180deg,#c8f5e8,#e0faf0,#f0fffe)' : recoveryLight==='YELLOW' ? 'linear-gradient(180deg,#fef3c7,#fffbeb,#fffff0)' : 'linear-gradient(180deg,#ffe4ec,#fff0f5,#fff5f7)' }} />
-            : <img src={cfg.bg} alt="Santuario" style={{ width:'100%', height:'100%', objectFit:'cover', objectPosition:'center top' }} onError={() => setBgErr(true)} />
+            : <img src={cfg.bg} alt="Santuario" style={{ width:'100%', height:'100%', objectFit:'contain', objectPosition:'center bottom' }} onError={() => setBgErr(true)} />
           }
         </motion.div>
       </AnimatePresence>
@@ -241,12 +241,12 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name, onXpBarRef }
       {/* PANDI — en % para escalar con el contenedor */}
       <div style={{
         position:'absolute',
-        bottom: isMobile ? '2%' : '4%',
+        bottom: isMobile ? '14%' : '12%',
         left:'50%',
         transform:'translateX(-50%)',
         zIndex:5,
-        width: isMobile ? '38%' : '18%',
-        maxWidth: isMobile ? 180 : 200,
+        width: isMobile ? '42%' : '20%',
+        maxWidth: isMobile ? 190 : 200,
       }}>
         <div style={{ position:'relative' }}>
           <motion.div animate={{ opacity:[0.3,0.5,0.3] }} transition={{ duration:3, repeat:Infinity, ease:'easeInOut' }}

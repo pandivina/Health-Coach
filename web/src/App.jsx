@@ -11,6 +11,7 @@ import { PrivacyPolicy, TermsOfUse, MedicalDisclaimerPage } from './pages/Legal'
 import UpdateBanner from './components/UpdateBanner'
 import WorkoutView from './pages/WorkoutView'
 import { ToastProvider } from './components/ToastProvider'
+import { CoachAwarenessProvider } from './contexts/CoachAwarenessContext'
 
 
 // Public
@@ -113,6 +114,7 @@ export default function App() {
   return (
     <ToastProvider>
   <AchievementToastProvider>
+    <CoachAwarenessProvider>
       <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <Routes>
           <Route path="/" element={<SmartRoot />} />
@@ -153,6 +155,7 @@ export default function App() {
         <CookieBanner />
         <UpdateBanner />
       </BrowserRouter>
+      </CoachAwarenessProvider>
       </AchievementToastProvider>
     </ToastProvider>
   )

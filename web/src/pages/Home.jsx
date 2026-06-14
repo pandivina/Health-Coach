@@ -152,46 +152,48 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name, onXpBarRef }
       <div style={{ position:'absolute', bottom:0, left:0, right:0, height:120, zIndex:1, background:'linear-gradient(to top, #f8fafa 0%, transparent 100%)', pointerEvents:'none' }} />
 
       {/* HEADER */}
-      <div style={{ position:'absolute', top:0, left:0, right:0, zIndex:10, padding:'16px 20px', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-        <div>
-          <p style={{ fontSize:11, color:'rgba(255,255,255,0.8)', margin:0, fontWeight:600 }}>{greeting},</p>
-          <h1 style={{ fontSize:22, fontWeight:900, color:'white', margin:0, letterSpacing:'-.02em', textShadow:'0 2px 8px rgba(0,0,0,0.25)' }}>{name} 👋</h1>
+      <div style={{ position:'absolute', top:0, left:0, right:0, zIndex:10, padding:'14px 16px', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+
+        {/* Perfil — izquierda */}
+        <Link to="/profile">
+          <div style={{ width:36, height:36, borderRadius:12, background:'rgba(255,255,255,0.88)', backdropFilter:'blur(8px)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18 }}>☰</div>
+        </Link>
+
+        {/* Saludo — centro */}
+        <div style={{ textAlign:'center' }}>
+          <p style={{ fontSize:11, color:'rgba(255,255,255,0.85)', margin:0, fontWeight:600 }}>{greeting},</p>
+          <h1 style={{ fontSize:20, fontWeight:900, color:'white', margin:0, letterSpacing:'-.02em', textShadow:'0 2px 8px rgba(0,0,0,0.25)' }}>{name} 👋</h1>
         </div>
-        <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-          <div style={{ padding:'6px 12px', borderRadius:12, background:'rgba(255,255,255,0.88)', backdropFilter:'blur(8px)' }}>
-            <p style={{ fontSize:9, color:'#6B7280', margin:0, textAlign:'center' }}>Nivel</p>
-            <p style={{ fontSize:14, fontWeight:900, color:theme.primary, margin:0, textAlign:'center' }}>{profile?.level || 1}</p>
+
+        {/* Notificaciones — derecha */}
+        <Link to="/calendar">
+          <div style={{ width:36, height:36, borderRadius:12, background:'rgba(255,255,255,0.88)', backdropFilter:'blur(8px)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18, position:'relative' }}>
+            🔔
+            {/* Badge — pendiente conectar a notificaciones reales */}
+            <div style={{ position:'absolute', top:-3, right:-3, width:10, height:10, borderRadius:'50%', background:'#EF4444', border:'2px solid white' }} />
           </div>
-          <div style={{ padding:'6px 12px', borderRadius:12, background:'rgba(255,255,255,0.88)', backdropFilter:'blur(8px)' }}>
-            <p style={{ fontSize:9, color:'#6B7280', margin:0, textAlign:'center' }}>Racha</p>
-            <p style={{ fontSize:14, fontWeight:900, color:'#F97316', margin:0, textAlign:'center' }}>🔥{profile?.streak || 0}</p>
-          </div>
-          <Link to="/onboarding">
-            <div style={{ width:36, height:36, borderRadius:12, background:'rgba(255,255,255,0.88)', backdropFilter:'blur(8px)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:16 }}>
-              ✨
-            </div>
-          </Link>
-          <Link to="/profile">
-            <div style={{ width:36, height:36, borderRadius:12, background:'rgba(255,255,255,0.88)', backdropFilter:'blur(8px)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:16 }}>☰</div>
-          </Link>
-        </div>
+        </Link>
       </div>
 
-      {/* BOCADILLO — encima de Pandi, anclado más arriba */}
+      {/* BOCADILLO — justo debajo del header, descartable */}
       <AnimatePresence>
         {tipVisible && tip && (
           <motion.div
-            initial={{ opacity:0, scale:0.8, x:10 }}
-            animate={{ opacity:1, scale:1, x:0 }}
-            exit={{ opacity:0, scale:0.8, x:10 }}
+            initial={{ opacity:0, y:-10 }}
+            animate={{ opacity:1, y:0 }}
+            exit={{ opacity:0, y:-10 }}
             transition={{ type:'spring', damping:20, stiffness:300 }}
             onClick={handleTipClick}
-            style={{ position:'absolute', bottom:100, left:16, right:16, cursor:'pointer', zIndex:6 }}>
+            style={{ position:'absolute', top:72, left:16, right:16, cursor:'pointer', zIndex:8 }}>
             <motion.div
-              animate={{ background: tipOpen ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.6)', boxShadow: tipOpen ? '0 8px 24px rgba(0,0,0,0.15)' : '0 2px 8px rgba(0,0,0,0.08)' }}
+              animate={{ background: tipOpen ? 'rgba(255,255,255,0.97)' : 'rgba(255,255,255,0.75)', boxShadow: tipOpen ? '0 8px 24px rgba(0,0,0,0.15)' : '0 2px 8px rgba(0,0,0,0.08)' }}
               transition={{ duration:0.3 }}
-              style={{ borderRadius:16, borderBottomLeftRadius:4, padding:'10px 12px', backdropFilter:'blur(12px)', border:`1px solid ${tipOpen ? 'rgba(46,196,182,0.3)' : 'rgba(255,255,255,0.4)'}` }}>
-              <p style={{ fontSize:10, fontWeight:800, color:theme.primary||'#2EC4B6', margin:'0 0 4px', textTransform:'uppercase', letterSpacing:'.05em', textAlign:'center' }}>💡 Tip de Pandi</p>
+              style={{ borderRadius:16, padding:'10px 12px', backdropFilter:'blur(16px)', border:`1px solid ${tipOpen ? 'rgba(46,196,182,0.3)' : 'rgba(255,255,255,0.5)'}` }}>
+              <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:4 }}>
+                <p style={{ fontSize:10, fontWeight:800, color:theme.primary||'#2EC4B6', margin:0, textTransform:'uppercase', letterSpacing:'.05em' }}>💡 Tip de Pandi</p>
+                <button onClick={e => { e.stopPropagation(); dismissTip() }}
+                  style={{ fontSize:10, color:'#9CA3AF', background:'none', border:'none', cursor:'pointer', padding:0, lineHeight:1 }}>✕</button>
+              </div>
               <AnimatePresence mode="sync">
                 {tipOpen ? (
                   <motion.div key="open" initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }} transition={{ duration:0.2 }}>
@@ -203,7 +205,7 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name, onXpBarRef }
                   </motion.div>
                 ) : (
                   <motion.div key="closed" initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }} transition={{ duration:0.2 }}>
-                    <p style={{ fontSize:11, color:'rgba(26,35,50,0.75)', lineHeight:1.4, margin:0, textAlign:'center', overflow:'hidden', display:'-webkit-box', WebkitLineClamp:2, WebkitBoxOrient:'vertical' }}>{tip}</p>
+                    <p style={{ fontSize:11, color:'rgba(26,35,50,0.75)', lineHeight:1.4, margin:0, overflow:'hidden', display:'-webkit-box', WebkitLineClamp:2, WebkitBoxOrient:'vertical' }}>{tip}</p>
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -237,13 +239,29 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name, onXpBarRef }
 function XPBar({ profile, cfg }) {
   return (
     <div style={{ padding:'10px 20px 0', marginTop:-4 }}>
-      <div style={{ display:'flex', justifyContent:'space-between', fontSize:10, color:'rgba(32,178,170,1)', marginBottom:5 }}>
-        <span style={{ fontWeight:700 }}>{profile?.xp || 0} XP</span>
-        <span>Nivel {(profile?.level || 1) + 1} → {(profile?.level || 1) * 500} XP</span>
+      {/* Nivel + Racha + XP en una fila */}
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:6 }}>
+        <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+          <div style={{ display:'flex', alignItems:'center', gap:4 }}>
+            <span style={{ fontSize:10, color:'#9CA3AF', fontWeight:600 }}>Nivel</span>
+            <span style={{ fontSize:13, fontWeight:900, color: cfg?.dot || '#2EC4B6' }}>{profile?.level || 1}</span>
+          </div>
+          <div style={{ width:1, height:12, background:'rgba(0,0,0,0.1)' }} />
+          <div style={{ display:'flex', alignItems:'center', gap:4 }}>
+            <span style={{ fontSize:13 }}>🔥</span>
+            <span style={{ fontSize:13, fontWeight:900, color:'#F97316' }}>{profile?.streak || 0}</span>
+            <span style={{ fontSize:10, color:'#9CA3AF', fontWeight:600 }}>racha</span>
+          </div>
+        </div>
+        <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+          <span style={{ fontSize:10, fontWeight:700, color: cfg?.dot || '#2EC4B6' }}>{profile?.xp || 0} XP</span>
+          <span style={{ fontSize:10, color:'#9CA3AF' }}>/ {(profile?.level || 1) * 500}</span>
+        </div>
       </div>
-      <div style={{ height:6, borderRadius:3, background:'rgba(0,0,0,0.1)', overflow:'hidden' }}>
+      {/* Barra */}
+      <div style={{ height:5, borderRadius:3, background:'rgba(0,0,0,0.08)', overflow:'hidden' }}>
         <motion.div
-          style={{ height:'100%', borderRadius:3, background: cfg?.dot || '#2EC4B6', boxShadow:`0 0 8px ${cfg?.dot || '#2EC4B6'}` }}
+          style={{ height:'100%', borderRadius:3, background: cfg?.dot || '#2EC4B6', boxShadow:`0 0 8px ${cfg?.dot || '#2EC4B6'}60` }}
           initial={{ width:0 }}
           animate={{ width:`${((profile?.xp || 0) % 500) / 5}%` }}
           transition={{ duration:0.8 }}

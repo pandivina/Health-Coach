@@ -130,7 +130,7 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name, onXpBarRef }
     : cfg.frames[frameIdx]
 
   return (
-    <div style={{ position:'relative', height:'72vw', minHeight:380, maxHeight:560, overflow:'hidden', background:'#f8fafa' }}>
+    <div style={{ position:'relative', height:'72vw', minHeight:360, maxHeight:520, overflow:'hidden', background:'#f8fafa' }}>
 
       {/* FONDO */}
       <AnimatePresence mode="wait">
@@ -140,7 +140,7 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name, onXpBarRef }
           style={{ position:'absolute', inset:0, zIndex:0 }}>
           {bgErr
             ? <div style={{ width:'100%', height:'100%', background: recoveryLight==='GREEN' ? 'linear-gradient(180deg,#c8f5e8,#e0faf0,#f0fffe)' : recoveryLight==='YELLOW' ? 'linear-gradient(180deg,#fef3c7,#fffbeb,#fffff0)' : 'linear-gradient(180deg,#ffe4ec,#fff0f5,#fff5f7)' }} />
-            : <img src={cfg.bg} alt="Santuario" style={{ width:'100%', height:'100%', objectFit:'contain', objectPosition:'center bottom' }} onError={() => setBgErr(true)} />
+            : <img src={cfg.bg} alt="Santuario" style={{ width:'100%', height:'100%', objectFit:'cover', objectPosition:'center top' }} onError={() => setBgErr(true)} />
           }
         </motion.div>
       </AnimatePresence>
@@ -148,8 +148,8 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name, onXpBarRef }
       {/* Overlay top */}
       <div style={{ position:'absolute', top:0, left:0, right:0, height:110, zIndex:1, background:'linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, transparent 100%)', pointerEvents:'none' }} />
 
-      {/* Overlay bottom — más alto para que tape el fondo bajo Pandi */}
-      <div style={{ position:'absolute', bottom:0, left:0, right:0, height:120, zIndex:1, background:'linear-gradient(to top, #f8fafa 0%, transparent 100%)', pointerEvents:'none' }} />
+      {/* Overlay bottom */}
+      <div style={{ position:'absolute', bottom:0, left:0, right:0, height:140, zIndex:1, background:'linear-gradient(to top, #f8fafa 0%, transparent 100%)', pointerEvents:'none' }} />
 
       {/* HEADER */}
       <div style={{ position:'absolute', top:0, left:0, right:0, zIndex:10, padding:'14px 16px', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
@@ -214,8 +214,8 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name, onXpBarRef }
         )}
       </AnimatePresence>
 
-      {/* PANDI centrada */}
-      <div style={{ position:'absolute', bottom:'16%', left:0, right:0, zIndex:5, display:'flex', alignItems:'flex-end', justifyContent:'center' }}>
+      {/* PANDI centrada — posicionada sobre la plataforma del fondo */}
+      <div style={{ position:'absolute', bottom:'8%', left:0, right:0, zIndex:5, display:'flex', alignItems:'flex-end', justifyContent:'center' }}>
         <div style={{ position:'relative', flexShrink:0 }}>
           <motion.div animate={{ opacity:[0.3,0.5,0.3] }} transition={{ duration:3, repeat:Infinity, ease:'easeInOut' }}
             style={{ position:'absolute', top:'50%', left:'50%', transform:'translate(-50%,-50%)', width:180, height:180, borderRadius:'50%', background:`radial-gradient(circle, ${cfg.glow} 0%, transparent 65%)`, filter:'blur(24px)', zIndex:-1, pointerEvents:'none' }} />

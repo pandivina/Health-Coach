@@ -186,7 +186,7 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name, onXpBarRef }
             exit={{ opacity:0, scale:0.8, x:10 }}
             transition={{ type:'spring', damping:20, stiffness:300 }}
             onClick={handleTipClick}
-            style={{ position:'absolute', bottom:100, left:16, right:16, cursor:'pointer', zIndex:6 }}>
+            style={{ position:'absolute', bottom:200, left:16, right:16, cursor:'pointer', zIndex:6 }}>
             <motion.div
               animate={{ background: tipOpen ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.6)', boxShadow: tipOpen ? '0 8px 24px rgba(0,0,0,0.15)' : '0 2px 8px rgba(0,0,0,0.08)' }}
               transition={{ duration:0.3 }}

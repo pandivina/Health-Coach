@@ -130,7 +130,7 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name, onXpBarRef }
     : cfg.frames[frameIdx]
 
   return (
-    <div style={{ position:'relative', height:'56vw', minHeight:340, maxHeight:480, overflow:'hidden', background:'#f8fafa' }}>
+    <div style={{ position:'relative', height:'72vw', minHeight:380, maxHeight:560, overflow:'hidden', background:'#f8fafa' }}>
 
       {/* FONDO */}
       <AnimatePresence mode="wait">

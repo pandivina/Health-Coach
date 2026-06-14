@@ -1,558 +1,344 @@
-import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
-import { motion, AnimatePresence } from 'framer-motion'
-import { useStore } from '../store/useStore'
-import { useTheme } from '../contexts/ThemeProvider'
-import { usePandiState } from '../contexts/PandiStateContext'
-import { supabase } from '../lib/supabase'
-import { useTour } from '../hooks/useTour'
-import { useSectionContext } from '../hooks/useSectionContext'
-import TourHelpButton from '../components/tour/TourHelpButton'
-import PandiInsights from '../components/PandiInsights'
-import { Plus, Minus as MinusIcon, Droplets } from 'lucide-react'
-import DailyCheckin from '../components/DailyCheckin'
-import CoachSuggestion from '../components/CoachSuggestion'
+const express = require('express');
+const router = express.Router();
+const Anthropic = require('@anthropic-ai/sdk');
+const { requireAuth, supabaseAdmin } = require('../middleware/auth');
 
-const STATE_CONFIG = {
-  GREEN: {
-    bg:            '/panda/sanctuary_green.png',
-    glow:          'rgba(46,196,182,0.4)',
-    dot:           '#2EC4B6',
-    msg:           'Hoy tienes energía para todo.',
-    frames:        ['/panda/panda_base.png','/panda/panda_happy.png','/panda/panda_happy.png','/panda/panda_base.png','/panda/panda_happy.png','/panda/panda_base.png'],
-    frameDuration: 4500,
-  },
-  YELLOW: {
-    bg:            '/panda/sanctuary_yellow.png',
-    glow:          'rgba(245,158,11,0.4)',
-    dot:           '#F59E0B',
-    msg:           'Ritmo moderado. Ajustando tu plan.',
-    frames:        ['/panda/panda_base.png','/panda/thinking_1.png','/panda/panda_base.png','/panda/thinking_1.png'],
-    frameDuration: 3000,
-  },
-  RED: {
-    bg:            '/panda/sanctuary_red.png',
-    glow:          'rgba(255,143,163,0.4)',
-    dot:           '#FF8FA3',
-    msg:           'Hoy el descanso ES el entrenamiento.',
-    frames:        ['/panda/panda_base.png','/panda/thinking_1.png','/panda/panda_base.png','/panda/thinking_1.png'],
-    frameDuration: 3500,
-  },
-}
+const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+const FREE_DAILY_LIMIT = 10;
 
-const ALL_FRAMES = [
-  '/panda/panda_blink.png',
-  '/panda/panda_tip.png',
-  ...STATE_CONFIG.GREEN.frames,
-  ...STATE_CONFIG.YELLOW.frames,
-  ...STATE_CONFIG.RED.frames,
-  STATE_CONFIG.GREEN.bg,
-  STATE_CONFIG.YELLOW.bg,
-  STATE_CONFIG.RED.bg,
-]
+// ─── RATE LIMIT ───────────────────────────────────────────────────────────────
+async function checkCoachLimit(req, res, next) {
+  try {
+    const userId = req.user.id;
+    const today  = new Date().toISOString().split('T')[0];
 
-// ── Detecta si estamos en móvil (< 768px) y se actualiza al redimensionar ──
-function useIsMobile() {
-  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768)
-  useEffect(() => {
-    const fn = () => setIsMobile(window.innerWidth < 768)
-    window.addEventListener('resize', fn)
-    return () => window.removeEventListener('resize', fn)
-  }, [])
-  return isMobile
-}
+    const { data: profile } = await supabaseAdmin
+      .from('user_profiles').select('is_premium').eq('id', userId).single();
 
-function Sanctuary({ recoveryLight, profile, theme, greeting, name, onXpBarRef }) {
-  const cfg      = STATE_CONFIG[recoveryLight] || STATE_CONFIG.GREEN
-  const isMobile = useIsMobile()
-  const [frameIdx,   setFrameIdx]   = useState(0)
-  const [imgErr,     setImgErr]     = useState(false)
-  const [bgErr,      setBgErr]      = useState(false)
-  const [blinking,   setBlinking]   = useState(false)
-  const [tipOpen,    setTipOpen]    = useState(false)
-  const [tipVisible, setTipVisible] = useState(false)
-  const [tip,        setTip]        = useState('')
+    if (profile?.is_premium) return next();
 
-  useEffect(() => {
-    ALL_FRAMES.forEach(src => { const i = new Image(); i.src = src })
-  }, [])
+    const { data: usage } = await supabaseAdmin
+      .from('coach_usage').select('count').eq('user_id', userId).eq('date', today).maybeSingle();
 
-  useEffect(() => {
-    setFrameIdx(0)
-    setImgErr(false)
-  }, [recoveryLight])
+    const count = usage?.count || 0;
 
-  useEffect(() => {
-    if (cfg.frames.length <= 1) return
-    const t = setInterval(() => setFrameIdx(i => (i + 1) % cfg.frames.length), cfg.frameDuration)
-    return () => clearInterval(t)
-  }, [recoveryLight, cfg.frames.length, cfg.frameDuration])
-
-  useEffect(() => {
-    const schedule = () => setTimeout(() => {
-      setBlinking(true)
-      setTimeout(() => { setBlinking(false); schedule() }, 120)
-    }, 3000 + Math.random() * 4000)
-    const t = schedule()
-    return () => clearTimeout(t)
-  }, [])
-
-  useEffect(() => {
-    const cacheKey = `pandi_tip_ai_${new Date().toISOString().slice(0, 13)}`
-    const cached   = localStorage.getItem(cacheKey)
-    if (cached) {
-      setTip(cached)
-      setTimeout(() => setTipVisible(true), 2000)
-      return
+    if (count >= FREE_DAILY_LIMIT) {
+      return res.status(429).json({
+        error: 'limit_reached',
+        message: `Has alcanzado el límite de ${FREE_DAILY_LIMIT} mensajes diarios del plan gratuito.`,
+        limit: FREE_DAILY_LIMIT,
+        used: count,
+      });
     }
-    import('../lib/supabase').then(({ supabase }) => {
-      supabase.auth.getSession().then(({ data: { session } }) => {
-        if (!session) return
-        fetch(`${import.meta.env.VITE_API_URL}/api/tip/daily`, {
-          headers: { Authorization: `Bearer ${session.access_token}` }
-        })
-        .then(r => r.json())
-        .then(data => {
-          if (data.tip) {
-            setTip(data.tip)
-            localStorage.setItem(cacheKey, data.tip)
-            setTimeout(() => setTipVisible(true), 2000)
-          }
-        })
-        .catch(() => {
-          const fallbacks = [
-            'Beber agua antes de comer reduce la ingesta calórica hasta un 13%. 💧',
-            'Una caminata de 10 min después de comer mejora la glucemia. 🚶',
-            'Dormir menos de 7h aumenta el hambre hasta un 24%. 😴',
-          ]
-          setTip(fallbacks[Math.floor(Math.random() * fallbacks.length)])
-          setTimeout(() => setTipVisible(true), 2000)
-        })
-      })
-    })
-  }, [])
 
-  function handleTipClick() { setTipOpen(o => !o) }
-  function dismissTip() { setTipVisible(false); setTipOpen(false) }
+    await supabaseAdmin.from('coach_usage').upsert(
+      { user_id: userId, date: today, count: count + 1 },
+      { onConflict: 'user_id,date' }
+    );
 
-  const currentFrame = blinking
-    ? '/panda/panda_blink.png'
-    : tipOpen
-    ? '/panda/panda_tip.png'
-    : cfg.frames[frameIdx]
-
-  return (
-    <div style={{
-      position:'relative',
-      width:'100%',
-      height: isMobile ? '75vw' : '45vw',
-      maxHeight: isMobile ? 500 : 400,
-      overflow:'hidden',
-      background:'#f8fafa',
-    }}>
-
-      {/* FONDO */}
-      <AnimatePresence mode="wait">
-        <motion.div key={recoveryLight}
-          initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
-          transition={{ duration:1.2 }}
-          style={{ position:'absolute', inset:0, zIndex:0 }}>
-          {bgErr
-            ? <div style={{ width:'100%', height:'100%', background: recoveryLight==='GREEN' ? 'linear-gradient(180deg,#c8f5e8,#e0faf0,#f0fffe)' : recoveryLight==='YELLOW' ? 'linear-gradient(180deg,#fef3c7,#fffbeb,#fffff0)' : 'linear-gradient(180deg,#ffe4ec,#fff0f5,#fff5f7)' }} />
-            : <img src={cfg.bg} alt="Santuario" style={{ width:'100%', height:'100%', objectFit:'contain', objectPosition:'center bottom' }} onError={() => setBgErr(true)} />
-          }
-        </motion.div>
-      </AnimatePresence>
-
-      {/* Overlay top */}
-      <div style={{ position:'absolute', top:0, left:0, right:0, height:'28%', zIndex:1, background:'linear-gradient(to bottom, rgba(0,0,0,0.28) 0%, transparent 100%)', pointerEvents:'none' }} />
-
-      {/* Overlay bottom */}
-      <div style={{ position:'absolute', bottom:0, left:0, right:0, height:'30%', zIndex:1, background:'linear-gradient(to top, #f8fafa 0%, transparent 100%)', pointerEvents:'none' }} />
-
-      {/* HEADER */}
-      <div style={{ position:'absolute', top:0, left:0, right:0, zIndex:10, padding:'14px 16px', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-
-        {/* Perfil + Onboarding — izquierda */}
-        <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-          <Link to="/profile">
-            <div style={{ width:36, height:36, borderRadius:12, background:'rgba(255,255,255,0.88)', backdropFilter:'blur(8px)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18 }}>☰</div>
-          </Link>
-          <Link to="/onboarding">
-            <div style={{ width:36, height:36, borderRadius:12, background:'rgba(255,255,255,0.88)', backdropFilter:'blur(8px)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:16 }}>✨</div>
-          </Link>
-        </div>
-
-        {/* Saludo — centro */}
-        <div style={{ textAlign:'center' }}>
-          <p style={{ fontSize:11, color:'rgba(255,255,255,0.85)', margin:0, fontWeight:600 }}>{greeting},</p>
-          <h1 style={{ fontSize:20, fontWeight:900, color:'white', margin:0, letterSpacing:'-.02em', textShadow:'0 2px 8px rgba(0,0,0,0.25)' }}>{name} 👋</h1>
-        </div>
-
-        {/* Notificaciones — derecha */}
-        <Link to="/calendar">
-          <div style={{ width:36, height:36, borderRadius:12, background:'rgba(255,255,255,0.88)', backdropFilter:'blur(8px)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18, position:'relative' }}>
-            🔔
-            {/* Badge — pendiente conectar a notificaciones reales */}
-            <div style={{ position:'absolute', top:-3, right:-3, width:10, height:10, borderRadius:'50%', background:'#EF4444', border:'2px solid white' }} />
-          </div>
-        </Link>
-      </div>
-
-      {/* BOCADILLO — justo debajo del header, descartable */}
-      <AnimatePresence>
-        {tipVisible && tip && (
-          <motion.div
-            initial={{ opacity:0, y:-10 }}
-            animate={{ opacity:1, y:0 }}
-            exit={{ opacity:0, y:-10 }}
-            transition={{ type:'spring', damping:20, stiffness:300 }}
-            onClick={handleTipClick}
-            style={{ position:'absolute', top:72, left:16, right:16, cursor:'pointer', zIndex:8 }}>
-            <motion.div
-              animate={{ background: tipOpen ? 'rgba(255,255,255,0.97)' : 'rgba(255,255,255,0.75)', boxShadow: tipOpen ? '0 8px 24px rgba(0,0,0,0.15)' : '0 2px 8px rgba(0,0,0,0.08)' }}
-              transition={{ duration:0.3 }}
-              style={{ borderRadius:16, padding:'10px 12px', backdropFilter:'blur(16px)', border:`1px solid ${tipOpen ? 'rgba(46,196,182,0.3)' : 'rgba(255,255,255,0.5)'}` }}>
-              <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:4 }}>
-                <p style={{ fontSize:10, fontWeight:800, color:theme.primary||'#2EC4B6', margin:0, textTransform:'uppercase', letterSpacing:'.05em' }}>💡 Tip de Pandi</p>
-                <button onClick={e => { e.stopPropagation(); dismissTip() }}
-                  style={{ fontSize:10, color:'#9CA3AF', background:'none', border:'none', cursor:'pointer', padding:0, lineHeight:1 }}>✕</button>
-              </div>
-              <AnimatePresence mode="sync">
-                {tipOpen ? (
-                  <motion.div key="open" initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }} transition={{ duration:0.2 }}>
-                    <p style={{ fontSize:12, color:'#1A2332', lineHeight:1.5, margin:'0 0 8px', fontWeight:500 }}>{tip}</p>
-                    <button onClick={e => { e.stopPropagation(); dismissTip() }}
-                      style={{ fontSize:10, color:theme.primary||'#2EC4B6', fontWeight:700, background:'none', border:'none', cursor:'pointer', padding:0 }}>
-                      Entendido ✓
-                    </button>
-                  </motion.div>
-                ) : (
-                  <motion.div key="closed" initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }} transition={{ duration:0.2 }}>
-                    <p style={{ fontSize:11, color:'rgba(26,35,50,0.75)', lineHeight:1.4, margin:0, overflow:'hidden', display:'-webkit-box', WebkitLineClamp:2, WebkitBoxOrient:'vertical' }}>{tip}</p>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* PANDI — en % para escalar con el contenedor */}
-      <div style={{
-        position:'absolute',
-        bottom: isMobile ? '14%' : '12%',
-        left:'50%',
-        transform:'translateX(-50%)',
-        zIndex:5,
-        width: isMobile ? '42%' : '20%',
-        maxWidth: isMobile ? 190 : 200,
-      }}>
-        <div style={{ position:'relative' }}>
-          <motion.div animate={{ opacity:[0.3,0.5,0.3] }} transition={{ duration:3, repeat:Infinity, ease:'easeInOut' }}
-            style={{ position:'absolute', top:'50%', left:'50%', transform:'translate(-50%,-50%)', width:'80%', height:'80%', borderRadius:'50%', background:`radial-gradient(circle, ${cfg.glow} 0%, transparent 65%)`, filter:'blur(24px)', zIndex:-1, pointerEvents:'none' }} />
-          <motion.div animate={{ scaleX:[1,1.04,1], opacity:[0.25,0.35,0.25] }} transition={{ duration:3, repeat:Infinity, ease:'easeInOut' }}
-            style={{ position:'absolute', bottom:-4, left:'50%', transform:'translateX(-50%)', width:'50%', height:10, borderRadius:'50%', background:'rgba(0,0,0,0.18)', filter:'blur(5px)', zIndex:-1 }} />
-          <div style={{ filter:`drop-shadow(0 12px 20px ${cfg.glow})` }}>
-            {imgErr
-              ? <span style={{ fontSize:'15vw', display:'block', textAlign:'center' }}>🐾</span>
-              : <img src={currentFrame} alt="Pandi" style={{ width:'100%', height:'auto', objectFit:'contain', display:'block' }} onError={() => setImgErr(true)} />
-            }
-          </div>
-        </div>
-      </div>
-
-      {/* XP BAR — eliminada de aquí, se renderiza en el scroll */}
-    </div>
-  )
+    next();
+  } catch (err) {
+    next();
+  }
 }
 
-// ── XP BAR como componente independiente en el scroll ────────────────────────
-function XPBar({ profile, cfg }) {
-  return (
-    <div style={{ padding:'10px 20px 0', marginTop:-4 }}>
-      {/* Nivel + Racha + XP en una fila */}
-      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:6 }}>
-        <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-          <div style={{ display:'flex', alignItems:'center', gap:4 }}>
-            <span style={{ fontSize:10, color:'#9CA3AF', fontWeight:600 }}>Nivel</span>
-            <span style={{ fontSize:13, fontWeight:900, color: cfg?.dot || '#2EC4B6' }}>{profile?.level || 1}</span>
-          </div>
-          <div style={{ width:1, height:12, background:'rgba(0,0,0,0.1)' }} />
-          <div style={{ display:'flex', alignItems:'center', gap:4 }}>
-            <span style={{ fontSize:13 }}>🔥</span>
-            <span style={{ fontSize:13, fontWeight:900, color:'#F97316' }}>{profile?.streak || 0}</span>
-            <span style={{ fontSize:10, color:'#9CA3AF', fontWeight:600 }}>racha</span>
-          </div>
-        </div>
-        <div style={{ display:'flex', alignItems:'center', gap:6 }}>
-          <span style={{ fontSize:10, fontWeight:700, color: cfg?.dot || '#2EC4B6' }}>{profile?.xp || 0} XP</span>
-          <span style={{ fontSize:10, color:'#9CA3AF' }}>/ {(profile?.level || 1) * 500}</span>
-        </div>
-      </div>
-      {/* Barra */}
-      <div style={{ height:5, borderRadius:3, background:'rgba(0,0,0,0.08)', overflow:'hidden' }}>
-        <motion.div
-          style={{ height:'100%', borderRadius:3, background: cfg?.dot || '#2EC4B6', boxShadow:`0 0 8px ${cfg?.dot || '#2EC4B6'}60` }}
-          initial={{ width:0 }}
-          animate={{ width:`${((profile?.xp || 0) % 500) / 5}%` }}
-          transition={{ duration:0.8 }}
-        />
-      </div>
-    </div>
-  )
+// ─── MEMORIA PERSISTENTE ──────────────────────────────────────────────────────
+async function loadMemory(userId) {
+  try {
+    const { data } = await supabaseAdmin
+      .from('coach_memory')
+      .select('summary, preferences, important_events')
+      .eq('user_id', userId)
+      .maybeSingle();
+    return data || null;
+  } catch { return null; }
 }
 
-function DayTask({ to, icon, label, sublabel, color, done }) {
-  return (
-    <Link to={to}>
-      <motion.div whileTap={{ scale:0.97 }} style={{ display:'flex', alignItems:'center', gap:14, padding:'14px 16px', borderRadius:18, background:'rgba(255,255,255,0.95)', border:`1px solid ${done ? color+'30' : 'rgba(0,0,0,0.06)'}`, boxShadow: done ? `0 2px 12px ${color}15` : '0 2px 8px rgba(0,0,0,0.04)', marginBottom:8 }}>
-        <div style={{ width:44, height:44, borderRadius:14, flexShrink:0, background: done ? `${color}15` : 'rgba(0,0,0,0.04)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:22 }}>{icon}</div>
-        <div style={{ flex:1, minWidth:0 }}>
-          <p style={{ fontSize:14, fontWeight:700, color:'#1A2332', margin:0 }}>{label}</p>
-          <p style={{ fontSize:12, color:'#6B7280', margin:'2px 0 0' }}>{sublabel}</p>
-        </div>
-        {done
-          ? <div style={{ width:28, height:28, borderRadius:'50%', background:color, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}><span style={{ fontSize:12, color:'#fff' }}>✓</span></div>
-          : <div style={{ width:28, height:28, borderRadius:'50%', border:'2px solid rgba(0,0,0,0.1)', flexShrink:0 }} />
-        }
-      </motion.div>
-    </Link>
-  )
+async function updateMemory(userId, messages, lastReply) {
+  try {
+    const { data: existing } = await supabaseAdmin
+      .from('coach_memory').select('summary, message_count')
+      .eq('user_id', userId).maybeSingle();
+
+    const messageCount = (existing?.message_count || 0) + 1;
+    if (messageCount % 5 !== 0) {
+      await supabaseAdmin.from('coach_memory').upsert({
+        user_id: userId,
+        message_count: messageCount,
+        last_updated: new Date().toISOString(),
+      }, { onConflict: 'user_id' });
+      return;
+    }
+
+    const lastMessages = messages.slice(-10).map(m =>
+      `${m.role === 'user' ? 'Usuario' : 'Coach'}: ${m.content}`
+    ).join('\n');
+
+    const summaryRes = await anthropic.messages.create({
+      model: process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-5',
+      max_tokens: 400,
+      messages: [{
+        role: 'user',
+        content: `Eres un asistente que resume conversaciones de salud. 
+Resumen anterior: ${existing?.summary || 'Sin resumen previo'}
+
+Últimos mensajes:
+${lastMessages}
+
+Genera un resumen actualizado MUY CONCISO (máx 200 palabras) que incluya:
+- Objetivos y preocupaciones del usuario
+- Preferencias detectadas (alimentos, rutinas, horarios)
+- Eventos importantes mencionados
+- Contexto relevante para futuras conversaciones
+
+Solo el texto del resumen, sin introducción.`
+      }]
+    });
+
+    const newSummary = summaryRes.content[0].text.trim();
+
+    await supabaseAdmin.from('coach_memory').upsert({
+      user_id: userId,
+      summary: newSummary,
+      message_count: messageCount,
+      last_updated: new Date().toISOString(),
+    }, { onConflict: 'user_id' });
+
+  } catch (err) {
+    console.error('Memory update error:', err.message);
+  }
 }
 
-function WaterWidget({ userId }) {
-  const [glasses, setGlasses] = useState(0)
-  const [goal,    setGoal]    = useState(8)
-  const today = new Date().toISOString().split('T')[0]
+// ─── SYSTEM PROMPT EVOLUTIVO ──────────────────────────────────────────────────
+function buildEvolutivePersonality(fase, profileName) {
+  const name = profileName || 'Usuario';
 
-  useEffect(() => {
-    if (!userId) return
-    supabase.from('hydration_logs').select('glasses,goal').eq('user_id', userId).eq('date', today).maybeSingle()
-      .then(({ data }) => { if (data) { setGlasses(data.glasses || 0); setGoal(data.goal || 8) } })
-  }, [userId])
-
-  async function update(delta) {
-    const next = Math.max(0, Math.min(glasses + delta, goal + 4))
-    setGlasses(next)
-    const { error } = await supabase
-      .from('hydration_logs')
-      .upsert({ user_id: userId, date: today, glasses: next, goal }, { onConflict: 'user_id,date' })
-    if (error) console.error('Hydration error:', error.message)
-    if (next === goal && glasses < goal) useStore.getState().addXP(20)
+  if (fase >= 2) {
+    return {
+      identity: `Eres Pandi, mentor analítico y científico de salud de ${name}. Tu conocimiento es profundo, técnico y basado en evidencia sólida. Eres el compañero de optimización del rendimiento humano de ${name}.`,
+      tone: `Utiliza terminología técnica precisa: mecanismos biológicos, endocrinos y psicológicos. Cita evidencia científica cuando sea relevante. Eres riguroso pero siempre de apoyo. Usa "nosotros" — estamos construyendo esto juntos.`,
+      rules: `
+- Relaciona cada consejo con la rama del sistema que corresponda (sueño, nutrición, movimiento, mente, hidratación, intención).
+- Si el usuario propone algo sin base científica, explica el porqué con rigor, manteniendo siempre apoyo.
+- Termina siempre con una llamada a la acción específica y medible.
+- Rechaza pseudociencia. Todo consejo debe estar fundamentado en evidencia sólida.`,
+      maxParagraphs: 3,
+    };
   }
 
-  const pct = Math.min(glasses / goal, 1)
-  return (
-    <motion.div whileTap={{ scale:0.98 }} style={{ display:'flex', alignItems:'center', gap:12, padding:'14px 16px', borderRadius:18, background:'rgba(255,255,255,0.95)', border:'1px solid rgba(59,130,246,0.2)', marginBottom:8, boxShadow:'0 2px 8px rgba(0,0,0,0.04)' }}>
-      <div style={{ width:44, height:44, borderRadius:14, background:'#EFF6FF', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-        <Droplets size={20} style={{ color:'#3B82F6' }} />
-      </div>
-      <div style={{ flex:1 }}>
-        <p style={{ fontSize:14, fontWeight:700, color:'#1A2332', margin:0 }}>Hidratación</p>
-        <div style={{ display:'flex', alignItems:'center', gap:6, marginTop:4 }}>
-          <div style={{ flex:1, height:6, borderRadius:3, background:'rgba(0,0,0,0.08)', overflow:'hidden' }}>
-            <motion.div animate={{ width:`${pct*100}%` }} transition={{ duration:0.4 }} style={{ height:'100%', borderRadius:3, background:'linear-gradient(90deg,#60A5FA,#3B82F6)' }} />
-          </div>
-          <span style={{ fontSize:11, color:'#6B7280', whiteSpace:'nowrap' }}>{glasses*250}ml / {goal*250}ml</span>
-        </div>
-      </div>
-      <div style={{ display:'flex', alignItems:'center', gap:8, flexShrink:0 }}>
-        <button onClick={() => update(-1)} disabled={glasses===0} style={{ width:28, height:28, borderRadius:8, background:'rgba(0,0,0,0.06)', border:'none', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>
-          <MinusIcon size={12} style={{ color:'#6B7280' }} />
-        </button>
-        <span style={{ fontSize:16, fontWeight:800, color:'#3B82F6', minWidth:16, textAlign:'center' }}>{glasses}</span>
-        <motion.button whileTap={{ scale:0.9 }} onClick={() => update(1)} style={{ width:28, height:28, borderRadius:8, background:'#3B82F6', border:'none', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>
-          <Plus size={12} style={{ color:'#fff' }} />
-        </motion.button>
-      </div>
-    </motion.div>
-  )
+  // Fase 1 — Bebé/Onboarding
+  return {
+    identity: `Eres Pandi, el guía tierno y protector de ${name} en su primer viaje de salud. Acabas de nacer gracias a la energía de ${name} y estás creciendo juntos.`,
+    tone: `Tu lenguaje es sencillo, cálido, motivador y directo. Celebra cada pequeño logro. Invita suavemente a usar las herramientas de la app. Usa "nosotros" — estamos construyendo esto juntos.`,
+    rules: `
+- Si ${name} no ha completado una función, invítale suavemente: "Pandi necesita que registres tu hidratación para tener energía y crecer".
+- Si ${name} pregunta algo complejo, responde con claridad pero añade: "Esto es algo que profundizaremos cuando hayamos desbloqueado tu nivel de mentoría avanzado".
+- Prioriza enseñar a usar la app sobre dar consejos técnicos complejos.
+- Termina siempre con una pequeña invitación a la siguiente tarea o reflexión.`,
+    maxParagraphs: 2,
+  };
 }
 
-function MiniRing({ value, max, color, label }) {
-  const r = 22, circ = 2 * Math.PI * r
-  const pct = Math.min(value / max, 1)
-  return (
-    <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:4 }}>
-      <div style={{ position:'relative', width:56, height:56 }}>
-        <svg width={56} height={56} style={{ transform:'rotate(-90deg)' }}>
-          <circle cx={28} cy={28} r={r} fill="none" stroke="rgba(0,0,0,0.07)" strokeWidth={6} />
-          <motion.circle cx={28} cy={28} r={r} fill="none" stroke={color} strokeWidth={6}
-            strokeDasharray={circ} initial={{ strokeDashoffset:circ }}
-            animate={{ strokeDashoffset:circ*(1-pct) }} transition={{ duration:0.8 }} strokeLinecap="round" />
-        </svg>
-        <div style={{ position:'absolute', inset:0, display:'flex', alignItems:'center', justifyContent:'center' }}>
-          <span style={{ fontSize:10, fontWeight:800, color }}>{Math.round(pct*100)}%</span>
-        </div>
-      </div>
-      <span style={{ fontSize:10, fontWeight:600, color:'#6B7280' }}>{label}</span>
-    </div>
-  )
-}
+// ─── POST /api/coach ──────────────────────────────────────────────────────────
+router.post('/', requireAuth, checkCoachLimit, async (req, res) => {
+  try {
+    const { messages, context } = req.body;
+    const userId = req.user.id;
+    const today = new Date().toISOString().split('T')[0];
 
-export default function Home() {
-  const { profile, user } = useStore()
-  const { theme, loaded } = useTheme()
-  const { recoveryLight: recoveryLightCtx } = usePandiState()
-  const recoveryLight = recoveryLightCtx || 'GREEN'
+    const safe = async fn => { try { return await fn } catch { return { data: null } } };
 
-  const [todayMeals,   setTodayMeals]   = useState([])
-  const [todayWorkout, setTodayWorkout] = useState(null)
-  const [goals,        setGoals]        = useState({ calories: 2000, protein_g: 150 })
-  const [weightLogs,   setWeightLogs]   = useState([])
-  const [todaySleep,   setTodaySleep]   = useState(null)
-  const [todayMood,    setTodayMood]    = useState(null)
-  const [waterGlasses, setWaterGlasses] = useState(0)
+    const [
+      healthRes, profileRes, goalsRes, mealsRes, sleepRes,
+      moodRes, workoutRes, weightRes, treatmentsRes, labsRes,
+      memory
+    ] = await Promise.all([
+      safe(supabaseAdmin.from('health_profiles').select('*').eq('user_id', userId).maybeSingle()),
+      // ← Añadido fase_evolutiva y level al select
+      safe(supabaseAdmin.from('user_profiles').select('name,xp,level,streak,motivation_why,fase_evolutiva').eq('id', userId).single()),
+      safe(supabaseAdmin.from('nutrition_goals').select('*').eq('user_id', userId).maybeSingle()),
+      safe(supabaseAdmin.from('meal_logs').select('calories,protein_g,food_name').eq('user_id', userId).eq('date', today)),
+      safe(supabaseAdmin.from('sleep_logs').select('hours,quality').eq('user_id', userId).order('date', { ascending: false }).limit(3)),
+      safe(supabaseAdmin.from('mood_logs').select('mood').eq('user_id', userId).order('date', { ascending: false }).limit(1).maybeSingle()),
+      safe(supabaseAdmin.from('workout_sessions').select('name,total_volume_kg,calories_burned').eq('user_id', userId).eq('status','completed').order('created_at', { ascending: false }).limit(3)),
+      safe(supabaseAdmin.from('weight_logs').select('weight_kg,date').eq('user_id', userId).order('date', { ascending: false }).limit(5)),
+      safe(supabaseAdmin.from('medical_treatments').select('name,type,affects_weight,affects_appetite').eq('user_id', userId).eq('active', true)),
+      safe(supabaseAdmin.from('lab_reports').select('ai_recommendations,report_date').eq('user_id', userId).eq('status','analyzed').order('report_date', { ascending: false }).limit(1).maybeSingle()),
+      loadMemory(userId),
+    ]);
 
-  useTour('home')
+    const health      = healthRes.data     || {};
+    const profile     = profileRes.data    || {};
+    const goals       = goalsRes.data      || {};
+    const meals       = mealsRes.data      || [];
+    const sleepLogs   = sleepRes.data      || [];
+    const mood        = moodRes.data       || {};
+    const workouts    = workoutRes.data    || [];
+    const weightLogs  = weightRes.data     || [];
+    const treatments  = treatmentsRes.data || [];
+    const lastLab     = labsRes.data       || {};
 
-  useEffect(() => {
-    if (!user) return
-    useStore.getState().initCoach()
-  }, [user])
+    // ─── FASE EVOLUTIVA ───────────────────────────────────────────────────────
+    // Si level >= 10 y no tiene fase_evolutiva=2, consideramos que está en fase 2
+    const faseEvolutiva = profile.fase_evolutiva || (profile.level >= 10 ? 2 : 1);
+    const personality   = buildEvolutivePersonality(faseEvolutiva, profile.name);
 
-  useEffect(() => {
-    if (!user) return
-    const today = new Date().toISOString().split('T')[0]
-    const safe  = p => Promise.resolve(p).catch(() => ({ data:null }))
-    Promise.all([
-      safe(supabase.from('meal_logs').select('calories,protein_g').eq('user_id',user.id).eq('date',today)),
-      safe(supabase.from('workout_sessions').select('calories_burned').eq('user_id',user.id).eq('status','completed').gte('created_at',today+'T00:00:00').limit(1)),
-      safe(supabase.from('nutrition_goals').select('*').eq('user_id',user.id).maybeSingle()),
-      safe(supabase.from('weight_logs').select('weight_kg,date').eq('user_id',user.id).order('date',{ascending:false}).limit(5)),
-      safe(supabase.from('sleep_logs').select('hours,quality').eq('user_id',user.id).eq('date',today).maybeSingle()),
-      safe(supabase.from('mood_logs').select('mood').eq('user_id',user.id).eq('date',today).maybeSingle()),
-      safe(supabase.from('hydration_logs').select('glasses').eq('user_id',user.id).eq('date',today).maybeSingle()),
-    ]).then(([mealsR,workoutR,goalsR,weightR,sleepR,moodR,waterR]) => {
-      setTodayMeals(mealsR.data || [])
-      setTodayWorkout(workoutR.data?.[0] || null)
-      if (goalsR.data) setGoals(goalsR.data)
-      setWeightLogs(weightR.data || [])
-      setTodaySleep(sleepR.data || null)
-      setTodayMood(moodR.data || null)
-      setWaterGlasses(waterR.data?.glasses || 0)
-    })
-  }, [user])
+    // Métricas calculadas
+    const caloriesConsumed = meals.reduce((s, m) => s + (m.calories || 0), 0);
+    const proteinConsumed  = meals.reduce((s, m) => s + (m.protein_g || 0), 0);
+    const avgSleep = sleepLogs.length
+      ? (sleepLogs.reduce((s, l) => s + l.hours, 0) / sleepLogs.length).toFixed(1)
+      : 'No registrado';
+    const weightTrend = weightLogs.length >= 2
+      ? (weightLogs[0].weight_kg - weightLogs[weightLogs.length - 1].weight_kg).toFixed(1)
+      : null;
+    const age = health.birth_date
+      ? Math.floor((new Date() - new Date(health.birth_date)) / (365.25 * 24 * 3600 * 1000))
+      : null;
 
-  const cals    = todayMeals?.reduce((s,m) => s+(m.calories||0), 0) || 0
-  const protein = todayMeals?.reduce((s,m) => s+(m.protein_g||0), 0) || 0
-  const burned  = todayWorkout?.calories_burned || 0
+    // ─── CONTEXTO DE ENTRENAMIENTO ACTIVO ─────────────────────────────────────
+    let workoutContextSection = '';
+    let behaviorInstruction = personality.tone;
 
-  useSectionContext('home', {
-    caloriesConsumed:Math.round(cals), caloriesTarget:goals.calories,
-    proteinConsumed:Math.round(protein), proteinTarget:goals.protein_g,
-    caloriesBurned:burned, waterGlasses, workedOutToday:!!todayWorkout,
-    sleepLastNight:todaySleep?.hours||null, moodToday:todayMood?.mood||null,
-    streak:profile?.streak||0, level:profile?.level||1,
-  })
+    if (context?.activeWorkout) {
+      const { routineName, senda, elapsedTime, progress, currentExercise } = context.activeWorkout;
+      const elapsedMinutes = Math.floor(elapsedTime / 60);
 
-  if (!loaded) return (
-    <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'100vh', background:'#f0fffe' }}>
-      <motion.div animate={{ scale:[1,1.1,1] }} transition={{ duration:1.5, repeat:Infinity }}>
-        <span style={{ fontSize:48 }}>🐾</span>
-      </motion.div>
-    </div>
-  )
+      let sendaStyle = '';
+      if (senda === 'titan') {
+        sendaStyle = 'SENDA TITÁN: Tu tono debe ser épico, exigente, hiper-motivador y energético. Habla de forjar fuerza.';
+      } else if (senda === 'warrior') {
+        sendaStyle = 'SENDA GUERRERO: Tu tono debe ser enfocado, ágil, táctico y determinado. Disciplina pura.';
+      } else if (senda === 'zen') {
+        sendaStyle = 'SENDA ZEN: Tu tono debe ser calmado, atento, consciente (mindful). Enfatiza la conexión mente-músculo y la respiración.';
+      }
 
-  const hour           = new Date().getHours()
-  const greeting       = hour<12 ? '¡Buenos días' : hour<20 ? '¡Buenas tardes' : '¡Buenas noches'
-  const name           = profile?.name?.split(' ')[0] || 'Compi'
-  const MOODS          = {1:'😩',2:'😞',3:'😐',4:'😊',5:'🤩'}
-  const MOOD_LABELS    = {1:'Muy mal',2:'Mal',3:'Regular',4:'Bien',5:'Genial'}
-  const currentWeight  = weightLogs[0]?.weight_kg
-  const doneTodayCount = [cals>0, !!todayWorkout, !!todaySleep, !!todayMood, waterGlasses>0].filter(Boolean).length
-  const cfg            = STATE_CONFIG[recoveryLight] || STATE_CONFIG.GREEN
+      workoutContextSection = `
+⚠️ ¡EL USUARIO ESTÁ ENTRENANDO EN TIEMPO REAL AHORA MISMO! ⚠️
+- **Rutina en curso**: ${routineName}
+- **Senda Mitológica**: ${senda.toUpperCase()}
+- **Ejercicio Actual**: ${currentExercise || 'Transición o descanso'}
+- **Progreso en la sesión**: Ejercicio número ${progress}
+- **Tiempo entrenando**: ${elapsedMinutes} minutos acumulados de sesión continua.
 
-  const tasks = [
-    { to:'/nutrition', icon:'🍎', label:'Nutrición',     sublabel: cals>0 ? `${Math.round(cals)} / ${goals.calories} kcal` : 'Sin registro hoy',                                          color:'#F97316', done:cals>0 },
-    { to:'/workout',   icon:'💪', label:'Entrenamiento', sublabel: todayWorkout ? `${burned} kcal quemadas` : 'Sin entreno hoy',                                                            color:'#6366F1', done:!!todayWorkout },
-    { to:'/sleep',     icon:'😴', label:'Sueño',         sublabel: todaySleep ? `${todaySleep.hours}h · Calidad ${todaySleep.quality}/5` : 'Sin registro',                                 color:'#818CF8', done:!!todaySleep },
-    { to:'/mood',      icon: todayMood ? MOODS[todayMood.mood] : '🧘', label:'Bienestar', sublabel: todayMood ? `Hoy te sientes ${MOOD_LABELS[todayMood.mood].toLowerCase()}` : 'Check-in pendiente', color:'#2EC4B6', done:!!todayMood },
-    { to:'/health',    icon:'⚖️', label:'Seguimiento',  sublabel: currentWeight ? `${currentWeight} kg actual` : 'Peso y medidas',                                                          color:'#EC4899', done:!!currentWeight },
-  ]
+INSTRUCCIONES EXTRAURGENTES PARA ESTE ESTADO:
+1. Si el usuario te pregunta cosas rápidas ("no puedo más", "ayuda", "¿cómo coloco los pies?"), asume DIRECTAMENTE que se refiere al ejercicio actual (${currentExercise}).
+2. El usuario está cansado y entre series. Reduce drásticamente tus respuestas a 1 o 2 párrafos ultra condensados, directos e impactantes.
+3. Incorpora consejos anatómicos o biomecánicos aplicados al ${currentExercise} de inmediato.
+`;
+      behaviorInstruction = `Prioriza la arenga deportiva instantánea, la técnica de levantamiento y el soporte bajo fatiga. ${sendaStyle}`;
+    }
 
-  return (
-    <div style={{ minHeight:'100vh', background:'#f8fafa', paddingBottom:100 }}>
+    // Adaptación horaria
+    let clientTimeStr = null;
+    if (context?.clientTime && context?.timezone) {
+      try {
+        clientTimeStr = new Date(context.clientTime).toLocaleString('es-ES', {
+          timeZone: context.timezone,
+          weekday: 'long',
+          day: 'numeric',
+          month: 'long',
+          hour: '2-digit',
+          minute: '2-digit'
+        }) + ` (${context.timezone})`;
+      } catch (e) {}
+    }
 
-      {/* SANCTUARY — sin XP bar dentro */}
-      <Sanctuary recoveryLight={recoveryLight} profile={profile} theme={theme} greeting={greeting} name={name} />
+    // ─── SYSTEM PROMPT ────────────────────────────────────────────────────────
+    const systemPrompt = `${personality.identity}
 
-      {/* XP BAR — fuera del sanctuary, en el scroll, pegada al borde inferior del sanctuary */}
-      <XPBar profile={profile} cfg={cfg} />
+${clientTimeStr ? `═══════════════════════════════════
+⏰ HORA Y FECHA REALES AHORA MISMO
+═══════════════════════════════════
+${clientTimeStr}
+Esta es la ÚNICA fuente de verdad sobre la hora/fecha actual. Úsala siempre que menciones "ahora", "hoy", "esta tarde", planifiques horarios o calcules cuánto falta para algo. NUNCA asumas, infieras o calcules otra hora distinta a esta, aunque el usuario mencione una hora diferente — si lo hace y no coincide, puedes corregirle con amabilidad.
 
-      <div style={{ padding:'0 16px', marginTop:8 }}>
+` : ''}${memory?.summary ? `═══════════════════════════════════
+MEMORIA DE CONVERSACIONES ANTERIORES
+═══════════════════════════════════
+${memory.summary}
 
-        {/* BADGE SEMÁFORO */}
-        <motion.div initial={{ opacity:0, y:8 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.05 }}
-          style={{ display:'flex', justifyContent:'center', marginBottom:12 }}>
-          <div style={{ display:'inline-flex', alignItems:'center', gap:8, padding:'8px 20px', borderRadius:20, background:'white', border:`1.5px solid ${recoveryLight==='GREEN' ? '#2EC4B6' : recoveryLight==='YELLOW' ? '#F59E0B' : '#FF8FA3'}30`, boxShadow:'0 2px 12px rgba(0,0,0,0.06)', whiteSpace:'nowrap' }}>
-            <motion.div animate={{ scale:[1,1.4,1] }} transition={{ duration:1.5, repeat:Infinity }}
-              style={{ width:8, height:8, borderRadius:'50%', background: recoveryLight==='GREEN' ? '#2EC4B6' : recoveryLight==='YELLOW' ? '#F59E0B' : '#FF8FA3', boxShadow:`0 0 8px ${recoveryLight==='GREEN' ? '#2EC4B6' : recoveryLight==='YELLOW' ? '#F59E0B' : '#FF8FA3'}`, flexShrink:0 }} />
-            <span style={{ fontSize:12, fontWeight:700, color:'#1A2332' }}>
-              {recoveryLight==='GREEN' ? 'Hoy tienes energía para todo.' : recoveryLight==='YELLOW' ? 'Ritmo moderado. Ajustando tu plan.' : 'Hoy el descanso ES el entrenamiento.'}
-            </span>
-          </div>
-        </motion.div>
+` : ''}═══════════════════════════════════
+FASE EVOLUTIVA: ${faseEvolutiva === 1 ? '1 — Guía Tierno (Bebé)' : '2 — Mentor Científico (Experto)'}
+NIVEL: ${profile.level || 1} | XP: ${profile.xp || 0} | RACHA: ${profile.streak || 0} días
+═══════════════════════════════════
 
-        {/* SUGERENCIA DEL COACH */}
-        <CoachSuggestion />
+═══════════════════════════════════
+PERFIL DEL USUARIO (datos reales)
+═══════════════════════════════════
+Nombre: ${profile.name || 'Usuario'}
+Edad: ${age || 'No especificada'} años | Sexo: ${health.sex || 'No especificado'}
+Peso actual: ${health.weight_kg || 'No registrado'} kg | Altura: ${health.height_cm || 'No especificada'} cm
+IMC: ${health.bmi || 'No calculado'} | Peso objetivo: ${health.target_weight_kg || 'No definido'} kg
+Objetivo: ${health.goal || 'No definido'} | Intensidad: ${health.goal_intensity || 'moderada'}
+Actividad: ${health.activity_level || 'No especificada'} | Entrena: ${health.training_days_per_week || 0} días/semana
+Profesión: ${health.profession || 'No especificada'} | Horario: ${health.work_schedule || 'No especificado'}
+Motivación personal: ${profile.motivation_why || 'No especificada'}
+Lesiones/limitaciones: ${health.physical_limitations || 'Ninguna'}
+Objetivo específico: ${health.specific_goals || 'No especificado'}
+Restricciones alimentarias: ${health.dietary_restrictions || 'Ninguna'}
 
-        {/* PLAN DE HOY */}
-        <motion.div initial={{ opacity:0, y:16 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.1 }}
-          style={{ background:'rgba(255,255,255,0.95)', borderRadius:20, padding:'14px 16px', marginBottom:16, border:'1px solid rgba(0,0,0,0.06)', boxShadow:'0 4px 20px rgba(0,0,0,0.06)' }}>
-          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:10 }}>
-            <div>
-              <p style={{ fontSize:15, fontWeight:800, color:'#1A2332', margin:0 }}>Tu plan de hoy</p>
-              <p style={{ fontSize:12, color:'#6B7280', margin:'2px 0 0' }}>{doneTodayCount} de {tasks.length} tareas completadas</p>
-            </div>
-            <div style={{ width:52, height:52, position:'relative' }}>
-              <svg width={52} height={52} style={{ transform:'rotate(-90deg)' }}>
-                <circle cx={26} cy={26} r={20} fill="none" stroke="rgba(0,0,0,0.07)" strokeWidth={5} />
-                <motion.circle cx={26} cy={26} r={20} fill="none" stroke={theme.primary} strokeWidth={5}
-                  strokeDasharray={2*Math.PI*20} initial={{ strokeDashoffset:2*Math.PI*20 }}
-                  animate={{ strokeDashoffset:2*Math.PI*20*(1-doneTodayCount/tasks.length) }}
-                  transition={{ duration:0.8 }} strokeLinecap="round" />
-              </svg>
-              <div style={{ position:'absolute', inset:0, display:'flex', alignItems:'center', justifyContent:'center' }}>
-                <span style={{ fontSize:11, fontWeight:800, color:theme.primary }}>{Math.round(doneTodayCount/tasks.length*100)}%</span>
-              </div>
-            </div>
-          </div>
-          <div style={{ display:'flex', justifyContent:'space-around', padding:'8px 0', borderTop:'1px solid rgba(0,0,0,0.05)' }}>
-            <MiniRing value={cals}         max={goals.calories}   color="#F97316"       label="Calorías" />
-            <MiniRing value={protein}      max={goals.protein_g}  color={theme.primary} label="Proteína" />
-            <MiniRing value={burned}       max={400}              color="#22C55E"        label="Quemadas" />
-            <MiniRing value={waterGlasses} max={8}                color="#3B82F6"        label="Agua" />
-          </div>
-        </motion.div>
+METABOLISMO
+TDEE: ${health.tdee || 'No calculado'} kcal | BMR: ${health.bmr || 'No calculado'} kcal
+Objetivo calórico: ${health.target_calories || goals.calories || 2000} kcal
+Proteína objetivo: ${health.target_protein_g || goals.protein_g || 150}g
 
-        {/* TAREAS */}
-        <motion.div initial={{ opacity:0, y:16 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.2 }}>
-          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:12 }}>
-            <p style={{ fontSize:15, fontWeight:800, color:'#1A2332', margin:0 }}>Tareas del día</p>
-            <Link to="/report" style={{ fontSize:12, color:theme.primary, fontWeight:600, textDecoration:'none' }}>Ver todas →</Link>
-          </div>
-          {tasks.map((t,i) => (
-            <motion.div key={t.to} initial={{ opacity:0, x:-16 }} animate={{ opacity:1, x:0 }} transition={{ delay:0.25+i*0.06 }}>
-              <DayTask {...t} />
-            </motion.div>
-          ))}
-        </motion.div>
+NUTRICIÓN HOY
+Consumidas: ${Math.round(caloriesConsumed)} kcal de ${health.target_calories || goals.calories || 2000} kcal
+Proteína: ${Math.round(proteinConsumed)}g de ${health.target_protein_g || goals.protein_g || 150}g
+Alimentos: ${meals.map(m => m.food_name).join(', ') || 'Ninguno registrado'}
 
-        <motion.div initial={{ opacity:0, y:16 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.5 }}>
-          <WaterWidget userId={user?.id} />
-        </motion.div>
+SUEÑO (promedio 3 días): ${avgSleep} h
+ÁNIMO (último): ${mood.mood ? mood.mood + '/5' : 'No registrado'}
 
-        <motion.div initial={{ opacity:0, y:16 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.6 }}>
-          <PandiInsights />
-        </motion.div>
+ENTRENAMIENTO HISTÓRICO RECIENTE
+${workouts.length ? workouts.map(w => `• ${w.name}: ${w.total_volume_kg}kg volumen, ${w.calories_burned} kcal`).join('\n') : 'Sin entrenamientos recientes'}
 
-        <TourHelpButton tourKey="home" />
-      </div>
+PESO (tendencia): ${weightTrend ? (weightTrend > 0 ? '+' : '') + weightTrend + 'kg en los últimos registros' : 'Sin datos de tendencia'}
 
-      {/* DAILY CHECKIN — bottom sheet, fuera del scroll */}
-      <DailyCheckin />
-    </div>
-  )
-}
+TRATAMIENTOS MÉDICOS ACTIVOS
+${treatments.length ? treatments.map(t => `• ${t.name} (${t.type})${t.affects_weight ? ' — afecta al peso' : ''}${t.affects_appetite ? ' — afecta al apetito' : ''}`).join('\n') : 'Ninguno'}
+
+ANALÍTICAS (últimas recomendaciones)
+${lastLab.ai_recommendations || 'Sin analíticas subidas'}
+${workoutContextSection}
+
+═══════════════════════════════════
+PERSONALIDAD Y REGLAS
+═══════════════════════════════════
+TONO: ${behaviorInstruction}
+${personality.rules}
+
+REGLAS GENERALES:
+1. La HORA Y FECHA REALES indicadas arriba son la única referencia temporal válida. Nunca asumas ni inventes otra hora.
+2. USA SOLO los datos reales del perfil. Nunca inventes valores.
+3. Usa la MEMORIA para dar continuidad — recuerda lo que se ha hablado antes.
+4. Ten en cuenta los TRATAMIENTOS MÉDICOS al dar consejos nutricionales.
+5. Si hay analíticas, considera las recomendaciones en tus respuestas.
+6. Adapta los consejos al HORARIO LABORAL del usuario.
+7. Responde siempre en español.
+8. Máximo ${personality.maxParagraphs} párrafos por respuesta${context?.activeWorkout ? ' (entrenando: máximo 2 párrafos cortos)' : ''}.
+9. Usa emojis con moderación.`;
+
+    // ─── LLAMADA A CLAUDE ─────────────────────────────────────────────────────
+    const response = await anthropic.messages.create({
+      model: process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-5',
+      max_tokens: 800,
+      system: systemPrompt,
+      messages: messages.map(m => ({ role: m.role, content: m.content })),
+    });
+
+    const reply = response.content[0].text;
+    res.json({ reply });
+
+    // Actualizar memoria en background
+    const allMessages = [...messages, { role: 'assistant', content: reply }];
+    updateMemory(userId, allMessages, reply).catch(() => {});
+
+  } catch (err) {
+    console.error('Coach error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+module.exports = router;

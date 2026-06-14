@@ -130,7 +130,7 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name, onXpBarRef }
     : cfg.frames[frameIdx]
 
   return (
-    <div style={{ position:'relative', height:'56vw', minHeight:340, maxHeight:480, overflow:'hidden' }}>
+    <div style={{ position:'relative', height:'56vw', minHeight:340, maxHeight:480, overflow:'hidden', background:'#f8fafa' }}>
 
       {/* FONDO */}
       <AnimatePresence mode="wait">
@@ -140,7 +140,7 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name, onXpBarRef }
           style={{ position:'absolute', inset:0, zIndex:0 }}>
           {bgErr
             ? <div style={{ width:'100%', height:'100%', background: recoveryLight==='GREEN' ? 'linear-gradient(180deg,#c8f5e8,#e0faf0,#f0fffe)' : recoveryLight==='YELLOW' ? 'linear-gradient(180deg,#fef3c7,#fffbeb,#fffff0)' : 'linear-gradient(180deg,#ffe4ec,#fff0f5,#fff5f7)' }} />
-            : <img src={cfg.bg} alt="Santuario" style={{ width:'100%', height:'100%', objectFit:'cover', objectPosition:'center center' }} onError={() => setBgErr(true)} />
+            : <img src={cfg.bg} alt="Santuario" style={{ width:'100%', height:'100%', objectFit:'contain', objectPosition:'center bottom' }} onError={() => setBgErr(true)} />
           }
         </motion.div>
       </AnimatePresence>

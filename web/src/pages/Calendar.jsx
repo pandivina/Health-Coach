@@ -534,11 +534,11 @@ function EventForm({ theme, date, event, onSave, onClose }) {
 
   async function handleSave() {
     if (!form.title.trim()) return
-    // Pedir permisos de notificación
     if ('Notification' in window && Notification.permission === 'default') {
       await Notification.requestPermission()
     }
-    await onSave(form)
+    const ok = await onSave(form)
+    if (ok) onClose()   // cierre explícito por si onSave no lo hace
   }
 
   return (
@@ -548,96 +548,103 @@ function EventForm({ theme, date, event, onSave, onClose }) {
       onClick={onClose}>
       <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
         transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-        className="w-full max-w-lg rounded-t-3xl p-5 max-h-[90vh] overflow-y-auto"
+        className="w-full max-w-lg rounded-t-3xl max-h-[88vh] flex flex-col"
         style={{ background: theme.bg }}
         onClick={e => e.stopPropagation()}>
 
-        <div className="flex items-center justify-between mb-5">
-          <p className="font-extrabold text-base" style={{ color: theme.text }}>
-            {event ? 'Editar evento' : 'Nuevo evento'}
-          </p>
-          <button onClick={onClose} className="w-8 h-8 rounded-xl flex items-center justify-center"
-            style={{ background: theme.surface2 }}>
-            <X size={16} style={{ color: theme.textMuted }} />
-          </button>
+        {/* Contenido scrollable */}
+        <div className="overflow-y-auto flex-1 p-5">
+          <div className="flex items-center justify-between mb-5">
+            <p className="font-extrabold text-base" style={{ color: theme.text }}>
+              {event ? 'Editar evento' : 'Nuevo evento'}
+            </p>
+            <button onClick={onClose} className="w-8 h-8 rounded-xl flex items-center justify-center"
+              style={{ background: theme.surface2 }}>
+              <X size={16} style={{ color: theme.textMuted }} />
+            </button>
+          </div>
+
+          <div className="space-y-4">
+            {/* Título */}
+            <div>
+              <label className="label">Título *</label>
+              <input className="input" placeholder="Ej: Cita médica, Entreno, Tomar pastilla…"
+                value={form.title} onChange={e => set('title', e.target.value)} />
+            </div>
+
+            {/* Fecha y hora */}
+            <div className="flex gap-3">
+              <div className="flex-1">
+                <label className="label">Fecha</label>
+                <input className="input" type="date" value={form.date}
+                  onChange={e => set('date', e.target.value)} />
+              </div>
+              <div className="flex-1">
+                <label className="label">Hora</label>
+                <input className="input" type="time" value={form.time}
+                  onChange={e => set('time', e.target.value)} />
+              </div>
+            </div>
+
+            {/* Categoría */}
+            <div>
+              <label className="label">Categoría</label>
+              <div className="grid grid-cols-4 gap-2">
+                {CATEGORIES.map(c => (
+                  <button key={c.id} onClick={() => set('category', c.id)}
+                    className="flex flex-col items-center gap-1 py-2.5 rounded-2xl transition-all"
+                    style={{
+                      background: form.category === c.id ? `${c.color}20` : theme.surface2,
+                      border: `2px solid ${form.category === c.id ? c.color : 'transparent'}`,
+                    }}>
+                    <span style={{ fontSize: 20 }}>{c.emoji}</span>
+                    <span className="text-[9px] font-semibold"
+                      style={{ color: form.category === c.id ? c.color : theme.textMuted }}>
+                      {c.label}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Recordatorio */}
+            <div>
+              <label className="label">Recordatorio</label>
+              <div className="grid grid-cols-3 gap-2">
+                {REMINDERS.map(r => (
+                  <button key={r.val} onClick={() => set('reminder_minutes', r.val)}
+                    className="py-2 rounded-xl text-xs font-semibold transition-all"
+                    style={{
+                      background: form.reminder_minutes === r.val ? `${theme.primary}20` : theme.surface2,
+                      color: form.reminder_minutes === r.val ? theme.primary : theme.textMuted,
+                      border: `2px solid ${form.reminder_minutes === r.val ? theme.primary : 'transparent'}`,
+                    }}>
+                    {r.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Descripción */}
+            <div>
+              <label className="label">Notas (opcional)</label>
+              <textarea className="input resize-none" rows={2}
+                placeholder="Detalles adicionales…"
+                value={form.description} onChange={e => set('description', e.target.value)} />
+            </div>
+          </div>
         </div>
 
-        <div className="space-y-4">
-          {/* Título */}
-          <div>
-            <label className="label">Título *</label>
-            <input className="input" placeholder="Ej: Cita médica, Entreno, Tomar pastilla…"
-              value={form.title} onChange={e => set('title', e.target.value)} />
-          </div>
-
-          {/* Fecha y hora */}
-          <div className="flex gap-3">
-            <div className="flex-1">
-              <label className="label">Fecha</label>
-              <input className="input" type="date" value={form.date}
-                onChange={e => set('date', e.target.value)} />
-            </div>
-            <div className="flex-1">
-              <label className="label">Hora</label>
-              <input className="input" type="time" value={form.time}
-                onChange={e => set('time', e.target.value)} />
-            </div>
-          </div>
-
-          {/* Categoría */}
-          <div>
-            <label className="label">Categoría</label>
-            <div className="grid grid-cols-4 gap-2">
-              {CATEGORIES.map(c => (
-                <button key={c.id} onClick={() => set('category', c.id)}
-                  className="flex flex-col items-center gap-1 py-2.5 rounded-2xl transition-all"
-                  style={{
-                    background: form.category === c.id ? `${c.color}20` : theme.surface2,
-                    border: `2px solid ${form.category === c.id ? c.color : 'transparent'}`,
-                  }}>
-                  <span style={{ fontSize: 20 }}>{c.emoji}</span>
-                  <span className="text-[9px] font-semibold"
-                    style={{ color: form.category === c.id ? c.color : theme.textMuted }}>
-                    {c.label}
-                  </span>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Recordatorio */}
-          <div>
-            <label className="label">Recordatorio</label>
-            <div className="grid grid-cols-3 gap-2">
-              {REMINDERS.map(r => (
-                <button key={r.val} onClick={() => set('reminder_minutes', r.val)}
-                  className="py-2 rounded-xl text-xs font-semibold transition-all"
-                  style={{
-                    background: form.reminder_minutes === r.val ? `${theme.primary}20` : theme.surface2,
-                    color: form.reminder_minutes === r.val ? theme.primary : theme.textMuted,
-                    border: `2px solid ${form.reminder_minutes === r.val ? theme.primary : 'transparent'}`,
-                  }}>
-                  {r.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Descripción */}
-          <div>
-            <label className="label">Notas (opcional)</label>
-            <textarea className="input resize-none" rows={2}
-              placeholder="Detalles adicionales…"
-              value={form.description} onChange={e => set('description', e.target.value)} />
-          </div>
+        {/* Botón fijo en la parte inferior — nunca tapado por el BottomNav */}
+        <div style={{ padding:'12px 20px', paddingBottom:'calc(env(safe-area-inset-bottom) + 80px)', background: theme.bg, borderTop:`1px solid ${theme.border||'rgba(0,0,0,0.06)'}`, flexShrink:0 }}>
+          <motion.button whileTap={{ scale: 0.97 }} onClick={handleSave}
+            disabled={!form.title.trim()}
+            className="w-full py-3.5 rounded-2xl font-bold text-white disabled:opacity-40 flex items-center justify-center gap-2"
+            style={{ background: `linear-gradient(135deg, ${theme.primary}, #FF8FA3)` }}>
+            <Check size={16} /> {event ? 'Actualizar' : 'Guardar evento'}
+          </motion.button>
         </div>
 
-        <motion.button whileTap={{ scale: 0.97 }} onClick={handleSave}
-          disabled={!form.title.trim()}
-          className="w-full py-3.5 rounded-2xl font-bold text-white mt-5 disabled:opacity-40 flex items-center justify-center gap-2"
-          style={{ background: `linear-gradient(135deg, ${theme.primary}, #FF8FA3)` }}>
-          <Check size={16} /> {event ? 'Actualizar' : 'Guardar evento'}
-        </motion.button>
       </motion.div>
     </motion.div>
   )

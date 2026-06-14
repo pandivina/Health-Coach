@@ -109,7 +109,208 @@ Solo el texto del resumen, sin introducción.`
   }
 }
 
-// ─── SYSTEM PROMPT EVOLUTIVO ──────────────────────────────────────────────────
+// ─── MOTOR DE DECISIÓN DIARIO ─────────────────────────────────────────────────
+
+// Evalúa el día del usuario y devuelve un score estructurado
+async function evaluarDia(userId) {
+  const today = new Date().toISOString().split('T')[0]
+  const safe  = async fn => { try { return await fn } catch { return { data: null } } }
+
+  const [profileRes, goalsRes, mealsRes, sleepRes, moodRes, workoutRes, waterRes] = await Promise.all([
+    safe(supabaseAdmin.from('user_profiles').select('name,level,streak,xp').eq('id', userId).single()),
+    safe(supabaseAdmin.from('nutrition_goals').select('calories,protein_g').eq('user_id', userId).maybeSingle()),
+    safe(supabaseAdmin.from('meal_logs').select('calories,protein_g').eq('user_id', userId).eq('date', today)),
+    safe(supabaseAdmin.from('sleep_logs').select('hours,quality').eq('user_id', userId).eq('date', today).maybeSingle()),
+    safe(supabaseAdmin.from('mood_logs').select('mood').eq('user_id', userId).eq('date', today).maybeSingle()),
+    safe(supabaseAdmin.from('workout_sessions').select('id').eq('user_id', userId).eq('status', 'completed').gte('created_at', today + 'T00:00:00').limit(1)),
+    safe(supabaseAdmin.from('hydration_logs').select('glasses,goal').eq('user_id', userId).eq('date', today).maybeSingle()),
+  ])
+
+  const profile  = profileRes.data  || {}
+  const goals    = goalsRes.data    || { calories: 2000, protein_g: 150 }
+  const meals    = mealsRes.data    || []
+  const sleep    = sleepRes.data    || null
+  const mood     = moodRes.data     || null
+  const workout  = workoutRes.data  || []
+  const water    = waterRes.data    || null
+
+  const caloriesConsumed = meals.reduce((s, m) => s + (m.calories || 0), 0)
+  const proteinConsumed  = meals.reduce((s, m) => s + (m.protein_g || 0), 0)
+  const waterGlasses     = water?.glasses || 0
+  const waterGoal        = water?.goal    || 8
+
+  // Scores 0-1 por módulo
+  const scores = {
+    nutricion:    goals.calories > 0
+      ? Math.min(caloriesConsumed / goals.calories, 1.2)   // permite hasta 120%
+      : 0,
+    proteina:     goals.protein_g > 0
+      ? Math.min(proteinConsumed / goals.protein_g, 1)
+      : 0,
+    hidratacion:  waterGoal > 0 ? Math.min(waterGlasses / waterGoal, 1) : 0,
+    sueno:        sleep?.hours  ? Math.min(sleep.hours / 7, 1) : 0,
+    animo:        mood?.mood    ? mood.mood / 5 : 0,
+    entreno:      workout.length > 0 ? 1 : 0,
+  }
+
+  const media = Object.values(scores).reduce((a, b) => a + b, 0) / Object.keys(scores).length
+  const estado = media > 0.7 ? 'GREEN' : media > 0.4 ? 'YELLOW' : 'RED'
+
+  const puntosFuertes = Object.entries(scores)
+    .filter(([, v]) => v >= 0.75)
+    .map(([k]) => k)
+
+  const puntosDebiles = Object.entries(scores)
+    .filter(([, v]) => v < 0.4)
+    .map(([k]) => k)
+
+  const modulosSinRegistro = Object.entries(scores)
+    .filter(([k, v]) => v === 0 && !['entreno'].includes(k))
+    .map(([k]) => k)
+
+  return {
+    userId,
+    fecha: today,
+    perfil: profile,
+    scores,
+    media: Math.round(media * 100) / 100,
+    estado,
+    puntosFuertes,
+    puntosDebiles,
+    modulosSinRegistro,
+    detalle: { caloriesConsumed, proteinConsumed, waterGlasses, sleepHours: sleep?.hours, mood: mood?.mood, workoutDone: workout.length > 0 },
+  }
+}
+
+// Genera el plan de mañana basado en la evaluación del día
+async function generarPlanManana(evaluacion) {
+  const { userId, perfil, scores, estado, puntosFuertes, puntosDebiles, detalle } = evaluacion
+
+  // Construir prompt para el plan de mañana
+  const prompt = `Eres Pandi, el coach de salud de ${perfil.name || 'el usuario'}. 
+Analiza el día de hoy y genera un plan de mañana concreto y motivador.
+
+RESUMEN DEL DÍA DE HOY:
+- Estado general: ${estado} (puntuación media: ${Math.round(evaluacion.media * 100)}%)
+- Nutrición: ${Math.round(detalle.caloriesConsumed)} kcal consumidas
+- Hidratación: ${detalle.waterGlasses} vasos
+- Sueño: ${detalle.sleepHours ? detalle.sleepHours + 'h' : 'no registrado'}
+- Ánimo: ${detalle.mood ? detalle.mood + '/5' : 'no registrado'}
+- Entreno: ${detalle.workoutDone ? 'completado ✅' : 'no realizado'}
+- Puntos fuertes: ${puntosFuertes.join(', ') || 'ninguno registrado'}
+- Puntos a mejorar: ${puntosDebiles.join(', ') || 'ninguno'}
+
+Genera un plan de mañana con exactamente este formato JSON (solo el JSON, sin texto adicional):
+{
+  "mensaje_noche": "Mensaje motivador corto para esta noche (máx 2 frases)",
+  "prioridades": ["tarea 1 concreta", "tarea 2 concreta", "tarea 3 concreta"],
+  "foco_principal": "el módulo más importante para mañana (nutricion|hidratacion|sueno|entreno|animo)",
+  "objetivo_calorico": número (ajustado según el día de hoy),
+  "mensaje_manana": "Mensaje motivador para empezar mañana (máx 2 frases)"
+}`
+
+  try {
+    const response = await anthropic.messages.create({
+      model: process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-5',
+      max_tokens: 600,
+      messages: [{ role: 'user', content: prompt }],
+    })
+
+    const text    = response.content[0].text.trim()
+    const clean   = text.replace(/```json|```/g, '').trim()
+    const plan    = JSON.parse(clean)
+
+    // Guardar en coach_memory
+    await supabaseAdmin.from('coach_memory').upsert({
+      user_id:        userId,
+      tomorrow_plan:  plan,
+      last_plan_date: evaluacion.fecha,
+      day_score:      evaluacion.media,
+      day_state:      evaluacion.estado,
+      last_updated:   new Date().toISOString(),
+    }, { onConflict: 'user_id' })
+
+    return plan
+  } catch (err) {
+    console.error('generarPlanManana error:', err.message)
+    // Plan por defecto si falla Claude
+    return {
+      mensaje_noche:    'Descansa bien esta noche. Mañana seguimos.',
+      prioridades:      ['Registrar nutrición', 'Beber 8 vasos de agua', 'Hacer 10 min de movimiento'],
+      foco_principal:   puntosDebiles[0] || 'hidratacion',
+      objetivo_calorico: 2000,
+      mensaje_manana:   'Buenos días. Un día más, un paso más.',
+    }
+  }
+}
+
+// Carga el plan de mañana para inyectarlo en el system prompt
+async function loadTomorrowPlan(userId) {
+  try {
+    const { data } = await supabaseAdmin
+      .from('coach_memory')
+      .select('tomorrow_plan, last_plan_date, day_score, day_state')
+      .eq('user_id', userId)
+      .maybeSingle()
+    if (!data?.tomorrow_plan) return null
+    return data
+  } catch { return null }
+}
+
+// Detecta patrones de refuerzo positivo para el system prompt
+async function detectPatterns(userId) {
+  const today = new Date()
+  const patterns = []
+
+  try {
+    // Últimos 7 días de mood
+    const last7 = Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(today); d.setDate(d.getDate() - i)
+      return d.toISOString().split('T')[0]
+    })
+
+    const { data: moodLogs } = await supabaseAdmin
+      .from('mood_logs').select('date,mood')
+      .eq('user_id', userId).in('date', last7)
+
+    const { data: profile } = await supabaseAdmin
+      .from('user_profiles').select('streak, level, xp')
+      .eq('user_id', userId).single()
+
+    // Racha larga
+    if (profile?.streak >= 7)  patterns.push(`🔥 Lleva ${profile.streak} días de racha consecutiva — menciona este logro`)
+    if (profile?.streak >= 30) patterns.push(`🏆 ¡30+ días de racha! Es un hito enorme — celébralo`)
+
+    // Mood bajo consecutivo (alerta)
+    if (moodLogs && moodLogs.length >= 3) {
+      const sorted = moodLogs.sort((a, b) => b.date.localeCompare(a.date))
+      const lowDays = sorted.slice(0, 3).filter(l => l.mood <= 2).length
+      if (lowDays >= 3) patterns.push('⚠️ 3+ días con ánimo bajo — prioriza validación emocional antes de cualquier consejo')
+    }
+
+    // Mood mejorando
+    if (moodLogs && moodLogs.length >= 2) {
+      const sorted = moodLogs.sort((a, b) => a.date.localeCompare(b.date))
+      const last = sorted[sorted.length - 1]
+      const prev = sorted[sorted.length - 2]
+      if (last && prev && last.mood > prev.mood + 1) {
+        patterns.push('📈 El ánimo ha mejorado respecto a días anteriores — refuerza positivamente')
+      }
+    }
+
+    // Subida de nivel reciente
+    if (profile?.level && profile.level > 1) {
+      patterns.push(`⭐ Usuario en nivel ${profile.level} — adapta la profundidad técnica al nivel`)
+    }
+
+  } catch (err) {
+    console.error('detectPatterns error:', err.message)
+  }
+
+  return patterns
+}
+
+
 function buildEvolutivePersonality(fase, profileName) {
   const name = profileName || 'Usuario';
 
@@ -151,10 +352,9 @@ router.post('/', requireAuth, checkCoachLimit, async (req, res) => {
     const [
       healthRes, profileRes, goalsRes, mealsRes, sleepRes,
       moodRes, workoutRes, weightRes, treatmentsRes, labsRes,
-      memory
+      memory, tomorrowPlanData, patterns
     ] = await Promise.all([
       safe(supabaseAdmin.from('health_profiles').select('*').eq('user_id', userId).maybeSingle()),
-      // ← Añadido fase_evolutiva y level al select
       safe(supabaseAdmin.from('user_profiles').select('name,xp,level,streak,motivation_why,fase_evolutiva').eq('id', userId).single()),
       safe(supabaseAdmin.from('nutrition_goals').select('*').eq('user_id', userId).maybeSingle()),
       safe(supabaseAdmin.from('meal_logs').select('calories,protein_g,food_name').eq('user_id', userId).eq('date', today)),
@@ -165,6 +365,8 @@ router.post('/', requireAuth, checkCoachLimit, async (req, res) => {
       safe(supabaseAdmin.from('medical_treatments').select('name,type,affects_weight,affects_appetite').eq('user_id', userId).eq('active', true)),
       safe(supabaseAdmin.from('lab_reports').select('ai_recommendations,report_date').eq('user_id', userId).eq('status','analyzed').order('report_date', { ascending: false }).limit(1).maybeSingle()),
       loadMemory(userId),
+      loadTomorrowPlan(userId),
+      detectPatterns(userId),
     ]);
 
     const health      = healthRes.data     || {};
@@ -302,6 +504,22 @@ ${treatments.length ? treatments.map(t => `• ${t.name} (${t.type})${t.affects_
 ANALÍTICAS (últimas recomendaciones)
 ${lastLab.ai_recommendations || 'Sin analíticas subidas'}
 ${workoutContextSection}
+${patterns && patterns.length > 0 ? `
+═══════════════════════════════════
+PATRONES DETECTADOS — REFUERZO POSITIVO
+═══════════════════════════════════
+${patterns.join('\n')}
+` : ''}
+${tomorrowPlanData?.tomorrow_plan ? `
+═══════════════════════════════════
+PLAN DE MAÑANA (generado anoche)
+═══════════════════════════════════
+Ayer el día cerró con estado: ${tomorrowPlanData.day_state} (${Math.round((tomorrowPlanData.day_score || 0) * 100)}%)
+Prioridades para hoy: ${tomorrowPlanData.tomorrow_plan.prioridades?.join(' · ') || 'sin definir'}
+Foco principal: ${tomorrowPlanData.tomorrow_plan.foco_principal || 'sin definir'}
+Objetivo calórico ajustado: ${tomorrowPlanData.tomorrow_plan.objetivo_calorico || 'sin definir'} kcal
+Referencia este plan cuando el usuario te pregunte qué hacer hoy o cómo va su progreso.
+` : ''}
 
 ═══════════════════════════════════
 PERSONALIDAD Y REGLAS
@@ -340,5 +558,47 @@ REGLAS GENERALES:
     res.status(500).json({ error: err.message });
   }
 });
+
+// ─── POST /api/coach/daily-review ─────────────────────────────────────────────
+// Llamado por un cron a las 22:00 — evalúa el día y genera el plan de mañana
+// Puede llamarse también manualmente desde el frontend (botón "Revisar mi día")
+router.post('/daily-review', requireAuth, async (req, res) => {
+  try {
+    const userId = req.user.id
+
+    // 1. Evaluar el día
+    const evaluacion = await evaluarDia(userId)
+
+    // 2. Generar plan de mañana
+    const plan = await generarPlanManana(evaluacion)
+
+    res.json({
+      success: true,
+      evaluacion: {
+        estado:         evaluacion.estado,
+        media:          evaluacion.media,
+        puntosFuertes:  evaluacion.puntosFuertes,
+        puntosDebiles:  evaluacion.puntosDebiles,
+        scores:         evaluacion.scores,
+      },
+      plan,
+    })
+  } catch (err) {
+    console.error('daily-review error:', err.message)
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// ─── GET /api/coach/daily-review ──────────────────────────────────────────────
+// El frontend lo llama al cargar para mostrar el plan del día
+router.get('/daily-review', requireAuth, async (req, res) => {
+  try {
+    const userId = req.user.id
+    const data   = await loadTomorrowPlan(userId)
+    res.json(data || { plan: null })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
 
 module.exports = router;

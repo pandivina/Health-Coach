@@ -51,8 +51,20 @@ const ALL_FRAMES = [
   STATE_CONFIG.RED.bg,
 ]
 
+// ── Detecta si estamos en móvil (< 768px) y se actualiza al redimensionar ──
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768)
+  useEffect(() => {
+    const fn = () => setIsMobile(window.innerWidth < 768)
+    window.addEventListener('resize', fn)
+    return () => window.removeEventListener('resize', fn)
+  }, [])
+  return isMobile
+}
+
 function Sanctuary({ recoveryLight, profile, theme, greeting, name, onXpBarRef }) {
-  const cfg = STATE_CONFIG[recoveryLight] || STATE_CONFIG.GREEN
+  const cfg      = STATE_CONFIG[recoveryLight] || STATE_CONFIG.GREEN
+  const isMobile = useIsMobile()
   const [frameIdx,   setFrameIdx]   = useState(0)
   const [imgErr,     setImgErr]     = useState(false)
   const [bgErr,      setBgErr]      = useState(false)
@@ -130,7 +142,14 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name, onXpBarRef }
     : cfg.frames[frameIdx]
 
   return (
-    <div style={{ position:'relative', width:'100%', aspectRatio:'4/3', maxHeight:520, overflow:'hidden', background:'#f8fafa' }}>
+    <div style={{
+      position:'relative',
+      width:'100%',
+      aspectRatio: isMobile ? '4/3' : '16/6',
+      maxHeight: isMobile ? 520 : 480,
+      overflow:'hidden',
+      background:'#f8fafa',
+    }}>
 
       {/* FONDO */}
       <AnimatePresence mode="wait">
@@ -220,7 +239,15 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name, onXpBarRef }
       </AnimatePresence>
 
       {/* PANDI — en % para escalar con el contenedor */}
-      <div style={{ position:'absolute', bottom:'5%', left:'50%', transform:'translateX(-50%)', zIndex:5, width:'55%', maxWidth:260 }}>
+      <div style={{
+        position:'absolute',
+        bottom: isMobile ? '2%' : '4%',
+        left:'50%',
+        transform:'translateX(-50%)',
+        zIndex:5,
+        width: isMobile ? '38%' : '18%',
+        maxWidth: isMobile ? 180 : 200,
+      }}>
         <div style={{ position:'relative' }}>
           <motion.div animate={{ opacity:[0.3,0.5,0.3] }} transition={{ duration:3, repeat:Infinity, ease:'easeInOut' }}
             style={{ position:'absolute', top:'50%', left:'50%', transform:'translate(-50%,-50%)', width:'80%', height:'80%', borderRadius:'50%', background:`radial-gradient(circle, ${cfg.glow} 0%, transparent 65%)`, filter:'blur(24px)', zIndex:-1, pointerEvents:'none' }} />

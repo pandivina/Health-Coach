@@ -8,6 +8,7 @@ import { usePandiState } from '../contexts/PandiStateContext'
 import { useTourContext } from '../contexts/GuidedTourProvider'
 import { api } from '../lib/api'
 import { SECTION_LABELS } from '../hooks/useSectionContext'
+import { useCoachAwareness } from '../contexts/CoachAwarenessContext'
 
 function getWelcomeMessage(section, name) {
   const n = name ? ` ${name}` : ''
@@ -31,6 +32,7 @@ export default function CoachFAB() {
   const { profile }                   = useStore()
   const { pandiState, recoveryLight, recoveryScore } = usePandiState()
   const { isActive: tourActive }      = useTourContext()
+  const { buildCoachContext } = useCoachAwareness()
 
   const [open,     setOpen]     = useState(false)
   const [messages, setMessages] = useState([])
@@ -72,7 +74,8 @@ export default function CoachFAB() {
   }
 
   async function send(text) {
-    const content = (text || input).trim()
+//   const context = buildCoachContext()   // ← contexto completo automático
+//   const { reply } = await api.coach.chat(newMessages.slice(-8), context)
     if (!content || loading) return
     setInput('')
     const newMessages = [...messages, { role: 'user', content }]

@@ -137,7 +137,7 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name, onXpBarRef }
         <motion.div key={recoveryLight}
           initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
           transition={{ duration:1.2 }}
-          style={{ position:'absolute', inset:0, zIndex:0 }}>
+          style={{ position:'absolute', bottom:65, inset:0, zIndex:0 }}>
           {bgErr
             ? <div style={{ width:'100%', height:'100%', background: recoveryLight==='GREEN' ? 'linear-gradient(180deg,#c8f5e8,#e0faf0,#f0fffe)' : recoveryLight==='YELLOW' ? 'linear-gradient(180deg,#fef3c7,#fffbeb,#fffff0)' : 'linear-gradient(180deg,#ffe4ec,#fff0f5,#fff5f7)' }} />
             : <img src={cfg.bg} alt="Santuario" style={{ width:'100%', height:'100%', objectFit:'cover', objectPosition:'center 60%' }} onError={() => setBgErr(true)} />

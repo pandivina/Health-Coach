@@ -245,44 +245,49 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name, onXpBarRef }
         )}
       </AnimatePresence>
 
-      {/* PANDI — capa independiente, animada, centrada sobre la plataforma */}
-      <div style={{
-        position: 'absolute',
-        bottom: '14%',
-        left: '50%',
-        transform: 'translateX(-50%)',
-        zIndex: 5,
-        width: isMobile ? '48%' : '22%',
-        maxWidth: 200,
-      }}>
-        <div style={{ position:'relative' }}>
-          {/* Glow bajo Pandi */}
-          <motion.div
-            animate={{ opacity:[0.3,0.5,0.3] }}
-            transition={{ duration:3, repeat:Infinity, ease:'easeInOut' }}
-            style={{ position:'absolute', top:'50%', left:'50%',
-              transform:'translate(-50%,-50%)', width:'80%', height:'80%',
-              borderRadius:'50%', background:`radial-gradient(circle, ${cfg.glow} 0%, transparent 65%)`,
-              filter:'blur(24px)', zIndex:-1, pointerEvents:'none' }} />
-          {/* Sombra suelo */}
-          <motion.div
-            animate={{ scaleX:[1,1.04,1], opacity:[0.2,0.3,0.2] }}
-            transition={{ duration:3, repeat:Infinity, ease:'easeInOut' }}
-            style={{ position:'absolute', bottom:-4, left:'50%',
-              transform:'translateX(-50%)', width:'50%', height:8,
-              borderRadius:'50%', background:'rgba(0,0,0,0.15)',
-              filter:'blur(4px)', zIndex:-1 }} />
-          {/* Imagen Pandi */}
-          <div style={{ filter:`drop-shadow(0 12px 20px ${cfg.glow})` }}>
-            {imgErr
-              ? <span style={{ fontSize:'15vw', display:'block', textAlign:'center' }}>🐾</span>
-              : <img src={currentFrame} alt="Pandi"
-                  style={{ width:'100%', height:'auto', objectFit:'contain', display:'block' }}
-                  onError={() => setImgErr(true)} />
-            }
+      {/* PANDI — tap abre el Santuario de Bienestar */}
+      <Link to="/mood" style={{ textDecoration:'none' }}>
+        <motion.div
+          whileTap={{ scale: 0.95 }}
+          style={{
+            position: 'absolute',
+            bottom: '14%',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            zIndex: 5,
+            width: isMobile ? '48%' : '22%',
+            maxWidth: 200,
+            cursor: 'pointer',
+          }}>
+          <div style={{ position:'relative' }}>
+            {/* Glow */}
+            <motion.div
+              animate={{ opacity:[0.3,0.5,0.3] }}
+              transition={{ duration:3, repeat:Infinity, ease:'easeInOut' }}
+              style={{ position:'absolute', top:'50%', left:'50%',
+                transform:'translate(-50%,-50%)', width:'80%', height:'80%',
+                borderRadius:'50%', background:`radial-gradient(circle, ${cfg.glow} 0%, transparent 65%)`,
+                filter:'blur(24px)', zIndex:-1, pointerEvents:'none' }} />
+            {/* Sombra suelo */}
+            <motion.div
+              animate={{ scaleX:[1,1.04,1], opacity:[0.2,0.3,0.2] }}
+              transition={{ duration:3, repeat:Infinity, ease:'easeInOut' }}
+              style={{ position:'absolute', bottom:-4, left:'50%',
+                transform:'translateX(-50%)', width:'50%', height:8,
+                borderRadius:'50%', background:'rgba(0,0,0,0.15)',
+                filter:'blur(4px)', zIndex:-1 }} />
+            {/* Imagen Pandi */}
+            <div style={{ filter:`drop-shadow(0 12px 20px ${cfg.glow})` }}>
+              {imgErr
+                ? <span style={{ fontSize:'15vw', display:'block', textAlign:'center' }}>🐾</span>
+                : <img src={currentFrame} alt="Pandi"
+                    style={{ width:'100%', height:'auto', objectFit:'contain', display:'block' }}
+                    onError={() => setImgErr(true)} />
+              }
+            </div>
           </div>
-        </div>
-      </div>
+        </motion.div>
+      </Link>
 
     </div>
   )

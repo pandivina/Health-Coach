@@ -209,12 +209,14 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name, onXpBarRef }
             transition={{ type:'spring', damping:20, stiffness:300 }}
             onClick={handleTipClick}
             style={{ position:'absolute', top:72, left:16, right:16, cursor:'pointer', zIndex:8 }}>
-            <motion.div
-              animate={{ background: tipOpen ? 'rgba(255,255,255,0.97)' : 'rgba(255,255,255,0.78)',
-                boxShadow: tipOpen ? '0 8px 24px rgba(0,0,0,0.15)' : '0 2px 8px rgba(0,0,0,0.08)' }}
-              transition={{ duration:0.3 }}
-              style={{ borderRadius:16, padding:'10px 12px', backdropFilter:'blur(16px)',
-                border:`1px solid ${tipOpen ? 'rgba(46,196,182,0.3)' : 'rgba(255,255,255,0.5)'}` }}>
+            <div
+              style={{
+                borderRadius:16, padding:'10px 12px', backdropFilter:'blur(16px)',
+                background: tipOpen ? 'rgba(255,255,255,0.97)' : 'rgba(255,255,255,0.78)',
+                boxShadow: tipOpen ? '0 8px 24px rgba(0,0,0,0.15)' : '0 2px 8px rgba(0,0,0,0.08)',
+                border:`1px solid ${tipOpen ? 'rgba(46,196,182,0.3)' : 'rgba(255,255,255,0.5)'}`,
+                transition:'all 0.3s',
+              }}>
               <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:4 }}>
                 <p style={{ fontSize:10, fontWeight:800, color:theme.primary||'#2EC4B6',
                   margin:0, textTransform:'uppercase', letterSpacing:'.05em' }}>💡 Tip de Pandi</p>
@@ -238,7 +240,7 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name, onXpBarRef }
                   </motion.div>
                 )}
               </AnimatePresence>
-            </motion.div>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

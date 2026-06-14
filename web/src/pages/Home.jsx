@@ -130,7 +130,7 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name, onXpBarRef }
     : cfg.frames[frameIdx]
 
   return (
-    <div style={{ position:'relative', height:'72vw', minHeight:360, maxHeight:520, overflow:'hidden', background:'#f8fafa' }}>
+    <div style={{ position:'relative', width:'100%', aspectRatio:'4/3', maxHeight:520, overflow:'hidden', background:'#f8fafa' }}>
 
       {/* FONDO */}
       <AnimatePresence mode="wait">
@@ -146,10 +146,10 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name, onXpBarRef }
       </AnimatePresence>
 
       {/* Overlay top */}
-      <div style={{ position:'absolute', top:0, left:0, right:0, height:110, zIndex:1, background:'linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, transparent 100%)', pointerEvents:'none' }} />
+      <div style={{ position:'absolute', top:0, left:0, right:0, height:'28%', zIndex:1, background:'linear-gradient(to bottom, rgba(0,0,0,0.28) 0%, transparent 100%)', pointerEvents:'none' }} />
 
       {/* Overlay bottom */}
-      <div style={{ position:'absolute', bottom:0, left:0, right:0, height:140, zIndex:1, background:'linear-gradient(to top, #f8fafa 0%, transparent 100%)', pointerEvents:'none' }} />
+      <div style={{ position:'absolute', bottom:0, left:0, right:0, height:'30%', zIndex:1, background:'linear-gradient(to top, #f8fafa 0%, transparent 100%)', pointerEvents:'none' }} />
 
       {/* HEADER */}
       <div style={{ position:'absolute', top:0, left:0, right:0, zIndex:10, padding:'14px 16px', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
@@ -219,17 +219,17 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name, onXpBarRef }
         )}
       </AnimatePresence>
 
-      {/* PANDI centrada — posicionada sobre la plataforma del fondo */}
-      <div style={{ position:'absolute', bottom:'8%', left:0, right:0, zIndex:5, display:'flex', alignItems:'flex-end', justifyContent:'center' }}>
-        <div style={{ position:'relative', flexShrink:0 }}>
+      {/* PANDI — en % para escalar con el contenedor */}
+      <div style={{ position:'absolute', bottom:'5%', left:'50%', transform:'translateX(-50%)', zIndex:5, width:'55%', maxWidth:260 }}>
+        <div style={{ position:'relative' }}>
           <motion.div animate={{ opacity:[0.3,0.5,0.3] }} transition={{ duration:3, repeat:Infinity, ease:'easeInOut' }}
-            style={{ position:'absolute', top:'50%', left:'50%', transform:'translate(-50%,-50%)', width:180, height:180, borderRadius:'50%', background:`radial-gradient(circle, ${cfg.glow} 0%, transparent 65%)`, filter:'blur(24px)', zIndex:-1, pointerEvents:'none' }} />
+            style={{ position:'absolute', top:'50%', left:'50%', transform:'translate(-50%,-50%)', width:'80%', height:'80%', borderRadius:'50%', background:`radial-gradient(circle, ${cfg.glow} 0%, transparent 65%)`, filter:'blur(24px)', zIndex:-1, pointerEvents:'none' }} />
           <motion.div animate={{ scaleX:[1,1.04,1], opacity:[0.25,0.35,0.25] }} transition={{ duration:3, repeat:Infinity, ease:'easeInOut' }}
-            style={{ position:'absolute', bottom:-8, left:'50%', transform:'translateX(-50%)', width:110, height:14, borderRadius:'50%', background:'rgba(0,0,0,0.18)', filter:'blur(5px)', zIndex:-1 }} />
+            style={{ position:'absolute', bottom:-4, left:'50%', transform:'translateX(-50%)', width:'50%', height:10, borderRadius:'50%', background:'rgba(0,0,0,0.18)', filter:'blur(5px)', zIndex:-1 }} />
           <div style={{ filter:`drop-shadow(0 12px 20px ${cfg.glow})` }}>
             {imgErr
-              ? <span style={{ fontSize:100, display:'block' }}>🐾</span>
-              : <img src={currentFrame} alt="Pandi" style={{ width:220, height:220, objectFit:'contain', display:'block' }} onError={() => setImgErr(true)} />
+              ? <span style={{ fontSize:'15vw', display:'block', textAlign:'center' }}>🐾</span>
+              : <img src={currentFrame} alt="Pandi" style={{ width:'100%', height:'auto', objectFit:'contain', display:'block' }} onError={() => setImgErr(true)} />
             }
           </div>
         </div>

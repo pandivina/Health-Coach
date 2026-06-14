@@ -230,11 +230,14 @@ INSTRUCCIONES EXTRAURGENTES PARA ESTE ESTADO:
     }
 
     // Adaptación horaria
-    let clientTimeStr = 'No provista';
+    let clientTimeStr = null;
     if (context?.clientTime && context?.timezone) {
       try {
-        clientTimeStr = new Date(context.clientTime).toLocaleTimeString('es-ES', {
+        clientTimeStr = new Date(context.clientTime).toLocaleString('es-ES', {
           timeZone: context.timezone,
+          weekday: 'long',
+          day: 'numeric',
+          month: 'long',
           hour: '2-digit',
           minute: '2-digit'
         }) + ` (${context.timezone})`;
@@ -244,7 +247,13 @@ INSTRUCCIONES EXTRAURGENTES PARA ESTE ESTADO:
     // ─── SYSTEM PROMPT ────────────────────────────────────────────────────────
     const systemPrompt = `${personality.identity}
 
-${memory?.summary ? `═══════════════════════════════════
+${clientTimeStr ? `═══════════════════════════════════
+⏰ HORA Y FECHA REALES AHORA MISMO
+═══════════════════════════════════
+${clientTimeStr}
+Esta es la ÚNICA fuente de verdad sobre la hora/fecha actual. Úsala siempre que menciones "ahora", "hoy", "esta tarde", planifiques horarios o calcules cuánto falta para algo. NUNCA asumas, infieras o calcules otra hora distinta a esta, aunque el usuario mencione una hora diferente — si lo hace y no coincide, puedes corregirle con amabilidad.
+
+` : ''}${memory?.summary ? `═══════════════════════════════════
 MEMORIA DE CONVERSACIONES ANTERIORES
 ═══════════════════════════════════
 ${memory.summary}
@@ -292,8 +301,6 @@ ${treatments.length ? treatments.map(t => `• ${t.name} (${t.type})${t.affects_
 
 ANALÍTICAS (últimas recomendaciones)
 ${lastLab.ai_recommendations || 'Sin analíticas subidas'}
-
-HORA ACTUAL DISPOSITIVO DEL USUARIO: ${clientTimeStr}
 ${workoutContextSection}
 
 ═══════════════════════════════════
@@ -303,14 +310,15 @@ TONO: ${behaviorInstruction}
 ${personality.rules}
 
 REGLAS GENERALES:
-1. USA SOLO los datos reales del perfil. Nunca inventes valores.
-2. Usa la MEMORIA para dar continuidad — recuerda lo que se ha hablado antes.
-3. Ten en cuenta los TRATAMIENTOS MÉDICOS al dar consejos nutricionales.
-4. Si hay analíticas, considera las recomendaciones en tus respuestas.
-5. Adapta los consejos al HORARIO LABORAL del usuario.
-6. Responde siempre en español.
-7. Máximo ${personality.maxParagraphs} párrafos por respuesta${context?.activeWorkout ? ' (entrenando: máximo 2 párrafos cortos)' : ''}.
-8. Usa emojis con moderación.`;
+1. La HORA Y FECHA REALES indicadas arriba son la única referencia temporal válida. Nunca asumas ni inventes otra hora.
+2. USA SOLO los datos reales del perfil. Nunca inventes valores.
+3. Usa la MEMORIA para dar continuidad — recuerda lo que se ha hablado antes.
+4. Ten en cuenta los TRATAMIENTOS MÉDICOS al dar consejos nutricionales.
+5. Si hay analíticas, considera las recomendaciones en tus respuestas.
+6. Adapta los consejos al HORARIO LABORAL del usuario.
+7. Responde siempre en español.
+8. Máximo ${personality.maxParagraphs} párrafos por respuesta${context?.activeWorkout ? ' (entrenando: máximo 2 párrafos cortos)' : ''}.
+9. Usa emojis con moderación.`;
 
     // ─── LLAMADA A CLAUDE ─────────────────────────────────────────────────────
     const response = await anthropic.messages.create({

@@ -667,8 +667,8 @@ export default function Onboarding() {
 
                 {/* Progreso + botón */}
                 <div style={{ display:'flex', gap:5, justifyContent:'center', margin:'10px 0 8px' }}>
-                  {QUESTIONS.map((_, i) => (
-                    <motion.div key={i}
+                  {QUESTIONS.map((q, i) => (
+                    <motion.div key={q.key}
                       animate={{
                         width: i===qStep ? 22 : 6,
                         background: i<qStep ? '#2EC4B6' : i===qStep ? energyColor : 'rgba(0,0,0,0.15)',

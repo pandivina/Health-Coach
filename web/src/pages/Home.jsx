@@ -62,26 +62,18 @@ function useIsMobile() {
   return isMobile
 }
 
-// FIX: eliminada la redeclaración de recoveryLight via useCoachAwareness
-// FIX: pandiMood/pandiStage/tomorrowPlan eliminados (se usan cuando CoachAwarenessProvider esté activo)
 function Sanctuary({ recoveryLight, profile, theme, greeting, name }) {
   const cfg      = STATE_CONFIG[recoveryLight] || STATE_CONFIG.GREEN
   const isMobile = useIsMobile()
-  const [frameIdx,   setFrameIdx]   = useState(0)
-  const [imgErr,     setImgErr]     = useState(false)
-  const [blinking,   setBlinking]   = useState(false)
-  const [tipOpen,    setTipOpen]    = useState(false)
-  const [tipVisible, setTipVisible] = useState(false)
-  const [tip,        setTip]        = useState('')
+  const [frameIdx, setFrameIdx] = useState(0)
+  const [imgErr,   setImgErr]   = useState(false)
+  const [blinking, setBlinking] = useState(false)
 
   useEffect(() => {
     ALL_FRAMES.forEach(src => { const i = new Image(); i.src = src })
   }, [])
 
-  useEffect(() => {
-    setFrameIdx(0)
-    setImgErr(false)
-  }, [recoveryLight])
+  useEffect(() => { setFrameIdx(0); setImgErr(false) }, [recoveryLight])
 
   useEffect(() => {
     if (cfg.frames.length <= 1) return
@@ -98,51 +90,7 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name }) {
     return () => clearTimeout(t)
   }, [])
 
-  useEffect(() => {
-    const cacheKey = `pandi_tip_ai_${new Date().toISOString().slice(0, 13)}`
-    try {
-      const cached = localStorage.getItem(cacheKey)
-      if (cached) {
-        setTip(cached)
-        setTimeout(() => setTipVisible(true), 2000)
-        return
-      }
-    } catch {}
-    import('../lib/supabase').then(({ supabase }) => {
-      supabase.auth.getSession().then(({ data: { session } }) => {
-        if (!session) return
-        fetch(`${import.meta.env.VITE_API_URL}/api/tip/daily`, {
-          headers: { Authorization: `Bearer ${session.access_token}` }
-        })
-        .then(r => r.json())
-        .then(data => {
-          if (data.tip) {
-            setTip(data.tip)
-            try { localStorage.setItem(cacheKey, data.tip) } catch {}
-            setTimeout(() => setTipVisible(true), 2000)
-          }
-        })
-        .catch(() => {
-          const fallbacks = [
-            'Beber agua antes de comer reduce la ingesta calórica hasta un 13%. 💧',
-            'Una caminata de 10 min después de comer mejora la glucemia. 🚶',
-            'Dormir menos de 7h aumenta el hambre hasta un 24%. 😴',
-          ]
-          setTip(fallbacks[Math.floor(Math.random() * fallbacks.length)])
-          setTimeout(() => setTipVisible(true), 2000)
-        })
-      })
-    })
-  }, [])
-
-  function handleTipClick() { setTipOpen(o => !o) }
-  function dismissTip() { setTipVisible(false); setTipOpen(false) }
-
-  const currentFrame = blinking
-    ? '/panda/panda_blink.png'
-    : tipOpen
-    ? '/panda/panda_tip.png'
-    : cfg.frames[frameIdx]
+  const currentFrame = blinking ? '/panda/panda_blink.png' : cfg.frames[frameIdx]
 
   return (
     <div style={{
@@ -201,50 +149,6 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name }) {
           </div>
         </Link>
       </div>
-
-      {/* TIP DE PANDI */}
-      <AnimatePresence>
-        {tipVisible && tip && (
-          <motion.div
-            initial={{ opacity:0, y:-10 }} animate={{ opacity:1, y:0 }}
-            exit={{ opacity:0, y:-10 }}
-            transition={{ type:'spring', damping:20, stiffness:300 }}
-            onClick={handleTipClick}
-            style={{ position:'absolute', top:72, left:16, right:16, cursor:'pointer', zIndex:8 }}>
-            <div style={{
-                borderRadius:16, padding:'10px 12px', backdropFilter:'blur(16px)',
-                background: tipOpen ? 'rgba(255,255,255,0.97)' : 'rgba(255,255,255,0.78)',
-                boxShadow: tipOpen ? '0 8px 24px rgba(0,0,0,0.15)' : '0 2px 8px rgba(0,0,0,0.08)',
-                border:`1px solid ${tipOpen ? 'rgba(46,196,182,0.3)' : 'rgba(255,255,255,0.5)'}`,
-                transition:'all 0.3s',
-              }}>
-              <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:4 }}>
-                <p style={{ fontSize:10, fontWeight:800, color:theme.primary||'#2EC4B6',
-                  margin:0, textTransform:'uppercase', letterSpacing:'.05em' }}>💡 Tip de Pandi</p>
-                <button onClick={e => { e.stopPropagation(); dismissTip() }}
-                  style={{ fontSize:10, color:'#9CA3AF', background:'none', border:'none', cursor:'pointer', padding:0 }}>✕</button>
-              </div>
-              <AnimatePresence mode="sync">
-                {tipOpen ? (
-                  <motion.div key="open" initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }} transition={{ duration:0.2 }}>
-                    <p style={{ fontSize:12, color:'#1A2332', lineHeight:1.5, margin:'0 0 8px', fontWeight:500 }}>{tip}</p>
-                    <button onClick={e => { e.stopPropagation(); dismissTip() }}
-                      style={{ fontSize:10, color:theme.primary||'#2EC4B6', fontWeight:700,
-                        background:'none', border:'none', cursor:'pointer', padding:0 }}>
-                      Entendido ✓
-                    </button>
-                  </motion.div>
-                ) : (
-                  <motion.div key="closed" initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }} transition={{ duration:0.2 }}>
-                    <p style={{ fontSize:11, color:'rgba(26,35,50,0.75)', lineHeight:1.4, margin:0,
-                      overflow:'hidden', display:'-webkit-box', WebkitLineClamp:2, WebkitBoxOrient:'vertical' }}>{tip}</p>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       {/* PANDI — tap abre /mood */}
       <Link to="/mood" style={{ textDecoration:'none' }}>
@@ -417,6 +321,99 @@ function MiniRing({ value, max, color, label }) {
       </div>
       <span style={{ fontSize:10, fontWeight:600, color:'#6B7280' }}>{label}</span>
     </div>
+  )
+}
+
+// ── Tip de Pandi — componente del scroll ─────────────────────────────────────
+function PandiTipCard({ theme }) {
+  const [tip,     setTip]     = useState('')
+  const [visible, setVisible] = useState(false)
+  const [open,    setOpen]    = useState(false)
+  const [dismissed, setDismissed] = useState(false)
+
+  useEffect(() => {
+    const cacheKey = `pandi_tip_ai_${new Date().toISOString().slice(0, 13)}`
+    try {
+      const cached = localStorage.getItem(cacheKey)
+      if (cached) { setTip(cached); setTimeout(() => setVisible(true), 800); return }
+    } catch {}
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session) return
+      fetch(`${import.meta.env.VITE_API_URL}/api/tip/daily`, {
+        headers: { Authorization: `Bearer ${session.access_token}` }
+      })
+      .then(r => r.json())
+      .then(data => {
+        if (data.tip) {
+          setTip(data.tip)
+          try { localStorage.setItem(cacheKey, data.tip) } catch {}
+          setTimeout(() => setVisible(true), 800)
+        }
+      })
+      .catch(() => {
+        const fallbacks = [
+          'Beber agua antes de comer reduce la ingesta calórica hasta un 13%. 💧',
+          'Una caminata de 10 min después de comer mejora la glucemia. 🚶',
+          'Dormir menos de 7h aumenta el hambre hasta un 24%. 😴',
+        ]
+        setTip(fallbacks[Math.floor(Math.random() * fallbacks.length)])
+        setTimeout(() => setVisible(true), 800)
+      })
+    })
+  }, [])
+
+  if (!visible || !tip || dismissed) return null
+
+  return (
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity:0, y:6 }} animate={{ opacity:1, y:0 }}
+        exit={{ opacity:0, y:-6 }}
+        transition={{ type:'spring', damping:22, stiffness:300 }}
+        style={{ marginBottom:12 }}>
+        <div
+          onClick={() => setOpen(o => !o)}
+          style={{ background:'rgba(255,255,255,0.95)', borderRadius:18, padding:'12px 14px',
+            border:`1px solid ${open ? (theme.primary+'40') : 'rgba(0,0,0,0.06)'}`,
+            boxShadow:'0 2px 12px rgba(0,0,0,0.05)', cursor:'pointer',
+            transition:'all 0.25s' }}>
+          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom: open ? 8 : 0 }}>
+            <p style={{ fontSize:11, fontWeight:800, color:theme.primary,
+              margin:0, textTransform:'uppercase', letterSpacing:'.05em' }}>
+              💡 Tip de Pandi
+            </p>
+            <button
+              onClick={e => { e.stopPropagation(); setDismissed(true) }}
+              style={{ fontSize:11, color:'#9CA3AF', background:'none', border:'none',
+                cursor:'pointer', padding:'0 0 0 8px', lineHeight:1 }}>✕</button>
+          </div>
+          <AnimatePresence mode="wait">
+            {open ? (
+              <motion.div key="open"
+                initial={{ opacity:0, height:0 }} animate={{ opacity:1, height:'auto' }}
+                exit={{ opacity:0, height:0 }} transition={{ duration:0.2 }}>
+                <p style={{ fontSize:13, color:'#1A2332', lineHeight:1.55,
+                  margin:'0 0 10px', fontWeight:500 }}>{tip}</p>
+                <button
+                  onClick={e => { e.stopPropagation(); setDismissed(true) }}
+                  style={{ fontSize:11, color:theme.primary, fontWeight:700,
+                    background:'none', border:'none', cursor:'pointer', padding:0 }}>
+                  Entendido ✓
+                </button>
+              </motion.div>
+            ) : (
+              <motion.p key="closed"
+                initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
+                style={{ fontSize:12, color:'#6B7280', lineHeight:1.4, margin:'6px 0 0',
+                  overflow:'hidden', display:'-webkit-box',
+                  WebkitLineClamp:2, WebkitBoxOrient:'vertical' }}>
+                {tip}
+              </motion.p>
+            )}
+          </AnimatePresence>
+        </div>
+      </motion.div>
+    </AnimatePresence>
   )
 }
 
@@ -624,6 +621,9 @@ export default function Home() {
 
         {/* MINI WIDGET SEMANAL */}
         <MiniWeekWidget userId={user?.id} theme={theme} />
+
+        {/* TIP DE PANDI */}
+        <PandiTipCard theme={theme} />
 
         {/* PLAN DE HOY */}
         <motion.div initial={{ opacity:0, y:16 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.1 }}

@@ -250,7 +250,7 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name }) {
       {/* PANDI — tap abre /mood */}
       <Link to="/mood" style={{ textDecoration:'none' }}>
         <motion.div whileTap={{ scale:0.95 }}
-          style={{ position:'absolute', bottom:'14%', left:'50%', transform:'translateX(-50%)',
+          style={{ position:'absolute', bottom:'8%', left:'50%', transform:'translateX(-50%)',
             zIndex:5, width:isMobile ? '48%' : '22%', maxWidth:200, cursor:'pointer' }}>
           <div style={{ position:'relative' }}>
             <motion.div

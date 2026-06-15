@@ -789,13 +789,17 @@ function HabitsTab({ theme, userId, onHabitsUpdate, profile }) {
   const storageKey = `pandi_habits_${today}`
   const configKey  = 'pandi_habit_config'
 
-  const [habits,     setHabits]     = useState(() => {
-    const saved = localStorage.getItem(configKey)
-    return saved ? JSON.parse(saved) : DEFAULT_HABITS.map(h => ({ ...h, enabled: true }))
+  const [habits, setHabits] = useState(() => {
+    try {
+      const saved = localStorage.getItem(configKey)
+      return saved ? JSON.parse(saved) : DEFAULT_HABITS.map(h => ({ ...h, enabled: true }))
+    } catch { return DEFAULT_HABITS.map(h => ({ ...h, enabled: true })) }
   })
-  const [checked,    setChecked]    = useState(() => {
-    const saved = localStorage.getItem(storageKey)
-    return saved ? JSON.parse(saved) : {}
+  const [checked, setChecked] = useState(() => {
+    try {
+      const saved = localStorage.getItem(storageKey)
+      return saved ? JSON.parse(saved) : {}
+    } catch { return {} }
   })
   const [celebrated, setCelebrated] = useState(false)
 
@@ -808,7 +812,7 @@ function HabitsTab({ theme, userId, onHabitsUpdate, profile }) {
   function toggle(id) {
     const next = { ...checked, [id]: !checked[id] }
     setChecked(next)
-    localStorage.setItem(storageKey, JSON.stringify(next))
+    try { localStorage.setItem(storageKey, JSON.stringify(next)) } catch {}
     if (!checked[id] && active.every(h => h.id === id ? true : checked[h.id])) {
       setCelebrated(true)
       useStore.getState().addBondXP?.(5)
@@ -897,10 +901,14 @@ function HabitsTab({ theme, userId, onHabitsUpdate, profile }) {
 }
 
 function SantuarioTab({ theme, userLevel, currentMood, habitsChecked }) {
-  const [mascotaActiva,   setMascotaActiva]   = useState(() => localStorage.getItem('pandi_active_pet') || 'pandi')
+  const [mascotaActiva,   setMascotaActiva]   = useState(() => {
+    try { return localStorage.getItem('pandi_active_pet') || 'pandi' } catch { return 'pandi' }
+  })
   const [nombresMascotas, setNombresMascotas] = useState(() => {
-    const saved = localStorage.getItem('pandi_pet_names')
-    return saved ? JSON.parse(saved) : { pandi: 'Pandi', slothi: 'Slothi', lumi: 'Lumi' }
+    try {
+      const saved = localStorage.getItem('pandi_pet_names')
+      return saved ? JSON.parse(saved) : { pandi: 'Pandi', slothi: 'Slothi', lumi: 'Lumi' }
+    } catch { return { pandi: 'Pandi', slothi: 'Slothi', lumi: 'Lumi' } }
   })
   const [editingName,  setEditingName]  = useState(false)
   const [newNameInput, setNewNameInput] = useState('')
@@ -925,7 +933,7 @@ function SantuarioTab({ theme, userLevel, currentMood, habitsChecked }) {
     if (!newNameInput.trim()) return
     const next = { ...nombresMascotas, [mascotaActiva]: newNameInput }
     setNombresMascotas(next)
-    localStorage.setItem('pandi_pet_names', JSON.stringify(next))
+    try { localStorage.setItem('pandi_pet_names', JSON.stringify(next)) } catch {}
     setEditingName(false)
   }
 
@@ -1019,7 +1027,7 @@ function SantuarioTab({ theme, userLevel, currentMood, habitsChecked }) {
                     textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{m.desc}</p>
                 </div>
                 {desbloqueado ? (
-                  <button onClick={() => { setMascotaActiva(m.id); localStorage.setItem('pandi_active_pet', m.id) }}
+                  <button onClick={() => { setMascotaActiva(m.id); try { localStorage.setItem('pandi_active_pet', m.id) } catch {} }}
                     style={{ fontSize:12, fontWeight:700, padding:'6px 12px', borderRadius:12,
                       border:'none', cursor:'pointer',
                       background: esActiva ? theme.primary : 'rgba(0,0,0,0.06)',

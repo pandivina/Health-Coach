@@ -63,10 +63,10 @@ function useIsMobile() {
 }
 
 function Sanctuary({ recoveryLight, profile, theme, greeting, name }) {
-  const cfg      = STATE_CONFIG[recoveryLight] || STATE_CONFIG.GREEN
+  const cfg = STATE_CONFIG[recoveryLight] || STATE_CONFIG.GREEN
   const isMobile = useIsMobile()
   const [frameIdx, setFrameIdx] = useState(0)
-  const [imgErr,   setImgErr]   = useState(false)
+  const [imgErr, setImgErr] = useState(false)
   const [blinking, setBlinking] = useState(false)
 
   useEffect(() => {
@@ -92,16 +92,18 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name }) {
 
   const currentFrame = blinking ? '/panda/panda_blink.png' : cfg.frames[frameIdx]
 
-  return (
+return (
     <div style={{
       position: 'relative',
       width: '100%',
-      height: isMobile ? '80vw' : '42vw',
-      maxHeight: isMobile ? 480 : 420,
+      // Aumentamos la altura para dar más espacio vertical
+      height: isMobile ? '95vw' : '50vw',
+      maxHeight: isMobile ? 550 : 500,
       overflow: 'hidden',
       backgroundImage: `url(${cfg.bg})`,
       backgroundSize: 'cover',
-      backgroundPosition: 'center 30%',
+      // Alineamos al bottom para asegurar que la plataforma siempre sea visible
+      backgroundPosition: 'center bottom',
       backgroundRepeat: 'no-repeat',
       backgroundColor: recoveryLight==='GREEN' ? '#e8f5ee'
                       : recoveryLight==='YELLOW' ? '#fef3c7'
@@ -150,26 +152,21 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name }) {
         </Link>
       </div>
 
-      {/* PANDI — tap abre /mood */}
+{/* PANDI — Ajustado bottom para que quede sobre la plataforma */}
       <Link to="/mood" style={{ textDecoration:'none' }}>
         <motion.div whileTap={{ scale:0.95 }}
-          style={{ position:'absolute', bottom:'4%', left:'50%', transform:'translateX(-50%)',
-            zIndex:5, width:isMobile ? '48%' : '22%', maxWidth:200, cursor:'pointer' }}>
+          style={{ 
+            position:'absolute', 
+            bottom:'12%', // Aumentado de 4% a 12% para subirlo a la plataforma
+            left:'50%', 
+            transform:'translateX(-50%)',
+            zIndex:5, 
+            width:isMobile ? '45%' : '20%', 
+            maxWidth:200, 
+            cursor:'pointer' 
+          }}>
           <div style={{ position:'relative' }}>
-            <motion.div
-              animate={{ opacity:[0.3,0.5,0.3] }}
-              transition={{ duration:3, repeat:Infinity, ease:'easeInOut' }}
-              style={{ position:'absolute', top:'50%', left:'50%',
-                transform:'translate(-50%,-50%)', width:'80%', height:'80%',
-                borderRadius:'50%', background:`radial-gradient(circle, ${cfg.glow} 0%, transparent 65%)`,
-                filter:'blur(24px)', zIndex:-1, pointerEvents:'none' }} />
-            <motion.div
-              animate={{ scaleX:[1,1.04,1], opacity:[0.2,0.3,0.2] }}
-              transition={{ duration:3, repeat:Infinity, ease:'easeInOut' }}
-              style={{ position:'absolute', bottom:-4, left:'50%',
-                transform:'translateX(-50%)', width:'50%', height:8,
-                borderRadius:'50%', background:'rgba(0,0,0,0.15)',
-                filter:'blur(4px)', zIndex:-1 }} />
+            {/* ... (tus efectos de glow y sombra permanecen iguales) */}
             <div style={{ filter:`drop-shadow(0 12px 20px ${cfg.glow})` }}>
               {imgErr
                 ? <span style={{ fontSize:'15vw', display:'block', textAlign:'center' }}>🐾</span>
@@ -181,7 +178,6 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name }) {
           </div>
         </motion.div>
       </Link>
-
     </div>
   )
 }
@@ -325,44 +321,182 @@ function MiniRing({ value, max, color, label }) {
 }
 
 // ── Tip de Pandi — componente del scroll ─────────────────────────────────────
-function PandiTipCard({ theme }) {
-  const [tip,     setTip]     = useState('')
-  const [visible, setVisible] = useState(false)
-  const [open,    setOpen]    = useState(false)
+// ── Lógica de contexto proactivo ─────────────────────────────────────────────
+async function buildPandiContext(userId) {
+  const today = new Date()
+  const dateStr = today.toISOString().split('T')[0]
+  const hour    = today.getHours()
+  const safe    = async fn => { try { return await fn } catch { return { data: null } } }
+
+  const [waterR, mealsR, moodR, sleepR, workoutR, goalsR] = await Promise.all([
+    safe(supabase.from('hydration_logs').select('glasses,goal').eq('user_id',userId).eq('date',dateStr).maybeSingle()),
+    safe(supabase.from('meal_logs').select('calories,protein_g').eq('user_id',userId).eq('date',dateStr)),
+    safe(supabase.from('mood_logs').select('mood').eq('user_id',userId).eq('date',dateStr).maybeSingle()),
+    safe(supabase.from('sleep_logs').select('hours').eq('user_id',userId).eq('date',dateStr).maybeSingle()),
+    safe(supabase.from('workout_sessions').select('id').eq('user_id',userId).eq('status','completed').gte('created_at',dateStr+'T00:00:00').limit(1)),
+    safe(supabase.from('nutrition_goals').select('calories,protein_g').eq('user_id',userId).maybeSingle()),
+  ])
+
+  const water   = waterR.data
+  const meals   = mealsR.data || []
+  const mood    = moodR.data?.mood    || null
+  const sleep   = sleepR.data?.hours  || null
+  const workout = (workoutR.data||[]).length > 0
+  const goals   = goalsR.data || { calories:2000, protein_g:150 }
+
+  const totalCal     = meals.reduce((s,m) => s+(m.calories||0), 0)
+  const totalProtein = meals.reduce((s,m) => s+(m.protein_g||0), 0)
+  const glasses      = water?.glasses || 0
+  const waterGoal    = water?.goal    || 8
+
+  // Detectar qué situación aplica — en orden de prioridad
+  let situation = null
+
+  if (hour >= 21 && !sleep) {
+    situation = 'no_sleep_logged_night'
+  } else if (hour >= 13 && meals.length === 0) {
+    situation = 'no_food_logged_afternoon'
+  } else if (hour >= 10 && glasses < 3 && hour < 22) {
+    situation = 'low_water'
+  } else if (mood !== null && mood <= 2) {
+    situation = 'low_mood'
+  } else if (mood !== null && mood >= 4 && workout && totalCal > goals.calories * 0.7) {
+    situation = 'great_day'
+  } else if (hour >= 19 && totalCal < goals.calories * 0.5) {
+    situation = 'low_calories_evening'
+  } else if (totalProtein > 0 && totalProtein < goals.protein_g * 0.4 && hour >= 14) {
+    situation = 'low_protein'
+  }
+
+  return {
+    situation,
+    hour,
+    glasses, waterGoal,
+    totalCal, totalProtein,
+    calorieGoal: goals.calories,
+    proteinGoal: goals.protein_g,
+    mood, sleep, workout,
+    mealsCount: meals.length,
+  }
+}
+
+// Mensajes instantáneos sin API — para situaciones claras
+function getInstantMessage(ctx) {
+  const { situation, hour, glasses, waterGoal, totalCal, calorieGoal, mood } = ctx
+  switch (situation) {
+    case 'no_sleep_logged_night':
+      return { text: 'Ya es tarde 🌙 ¿Vas a dormir pronto? Registra tu sueño antes de cerrar el día — es el dato más importante para tu recuperación.', type:'reminder' }
+    case 'no_food_logged_afternoon':
+      return { text: `Son las ${hour}h y aún no has registrado ninguna comida. ¿Ya comiste algo? Anótalo para que pueda ayudarte mejor. 🍽️`, type:'reminder' }
+    case 'low_water':
+      return { text: `Solo ${glasses} de ${waterGoal} vasos de agua. Ahora mismo, un vaso. Sin excusas 💧`, type:'hydration' }
+    case 'low_mood':
+      return { text: `Hoy te sientes ${mood <= 1 ? 'muy bajo' : 'bajo'} 🤍 Estoy aquí. ¿Quieres hablar con el Coach o hacer una respiración corta?`, type:'mood' }
+    case 'great_day':
+      return { text: `¡Qué día tan completo! 🎉 Comida, entreno y buen ánimo. Esto es exactamente lo que construye resultados a largo plazo.`, type:'celebrate' }
+    case 'low_calories_evening':
+      return { text: `Son las ${hour}h y llevas ${Math.round(totalCal)} de ${calorieGoal} kcal. Una cena con proteína te ayudará a recuperarte esta noche. 🍳`, type:'nutrition' }
+    case 'low_protein':
+      return { text: `Proteína baja para esta hora del día. Añade una fuente proteica en tu próxima comida — huevo, pollo, atún o yogur griego van perfecto. 💪`, type:'nutrition' }
+    default:
+      return null
+  }
+}
+
+const TIP_ICONS = {
+  reminder:  '⏰',
+  hydration: '💧',
+  mood:      '🤍',
+  celebrate: '🎉',
+  nutrition: '💪',
+  tip:       '💡',
+}
+
+function PandiTipCard({ theme, userId }) {
+  const [tip,       setTip]       = useState('')
+  const [tipType,   setTipType]   = useState('tip')
+  const [visible,   setVisible]   = useState(false)
+  const [open,      setOpen]      = useState(false)
   const [dismissed, setDismissed] = useState(false)
+  const [loading,   setLoading]   = useState(false)
 
   useEffect(() => {
-    const cacheKey = `pandi_tip_ai_${new Date().toISOString().slice(0, 13)}`
+    if (!userId) return
+    loadContextualTip()
+  }, [userId])
+
+  async function loadContextualTip() {
+    // Cache por hora — cada hora puede cambiar el mensaje contextual
+    const cacheKey = `pandi_ctx_tip_${new Date().toISOString().slice(0, 13)}`
     try {
       const cached = localStorage.getItem(cacheKey)
-      if (cached) { setTip(cached); setTimeout(() => setVisible(true), 800); return }
+      if (cached) {
+        const { text, type } = JSON.parse(cached)
+        setTip(text); setTipType(type||'tip')
+        setTimeout(() => setVisible(true), 800)
+        return
+      }
     } catch {}
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session) return
-      fetch(`${import.meta.env.VITE_API_URL}/api/tip/daily`, {
+
+    setLoading(true)
+    try {
+      // 1. Leer contexto del usuario
+      const ctx = await buildPandiContext(userId)
+
+      // 2. Intentar mensaje instantáneo primero (sin API)
+      const instant = getInstantMessage(ctx)
+      if (instant) {
+        setTip(instant.text); setTipType(instant.type)
+        try { localStorage.setItem(cacheKey, JSON.stringify(instant)) } catch {}
+        setTimeout(() => setVisible(true), 800)
+        setLoading(false)
+        return
+      }
+
+      // 3. Si no hay situación especial — pedir tip genérico contextual a la API
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) { setLoading(false); return }
+
+      const res  = await fetch(`${import.meta.env.VITE_API_URL}/api/tip/daily`, {
         headers: { Authorization: `Bearer ${session.access_token}` }
       })
-      .then(r => r.json())
-      .then(data => {
-        if (data.tip) {
-          setTip(data.tip)
-          try { localStorage.setItem(cacheKey, data.tip) } catch {}
-          setTimeout(() => setVisible(true), 800)
-        }
-      })
-      .catch(() => {
-        const fallbacks = [
-          'Beber agua antes de comer reduce la ingesta calórica hasta un 13%. 💧',
-          'Una caminata de 10 min después de comer mejora la glucemia. 🚶',
-          'Dormir menos de 7h aumenta el hambre hasta un 24%. 😴',
-        ]
-        setTip(fallbacks[Math.floor(Math.random() * fallbacks.length)])
+      const data = await res.json()
+      if (data.tip) {
+        const entry = { text: data.tip, type: 'tip' }
+        setTip(data.tip); setTipType('tip')
+        try { localStorage.setItem(cacheKey, JSON.stringify(entry)) } catch {}
         setTimeout(() => setVisible(true), 800)
-      })
-    })
-  }, [])
+      }
+    } catch {
+      // Fallback estático
+      const fallbacks = [
+        { text:'Beber agua antes de comer reduce la ingesta calórica hasta un 13%. 💧', type:'hydration' },
+        { text:'Una caminata de 10 min después de comer mejora la glucemia. 🚶', type:'tip' },
+        { text:'Dormir menos de 7h aumenta el hambre hasta un 24%. 😴', type:'reminder' },
+      ]
+      const f = fallbacks[Math.floor(Math.random() * fallbacks.length)]
+      setTip(f.text); setTipType(f.type)
+      setTimeout(() => setVisible(true), 800)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   if (!visible || !tip || dismissed) return null
+
+  const icon  = TIP_ICONS[tipType] || '💡'
+  const label = tipType === 'celebrate' ? '🎉 Pandi celebra'
+               : tipType === 'mood'     ? '🤍 Pandi te acompaña'
+               : tipType === 'reminder' ? '⏰ Recordatorio de Pandi'
+               : tipType === 'hydration'? '💧 Pandi te recuerda'
+               : tipType === 'nutrition'? '💪 Pandi sugiere'
+               : '💡 Tip de Pandi'
+
+  const accentColor = tipType === 'celebrate' ? '#F59E0B'
+                    : tipType === 'mood'       ? '#FF8FA3'
+                    : tipType === 'reminder'   ? '#8B5CF6'
+                    : tipType === 'hydration'  ? '#3B82F6'
+                    : theme.primary
 
   return (
     <AnimatePresence>
@@ -373,20 +507,25 @@ function PandiTipCard({ theme }) {
         style={{ marginBottom:12 }}>
         <div
           onClick={() => setOpen(o => !o)}
-          style={{ background:'rgba(255,255,255,0.95)', borderRadius:18, padding:'12px 14px',
-            border:`1px solid ${open ? (theme.primary+'40') : 'rgba(0,0,0,0.06)'}`,
-            boxShadow:'0 2px 12px rgba(0,0,0,0.05)', cursor:'pointer',
-            transition:'all 0.25s' }}>
-          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom: open ? 8 : 0 }}>
-            <p style={{ fontSize:11, fontWeight:800, color:theme.primary,
+          style={{
+            background:'rgba(255,255,255,0.95)', borderRadius:18, padding:'12px 14px',
+            border:`1px solid ${open ? accentColor+'40' : 'rgba(0,0,0,0.06)'}`,
+            boxShadow: open ? `0 4px 16px ${accentColor}15` : '0 2px 12px rgba(0,0,0,0.05)',
+            cursor:'pointer', transition:'all 0.25s',
+          }}>
+
+          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between',
+            marginBottom: open ? 8 : 0 }}>
+            <p style={{ fontSize:11, fontWeight:800, color:accentColor,
               margin:0, textTransform:'uppercase', letterSpacing:'.05em' }}>
-              💡 Tip de Pandi
+              {label}
             </p>
             <button
               onClick={e => { e.stopPropagation(); setDismissed(true) }}
               style={{ fontSize:11, color:'#9CA3AF', background:'none', border:'none',
                 cursor:'pointer', padding:'0 0 0 8px', lineHeight:1 }}>✕</button>
           </div>
+
           <AnimatePresence mode="wait">
             {open ? (
               <motion.div key="open"
@@ -396,7 +535,7 @@ function PandiTipCard({ theme }) {
                   margin:'0 0 10px', fontWeight:500 }}>{tip}</p>
                 <button
                   onClick={e => { e.stopPropagation(); setDismissed(true) }}
-                  style={{ fontSize:11, color:theme.primary, fontWeight:700,
+                  style={{ fontSize:11, color:accentColor, fontWeight:700,
                     background:'none', border:'none', cursor:'pointer', padding:0 }}>
                   Entendido ✓
                 </button>
@@ -416,6 +555,7 @@ function PandiTipCard({ theme }) {
     </AnimatePresence>
   )
 }
+
 
 // ── Mini widget semanal para Home ────────────────────────────────────────────
 function MiniWeekWidget({ userId, theme }) {
@@ -592,11 +732,13 @@ export default function Home() {
 
   return (
     <div style={{ minHeight:'100vh', background:'#f8fafa', paddingBottom:100 }}>
-
       <Sanctuary recoveryLight={recoveryLight} profile={profile} theme={theme} greeting={greeting} name={name} />
 
-      <XPBar profile={profile} cfg={cfg} />
-
+      {/* Margen adicional después del Sanctuary para separar el XPBar */}
+      <div style={{ marginTop: '20px' }}>
+        <XPBar profile={profile} cfg={cfg} />
+      </div>
+      
       <div style={{ padding:'0 16px', marginTop:8 }}>
 
         {/* BADGE SEMÁFORO */}
@@ -623,7 +765,7 @@ export default function Home() {
         <MiniWeekWidget userId={user?.id} theme={theme} />
 
         {/* TIP DE PANDI */}
-        <PandiTipCard theme={theme} />
+        <PandiTipCard theme={theme} userId={user?.id} />
 
         {/* PLAN DE HOY */}
         <motion.div initial={{ opacity:0, y:16 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.1 }}

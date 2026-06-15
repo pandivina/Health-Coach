@@ -157,7 +157,7 @@ return (
         <motion.div whileTap={{ scale:0.95 }}
           style={{ 
             position:'absolute', 
-            bottom:'12%', // Aumentado de 4% a 12% para subirlo a la plataforma
+            bottom:'15%', // Aumentado de 4% a 12% para subirlo a la plataforma
             left:'50%', 
             transform:'translateX(-50%)',
             zIndex:5, 

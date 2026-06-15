@@ -101,12 +101,14 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name }) {
 
   useEffect(() => {
     const cacheKey = `pandi_tip_ai_${new Date().toISOString().slice(0, 13)}`
-    const cached   = localStorage.getItem(cacheKey)
-    if (cached) {
-      setTip(cached)
-      setTimeout(() => setTipVisible(true), 2000)
-      return
-    }
+    try {
+      const cached = localStorage.getItem(cacheKey)
+      if (cached) {
+        setTip(cached)
+        setTimeout(() => setTipVisible(true), 2000)
+        return
+      }
+    } catch {}
     import('../lib/supabase').then(({ supabase }) => {
       supabase.auth.getSession().then(({ data: { session } }) => {
         if (!session) return
@@ -117,7 +119,7 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name }) {
         .then(data => {
           if (data.tip) {
             setTip(data.tip)
-            localStorage.setItem(cacheKey, data.tip)
+            try { localStorage.setItem(cacheKey, data.tip) } catch {}
             setTimeout(() => setTipVisible(true), 2000)
           }
         })

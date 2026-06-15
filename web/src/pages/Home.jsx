@@ -153,7 +153,7 @@ return (
       </div>
 
 {/* PANDI — Ajustado bottom para que quede sobre la plataforma */}
-      <Link to="/mood" style={{ textDecoration:'none' }}>
+      <Link to="/mood.jsx" style={{ textDecoration:'none' }}>
         <motion.div whileTap={{ scale:0.95 }}
           style={{ 
             position:'absolute', 

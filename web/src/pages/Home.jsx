@@ -11,7 +11,6 @@ import TourHelpButton from '../components/tour/TourHelpButton'
 import PandiInsights from '../components/PandiInsights'
 import { Plus, Minus as MinusIcon, Droplets } from 'lucide-react'
 import DailyCheckin from '../components/DailyCheckin'
-import CoachSuggestion from '../components/CoachSuggestion'
 // CoachAwarenessContext — disponible cuando el provider esté en App.jsx
 // import { useModuleAwareness } from '../contexts/CoachAwarenessContext'
 
@@ -625,8 +624,6 @@ export default function Home() {
 
         {/* MINI WIDGET SEMANAL */}
         <MiniWeekWidget userId={user?.id} theme={theme} />
-
-        <CoachSuggestion />
 
         {/* PLAN DE HOY */}
         <motion.div initial={{ opacity:0, y:16 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.1 }}

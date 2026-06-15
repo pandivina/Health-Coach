@@ -1,38 +1,58 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Camera, Hash, Plus, Trash2, ChefHat, Flame, Search, X, Clock, ChevronRight, Loader2 } from 'lucide-react'
+import {
+  Camera, Hash, Plus, Trash2, ChefHat, Flame,
+  Search, X, Clock, ChevronRight, Loader2, Barcode, Zap
+} from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { useStore } from '../../store/useStore'
 import { useTheme } from '../../contexts/ThemeProvider'
+import { searchLocal, FOOD_CATEGORIES, getFoodsByCategory, SPANISH_FOODS } from '../../lib/spanishFoods'
 
 const MEAL_TYPES  = ['breakfast', 'lunch', 'dinner', 'snack']
 const MEAL_LABELS = { breakfast: '🌅 Desayuno', lunch: '☀️ Comida', dinner: '🌙 Cena', snack: '🍎 Snack' }
 
-// ─── OPEN FOOD FACTS ─────────────────────────────────────────────────────────
+// ─── OPEN FOOD FACTS (mejorado) ───────────────────────────────────────────────
 
 async function searchOFF(query) {
   try {
     const url = `https://world.openfoodfacts.org/cgi/search.pl?` +
       `search_terms=${encodeURIComponent(query)}&search_simple=1&action=process&json=1` +
-      `&lc=es&cc=es&page_size=20&fields=product_name,nutriments,brands,code,image_small_url`
-    const res  = await fetch(url)
+      `&lc=es&cc=es&page_size=24&fields=product_name,nutriments,brands,code,image_small_url,quantity`
+    const res  = await fetch(url, { signal: AbortSignal.timeout(6000) })
     const data = await res.json()
     return (data.products || [])
-      .filter(p => p.product_name && p.product_name.trim())
-      .slice(0, 15)
+      .filter(p => {
+        if (!p.product_name?.trim()) return false
+        const n = p.nutriments || {}
+        // Filtrar productos sin datos nutricionales útiles
+        return (n['energy-kcal_100g'] ?? n['energy-kcal'] ?? 0) > 0
+      })
+      .slice(0, 12)
   } catch { return [] }
+}
+
+async function searchOFFByBarcode(barcode) {
+  try {
+    const res  = await fetch(`https://world.openfoodfacts.org/api/v0/product/${barcode}.json`)
+    const data = await res.json()
+    if (data.status !== 1 || !data.product) return null
+    return data.product
+  } catch { return null }
 }
 
 function parseOFF(product) {
   const n = product.nutriments || {}
   return {
     food_name:         (product.product_name || product.brands || 'Producto').trim(),
-    calories_per_100g: n['energy-kcal_100g'] ?? n['energy-kcal'] ?? 0,
-    protein_per_100g:  n.proteins_100g       ?? 0,
-    carbs_per_100g:    n.carbohydrates_100g  ?? 0,
-    fat_per_100g:      n.fat_100g            ?? 0,
-    off_id:            product.code          ?? null,
+    calories_per_100g: Math.round(n['energy-kcal_100g'] ?? n['energy-kcal'] ?? 0),
+    protein_per_100g:  Math.round((n.proteins_100g      ?? 0) * 10) / 10,
+    carbs_per_100g:    Math.round((n.carbohydrates_100g ?? 0) * 10) / 10,
+    fat_per_100g:      Math.round((n.fat_100g           ?? 0) * 10) / 10,
+    off_id:            product.code           ?? null,
     image:             product.image_small_url ?? null,
+    quantity:          product.quantity        ?? null,
+    emoji:             '📦',
   }
 }
 
@@ -47,7 +67,7 @@ function calcEntry(food, grams) {
   }
 }
 
-// ─── MACROBAR ────────────────────────────────────────────────────────────────
+// ─── MACROBAR ─────────────────────────────────────────────────────────────────
 
 function MacroBar({ label, value, max, color }) {
   const pct = Math.min((value / max) * 100, 100)
@@ -64,31 +84,191 @@ function MacroBar({ label, value, max, color }) {
   )
 }
 
+// ─── ESCÁNER DE CÓDIGO DE BARRAS ──────────────────────────────────────────────
+
+function BarcodeScanner({ onResult, onClose, theme }) {
+  const videoRef    = useRef(null)
+  const streamRef   = useRef(null)
+  const [error, setError]     = useState(null)
+  const [scanning, setScanning] = useState(false)
+  const [manualCode, setManualCode] = useState('')
+
+  useEffect(() => {
+    startCamera()
+    return () => stopCamera()
+  }, [])
+
+  async function startCamera() {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
+      })
+      streamRef.current = stream
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream
+        videoRef.current.play()
+      }
+      // Intentar usar BarcodeDetector si está disponible (Chrome Android)
+      if ('BarcodeDetector' in window) {
+        startBarcodeDetection()
+      }
+    } catch (err) {
+      setError('No se pudo acceder a la cámara. Introduce el código manualmente.')
+    }
+  }
+
+  function stopCamera() {
+    streamRef.current?.getTracks().forEach(t => t.stop())
+  }
+
+  async function startBarcodeDetection() {
+    const detector = new window.BarcodeDetector({ formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e'] })
+    setScanning(true)
+    const scan = async () => {
+      if (!videoRef.current || !streamRef.current) return
+      try {
+        const barcodes = await detector.detect(videoRef.current)
+        if (barcodes.length > 0) {
+          const code = barcodes[0].rawValue
+          stopCamera()
+          await handleBarcode(code)
+          return
+        }
+      } catch {}
+      requestAnimationFrame(scan)
+    }
+    requestAnimationFrame(scan)
+  }
+
+  async function handleBarcode(code) {
+    setScanning(false)
+    const product = await searchOFFByBarcode(code)
+    if (product) {
+      onResult(parseOFF(product))
+    } else {
+      setError(`Código ${code} no encontrado en la base de datos.`)
+    }
+  }
+
+  async function handleManualSubmit() {
+    if (!manualCode.trim()) return
+    await handleBarcode(manualCode.trim())
+  }
+
+  return (
+    <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
+      className="fixed inset-0 z-[60] flex flex-col"
+      style={{ background: '#000' }}>
+
+      {/* Header */}
+      <div style={{ padding:'14px 16px', display:'flex', alignItems:'center', gap:12, background:'rgba(0,0,0,0.8)' }}>
+        <button onClick={() => { stopCamera(); onClose() }}
+          style={{ width:36, height:36, borderRadius:12, background:'rgba(255,255,255,0.15)',
+            border:'none', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center',
+            color:'white', fontSize:18 }}>←</button>
+        <p style={{ color:'white', fontWeight:700, fontSize:16, margin:0 }}>Escanear código de barras</p>
+      </div>
+
+      {/* Visor cámara */}
+      <div style={{ flex:1, position:'relative', display:'flex', alignItems:'center', justifyContent:'center' }}>
+        {error ? (
+          <div style={{ padding:24, textAlign:'center' }}>
+            <p style={{ color:'#FF8FA3', marginBottom:16, fontSize:14 }}>{error}</p>
+            <div style={{ display:'flex', gap:8, maxWidth:300, margin:'0 auto' }}>
+              <input value={manualCode} onChange={e => setManualCode(e.target.value)}
+                placeholder="Introduce el código EAN"
+                onKeyDown={e => e.key==='Enter' && handleManualSubmit()}
+                style={{ flex:1, padding:'10px 14px', borderRadius:12, border:'1px solid rgba(255,255,255,0.2)',
+                  background:'rgba(255,255,255,0.1)', color:'white', fontSize:14, outline:'none' }} />
+              <button onClick={handleManualSubmit}
+                style={{ padding:'10px 16px', borderRadius:12, background:'#2EC4B6',
+                  border:'none', cursor:'pointer', color:'white', fontWeight:700 }}>
+                Buscar
+              </button>
+            </div>
+          </div>
+        ) : (
+          <>
+            <video ref={videoRef} playsInline muted
+              style={{ width:'100%', height:'100%', objectFit:'cover' }} />
+            {/* Marco de escaneo */}
+            <div style={{ position:'absolute', inset:0, display:'flex', alignItems:'center', justifyContent:'center' }}>
+              <div style={{ width:280, height:160, border:'2px solid #2EC4B6', borderRadius:16,
+                boxShadow:'0 0 0 2000px rgba(0,0,0,0.5)', position:'relative' }}>
+                {/* Línea de escaneo animada */}
+                <motion.div
+                  animate={{ y: [0, 140, 0] }}
+                  transition={{ duration:2, repeat:Infinity, ease:'easeInOut' }}
+                  style={{ position:'absolute', left:0, right:0, height:2,
+                    background:'linear-gradient(90deg, transparent, #2EC4B6, transparent)',
+                    boxShadow:'0 0 8px #2EC4B6' }} />
+              </div>
+            </div>
+            {scanning && (
+              <div style={{ position:'absolute', bottom:40, left:0, right:0, textAlign:'center' }}>
+                <p style={{ color:'rgba(255,255,255,0.8)', fontSize:13 }}>
+                  {window.BarcodeDetector ? 'Apunta al código de barras...' : 'BarcodeDetector no disponible en este navegador'}
+                </p>
+                {!window.BarcodeDetector && (
+                  <div style={{ padding:'12px 24px', marginTop:12 }}>
+                    <div style={{ display:'flex', gap:8, maxWidth:300, margin:'0 auto' }}>
+                      <input value={manualCode} onChange={e => setManualCode(e.target.value)}
+                        placeholder="Introduce el código EAN"
+                        onKeyDown={e => e.key==='Enter' && handleManualSubmit()}
+                        style={{ flex:1, padding:'10px 14px', borderRadius:12, border:'1px solid rgba(255,255,255,0.2)',
+                          background:'rgba(255,255,255,0.1)', color:'white', fontSize:14, outline:'none' }} />
+                      <button onClick={handleManualSubmit}
+                        style={{ padding:'10px 16px', borderRadius:12, background:'#2EC4B6',
+                          border:'none', cursor:'pointer', color:'white', fontWeight:700 }}>
+                        OK
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </>
+        )}
+      </div>
+    </motion.div>
+  )
+}
+
 // ─── SELECTOR DE CANTIDAD ─────────────────────────────────────────────────────
 
 function PortionPicker({ food, onConfirm, onBack, theme }) {
   const [grams, setGrams] = useState('100')
   const g     = Math.max(parseFloat(grams) || 0, 0)
   const entry = calcEntry(food, g)
-  const QUICK = [50, 100, 150, 200, 250]
+  const QUICK = [30, 50, 100, 150, 200]
 
   return (
-    <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-4">
+    <motion.div initial={{ opacity:0, x:20 }} animate={{ opacity:1, x:0 }} className="space-y-4">
+      {/* Info alimento */}
       <div className="flex items-center gap-3 p-3 rounded-2xl" style={{ background: theme.surface2 }}>
-        <span style={{ fontSize: 28 }}>🍽️</span>
+        {food.image
+          ? <img src={food.image} alt={food.food_name}
+              style={{ width:48, height:48, borderRadius:12, objectFit:'cover', flexShrink:0 }}
+              onError={e => { e.target.style.display='none' }} />
+          : <span style={{ fontSize:32, flexShrink:0 }}>{food.emoji || '🍽️'}</span>
+        }
         <div className="flex-1 min-w-0">
           <p className="font-semibold text-sm truncate" style={{ color: theme.text }}>{food.food_name}</p>
           <p className="text-xs" style={{ color: theme.textMuted }}>
-            {Math.round(food.calories_per_100g)} kcal / 100g
+            {food.calories_per_100g} kcal · P {food.protein_per_100g}g · C {food.carbs_per_100g}g · G {food.fat_per_100g}g / 100g
           </p>
+          {food.quantity && (
+            <p className="text-xs" style={{ color: theme.textMuted }}>📦 {food.quantity}</p>
+          )}
         </div>
       </div>
 
+      {/* Cantidad */}
       <div>
         <p className="text-xs font-semibold mb-2" style={{ color: theme.textMuted }}>CANTIDAD (gramos)</p>
         <div className="flex items-center gap-3 mb-3">
           <input type="number" value={grams} onChange={e => setGrams(e.target.value)}
-            className="input text-center font-bold text-lg flex-1" style={{ maxWidth: 110 }} />
+            className="input text-center font-bold text-lg flex-1" style={{ maxWidth:110 }} />
           <span className="text-sm font-medium" style={{ color: theme.textMuted }}>g</span>
         </div>
         <div className="flex gap-2">
@@ -103,12 +283,13 @@ function PortionPicker({ food, onConfirm, onBack, theme }) {
         </div>
       </div>
 
+      {/* Preview macros */}
       <div className="grid grid-cols-4 gap-2 p-3 rounded-2xl" style={{ background: `${theme.primary}10` }}>
         {[
-          { l: 'Kcal',   v: entry.calories,  unit: '' },
-          { l: 'Prot',   v: entry.protein_g, unit: 'g' },
-          { l: 'Carbos', v: entry.carbs_g,   unit: 'g' },
-          { l: 'Grasa',  v: entry.fat_g,     unit: 'g' },
+          { l:'Kcal',   v:entry.calories,  unit:'' },
+          { l:'Prot',   v:entry.protein_g, unit:'g' },
+          { l:'Carbos', v:entry.carbs_g,   unit:'g' },
+          { l:'Grasa',  v:entry.fat_g,     unit:'g' },
         ].map(({ l, v, unit }) => (
           <div key={l} className="text-center">
             <p className="font-extrabold text-sm" style={{ color: theme.primary }}>{v}{unit}</p>
@@ -120,11 +301,11 @@ function PortionPicker({ food, onConfirm, onBack, theme }) {
       <div className="flex gap-2">
         <button onClick={onBack} className="flex-1 py-3 rounded-2xl text-sm font-semibold"
           style={{ background: theme.surface2, color: theme.textMuted }}>← Volver</button>
-        <motion.button whileTap={{ scale: 0.96 }} onClick={() => onConfirm(entry)}
+        <motion.button whileTap={{ scale:0.96 }} onClick={() => onConfirm(entry)}
           disabled={g === 0}
           className="flex-2 px-8 py-3 rounded-2xl text-sm font-bold text-white disabled:opacity-40"
-          style={{ background: 'linear-gradient(135deg,#2EC4B6,#FF8FA3)', flex: 2 }}>
-          Añadir a {MEAL_LABELS[food._mealType]?.split(' ')[1] || 'diario'}
+          style={{ background:'linear-gradient(135deg,#2EC4B6,#FF8FA3)', flex:2 }}>
+          Añadir ✓
         </motion.button>
       </div>
     </motion.div>
@@ -134,10 +315,10 @@ function PortionPicker({ food, onConfirm, onBack, theme }) {
 // ─── ENTRADA MANUAL ───────────────────────────────────────────────────────────
 
 function ManualForm({ onAdd, theme }) {
-  const [form, setForm] = useState({ food_name: '', calories: '', protein_g: '', carbs_g: '', fat_g: '' })
+  const [form, setForm] = useState({ food_name:'', calories:'', protein_g:'', carbs_g:'', fat_g:'' })
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-3">
+    <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }} className="space-y-3">
       <input className="input text-sm" placeholder="Nombre del alimento"
         value={form.food_name} onChange={e => set('food_name', e.target.value)} autoFocus />
       <div className="grid grid-cols-2 gap-2">
@@ -146,26 +327,66 @@ function ManualForm({ onAdd, theme }) {
             value={form[k]} onChange={e => set(k, e.target.value)} />
         ))}
       </div>
-      <motion.button whileTap={{ scale: 0.96 }}
+      <motion.button whileTap={{ scale:0.96 }}
         onClick={() => { if (form.food_name) onAdd(form) }}
         disabled={!form.food_name}
         className="w-full py-3 rounded-2xl text-sm font-bold text-white disabled:opacity-40"
-        style={{ background: 'linear-gradient(135deg,#2EC4B6,#FF8FA3)' }}>
+        style={{ background:'linear-gradient(135deg,#2EC4B6,#FF8FA3)' }}>
         Añadir al diario
       </motion.button>
     </motion.div>
   )
 }
 
+// ─── FILA DE ALIMENTO ─────────────────────────────────────────────────────────
+
+function FoodRow({ food, theme, onSelect, source }) {
+  return (
+    <motion.button whileTap={{ scale:0.98 }} onClick={onSelect}
+      className="w-full flex items-center gap-3 p-3 rounded-2xl text-left transition-all"
+      style={{ background: theme.surface, border:`1px solid ${theme.border}` }}>
+      {food.image
+        ? <img src={food.image} alt={food.food_name}
+            style={{ width:40, height:40, borderRadius:10, objectFit:'cover', flexShrink:0 }}
+            onError={e => { e.target.style.display='none'; e.target.nextSibling.style.display='flex' }} />
+        : null
+      }
+      <div style={{ width:40, height:40, borderRadius:10, background:theme.surface2,
+        display: food.image ? 'none' : 'flex', alignItems:'center', justifyContent:'center',
+        fontSize:22, flexShrink:0 }}>
+        {food.emoji || '🍽️'}
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-1.5">
+          <p className="text-sm font-semibold truncate" style={{ color: theme.text }}>{food.food_name}</p>
+          {source === 'local' && (
+            <span style={{ fontSize:9, background:`${theme.primary}20`, color:theme.primary,
+              padding:'1px 5px', borderRadius:6, fontWeight:700, flexShrink:0 }}>ES</span>
+          )}
+        </div>
+        <p className="text-xs" style={{ color: theme.textMuted }}>
+          {Math.round(food.calories_per_100g||0)} kcal · P {Math.round(food.protein_per_100g||0)}g
+          · C {Math.round(food.carbs_per_100g||0)}g · G {Math.round(food.fat_per_100g||0)}g
+          <span style={{ color: theme.textLight }}> /100g</span>
+        </p>
+      </div>
+      <ChevronRight size={14} style={{ color: theme.textLight, flexShrink:0 }} />
+    </motion.button>
+  )
+}
+
 // ─── MODAL BIBLIOTECA ─────────────────────────────────────────────────────────
 
 function FoodModal({ mealType, userId, theme, onAdd, onClose }) {
-  const [tab,      setTab]      = useState('search')
-  const [query,    setQuery]    = useState('')
-  const [results,  setResults]  = useState([])
-  const [recent,   setRecent]   = useState([])
-  const [loading,  setLoading]  = useState(false)
-  const [selected, setSelected] = useState(null)
+  const [tab,        setTab]        = useState('search')
+  const [query,      setQuery]      = useState('')
+  const [offResults, setOffResults] = useState([])
+  const [localResults, setLocalResults] = useState([])
+  const [recent,     setRecent]     = useState([])
+  const [loadingOFF, setLoadingOFF] = useState(false)
+  const [selected,   setSelected]   = useState(null)
+  const [showScanner,setShowScanner]= useState(false)
+  const [activeCategory, setActiveCategory] = useState(null)
   const debounceRef = useRef(null)
   const inputRef    = useRef(null)
 
@@ -181,36 +402,49 @@ function FoodModal({ mealType, userId, theme, onAdd, onClose }) {
   useEffect(() => { setTimeout(() => inputRef.current?.focus(), 200) }, [])
 
   useEffect(() => {
-    if (query.length < 2) { setResults([]); return }
+    if (query.length < 2) {
+      setLocalResults([])
+      setOffResults([])
+      return
+    }
+
+    // Búsqueda local INSTANTÁNEA
+    const local = searchLocal(query)
+    setLocalResults(local)
+
+    // Búsqueda OFF con debounce
     clearTimeout(debounceRef.current)
-    setLoading(true)
+    setLoadingOFF(true)
     debounceRef.current = setTimeout(async () => {
       const res = await searchOFF(query)
-      setResults(res)
-      setLoading(false)
-    }, 500)
+      setOffResults(res)
+      setLoadingOFF(false)
+    }, 600)
+
     return () => clearTimeout(debounceRef.current)
   }, [query])
 
   async function saveToHistory(food) {
     if (!userId) return
-    const { data } = await supabase.from('food_history').select('id, use_count')
-      .eq('user_id', userId).eq('food_name', food.food_name).maybeSingle()
-    if (data) {
-      await supabase.from('food_history').update({
-        use_count: (data.use_count || 1) + 1,
-        last_used_at: new Date().toISOString(),
-      }).eq('id', data.id)
-    } else {
-      await supabase.from('food_history').insert({
-        user_id: userId, ...food,
-        use_count: 1, last_used_at: new Date().toISOString(),
-      })
-    }
+    try {
+      const { data } = await supabase.from('food_history').select('id, use_count')
+        .eq('user_id', userId).eq('food_name', food.food_name).maybeSingle()
+      if (data) {
+        await supabase.from('food_history').update({
+          use_count: (data.use_count||1) + 1,
+          last_used_at: new Date().toISOString(),
+        }).eq('id', data.id)
+      } else {
+        await supabase.from('food_history').insert({
+          user_id: userId, ...food,
+          use_count: 1, last_used_at: new Date().toISOString(),
+        })
+      }
+    } catch {}
   }
 
   async function handleConfirm(entry) {
-    await saveToHistory(selected)
+    if (selected) await saveToHistory(selected)
     onAdd(entry)
   }
 
@@ -224,36 +458,76 @@ function FoodModal({ mealType, userId, theme, onAdd, onClose }) {
     })
   }
 
-  const showRecent  = query.length < 2 && recent.length > 0
-  const showResults = query.length >= 2
+  function handleBarcodeResult(food) {
+    setShowScanner(false)
+    setSelected({ ...food, _mealType: mealType })
+  }
+
+  function selectFood(food, source) {
+    setSelected({ ...food, _mealType: mealType, _source: source })
+  }
+
+  // Combinar resultados: locales primero, luego OFF sin duplicados
+  const combined = [
+    ...localResults.map(f => ({ ...f, _source:'local' })),
+    ...offResults
+      .map(p => ({ ...parseOFF(p), _source:'off' }))
+      .filter(f => !localResults.some(l =>
+        l.food_name.toLowerCase() === f.food_name.toLowerCase()
+      )),
+  ]
+
+  const categoryFoods = activeCategory ? getFoodsByCategory(activeCategory) : []
+
+  if (showScanner) {
+    return <BarcodeScanner onResult={handleBarcodeResult} onClose={() => setShowScanner(false)} theme={theme} />
+  }
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+    <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
       className="fixed inset-0 z-50 flex flex-col" style={{ background: theme.bg }}>
 
+      {/* Header */}
       <div className="flex items-center gap-3 px-4 pt-4 pb-3"
-        style={{ borderBottom: `1px solid ${theme.border}` }}>
-        <button onClick={selected ? () => setSelected(null) : onClose}
+        style={{ borderBottom:`1px solid ${theme.border}` }}>
+        <button onClick={selected ? () => setSelected(null) : (activeCategory ? () => setActiveCategory(null) : onClose)}
           className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
           style={{ background: theme.surface2 }}>
-          {selected ? '←' : <X size={16} color={theme.textMuted} />}
+          {selected || activeCategory ? '←' : <X size={16} color={theme.textMuted} />}
         </button>
         <div className="flex-1">
           <p className="font-extrabold text-base" style={{ color: theme.text }}>
-            {selected ? 'Cantidad' : `Añadir a ${MEAL_LABELS[mealType]}`}
+            {selected ? 'Cantidad' : activeCategory ? FOOD_CATEGORIES.find(c=>c.id===activeCategory)?.label : `Añadir a ${MEAL_LABELS[mealType]}`}
           </p>
-          {!selected && (
-            <p className="text-xs" style={{ color: theme.textMuted }}>Busca en millones de alimentos</p>
+          {!selected && !activeCategory && (
+            <p className="text-xs" style={{ color: theme.textMuted }}>Base española + 3M productos</p>
           )}
         </div>
+        {/* Botón escáner */}
+        {!selected && (
+          <button onClick={() => setShowScanner(true)}
+            style={{ width:38, height:38, borderRadius:12, background:`${theme.primary}15`,
+              border:'none', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>
+            <Barcode size={18} style={{ color: theme.primary }} />
+          </button>
+        )}
       </div>
 
       <div className="flex-1 overflow-y-auto px-4 py-4">
         {selected ? (
           <PortionPicker food={selected} onConfirm={handleConfirm}
             onBack={() => setSelected(null)} theme={theme} />
+        ) : activeCategory ? (
+          // Vista de categoría
+          <div className="space-y-2">
+            {categoryFoods.map((food, i) => (
+              <FoodRow key={i} food={food} theme={theme} source="local"
+                onSelect={() => selectFood(food, 'local')} />
+            ))}
+          </div>
         ) : (
           <div className="space-y-4">
+            {/* Tabs */}
             <div className="flex gap-1 p-1 rounded-2xl" style={{ background: theme.surface2 }}>
               {[['search','🔍 Buscar'],['manual','✏️ Manual']].map(([id, label]) => (
                 <button key={id} onClick={() => setTab(id)}
@@ -270,11 +544,12 @@ function FoodModal({ mealType, userId, theme, onAdd, onClose }) {
               <ManualForm onAdd={handleManualAdd} theme={theme} />
             ) : (
               <>
+                {/* Barra búsqueda */}
                 <div className="relative">
                   <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2"
                     style={{ color: theme.textMuted }} />
                   <input ref={inputRef} className="input pl-9 pr-9"
-                    placeholder="Ej: pollo a la plancha, manzana…"
+                    placeholder="Pollo, arroz, manzana…"
                     value={query} onChange={e => setQuery(e.target.value)} />
                   {query && (
                     <button onClick={() => setQuery('')}
@@ -284,67 +559,83 @@ function FoodModal({ mealType, userId, theme, onAdd, onClose }) {
                   )}
                 </div>
 
-                {loading && (
-                  <div className="flex items-center justify-center py-8 gap-2">
-                    <Loader2 size={18} className="animate-spin" style={{ color: theme.primary }} />
+                {/* Estado: buscando en OFF */}
+                {loadingOFF && localResults.length === 0 && (
+                  <div className="flex items-center justify-center py-6 gap-2">
+                    <Loader2 size={16} className="animate-spin" style={{ color: theme.primary }} />
                     <span className="text-sm" style={{ color: theme.textMuted }}>Buscando…</span>
                   </div>
                 )}
 
-                {showRecent && !loading && (
+                {/* Resultados combinados */}
+                {query.length >= 2 && combined.length > 0 && (
                   <div>
-                    <div className="flex items-center gap-2 mb-2">
-                      <Clock size={13} style={{ color: theme.textMuted }} />
+                    <div className="flex items-center justify-between mb-2">
                       <p className="text-xs font-bold uppercase tracking-wide" style={{ color: theme.textMuted }}>
-                        Recientes
+                        Resultados ({combined.length})
                       </p>
+                      {loadingOFF && (
+                        <div className="flex items-center gap-1">
+                          <Loader2 size={11} className="animate-spin" style={{ color: theme.primary }} />
+                          <span style={{ fontSize:10, color: theme.textMuted }}>Buscando más…</span>
+                        </div>
+                      )}
                     </div>
-                    <div className="space-y-1">
-                      {recent.map((food, i) => (
-                        <FoodRow key={i} food={food} theme={theme}
-                          onSelect={() => setSelected({ ...food, _mealType: mealType })} />
+                    <div className="space-y-1.5">
+                      {combined.map((food, i) => (
+                        <FoodRow key={i} food={food} theme={theme} source={food._source}
+                          onSelect={() => selectFood(food, food._source)} />
                       ))}
                     </div>
-                  </div>
-                )}
-
-                {showResults && !loading && (
-                  <div>
-                    <div className="flex items-center gap-2 mb-2">
-                      <Search size={13} style={{ color: theme.textMuted }} />
-                      <p className="text-xs font-bold uppercase tracking-wide" style={{ color: theme.textMuted }}>
-                        Resultados ({results.length})
-                      </p>
-                    </div>
-                    {results.length === 0 ? (
-                      <div className="text-center py-8">
+                    {combined.length === 0 && !loadingOFF && (
+                      <div className="text-center py-6">
                         <p className="text-sm" style={{ color: theme.textMuted }}>Sin resultados para «{query}»</p>
                         <button onClick={() => setTab('manual')}
-                          className="mt-3 text-sm font-semibold" style={{ color: theme.primary }}>
+                          className="mt-2 text-sm font-semibold" style={{ color: theme.primary }}>
                           Añadir manualmente →
                         </button>
-                      </div>
-                    ) : (
-                      <div className="space-y-1">
-                        {results.map((product, i) => {
-                          const food = parseOFF(product)
-                          return <FoodRow key={i} food={food} theme={theme}
-                            onSelect={() => setSelected({ ...food, _mealType: mealType })} />
-                        })}
                       </div>
                     )}
                   </div>
                 )}
 
-                {!showRecent && !showResults && !loading && (
-                  <div className="text-center py-12">
-                    <p style={{ fontSize: 48 }}>🔍</p>
-                    <p className="mt-3 font-semibold text-sm" style={{ color: theme.text }}>
-                      Busca cualquier alimento
+                {/* Recientes */}
+                {query.length < 2 && recent.length > 0 && (
+                  <div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <Clock size={13} style={{ color: theme.textMuted }} />
+                      <p className="text-xs font-bold uppercase tracking-wide" style={{ color: theme.textMuted }}>Recientes</p>
+                    </div>
+                    <div className="space-y-1.5">
+                      {recent.map((food, i) => (
+                        <FoodRow key={i} food={food} theme={theme} source="history"
+                          onSelect={() => selectFood(food, 'history')} />
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Categorías cuando no hay búsqueda */}
+                {query.length < 2 && (
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-wide mb-3" style={{ color: theme.textMuted }}>
+                      Explorar por categoría
                     </p>
-                    <p className="text-xs mt-1" style={{ color: theme.textMuted }}>
-                      Base de datos con más de 3 millones de productos
-                    </p>
+                    <div className="grid grid-cols-2 gap-2">
+                      {FOOD_CATEGORIES.map(cat => (
+                        <button key={cat.id} onClick={() => setActiveCategory(cat.id)}
+                          className="flex items-center gap-3 p-3 rounded-2xl text-left transition-all active:scale-95"
+                          style={{ background: theme.surface, border:`1px solid ${theme.border}` }}>
+                          <span style={{ fontSize:24 }}>{cat.emoji}</span>
+                          <div>
+                            <p className="text-sm font-semibold" style={{ color: theme.text }}>{cat.label}</p>
+                            <p className="text-xs" style={{ color: theme.textMuted }}>
+                              {SPANISH_FOODS.filter(f => f.category === cat.id).length} alimentos
+                            </p>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 )}
               </>
@@ -356,30 +647,8 @@ function FoodModal({ mealType, userId, theme, onAdd, onClose }) {
   )
 }
 
-function FoodRow({ food, theme, onSelect }) {
-  return (
-    <motion.button whileTap={{ scale: 0.98 }} onClick={onSelect}
-      className="w-full flex items-center gap-3 p-3 rounded-2xl text-left transition-all"
-      style={{ background: theme.surface, border: `1px solid ${theme.border}` }}>
-      <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 text-xl"
-        style={{ background: theme.surface2 }}>🍽️</div>
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold truncate" style={{ color: theme.text }}>{food.food_name}</p>
-        <p className="text-xs" style={{ color: theme.textMuted }}>
-          {Math.round(food.calories_per_100g || 0)} kcal · P {Math.round(food.protein_per_100g || 0)}g
-          · C {Math.round(food.carbs_per_100g || 0)}g · G {Math.round(food.fat_per_100g || 0)}g
-          <span style={{ color: theme.textLight }}> / 100g</span>
-        </p>
-      </div>
-      <ChevronRight size={14} style={{ color: theme.textLight, flexShrink: 0 }} />
-    </motion.button>
-  )
-}
-
 // ─── DIARIO TAB ───────────────────────────────────────────────────────────────
 
-// onSummaryChange: callback opcional que recibe los macros del día en tiempo real
-// Lo usa Nutrition.jsx para pasárselos al useSectionContext y al coach
 export default function DiarioTab({ onAnalyze, onScan, onRecipes, onSummaryChange }) {
   const { user, addXP } = useStore()
   const { theme }       = useTheme()
@@ -396,11 +665,8 @@ export default function DiarioTab({ onAnalyze, onScan, onRecipes, onSummaryChang
     ])
     const loadedMeals = mealsRes.data || []
     const loadedGoals = goalsRes.data || goals
-
     setMeals(loadedMeals)
     if (goalsRes.data) setGoals(loadedGoals)
-
-    // ── Notificar al padre (Nutrition.jsx) para que el coach lo vea ─────────
     onSummaryChange?.({
       caloriesConsumed: loadedMeals.reduce((s, m) => s + (m.calories  || 0), 0),
       caloriesTarget:   loadedGoals.calories  || 2000,
@@ -428,7 +694,7 @@ export default function DiarioTab({ onAnalyze, onScan, onRecipes, onSummaryChang
     })
     await addXP(10)
     setModal(null)
-    load()  // load() ya llama a onSummaryChange con los datos actualizados
+    load()
   }
 
   async function deleteMeal(id) {
@@ -448,8 +714,8 @@ export default function DiarioTab({ onAnalyze, onScan, onRecipes, onSummaryChang
       <div className="space-y-4">
 
         {/* Hero calorías */}
-        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
-          className="rounded-3xl p-5" style={{ background: theme.surface, border: `1px solid ${theme.border}` }}>
+        <motion.div initial={{ opacity:0, y:-10 }} animate={{ opacity:1, y:0 }}
+          className="rounded-3xl p-5" style={{ background: theme.surface, border:`1px solid ${theme.border}` }}>
           <div className="flex items-start justify-between mb-4">
             <div>
               <p className="text-xs font-medium uppercase tracking-wider" style={{ color: theme.textMuted }}>
@@ -473,15 +739,15 @@ export default function DiarioTab({ onAnalyze, onScan, onRecipes, onSummaryChang
                 <circle cx="28" cy="28" r="22" fill="none" stroke={`${theme.primary}20`} strokeWidth="5" />
                 <motion.circle cx="28" cy="28" r="22" fill="none" stroke={theme.primary} strokeWidth="5"
                   strokeDasharray={2*Math.PI*22} strokeLinecap="round"
-                  initial={{ strokeDashoffset: 2*Math.PI*22 }}
-                  animate={{ strokeDashoffset: 2*Math.PI*22*(1 - calPct/100) }} />
+                  initial={{ strokeDashoffset:2*Math.PI*22 }}
+                  animate={{ strokeDashoffset:2*Math.PI*22*(1 - calPct/100) }} />
               </svg>
               <div className="absolute inset-0 flex items-center justify-center">
                 <Flame size={14} style={{ color: theme.primary }} />
               </div>
             </div>
           </div>
-          <div className="space-y-2 pt-3" style={{ borderTop: `1px solid ${theme.border}` }}>
+          <div className="space-y-2 pt-3" style={{ borderTop:`1px solid ${theme.border}` }}>
             <MacroBar label="Proteína" value={totalProtein} max={goals.protein_g} color={theme.primary} />
             <MacroBar label="Carbos"   value={totalCarbs}   max={goals.carbs_g}   color={theme.warning} />
             <MacroBar label="Grasa"    value={totalFat}     max={goals.fat_g}     color={theme.success} />
@@ -491,14 +757,14 @@ export default function DiarioTab({ onAnalyze, onScan, onRecipes, onSummaryChang
         {/* Quick actions */}
         <div className="grid grid-cols-4 gap-2" data-tour="nutrition-add">
           {[
-            { icon: Camera,  label: 'Foto',    action: onAnalyze },
-            { icon: Hash,    label: 'Código',  action: onScan    },
-            { icon: Plus,    label: 'Añadir',  action: () => setModal('snack') },
-            { icon: ChefHat, label: 'Recetas', action: onRecipes },
+            { icon:Camera,  label:'Foto',    action:onAnalyze },
+            { icon:Barcode, label:'Código',  action:() => setModal({ type:'snack', scanner:true }) },
+            { icon:Plus,    label:'Añadir',  action:() => setModal({ type:'snack' }) },
+            { icon:ChefHat, label:'Recetas', action:onRecipes },
           ].map(({ icon: Icon, label, action }) => (
             <button key={label} onClick={action}
               className="flex flex-col items-center gap-1.5 p-3 rounded-2xl active:scale-95 transition-all"
-              style={{ background: theme.surface, border: `1px solid ${theme.border}` }}>
+              style={{ background: theme.surface, border:`1px solid ${theme.border}` }}>
               <Icon size={18} style={{ color: theme.primary }} />
               <span className="text-[10px] font-medium" style={{ color: theme.textMuted }}>{label}</span>
             </button>
@@ -518,16 +784,15 @@ export default function DiarioTab({ onAnalyze, onScan, onRecipes, onSummaryChang
                     <p className="text-xs" style={{ color: theme.textMuted }}>{Math.round(typeCals)} kcal</p>
                   )}
                 </div>
-                <button onClick={() => setModal(type)}
+                <button onClick={() => setModal({ type })}
                   className="w-7 h-7 rounded-lg flex items-center justify-center active:scale-90 transition-all"
-                  style={{ background: `${theme.primary}20` }}>
+                  style={{ background:`${theme.primary}20` }}>
                   <Plus size={14} style={{ color: theme.primary }} />
                 </button>
               </div>
-
               {typeMeals.map(m => (
                 <div key={m.id} className="flex items-center justify-between py-1.5"
-                  style={{ borderTop: `1px solid ${theme.border}` }}>
+                  style={{ borderTop:`1px solid ${theme.border}` }}>
                   <div>
                     <p className="text-sm" style={{ color: theme.text }}>{m.food_name}</p>
                     <p className="text-xs" style={{ color: theme.textMuted }}>
@@ -539,7 +804,6 @@ export default function DiarioTab({ onAnalyze, onScan, onRecipes, onSummaryChang
                   </button>
                 </div>
               ))}
-
               {typeMeals.length === 0 && (
                 <p className="text-xs py-1" style={{ color: theme.textLight }}>Sin registros</p>
               )}
@@ -548,14 +812,13 @@ export default function DiarioTab({ onAnalyze, onScan, onRecipes, onSummaryChang
         })}
       </div>
 
-      {/* Modal biblioteca */}
       <AnimatePresence>
         {modal && (
           <FoodModal
-            mealType={modal}
+            mealType={modal.type}
             userId={user?.id}
             theme={theme}
-            onAdd={(entry) => addMeal(modal, entry)}
+            onAdd={(entry) => addMeal(modal.type, entry)}
             onClose={() => setModal(null)}
           />
         )}

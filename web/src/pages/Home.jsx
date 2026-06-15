@@ -250,7 +250,7 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name }) {
       {/* PANDI — tap abre /mood */}
       <Link to="/mood" style={{ textDecoration:'none' }}>
         <motion.div whileTap={{ scale:0.95 }}
-          style={{ position:'absolute', bottom:'8%', left:'50%', transform:'translateX(-50%)',
+          style={{ position:'absolute', bottom:'14%', left:'50%', transform:'translateX(-50%)',
             zIndex:5, width:isMobile ? '48%' : '22%', maxWidth:200, cursor:'pointer' }}>
           <div style={{ position:'relative' }}>
             <motion.div
@@ -421,6 +421,94 @@ function MiniRing({ value, max, color, label }) {
   )
 }
 
+// ── Mini widget semanal para Home ────────────────────────────────────────────
+function MiniWeekWidget({ userId, theme }) {
+  const [weekData, setWeekData] = useState([])
+
+  useEffect(() => {
+    if (!userId) return
+    const today = new Date()
+    const days  = Array.from({ length:7 }, (_, i) => {
+      const d = new Date(today); d.setDate(d.getDate() - (6-i))
+      return d.toISOString().split('T')[0]
+    })
+    const from = days[0], to = days[6]
+    const safe = async fn => { try { return await fn } catch { return { data:[] } } }
+    Promise.all([
+      safe(supabase.from('meal_logs').select('date,calories').eq('user_id',userId).gte('date',from).lte('date',to)),
+      safe(supabase.from('mood_logs').select('date,mood').eq('user_id',userId).gte('date',from).lte('date',to)),
+      safe(supabase.from('workout_sessions').select('created_at').eq('user_id',userId).eq('status','completed').gte('created_at',from+'T00:00:00')),
+      safe(supabase.from('sleep_logs').select('date,hours').eq('user_id',userId).gte('date',from).lte('date',to)),
+    ]).then(([mealsR, moodR, workoutR, sleepR]) => {
+      const calByDate  = {}; (mealsR.data||[]).forEach(m => { calByDate[m.date]=(calByDate[m.date]||0)+m.calories })
+      const moodByDate = {}; (moodR.data||[]).forEach(m => { moodByDate[m.date]=m.mood })
+      const woDates    = new Set((workoutR.data||[]).map(w=>w.created_at?.split('T')[0]))
+      const sleepByDate= {}; (sleepR.data||[]).forEach(s => { sleepByDate[s.date]=s.hours })
+
+      setWeekData(days.map(date => {
+        const cal   = calByDate[date]  || 0
+        const mood  = moodByDate[date] || null
+        const wo    = woDates.has(date)
+        const sleep = sleepByDate[date]|| null
+        let score=0, count=0
+        if (cal>0)  { score+=Math.min(cal/2000,1); count++ }
+        if (mood)   { score+=mood/5; count++ }
+        if (wo)     { score+=1; count++ }
+        if (sleep)  { score+=Math.min(sleep/7,1); count++ }
+        return { date, score: count>0 ? score/count : 0, registered: count>0, mood, workout:wo }
+      }))
+    })
+  }, [userId])
+
+  if (!weekData.length) return null
+
+  const scoreColor = s => s>0.7 ? '#2EC4B6' : s>0.4 ? '#F59E0B' : s>0 ? '#EF4444' : 'rgba(0,0,0,0.08)'
+  const MOOD_EMOJIS = {1:'😩',2:'😞',3:'😐',4:'😊',5:'🤩'}
+  const activeDays  = weekData.filter(d=>d.registered).length
+
+  return (
+    <Link to="/calendar?tab=history" style={{ textDecoration:'none' }}>
+      <motion.div initial={{ opacity:0, y:8 }} animate={{ opacity:1, y:0 }}
+        transition={{ delay:0.08 }}
+        style={{ background:'rgba(255,255,255,0.95)', borderRadius:20, padding:'12px 14px',
+          marginBottom:12, border:'1px solid rgba(0,0,0,0.06)', boxShadow:'0 2px 12px rgba(0,0,0,0.04)' }}>
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:10 }}>
+          <p style={{ fontSize:13, fontWeight:800, color:'#1A2332', margin:0 }}>Esta semana</p>
+          <span style={{ fontSize:11, color:theme.primary, fontWeight:700 }}>
+            {activeDays}/7 días activos →
+          </span>
+        </div>
+        <div style={{ display:'flex', gap:6, alignItems:'flex-end', height:48 }}>
+          {weekData.map((day, i) => {
+            const date    = new Date(day.date+'T12:00:00')
+            const dayName = ['L','M','X','J','V','S','D'][date.getDay()===0?6:date.getDay()-1]
+            const isToday = day.date === new Date().toISOString().split('T')[0]
+            const h       = day.registered ? Math.max(day.score*36, 6) : 6
+            return (
+              <div key={day.date} style={{ flex:1, display:'flex', flexDirection:'column',
+                alignItems:'center', gap:3 }}>
+                {day.mood
+                  ? <span style={{ fontSize:9 }}>{MOOD_EMOJIS[day.mood]}</span>
+                  : <span style={{ fontSize:9, opacity:0 }}>·</span>
+                }
+                <motion.div
+                  initial={{ height:0 }} animate={{ height:h }}
+                  transition={{ duration:0.4, delay:i*0.05 }}
+                  style={{ width:'100%', borderRadius:5,
+                    background: scoreColor(day.score),
+                    border: isToday ? `2px solid ${theme.primary}` : '2px solid transparent',
+                    boxShadow: isToday ? `0 0 6px ${theme.primary}50` : 'none' }} />
+                <span style={{ fontSize:9, fontWeight:700,
+                  color: isToday ? theme.primary : '#9CA3AF' }}>{dayName}</span>
+              </div>
+            )
+          })}
+        </div>
+      </motion.div>
+    </Link>
+  )
+}
+
 export default function Home() {
   const { profile, user } = useStore()
   const { theme, loaded } = useTheme()
@@ -534,6 +622,9 @@ export default function Home() {
             </span>
           </div>
         </motion.div>
+
+        {/* MINI WIDGET SEMANAL */}
+        <MiniWeekWidget userId={user?.id} theme={theme} />
 
         <CoachSuggestion />
 

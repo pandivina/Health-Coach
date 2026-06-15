@@ -520,8 +520,8 @@ function FoodModal({ mealType, userId, theme, onAdd, onClose }) {
         ) : activeCategory ? (
           // Vista de categoría
           <div className="space-y-2">
-            {categoryFoods.map((food, i) => (
-              <FoodRow key={i} food={food} theme={theme} source="local"
+            {categoryFoods.map((food) => (
+              <FoodRow key={`local-${food.food_name}`} food={food} theme={theme} source="local"
                 onSelect={() => selectFood(food, 'local')} />
             ))}
           </div>
@@ -582,8 +582,8 @@ function FoodModal({ mealType, userId, theme, onAdd, onClose }) {
                       )}
                     </div>
                     <div className="space-y-1.5">
-                      {combined.map((food, i) => (
-                        <FoodRow key={i} food={food} theme={theme} source={food._source}
+                      {combined.map((food) => (
+                        <FoodRow key={`combined-${food.food_name}-${food._source}`} food={food} theme={theme} source={food._source}
                           onSelect={() => selectFood(food, food._source)} />
                       ))}
                     </div>
@@ -607,8 +607,8 @@ function FoodModal({ mealType, userId, theme, onAdd, onClose }) {
                       <p className="text-xs font-bold uppercase tracking-wide" style={{ color: theme.textMuted }}>Recientes</p>
                     </div>
                     <div className="space-y-1.5">
-                      {recent.map((food, i) => (
-                        <FoodRow key={i} food={food} theme={theme} source="history"
+                      {recent.map((food) => (
+                        <FoodRow key={`history-${food.food_name}`} food={food} theme={theme} source="history"
                           onSelect={() => selectFood(food, 'history')} />
                       ))}
                     </div>

@@ -92,7 +92,7 @@ function useIsLandscape() {
     const check = () => setIsLandscape(getCurrent())
     const checkDelayed = () => {
       setTimeout(check, 100)
-      setTimeout(check, 300) // segundo check por si el primero lee valores intermedios
+      setTimeout(check, 300)
     }
 
     window.addEventListener('resize', check)
@@ -107,6 +107,9 @@ function useIsLandscape() {
       window.screen.orientation.addEventListener('change', checkDelayed)
     }
 
+    // Polling de respaldo cada 400ms — por si ningún evento se dispara en este WebView
+    const poll = setInterval(check, 400)
+
     check()
 
     return () => {
@@ -116,6 +119,7 @@ function useIsLandscape() {
       if (window.screen?.orientation) {
         window.screen.orientation.removeEventListener('change', checkDelayed)
       }
+      clearInterval(poll)
     }
   }, [])
 

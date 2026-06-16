@@ -89,7 +89,7 @@ export function ExerciseProgressModal({ exerciseName, onClose }) {
       const exerciseIds = workoutExercises.map(e => e.id)
 
       const { data: sets } = await supabase
-        .from('set_logs')
+        .from('workout_sets')
         .select('workout_exercise_id, weight_kg, reps, is_warmup, created_at')
         .in('workout_exercise_id', exerciseIds)
         .eq('is_warmup', false)

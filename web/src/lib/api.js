@@ -208,7 +208,10 @@ export const api = {
     completeSet:  (data) => request('POST', '/api/workouts/complete-set', data),
     finish:       (data) => request('POST', '/api/workouts/finish', data),
     stats:        () => request('GET', '/api/workouts/stats'),
-    
+
+    // Recarga una sesión completa con sus ejercicios — usado al iniciar una rutina favorita
+    getSession:   (sessionId) => request('GET', `/api/workouts/session/${sessionId}`),
+
     // Historial vitaminado con caché local (TTL de 5 minutos)
     history: async (forceRefresh = false) => {
       const CACHE_KEY = 'pandi_workout_history_cache'
@@ -230,8 +233,7 @@ export const api = {
       } catch (e) {}
       return data
     },
-  },
-
+  
   health: {
     getProfile:       () => request('GET', '/api/health/profile'),
     updateProfile:    (data) => request('PUT', '/api/health/profile', data),

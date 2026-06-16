@@ -11,6 +11,7 @@ import TourHelpButton from '../components/tour/TourHelpButton'
 import PandiInsights from '../components/PandiInsights'
 import { Plus, Minus as MinusIcon, Droplets } from 'lucide-react'
 import DailyCheckin from '../components/DailyCheckin'
+import ComebackModal from '../components/ComebackModal'
 // CoachAwarenessContext — disponible cuando el provider esté en App.jsx
 // import { useModuleAwareness } from '../contexts/CoachAwarenessContext'
 
@@ -822,6 +823,7 @@ export default function Home() {
       </div>
 
       <DailyCheckin />
+      <ComebackModal />
     </div>
   )
 }

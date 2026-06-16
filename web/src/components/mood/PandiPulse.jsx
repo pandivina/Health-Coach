@@ -371,7 +371,7 @@ export default function PandiPulse({
             rgba(${100-calmLevel*60},${130+calmLevel*60},${200+calmLevel*30},0.35) 0%,
             #0f1420 70%)`
         }}
-        style={{ position:'absolute', inset:0 }} />
+        style={{ position:'absolute', inset:0, pointerEvents:'none' }} />
 
       {/* Header */}
       <div style={{ position:'relative', zIndex:10, display:'flex',
@@ -418,8 +418,8 @@ export default function PandiPulse({
 
         {phase === 'ready' && (
           <motion.div key="ready" initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
-            style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center',
-              justifyContent:'center', padding:24 }}>
+            style={{ position:'relative', zIndex:5, flex:1, display:'flex', flexDirection:'column',
+              alignItems:'center', justifyContent:'center', padding:24 }}>
             <motion.img src={assets.calm} alt="Pandi lista"
               animate={{ y:[0,-6,0] }} transition={{ duration:2.5, repeat:Infinity }}
               style={{ width:140, height:140, objectFit:'contain' }}

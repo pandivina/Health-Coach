@@ -11,6 +11,7 @@ import TourHelpButton from '../components/tour/TourHelpButton'
 import PandiInsights from '../components/PandiInsights'
 import { Plus, Minus as MinusIcon, Droplets } from 'lucide-react'
 import DailyCheckin from '../components/DailyCheckin'
+import PandiPulse from '../components/mood/PandiPulse'
 // CoachAwarenessContext — disponible cuando el provider esté en App.jsx
 // import { useModuleAwareness } from '../contexts/CoachAwarenessContext'
 
@@ -515,7 +516,11 @@ function getInstantMessage(ctx) {
     case 'low_water':
       return { text: `Solo ${glasses} de ${waterGoal} vasos de agua. Ahora mismo, un vaso. Sin excusas 💧`, type:'hydration' }
     case 'low_mood':
-      return { text: `Hoy te sientes ${mood <= 1 ? 'muy bajo' : 'bajo'} 🤍 Estoy aquí. ¿Quieres hablar con el Coach o hacer una respiración corta?`, type:'mood' }
+      return {
+        text: `Hoy te sientes ${mood <= 1 ? 'muy bajo' : 'bajo'} 🤍 Estoy aquí. Hagamos una respiración corta juntos.`,
+        type:'mood',
+        action: { label: '🫁 Calmar con Pandi', situation: 'low_mood', score: mood ? mood/5 : 0.3 },
+      }
     case 'great_day':
       return { text: `¡Qué día tan completo! 🎉 Comida, entreno y buen ánimo. Esto es exactamente lo que construye resultados a largo plazo.`, type:'celebrate' }
     case 'low_calories_evening':
@@ -541,10 +546,12 @@ const TIP_ICONS = {
 function PandiTipCard({ theme, userId }) {
   const [tip,       setTip]       = useState('')
   const [tipType,   setTipType]   = useState('tip')
+  const [action,    setAction]    = useState(null)
   const [visible,   setVisible]   = useState(false)
   const [open,      setOpen]      = useState(false)
   const [dismissed, setDismissed] = useState(false)
   const [loading,   setLoading]   = useState(false)
+  const [showPulse, setShowPulse] = useState(false)
 
   useEffect(() => {
     if (!userId) return
@@ -557,8 +564,8 @@ function PandiTipCard({ theme, userId }) {
     try {
       const cached = localStorage.getItem(cacheKey)
       if (cached) {
-        const { text, type } = JSON.parse(cached)
-        setTip(text); setTipType(type||'tip')
+        const { text, type, action: cachedAction } = JSON.parse(cached)
+        setTip(text); setTipType(type||'tip'); setAction(cachedAction || null)
         setTimeout(() => setVisible(true), 800)
         return
       }
@@ -572,7 +579,7 @@ function PandiTipCard({ theme, userId }) {
       // 2. Intentar mensaje instantáneo primero (sin API)
       const instant = getInstantMessage(ctx)
       if (instant) {
-        setTip(instant.text); setTipType(instant.type)
+        setTip(instant.text); setTipType(instant.type); setAction(instant.action || null)
         try { localStorage.setItem(cacheKey, JSON.stringify(instant)) } catch {}
         setTimeout(() => setVisible(true), 800)
         setLoading(false)
@@ -589,7 +596,7 @@ function PandiTipCard({ theme, userId }) {
       const data = await res.json()
       if (data.tip) {
         const entry = { text: data.tip, type: 'tip' }
-        setTip(data.tip); setTipType('tip')
+        setTip(data.tip); setTipType('tip'); setAction(null)
         try { localStorage.setItem(cacheKey, JSON.stringify(entry)) } catch {}
         setTimeout(() => setVisible(true), 800)
       }
@@ -601,7 +608,7 @@ function PandiTipCard({ theme, userId }) {
         { text:'Dormir menos de 7h aumenta el hambre hasta un 24%. 😴', type:'reminder' },
       ]
       const f = fallbacks[Math.floor(Math.random() * fallbacks.length)]
-      setTip(f.text); setTipType(f.type)
+      setTip(f.text); setTipType(f.type); setAction(null)
       setTimeout(() => setVisible(true), 800)
     } finally {
       setLoading(false)
@@ -659,12 +666,23 @@ function PandiTipCard({ theme, userId }) {
                 exit={{ opacity:0, height:0 }} transition={{ duration:0.2 }}>
                 <p style={{ fontSize:13, color:'#1A2332', lineHeight:1.55,
                   margin:'0 0 10px', fontWeight:500 }}>{tip}</p>
-                <button
-                  onClick={e => { e.stopPropagation(); setDismissed(true) }}
-                  style={{ fontSize:11, color:accentColor, fontWeight:700,
-                    background:'none', border:'none', cursor:'pointer', padding:0 }}>
-                  Entendido ✓
-                </button>
+                <div style={{ display:'flex', gap:10, alignItems:'center' }}>
+                  {action && (
+                    <button
+                      onClick={e => { e.stopPropagation(); setShowPulse(true) }}
+                      style={{ fontSize:12, color:'white', fontWeight:700,
+                        background: accentColor, border:'none', borderRadius:12,
+                        padding:'7px 14px', cursor:'pointer' }}>
+                      {action.label}
+                    </button>
+                  )}
+                  <button
+                    onClick={e => { e.stopPropagation(); setDismissed(true) }}
+                    style={{ fontSize:11, color:accentColor, fontWeight:700,
+                      background:'none', border:'none', cursor:'pointer', padding:0 }}>
+                    Entendido ✓
+                  </button>
+                </div>
               </motion.div>
             ) : (
               <motion.p key="closed"
@@ -678,6 +696,19 @@ function PandiTipCard({ theme, userId }) {
           </AnimatePresence>
         </div>
       </motion.div>
+
+      {/* El Pulso de Pandi — modo guiado desde el tip contextual */}
+      <AnimatePresence>
+        {showPulse && action && (
+          <PandiPulse
+            mode="guided"
+            situation={action.situation}
+            score={action.score}
+            onClose={() => setShowPulse(false)}
+            onComplete={() => { setShowPulse(false); setDismissed(true) }}
+          />
+        )}
+      </AnimatePresence>
     </AnimatePresence>
   )
 }

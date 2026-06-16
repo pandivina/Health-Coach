@@ -118,7 +118,7 @@ function VerticalJoystick({ position, sync, onDrag, onDragEnd, disabled }) {
       onMouseDown={handleStart}
       onTouchStart={handleStart}
       style={{
-        position: 'relative', width: 56, height: '100%', minHeight: 260,
+        position: 'relative', width: 56, height: '100%', minHeight: 200, maxHeight: 260,
         borderRadius: 28, background: 'rgba(255,255,255,0.08)',
         border: '1.5px solid rgba(255,255,255,0.15)',
         touchAction: 'none', cursor: disabled ? 'default' : 'grab',
@@ -177,8 +177,8 @@ export default function PandiPulse({
   const tech = TECHNIQUES[techKey]
   const cyclesNeeded = mode === 'guided' ? calcCyclesNeeded(score) : 4
 
-  const [phase, setPhase]             = useState('intro') // intro | scared | playing | break | success
-  const [position, setPosition]       = useState(0.5)
+  const [phase, setPhase]             = useState('intro') // intro | scared | ready | playing | break | success
+  const [position, setPosition]       = useState(0) // arranca exhalado, sincronizado con inicio de ciclo
   const [cleanCycles, setCleanCycles] = useState(0)
   const [calmLevel, setCalmLevel]     = useState(0)
   const [sync, setSync]               = useState('neutral')
@@ -198,15 +198,21 @@ export default function PandiPulse({
     if (tutorial.show) return
     if (mode === 'free') {
       setPhase('scared')
-      setTimeout(() => setPhase('playing'), 2200)
+      setTimeout(() => setPhase('ready'), 2200)
     } else {
-      setPhase('playing')
+      setPhase('ready')
     }
   }, [mode, tutorial.show])
 
+  function startPlaying() {
+    setPosition(0)
+    lastPosRef.current = 0
+    setPhase('playing')
+  }
+
   useEffect(() => {
     if (phase === 'playing') {
-      lastDirRef.current = null // forzar disparo del primer subtítulo
+      lastDirRef.current = null // forzar disparo del subtítulo (inicio o tras un break)
       cycleProgressRef.current = 0
       lastTimeRef.current = Date.now()
     }
@@ -312,10 +318,13 @@ export default function PandiPulse({
   }
 
   function triggerBreak() {
-    if (phase !== 'playing') return
+    if (phase !== 'playing') return // ya está roto o en otra fase — no duplicar
     setPhase('break')
     if (!muted) { vibrateBreak(); playBreakSound() }
     cycleProgressRef.current = 0
+    lastDirRef.current = null
+    setPosition(0)
+    lastPosRef.current = 0
     setCalmLevel(c => Math.max(c - (1 / cyclesNeeded) * 0.5, 0))
     setCleanCycles(c => Math.max(c - 1, 0))
     setTimeout(() => setPhase('playing'), 1100)
@@ -404,6 +413,29 @@ export default function PandiPulse({
             <p style={{ color:'rgba(255,255,255,0.5)', fontSize:12, marginTop:4 }}>
               Ayúdala a calmarse
             </p>
+          </motion.div>
+        )}
+
+        {phase === 'ready' && (
+          <motion.div key="ready" initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
+            style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center',
+              justifyContent:'center', padding:24 }}>
+            <motion.img src={assets.calm} alt="Pandi lista"
+              animate={{ y:[0,-6,0] }} transition={{ duration:2.5, repeat:Infinity }}
+              style={{ width:140, height:140, objectFit:'contain' }}
+              onError={e => e.target.style.display='none'} />
+            <p style={{ color:'white', fontSize:15, fontWeight:700, marginTop:16, textAlign:'center' }}>
+              ¿Lista para respirar juntos?
+            </p>
+            <p style={{ color:'rgba(255,255,255,0.5)', fontSize:12, marginTop:4, textAlign:'center', maxWidth:240 }}>
+              Sigue el control con el dedo al ritmo de Pandi
+            </p>
+            <motion.button whileTap={{ scale:0.95 }} onClick={startPlaying}
+              style={{ marginTop:24, padding:'14px 40px', borderRadius:20, border:'none',
+                cursor:'pointer', background:'linear-gradient(135deg,#2EC4B6,#86EFAC)',
+                color:'white', fontWeight:800, fontSize:15 }}>
+              Empezar
+            </motion.button>
           </motion.div>
         )}
 

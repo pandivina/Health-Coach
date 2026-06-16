@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Dumbbell, Sparkles, History, BarChart2, Plus, Play } from 'lucide-react'
+import { Dumbbell, Sparkles, History, BarChart2, Plus, Play, TrendingUp, Star } from 'lucide-react'
 import { useTheme } from '../contexts/ThemeProvider'
 import { useStore } from '../store/useStore'
 import { api } from '../lib/api'
@@ -8,15 +8,19 @@ import { supabase } from '../lib/supabase'
 import WorkoutDashboard from '../components/workout/WorkoutDashboard'
 import LiveWorkoutScreen from '../components/workout/LiveWorkoutScreen'
 import { RoutineGenerator, ExerciseLibrary, WorkoutHistory, WorkoutStats } from '../components/workout/WorkoutComponents'
+import { ExerciseProgressList } from '../components/workout/ExerciseProgressChart'
+import { FavoriteRoutinesList } from '../components/workout/FavoriteRoutines'
 import PandiContextualBubble from '../components/PandiContextualBubble'
 import PandiTips from '../components/PandiTips'
 
 const TABS = [
-  { id: 'dashboard', icon: Dumbbell,  label: 'Inicio'     },
-  { id: 'generate',  icon: Sparkles,  label: 'IA'         },
-  { id: 'library',   icon: Plus,      label: 'Ejercicios' },
-  { id: 'history',   icon: History,   label: 'Historial'  },
-  { id: 'stats',     icon: BarChart2, label: 'Stats'      },
+  { id: 'dashboard', icon: Dumbbell,   label: 'Inicio'     },
+  { id: 'favorites', icon: Star,       label: 'Favoritas'  },
+  { id: 'generate',  icon: Sparkles,   label: 'IA'         },
+  { id: 'library',   icon: Plus,       label: 'Ejercicios' },
+  { id: 'progress',  icon: TrendingUp, label: 'Progreso'   },
+  { id: 'history',   icon: History,    label: 'Historial'  },
+  { id: 'stats',     icon: BarChart2,  label: 'Stats'      },
 ]
 
 export default function Workout() {
@@ -84,7 +88,6 @@ export default function Workout() {
         {/* Stats Bento unificado */}
         <div className="rounded-2xl p-3 grid grid-cols-4 gap-0"
           style={{ background: theme.surface, border: `1px solid ${theme.border}` }}>
-          {/* Métricas */}
           {[
             { emoji: '⚡', label: 'Sesiones', value: stats?.total_sessions ?? '–',                          color: '#EAB308' },
             { emoji: '📦', label: 'Volumen',  value: stats ? `${(stats.total_volume_kg/1000).toFixed(1)}t` : '–', color: '#6366F1' },
@@ -97,7 +100,6 @@ export default function Workout() {
               <p className="text-[10px] font-medium mt-0.5" style={{ color: theme.textMuted }}>{s.label}</p>
             </div>
           ))}
-          {/* Racha integrada */}
           <div className="flex flex-col items-center py-2 col-span-1">
             <span className="text-base mb-0.5">🔥</span>
             <p className="font-extrabold text-sm" style={{ color: '#F97316' }}>
@@ -136,14 +138,15 @@ export default function Workout() {
       </div>
 
       {/* 4 — Tab bar refinada */}
-      <div className="flex gap-1 rounded-2xl p-1 mb-5"
+      <div className="flex gap-1 rounded-2xl p-1 mb-5 overflow-x-auto"
         style={{ background: theme.surface2 }}>
         {TABS.map(t => {
           const active = tab === t.id
           return (
             <button key={t.id} onClick={() => setTab(t.id)}
-              className="flex-1 flex flex-col items-center gap-0.5 py-2 rounded-xl transition-all"
+              className="flex-1 flex flex-col items-center gap-0.5 py-2 rounded-xl transition-all flex-shrink-0"
               style={{
+                minWidth: 56,
                 background: active ? `${theme.primary}18` : 'transparent',
                 border:     active ? `1px solid ${theme.primary}30` : '1px solid transparent',
               }}>
@@ -165,8 +168,10 @@ export default function Workout() {
           exit={{ opacity: 0, y: -8 }}
           transition={{ duration: 0.18 }}>
           {tab === 'dashboard' && <WorkoutDashboard onStartSession={setActiveSession} hideQuickStart />}
+          {tab === 'favorites' && <FavoriteRoutinesList onStartSession={setActiveSession} />}
           {tab === 'generate'  && <RoutineGenerator onStartSession={setActiveSession} />}
           {tab === 'library'   && <ExerciseLibrary />}
+          {tab === 'progress'  && <ExerciseProgressList />}
           {tab === 'history'   && <WorkoutHistory />}
           {tab === 'stats'     && <WorkoutStats />}
         </motion.div>

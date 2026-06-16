@@ -109,7 +109,6 @@ router.post('/start', requireAuth, async (req, res) => {
     }).select().single();
     if (sErr) throw sErr;
 
-    // Crear ejercicios en la sesión
     if (exercises?.length) {
       const rows = exercises.map((ex, i) => ({
         session_id: session.id,
@@ -126,6 +125,7 @@ router.post('/start', requireAuth, async (req, res) => {
     res.json({ session, exercises: [] });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
+
 // POST /api/workouts/add-exercise
 router.post('/add-exercise', requireAuth, async (req, res) => {
   try {
@@ -147,10 +147,8 @@ router.post('/complete-set', requireAuth, async (req, res) => {
     const { workout_exercise_id, set_number, weight_kg, reps, is_warmup, rpe } = req.body;
     const userId = req.user.id;
 
-    // Calcular 1RM (Epley)
     const oneRepMax = reps > 1 ? Math.round(weight_kg * (1 + reps / 30)) : weight_kg;
 
-    // Ver si es PR
     const { data: currentPR } = await supabaseAdmin.from('personal_records')
       .select('one_rep_max, exercise_name')
       .eq('user_id', userId)
@@ -159,14 +157,12 @@ router.post('/complete-set', requireAuth, async (req, res) => {
 
     const isPR = !is_warmup && (!currentPR || oneRepMax > (currentPR.one_rep_max || 0));
 
-    // Guardar serie
     const { data: set, error } = await supabaseAdmin.from('workout_sets').insert({
       workout_exercise_id, set_number, weight_kg, reps, is_warmup, rpe,
       is_pr: isPR,
     }).select().single();
     if (error) throw error;
 
-    // Si es PR, guardarlo
     if (isPR && !is_warmup) {
       const { data: we } = await supabaseAdmin.from('workout_exercises')
         .select('exercise_name, session_id').eq('id', workout_exercise_id).single();
@@ -191,14 +187,13 @@ router.post('/finish', requireAuth, async (req, res) => {
     const { session_id, duration_seconds, notes } = req.body;
     const userId = req.user.id;
 
-    // Calcular volumen total
     const { data: exercises } = await supabaseAdmin.from('workout_exercises')
-  .select('id').eq('session_id', session_id);
-const exerciseIds = (exercises || []).map(e => e.id);
-const { data: sets } = exerciseIds.length 
-  ? await supabaseAdmin.from('workout_sets').select('weight_kg, reps, is_warmup').in('workout_exercise_id', exerciseIds)
-  : { data: [] };
-    
+      .select('id').eq('session_id', session_id);
+    const exerciseIds = (exercises || []).map(e => e.id);
+    const { data: sets } = exerciseIds.length
+      ? await supabaseAdmin.from('workout_sets').select('weight_kg, reps, is_warmup').in('workout_exercise_id', exerciseIds)
+      : { data: [] };
+
     const totalVolume = (sets || []).filter(s => !s.is_warmup).reduce((sum, s) => sum + (s.weight_kg * s.reps), 0);
     const totalSets = (sets || []).filter(s => !s.is_warmup).length;
     const caloriesBurned = Math.round(duration_seconds / 60 * 8);
@@ -213,12 +208,86 @@ const { data: sets } = exerciseIds.length
     }).eq('id', session_id).eq('user_id', userId).select().single();
     if (error) throw error;
 
-    // Actualizar XP en perfil
     await supabaseAdmin.from('user_profiles').update({
       xp: supabaseAdmin.rpc('increment_xp', { user_id: userId, amount: 50 }),
     }).eq('id', userId);
 
     res.json(data);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// GET /api/workouts/session/:id — recargar sesión completa con ejercicios
+// Usado al iniciar una rutina favorita, para pasarle a LiveWorkoutScreen
+// la sesión con la misma forma que devuelve POST /start
+router.get('/session/:id', requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { data: session, error: sErr } = await supabaseAdmin
+      .from('workout_sessions').select('*')
+      .eq('id', id).eq('user_id', req.user.id).single();
+    if (sErr) throw sErr;
+
+    const { data: exercises, error: eErr } = await supabaseAdmin
+      .from('workout_exercises').select('*')
+      .eq('session_id', id).order('order_index');
+    if (eErr) throw eErr;
+
+    res.json({ session, exercises: exercises || [] });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// GET /api/workouts/progress/:exerciseName — progresión de peso por ejercicio
+// Usa personal_records (1RM ya calculado) + workout_sets para el historial completo
+router.get('/progress/:exerciseName', requireAuth, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const exerciseName = decodeURIComponent(req.params.exerciseName);
+    const months = parseInt(req.query.months) || 3;
+    const from = new Date();
+    from.setMonth(from.getMonth() - months);
+
+    // 1RM actual desde personal_records — ya calculado por complete-set
+    const { data: pr } = await supabaseAdmin.from('personal_records')
+      .select('weight_kg, reps, one_rep_max, achieved_at')
+      .eq('user_id', userId).eq('exercise_name', exerciseName)
+      .maybeSingle();
+
+    // Historial completo de series no-warmup para el gráfico
+    const { data: workoutExercises } = await supabaseAdmin
+      .from('workout_exercises')
+      .select('id, session_id, workout_sessions!inner(created_at, status, user_id)')
+      .eq('exercise_name', exerciseName)
+      .eq('workout_sessions.status', 'completed')
+      .eq('workout_sessions.user_id', userId)
+      .gte('workout_sessions.created_at', from.toISOString());
+
+    if (!workoutExercises?.length) {
+      return res.json({ personalRecord: pr || null, history: [] });
+    }
+
+    const exerciseIds = workoutExercises.map(e => e.id);
+    const { data: sets } = await supabaseAdmin
+      .from('workout_sets')
+      .select('workout_exercise_id, weight_kg, reps, is_warmup, created_at')
+      .in('workout_exercise_id', exerciseIds)
+      .eq('is_warmup', false)
+      .order('created_at');
+
+    const byDate = {};
+    (sets || []).forEach(s => {
+      const we = workoutExercises.find(w => w.id === s.workout_exercise_id);
+      const date = we?.workout_sessions?.created_at?.split('T')[0];
+      if (!date) return;
+      if (!byDate[date] || s.weight_kg > byDate[date].weight) {
+        byDate[date] = { weight: s.weight_kg, reps: s.reps };
+      }
+    });
+
+    const history = Object.entries(byDate)
+      .map(([date, d]) => ({ date, value: d.weight, reps: d.reps }))
+      .sort((a, b) => a.date.localeCompare(b.date));
+
+    res.json({ personalRecord: pr || null, history });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 

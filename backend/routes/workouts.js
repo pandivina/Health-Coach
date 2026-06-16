@@ -268,10 +268,10 @@ router.get('/progress/:exerciseName', requireAuth, async (req, res) => {
     const exerciseIds = workoutExercises.map(e => e.id);
     const { data: sets } = await supabaseAdmin
       .from('workout_sets')
-      .select('workout_exercise_id, weight_kg, reps, is_warmup, created_at')
+      .select('workout_exercise_id, weight_kg, reps, is_warmup, completed_at')
       .in('workout_exercise_id', exerciseIds)
       .eq('is_warmup', false)
-      .order('created_at');
+      .order('completed_at');
 
     const byDate = {};
     (sets || []).forEach(s => {

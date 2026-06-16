@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useStore } from '../store/useStore'
 import { useTheme } from '../contexts/ThemeProvider'
@@ -11,13 +11,13 @@ import TourHelpButton from '../components/tour/TourHelpButton'
 import PandiInsights from '../components/PandiInsights'
 import { Plus, Minus as MinusIcon, Droplets } from 'lucide-react'
 import DailyCheckin from '../components/DailyCheckin'
-import ComebackModal from '../components/ComebackModal'
 // CoachAwarenessContext — disponible cuando el provider esté en App.jsx
 // import { useModuleAwareness } from '../contexts/CoachAwarenessContext'
 
 const STATE_CONFIG = {
   GREEN: {
     bg:            '/panda/sanctuary_green.png',
+    bgNight:       '/panda/sanctuary_green_night.png',
     glow:          'rgba(46,196,182,0.4)',
     dot:           '#2EC4B6',
     msg:           'Hoy tienes energía para todo.',
@@ -26,21 +26,28 @@ const STATE_CONFIG = {
   },
   YELLOW: {
     bg:            '/panda/sanctuary_yellow.png',
+    bgNight:       '/panda/sanctuary_yellow_night.png',
     glow:          'rgba(245,158,11,0.4)',
     dot:           '#F59E0B',
     msg:           'Ritmo moderado. Ajustando tu plan.',
-    frames:        ['/panda/panda_base.png'],
+    frames:        ['/panda/panda_base.png','/panda/thinking_1.png','/panda/panda_base.png','/panda/thinking_1.png'],
     frameDuration: 3000,
   },
   RED: {
     bg:            '/panda/sanctuary_red.png',
+    bgNight:       '/panda/sanctuary_red_night.png',
     glow:          'rgba(255,143,163,0.4)',
     dot:           '#FF8FA3',
     msg:           'Hoy el descanso ES el entrenamiento.',
-    frames:        ['/panda/panda_base.png'],
+    frames:        ['/panda/panda_base.png','/panda/thinking_1.png','/panda/panda_base.png','/panda/thinking_1.png'],
     frameDuration: 3500,
   },
 }
+
+// Frames de la animación de despertar — en orden
+const WAKING_FRAMES = ['/panda/panda_waking_1.png', '/panda/panda_waking_2.png', '/panda/panda_waking_3.png']
+const SLEEPING_FRAME      = '/panda/panda_sleeping.png'
+const SLEEPING_ZZZ_FRAME  = '/panda/panda_sleeping_zzz.png'
 
 const ALL_FRAMES = [
   '/panda/panda_blink.png',
@@ -48,10 +55,29 @@ const ALL_FRAMES = [
   ...STATE_CONFIG.GREEN.frames,
   ...STATE_CONFIG.YELLOW.frames,
   ...STATE_CONFIG.RED.frames,
-  STATE_CONFIG.GREEN.bg,
-  STATE_CONFIG.YELLOW.bg,
-  STATE_CONFIG.RED.bg,
+  STATE_CONFIG.GREEN.bg, STATE_CONFIG.GREEN.bgNight,
+  STATE_CONFIG.YELLOW.bg, STATE_CONFIG.YELLOW.bgNight,
+  STATE_CONFIG.RED.bg, STATE_CONFIG.RED.bgNight,
+  SLEEPING_FRAME, SLEEPING_ZZZ_FRAME,
+  ...WAKING_FRAMES,
 ]
+
+// ── Detecta si estamos en modo noche (22h - 7h) ──────────────────────────────
+function useNightMode() {
+  const [isNight, setIsNight] = useState(() => {
+    const h = new Date().getHours()
+    return h >= 22 || h < 7
+  })
+  useEffect(() => {
+    const check = () => {
+      const h = new Date().getHours()
+      setIsNight(h >= 22 || h < 7)
+    }
+    const t = setInterval(check, 60000) // revisar cada minuto
+    return () => clearInterval(t)
+  }, [])
+  return isNight
+}
 
 function useIsMobile() {
   const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768)
@@ -64,11 +90,18 @@ function useIsMobile() {
 }
 
 function Sanctuary({ recoveryLight, profile, theme, greeting, name }) {
-  const cfg = STATE_CONFIG[recoveryLight] || STATE_CONFIG.GREEN
+  const cfg      = STATE_CONFIG[recoveryLight] || STATE_CONFIG.GREEN
   const isMobile = useIsMobile()
+  const isNight  = useNightMode()
+  const navigate = useNavigate()
+
   const [frameIdx, setFrameIdx] = useState(0)
-  const [imgErr, setImgErr] = useState(false)
+  const [imgErr,   setImgErr]   = useState(false)
   const [blinking, setBlinking] = useState(false)
+  const [zzzOn,    setZzzOn]    = useState(true)
+  const [waking,   setWaking]   = useState(false)
+  const [wakeFrame,setWakeFrame]= useState(0)
+  const [showPrompt, setShowPrompt] = useState(false)
 
   useEffect(() => {
     ALL_FRAMES.forEach(src => { const i = new Image(); i.src = src })
@@ -76,44 +109,83 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name }) {
 
   useEffect(() => { setFrameIdx(0); setImgErr(false) }, [recoveryLight])
 
+  // Animación normal de frames — solo de día
   useEffect(() => {
-    if (cfg.frames.length <= 1) return
+    if (isNight || cfg.frames.length <= 1) return
     const t = setInterval(() => setFrameIdx(i => (i + 1) % cfg.frames.length), cfg.frameDuration)
     return () => clearInterval(t)
-  }, [recoveryLight, cfg.frames.length, cfg.frameDuration])
+  }, [recoveryLight, cfg.frames.length, cfg.frameDuration, isNight])
 
+  // Parpadeo — solo de día
   useEffect(() => {
+    if (isNight) return
     const schedule = () => setTimeout(() => {
       setBlinking(true)
       setTimeout(() => { setBlinking(false); schedule() }, 120)
     }, 3000 + Math.random() * 4000)
     const t = schedule()
     return () => clearTimeout(t)
-  }, [])
+  }, [isNight])
 
-  const currentFrame = blinking ? '/panda/panda_blink.png' : cfg.frames[frameIdx]
+  // Parpadeo del Zzz — solo de noche
+  useEffect(() => {
+    if (!isNight) return
+    const t = setInterval(() => setZzzOn(z => !z), 1400)
+    return () => clearInterval(t)
+  }, [isNight])
 
-return (
+  function handlePandiTap() {
+    if (!isNight) { navigate('/mood'); return }
+    if (waking) return
+    // Secuencia de despertar
+    setWaking(true)
+    setWakeFrame(0)
+    setTimeout(() => setWakeFrame(1), 500)
+    setTimeout(() => setWakeFrame(2), 1100)
+    setTimeout(() => { setShowPrompt(true) }, 1700)
+  }
+
+  function goToSanctuary() {
+    setShowPrompt(false); setWaking(false)
+    navigate('/mood')
+  }
+
+  function letSleep() {
+    setShowPrompt(false)
+    setTimeout(() => setWaking(false), 300)
+  }
+
+  const bgImage = isNight ? (cfg.bgNight || cfg.bg) : cfg.bg
+
+  const currentFrame = isNight
+    ? (waking
+        ? WAKING_FRAMES[wakeFrame]
+        : (zzzOn ? SLEEPING_ZZZ_FRAME : SLEEPING_FRAME))
+    : (blinking ? '/panda/panda_blink.png' : cfg.frames[frameIdx])
+
+  return (
     <div style={{
       position: 'relative',
       width: '100%',
-      // Aumentamos la altura para dar más espacio vertical
-      height: isMobile ? '95vw' : '50vw',
-      maxHeight: isMobile ? 550 : 500,
+      height: isMobile ? '80vw' : '42vw',
+      maxHeight: isMobile ? 480 : 420,
       overflow: 'hidden',
-      backgroundImage: `url(${cfg.bg})`,
+      backgroundImage: `url(${bgImage})`,
       backgroundSize: 'cover',
-      // Alineamos al bottom para asegurar que la plataforma siempre sea visible
-      backgroundPosition: 'center bottom',
+      backgroundPosition: 'center 30%',
       backgroundRepeat: 'no-repeat',
-      backgroundColor: recoveryLight==='GREEN' ? '#e8f5ee'
+      backgroundColor: isNight ? '#1a2138'
+                      : recoveryLight==='GREEN' ? '#e8f5ee'
                       : recoveryLight==='YELLOW' ? '#fef3c7'
                       : '#ffe4ec',
+      transition: 'background-color 1.5s ease',
     }}>
 
       {/* Overlay top */}
       <div style={{ position:'absolute', top:0, left:0, right:0, height:'35%', zIndex:1,
-        background:'linear-gradient(to bottom, rgba(0,0,0,0.22) 0%, transparent 100%)',
+        background: isNight
+          ? 'linear-gradient(to bottom, rgba(0,0,0,0.4) 0%, transparent 100%)'
+          : 'linear-gradient(to bottom, rgba(0,0,0,0.22) 0%, transparent 100%)',
         pointerEvents:'none' }} />
 
       {/* Overlay bottom */}
@@ -153,32 +225,81 @@ return (
         </Link>
       </div>
 
-{/* PANDI — Ajustado bottom para que quede sobre la plataforma */}
-      <Link to="/mood.jsx" style={{ textDecoration:'none' }}>
-        <motion.div whileTap={{ scale:0.95 }}
-          style={{ 
-            position:'absolute', 
-            bottom:'15%', // Aumentado de 4% a 12% para subirlo a la plataforma
-            left:'50%', 
-            transform:'translateX(-50%)',
-            zIndex:5, 
-            width:isMobile ? '45%' : '20%', 
-            maxWidth:200, 
-            cursor:'pointer' 
-          }}>
-          <div style={{ position:'relative' }}>
-            {/* ... (tus efectos de glow y sombra permanecen iguales) */}
-            <div style={{ filter:`drop-shadow(0 12px 20px ${cfg.glow})` }}>
-              {imgErr
-                ? <span style={{ fontSize:'15vw', display:'block', textAlign:'center' }}>🐾</span>
-                : <img src={currentFrame} alt="Pandi"
-                    style={{ width:'100%', height:'auto', objectFit:'contain', display:'block' }}
-                    onError={() => setImgErr(true)} />
-              }
-            </div>
+      {/* Estrellas decorativas — solo de noche */}
+      {isNight && (
+        <div style={{ position:'absolute', inset:0, zIndex:2, pointerEvents:'none' }}>
+          {[
+            { top:'12%', left:'15%', size:3, delay:0 },
+            { top:'18%', left:'75%', size:2, delay:0.6 },
+            { top:'8%',  left:'45%', size:2, delay:1.2 },
+            { top:'25%', left:'85%', size:3, delay:0.3 },
+          ].map((s, i) => (
+            <motion.div key={i}
+              animate={{ opacity:[0.2,0.9,0.2] }}
+              transition={{ duration:2.5, repeat:Infinity, delay:s.delay }}
+              style={{ position:'absolute', top:s.top, left:s.left, width:s.size, height:s.size,
+                borderRadius:'50%', background:'white', boxShadow:'0 0 4px white' }} />
+          ))}
+        </div>
+      )}
+
+      {/* PANDI — de día navega directo, de noche hay que despertarla */}
+      <motion.div
+        onClick={handlePandiTap}
+        whileTap={{ scale:0.95 }}
+        style={{ position:'absolute', bottom:'14%', left:'50%', transform:'translateX(-50%)',
+          zIndex:5, width:isMobile ? '48%' : '22%', maxWidth:200, cursor:'pointer' }}>
+        <div style={{ position:'relative' }}>
+          <motion.div
+            animate={{ opacity: isNight ? [0.15,0.3,0.15] : [0.3,0.5,0.3] }}
+            transition={{ duration:3, repeat:Infinity, ease:'easeInOut' }}
+            style={{ position:'absolute', top:'50%', left:'50%',
+              transform:'translate(-50%,-50%)', width:'80%', height:'80%',
+              borderRadius:'50%',
+              background:`radial-gradient(circle, ${isNight ? 'rgba(120,140,220,0.35)' : cfg.glow} 0%, transparent 65%)`,
+              filter:'blur(24px)', zIndex:-1, pointerEvents:'none' }} />
+          <motion.div
+            animate={{ scaleX:[1,1.04,1], opacity:[0.2,0.3,0.2] }}
+            transition={{ duration:3, repeat:Infinity, ease:'easeInOut' }}
+            style={{ position:'absolute', bottom:-4, left:'50%',
+              transform:'translateX(-50%)', width:'50%', height:8,
+              borderRadius:'50%', background:'rgba(0,0,0,0.15)',
+              filter:'blur(4px)', zIndex:-1 }} />
+          <div style={{ filter:`drop-shadow(0 12px 20px ${isNight ? 'rgba(120,140,220,0.3)' : cfg.glow})` }}>
+            {imgErr
+              ? <span style={{ fontSize:'15vw', display:'block', textAlign:'center' }}>{isNight ? '😴' : '🐾'}</span>
+              : <motion.img key={currentFrame} src={currentFrame} alt="Pandi"
+                  initial={{ opacity:0.7 }} animate={{ opacity:1 }} transition={{ duration:0.3 }}
+                  style={{ width:'100%', height:'auto', objectFit:'contain', display:'block' }}
+                  onError={() => setImgErr(true)} />
+            }
           </div>
-        </motion.div>
-      </Link>
+        </div>
+      </motion.div>
+
+      {/* Prompt: ¿entramos o la dejamos dormir? */}
+      <AnimatePresence>
+        {showPrompt && (
+          <motion.div
+            initial={{ opacity:0, y:10 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0, y:10 }}
+            style={{ position:'absolute', bottom:'4%', left:16, right:16, zIndex:15,
+              display:'flex', gap:8, justifyContent:'center' }}>
+            <button onClick={letSleep}
+              style={{ padding:'10px 16px', borderRadius:14, border:'none', cursor:'pointer',
+                background:'rgba(255,255,255,0.92)', backdropFilter:'blur(8px)',
+                fontSize:12, fontWeight:700, color:'#6B7280' }}>
+              Déjala dormir 😴
+            </button>
+            <button onClick={goToSanctuary}
+              style={{ padding:'10px 16px', borderRadius:14, border:'none', cursor:'pointer',
+                background:'linear-gradient(135deg,#2EC4B6,#FF8FA3)',
+                fontSize:12, fontWeight:700, color:'white' }}>
+              Entrar al santuario →
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
     </div>
   )
 }
@@ -367,6 +488,8 @@ async function buildPandiContext(userId) {
     situation = 'low_calories_evening'
   } else if (totalProtein > 0 && totalProtein < goals.protein_g * 0.4 && hour >= 14) {
     situation = 'low_protein'
+  } else if (hour >= 22 || hour < 7) {
+    situation = 'deep_night_calm'
   }
 
   return {
@@ -399,6 +522,8 @@ function getInstantMessage(ctx) {
       return { text: `Son las ${hour}h y llevas ${Math.round(totalCal)} de ${calorieGoal} kcal. Una cena con proteína te ayudará a recuperarte esta noche. 🍳`, type:'nutrition' }
     case 'low_protein':
       return { text: `Proteína baja para esta hora del día. Añade una fuente proteica en tu próxima comida — huevo, pollo, atún o yogur griego van perfecto. 💪`, type:'nutrition' }
+    case 'deep_night_calm':
+      return { text: 'Has cerrado bien el día. Ahora toca descansar — el cuerpo se recupera mientras duermes. Hasta mañana 🌙', type:'mood' }
     default:
       return null
   }
@@ -733,13 +858,11 @@ export default function Home() {
 
   return (
     <div style={{ minHeight:'100vh', background:'#f8fafa', paddingBottom:100 }}>
+
       <Sanctuary recoveryLight={recoveryLight} profile={profile} theme={theme} greeting={greeting} name={name} />
 
-      {/* Margen adicional después del Sanctuary para separar el XPBar */}
-      <div style={{ marginTop: '20px' }}>
-        <XPBar profile={profile} cfg={cfg} />
-      </div>
-      
+      <XPBar profile={profile} cfg={cfg} />
+
       <div style={{ padding:'0 16px', marginTop:8 }}>
 
         {/* BADGE SEMÁFORO */}
@@ -823,7 +946,6 @@ export default function Home() {
       </div>
 
       <DailyCheckin />
-      <ComebackModal />
     </div>
   )
 }

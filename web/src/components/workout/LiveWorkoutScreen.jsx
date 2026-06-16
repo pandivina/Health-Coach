@@ -1,48 +1,13 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Plus, Check, ChevronDown, ChevronUp, Trophy, Timer } from 'lucide-react'
+import { X, Plus, Check, ChevronDown, ChevronUp, Trophy, Timer, TrendingUp } from 'lucide-react'
 import { api } from '../../lib/api'
 import { useStore } from '../../store/useStore'
 import { useTheme } from '../../contexts/ThemeProvider'
 import ExerciseSelectorModal from '../ExerciseSelectorModal'
-
-// ─── REST TIMER ───────────────────────────────────────────────────────────────
-
-function RestTimer({ seconds, onDone }) {
-  const [left, setLeft] = useState(seconds)
-  useEffect(() => {
-    if (left <= 0) { onDone(); return }
-    const t = setTimeout(() => setLeft(l => l - 1), 1000)
-    return () => clearTimeout(t)
-  }, [left])
-  const pct = ((seconds - left) / seconds) * 100
-
-  return (
-    <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }}
-      className="fixed inset-0 flex items-center justify-center z-50"
-      style={{ background: 'rgba(0,0,0,0.85)' }}>
-      <div className="text-center">
-        <div className="relative w-32 h-32 mx-auto mb-4">
-          <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
-            <circle cx="50" cy="50" r="40" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="8" />
-            <circle cx="50" cy="50" r="40" fill="none" stroke="#6366F1" strokeWidth="8"
-              strokeDasharray={2*Math.PI*40}
-              strokeDashoffset={2*Math.PI*40*(1-pct/100)} strokeLinecap="round" />
-          </svg>
-          <div className="absolute inset-0 flex items-center justify-center">
-            <span className="text-3xl font-bold text-white">{left}</span>
-          </div>
-        </div>
-        <p className="text-white/60 mb-4">Descansando…</p>
-        <button onClick={onDone}
-          className="px-6 py-2 text-sm font-semibold rounded-xl text-white"
-          style={{ background: 'rgba(255,255,255,0.15)' }}>
-          Saltar
-        </button>
-      </div>
-    </motion.div>
-  )
-}
+import RestTimer from './RestTimer'
+import { ExerciseProgressModal } from './ExerciseProgressChart'
+import { SaveRoutineButton } from './FavoriteRoutines'
 
 // ─── PR BANNER ────────────────────────────────────────────────────────────────
 
@@ -62,14 +27,13 @@ function PRBanner() {
 
 // ─── EXERCISE BLOCK ───────────────────────────────────────────────────────────
 
-function ExerciseBlock({ workoutExercise, onSetComplete }) {
+function ExerciseBlock({ workoutExercise, onSetComplete, onShowProgress }) {
   const { theme }  = useTheme()
   const [sets,     setSets]     = useState([])
   const [weight,   setWeight]   = useState('')
   const [reps,     setReps]     = useState('')
   const [expanded, setExpanded] = useState(true)
 
-  // Info del ejercicio de la biblioteca (si existe)
   const info = workoutExercise.libraryData
 
   async function logSet(isWarmup = false) {
@@ -80,7 +44,7 @@ function ExerciseBlock({ workoutExercise, onSetComplete }) {
       weight_kg:  parseFloat(weight) || 0,
       reps:       parseInt(reps)     || 0,
       is_warmup:  isWarmup,
-    })
+    }, workoutExercise.exercise_name)
     setSets(s => [...s, {
       weight_kg: parseFloat(weight) || 0,
       reps:      parseInt(reps)     || 0,
@@ -114,9 +78,16 @@ function ExerciseBlock({ workoutExercise, onSetComplete }) {
             </p>
           </div>
         </div>
-        {expanded
-          ? <ChevronUp size={16} style={{ color: theme.textMuted }} />
-          : <ChevronDown size={16} style={{ color: theme.textMuted }} />}
+        <div className="flex items-center gap-1.5">
+          <button onClick={e => { e.stopPropagation(); onShowProgress(workoutExercise.exercise_name) }}
+            className="w-7 h-7 rounded-lg flex items-center justify-center"
+            style={{ background: `${theme.primary}15` }}>
+            <TrendingUp size={13} style={{ color: theme.primary }} />
+          </button>
+          {expanded
+            ? <ChevronUp size={16} style={{ color: theme.textMuted }} />
+            : <ChevronDown size={16} style={{ color: theme.textMuted }} />}
+        </div>
       </div>
 
       {expanded && (
@@ -188,10 +159,12 @@ export default function LiveWorkoutScreen({ session, onFinish, workoutPath = 'ti
   const [exercises,    setExercises]    = useState(Array.isArray(session.exercises) ? session.exercises : [])
   const [elapsed,      setElapsed]      = useState(0)
   const [showRest,     setShowRest]     = useState(false)
+  const [restExercise, setRestExercise] = useState(null)
   const [showPR,       setShowPR]       = useState(false)
   const [finishing,    setFinishing]    = useState(false)
   const [showModal,    setShowModal]    = useState(false)
   const [restSeconds,  setRestSeconds]  = useState(90)
+  const [progressFor,  setProgressFor]  = useState(null)
   const startTime = useRef(Date.now())
 
   useEffect(() => {
@@ -202,16 +175,17 @@ export default function LiveWorkoutScreen({ session, onFinish, workoutPath = 'ti
   const formatTime = s =>
     `${Math.floor(s/3600).toString().padStart(2,'0')}:${Math.floor((s%3600)/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}`
 
-  async function handleSetComplete(data) {
+  async function handleSetComplete(data, exerciseName) {
     const result = await api.workouts.completeSet(data)
     if (result?.is_pr) {
       setShowPR(true)
       setTimeout(() => setShowPR(false), 3000)
       addXP(75)
     }
-    // Descanso según el ejercicio
+    // Descanso según el ejercicio — arranca automáticamente
     const ex = exercises.find(e => e.id === data.workout_exercise_id)
     setRestSeconds(ex?.libraryData?.rest || 90)
+    setRestExercise(exerciseName)
     setShowRest(true)
     return result
   }
@@ -254,11 +228,14 @@ export default function LiveWorkoutScreen({ session, onFinish, workoutPath = 'ti
               <span>· {exercises.length} ejercicios</span>
             </div>
           </div>
-          <button onClick={finish} disabled={finishing}
-            className="text-sm font-bold px-4 py-2 rounded-xl text-white disabled:opacity-50"
-            style={{ background: theme.success }}>
-            {finishing ? 'Guardando…' : 'Terminar'}
-          </button>
+          <div className="flex items-center gap-2">
+            {!isEmpty && <SaveRoutineButton exercises={exercises} sessionName={session.session?.name} />}
+            <button onClick={finish} disabled={finishing}
+              className="text-sm font-bold px-4 py-2 rounded-xl text-white disabled:opacity-50"
+              style={{ background: theme.success }}>
+              {finishing ? 'Guardando…' : 'Terminar'}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -286,7 +263,8 @@ export default function LiveWorkoutScreen({ session, onFinish, workoutPath = 'ti
 
         {/* Ejercicios */}
         {exercises.map(ex => (
-          <ExerciseBlock key={ex.id} workoutExercise={ex} onSetComplete={handleSetComplete} />
+          <ExerciseBlock key={ex.id} workoutExercise={ex} onSetComplete={handleSetComplete}
+            onShowProgress={setProgressFor} />
         ))}
 
         {/* Botón añadir más */}
@@ -307,7 +285,17 @@ export default function LiveWorkoutScreen({ session, onFinish, workoutPath = 'ti
         onSelectExercise={addExerciseFromLibrary} />
 
       <AnimatePresence>{showPR && <PRBanner />}</AnimatePresence>
-      {showRest && <RestTimer seconds={restSeconds} onDone={() => setShowRest(false)} />}
+
+      {showRest && (
+        <RestTimer seconds={restSeconds} exerciseName={restExercise}
+          onDone={() => setShowRest(false)} />
+      )}
+
+      <AnimatePresence>
+        {progressFor && (
+          <ExerciseProgressModal exerciseName={progressFor} onClose={() => setProgressFor(null)} />
+        )}
+      </AnimatePresence>
     </div>
   )
 }

@@ -1,43 +1,27 @@
 // ─── components/mood/PandiPulse.jsx ──────────────────────────────────────────
 // "El Pulso de Pandi" — minijuego de biofeedback respiratorio táctil
-// Joystick vertical de 3 posiciones sincronizado con la respiración de la mascota
+// Joystick vertical lateral, Pandi centro-izquierda, 3 fases con asset propio
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Volume2, VolumeX } from 'lucide-react'
 import { useStore } from '../../store/useStore'
 import { speak, stopSpeech, sayAsync, PANDI_VOICE } from '../../lib/tts'
+import { TutorialOverlay, TutorialHelpButton, useTutorial } from '../shared/TutorialOverlay'
 
-// ─── TÉCNICAS DE RESPIRACIÓN — velocidad objetivo única por ciclo completo ──
+// ─── TÉCNICAS DE RESPIRACIÓN ──────────────────────────────────────────────────
 const TECHNIQUES = {
-  '478': {
-    name: '4-7-8',
-    inhale: 4, hold: 7, exhale: 8,
-    totalCycle: 19,
-    targetSpeed: 1 / 19, // posición del joystick (0-1) por segundo, aprox
-  },
-  'night': {
-    name: '4-6',
-    inhale: 4, hold: 0, exhale: 6,
-    totalCycle: 10,
-    targetSpeed: 1 / 10,
-  },
-  'box': {
-    name: 'Box',
-    inhale: 4, hold: 4, exhale: 4, holdOut: 4,
-    totalCycle: 16,
-    targetSpeed: 1 / 16,
-  },
+  '478': { name: '4-7-8', inhale: 4, hold: 7, exhale: 8, totalCycle: 19, targetSpeed: 1/19 },
+  'night': { name: '4-6', inhale: 4, hold: 0, exhale: 6, totalCycle: 10, targetSpeed: 1/10 },
+  'box': { name: 'Box', inhale: 4, hold: 4, exhale: 4, holdOut: 4, totalCycle: 16, targetSpeed: 1/16 },
 }
 
-// Determina técnica según contexto — se llama desde fuera y se pasa como prop
 export function pickTechnique(situation) {
   if (situation === 'low_mood' || situation === 'great_anxiety') return '478'
   if (situation === 'deep_night_calm' || situation === 'night') return 'night'
   return 'box'
 }
 
-// Ciclos necesarios según score real (no tramos fijos)
 export function calcCyclesNeeded(score = 0.5) {
   const n = Math.round(3 + (1 - score) * 5)
   return Math.min(Math.max(n, 3), 8)
@@ -49,8 +33,7 @@ const AMBIENT_SOUND = '/audio/ambient-rain.mp3'
 function playBreakSound() {
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)()
-    const osc = ctx.createOscillator()
-    const gain = ctx.createGain()
+    const osc = ctx.createOscillator(); const gain = ctx.createGain()
     osc.connect(gain); gain.connect(ctx.destination)
     osc.type = 'sawtooth'
     osc.frequency.setValueAtTime(180, ctx.currentTime)
@@ -65,11 +48,9 @@ function playSuccessChime() {
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)()
     ;[523, 659, 784].forEach((freq, i) => {
-      const osc = ctx.createOscillator()
-      const gain = ctx.createGain()
+      const osc = ctx.createOscillator(); const gain = ctx.createGain()
       osc.connect(gain); gain.connect(ctx.destination)
-      osc.frequency.value = freq
-      osc.type = 'sine'
+      osc.frequency.value = freq; osc.type = 'sine'
       const t = ctx.currentTime + i * 0.12
       gain.gain.setValueAtTime(0.2, t)
       gain.gain.exponentialRampToValueAtTime(0.01, t + 0.4)
@@ -78,35 +59,27 @@ function playSuccessChime() {
   } catch {}
 }
 
-function vibrateBreak() {
-  if ('vibrate' in navigator) { try { navigator.vibrate([60, 40, 60, 40, 100]) } catch {} }
-}
-function vibrateSuccess() {
-  if ('vibrate' in navigator) { try { navigator.vibrate([40, 30, 40, 30, 80, 30, 120]) } catch {} }
-}
+function vibrateBreak()   { if ('vibrate' in navigator) { try { navigator.vibrate([60,40,60,40,100]) } catch {} } }
+function vibrateSuccess() { if ('vibrate' in navigator) { try { navigator.vibrate([40,30,40,30,80,30,120]) } catch {} } }
 
-// ─── ASSETS DE MASCOTA — por convención, sustituible sin tocar código ───────
-// Cuando haya más mascotas: petId viene de localStorage('pandi_active_pet')
-// y los paths cambian de /panda/ a /{petId}/ automáticamente
+// ─── ASSETS DE MASCOTA POR FASE — placeholders, sustituibles sin tocar código ─
 function getPetAssets(petId = 'pandi') {
   const base = petId === 'pandi' ? '/panda' : `/${petId}`
   return {
-    agitated:  `${base}/avatar_neutro.png`,   // placeholder hasta tener frames de susto
-    calming:   `${base}/panda_base.png`,
-    calm:      `${base}/avatar_happy.png`,
-    scared:    `${base}/thinking_1.png`,      // placeholder para modo libre (susto inicial)
+    scared:  `${base}/thinking_1.png`,    // intro modo libre
+    inhale:  `${base}/breath_2.png`,      // fase inhalando
+    hold:    `${base}/breath_3.png`,      // fase manteniendo
+    exhale:  `${base}/breath_4.png`,      // fase exhalando
+    calm:    `${base}/avatar_happy.png`,  // estado final de calma
   }
 }
 
-// ─── JOYSTICK VERTICAL ────────────────────────────────────────────────────────
+// ─── JOYSTICK VERTICAL LATERAL ─────────────────────────────────────────────────
 function VerticalJoystick({ position, sync, onDrag, onDragEnd, disabled }) {
   const trackRef = useRef(null)
   const draggingRef = useRef(false)
 
-  const handleStart = useCallback((clientY) => {
-    if (disabled) return
-    draggingRef.current = true
-  }, [disabled])
+  const handleStart = useCallback(() => { if (!disabled) draggingRef.current = true }, [disabled])
 
   const handleMove = useCallback((clientY) => {
     if (!draggingRef.current || !trackRef.current) return
@@ -142,110 +115,92 @@ function VerticalJoystick({ position, sync, onDrag, onDragEnd, disabled }) {
   return (
     <div
       ref={trackRef}
-      onMouseDown={e => handleStart(e.clientY)}
-      onTouchStart={e => handleStart(e.touches[0].clientY)}
+      onMouseDown={handleStart}
+      onTouchStart={handleStart}
       style={{
-        position: 'relative', width: 64, height: 280,
-        borderRadius: 32, background: 'rgba(255,255,255,0.08)',
+        position: 'relative', width: 56, height: '100%', minHeight: 260,
+        borderRadius: 28, background: 'rgba(255,255,255,0.08)',
         border: '1.5px solid rgba(255,255,255,0.15)',
         touchAction: 'none', cursor: disabled ? 'default' : 'grab',
-        margin: '0 auto',
       }}>
 
-      {/* Etiquetas */}
-      <div style={{ position:'absolute', top:8, left:0, right:0, textAlign:'center',
-        fontSize:9, color:'rgba(255,255,255,0.4)', fontWeight:700 }}>INHALA</div>
-      <div style={{ position:'absolute', bottom:8, left:0, right:0, textAlign:'center',
-        fontSize:9, color:'rgba(255,255,255,0.4)', fontWeight:700 }}>EXHALA</div>
+      <div style={{ position:'absolute', top:10, left:0, right:0, textAlign:'center',
+        fontSize:8, color:'rgba(255,255,255,0.4)', fontWeight:700, letterSpacing:'.05em' }}>IN</div>
+      <div style={{ position:'absolute', bottom:10, left:0, right:0, textAlign:'center',
+        fontSize:8, color:'rgba(255,255,255,0.4)', fontWeight:700, letterSpacing:'.05em' }}>OUT</div>
 
-      {/* Línea central (neutro) */}
       <div style={{ position:'absolute', top:'50%', left:8, right:8, height:1,
         background:'rgba(255,255,255,0.15)' }} />
 
-      {/* Knob */}
       <motion.div
         animate={{ top: `${(1 - position) * 100}%` }}
         transition={{ type: 'tween', duration: 0.05 }}
         style={{
-          position:'absolute', left:'50%', width:48, height:48,
-          marginLeft:-24, marginTop:-24,
+          position:'absolute', left:'50%', width:42, height:42,
+          marginLeft:-21, marginTop:-21,
           borderRadius:'50%', background:knobColor,
-          boxShadow:`0 0 20px 6px ${knobGlow}, 0 4px 12px rgba(0,0,0,0.3)`,
+          boxShadow:`0 0 18px 5px ${knobGlow}, 0 4px 10px rgba(0,0,0,0.3)`,
           transition:'background 0.15s, box-shadow 0.15s',
         }} />
     </div>
   )
 }
 
-// ─── BARRA DE VELOCIDAD OBJETIVO ──────────────────────────────────────────────
+// ─── BARRA DE VELOCIDAD ─────────────────────────────────────────────────────────
 function SpeedBar({ userSpeed, targetSpeed, inZone }) {
-  // Normalizar velocidad para visualización (0-100%)
   const ratio = targetSpeed > 0 ? Math.min(userSpeed / targetSpeed, 2) : 0
   const pct = Math.min(ratio * 50, 100)
 
   return (
-    <div style={{ width: '100%', maxWidth: 200, margin: '0 auto' }}>
-      <div style={{ height: 8, borderRadius: 6, background: 'rgba(255,255,255,0.1)',
+    <div style={{ width: '100%' }}>
+      <div style={{ height: 6, borderRadius: 5, background: 'rgba(255,255,255,0.1)',
         overflow: 'hidden', position: 'relative' }}>
-        {/* Zona verde objetivo */}
         <div style={{ position:'absolute', left:'40%', width:'20%', top:0, bottom:0,
           background:'rgba(46,196,182,0.25)' }} />
-        {/* Barra actual */}
-        <motion.div
-          animate={{ width: `${pct}%` }}
-          transition={{ duration: 0.1 }}
-          style={{ height: '100%', borderRadius: 6,
-            background: inZone ? '#2EC4B6' : '#F59E0B' }} />
+        <motion.div animate={{ width: `${pct}%` }} transition={{ duration: 0.1 }}
+          style={{ height: '100%', borderRadius: 5, background: inZone ? '#2EC4B6' : '#F59E0B' }} />
       </div>
-      <p style={{ fontSize: 9, color: 'rgba(255,255,255,0.4)', textAlign: 'center', marginTop: 4 }}>
-        Ritmo {inZone ? 'perfecto' : 'ajusta la velocidad'}
-      </p>
     </div>
   )
 }
 
 // ─── COMPONENTE PRINCIPAL ──────────────────────────────────────────────────────
 export default function PandiPulse({
-  mode = 'free',           // 'free' | 'guided'
-  situation = null,        // situación detectada (solo en modo guided)
-  score = 0.5,             // score del contexto (solo en modo guided)
-  petId = 'pandi',
-  onClose,
-  onComplete,
+  mode = 'free', situation = null, score = 0.5, petId = 'pandi',
+  onClose, onComplete,
 }) {
   const { addXP } = useStore()
   const assets = getPetAssets(petId)
+  const tutorial = useTutorial('pandi_pulse')
 
   const techKey = mode === 'guided' ? pickTechnique(situation) : 'box'
   const tech = TECHNIQUES[techKey]
   const cyclesNeeded = mode === 'guided' ? calcCyclesNeeded(score) : 4
 
-  const [phase, setPhase]         = useState('intro') // intro | scared | playing | break | success
-  const [position, setPosition]   = useState(0.5)     // 0 = exhalado, 1 = inhalado
+  const [phase, setPhase]             = useState('intro') // intro | scared | playing | break | success
+  const [position, setPosition]       = useState(0.5)
   const [cleanCycles, setCleanCycles] = useState(0)
-  const [calmLevel, setCalmLevel] = useState(0)        // 0-1, progreso visual de calma
-  const [sync, setSync]           = useState('neutral')// 'good' | 'bad' | 'neutral'
-  const [userSpeed, setUserSpeed] = useState(0)
-  const [muted, setMuted]         = useState(false)
-  const [cycleDir, setCycleDir]   = useState('inhale') // dirección esperada del ciclo
+  const [calmLevel, setCalmLevel]     = useState(0)
+  const [sync, setSync]               = useState('neutral')
+  const [userSpeed, setUserSpeed]     = useState(0)
+  const [muted, setMuted]             = useState(false)
+  const [cycleDir, setCycleDir]       = useState('inhale') // inhale | hold | exhale
 
-  const ambientRef   = useRef(null)
-  const lastPosRef    = useRef(0.5)
-  const lastTimeRef   = useRef(Date.now())
-  const phaseStartRef = useRef(Date.now())
-  const cycleProgressRef = useRef(0) // 0-1 dentro del ciclo actual esperado
+  const ambientRef       = useRef(null)
+  const lastPosRef        = useRef(0.5)
+  const lastTimeRef       = useRef(Date.now())
+  const cycleProgressRef  = useRef(0)
 
-  // ── Intro: modo libre tiene susto inicial, modo guiado va directo ──────────
   useEffect(() => {
+    if (tutorial.show) return // esperar a que cierre el tutorial antes de empezar
     if (mode === 'free') {
       setPhase('scared')
       setTimeout(() => setPhase('playing'), 2200)
     } else {
       setPhase('playing')
     }
-  }, [mode])
+  }, [mode, tutorial.show])
 
-  // ── Audio ambiente ──────────────────────────────────────────────────────────
   useEffect(() => {
     if (phase !== 'playing' || muted) return
     const audio = new Audio(AMBIENT_SOUND)
@@ -255,15 +210,13 @@ export default function PandiPulse({
     return () => { audio.pause(); ambientRef.current = null }
   }, [phase, muted])
 
-  // ── TTS de fase inicial ─────────────────────────────────────────────────────
   useEffect(() => {
     if (phase === 'playing' && !muted) {
-      sayAsync('Sigue mi ritmo con el dedo. Inhala...', { rate: 0.85 })
+      sayAsync('Sigue mi ritmo con el control. Inhala...', { rate: 0.85 })
     }
     return () => stopSpeech()
   }, [phase])
 
-  // ── Loop principal: avanza el ciclo esperado y compara con el usuario ──────
   useEffect(() => {
     if (phase !== 'playing') return
 
@@ -272,37 +225,46 @@ export default function PandiPulse({
       const dt = (now - lastTimeRef.current) / 1000
       lastTimeRef.current = now
 
-      // Avanzar progreso del ciclo esperado (0→1→0 en totalCycle segundos)
       const cycleSpeed = 1 / tech.totalCycle
       cycleProgressRef.current += cycleSpeed * dt
 
-      let expectedPos
-      if (cycleProgressRef.current <= 0.5) {
-        // Mitad inhalación: 0→1
-        expectedPos = cycleProgressRef.current * 2
-        setCycleDir('inhale')
-      } else if (cycleProgressRef.current <= 1) {
-        // Mitad exhalación: 1→0
-        expectedPos = 1 - (cycleProgressRef.current - 0.5) * 2
-        setCycleDir('exhale')
+      const inhaleFrac = tech.inhale / tech.totalCycle
+      const holdFrac   = (tech.hold || 0) / tech.totalCycle
+      const exhaleFrac = tech.exhale / tech.totalCycle
+
+      let expectedPos, dir
+      const p = cycleProgressRef.current
+
+      if (p <= inhaleFrac) {
+        expectedPos = p / inhaleFrac
+        dir = 'inhale'
+      } else if (p <= inhaleFrac + holdFrac) {
+        expectedPos = 1
+        dir = 'hold'
+      } else if (p <= 1) {
+        const exhaleP = (p - inhaleFrac - holdFrac) / exhaleFrac
+        expectedPos = 1 - exhaleP
+        dir = 'exhale'
       } else {
-        // Ciclo completo
         cycleProgressRef.current = 0
         handleCycleComplete()
         return
       }
 
-      // Calcular velocidad real del usuario (derivada de su posición)
+      setCycleDir(dir)
+
       const userDelta = Math.abs(position - lastPosRef.current)
       const speed = userDelta / dt
       lastPosRef.current = position
       setUserSpeed(speed)
 
-      // ¿Está sincronizado? — comparar posición real vs esperada
       const diff = Math.abs(position - expectedPos)
-      const inSync = diff < 0.22 // margen de tolerancia
+      const inSync = diff < 0.22
 
-      if (inSync) {
+      if (dir === 'hold') {
+        // En la fase de mantener, toleramos más — solo penalizamos si suelta del todo
+        setSync(position > 0.7 ? 'good' : 'neutral')
+      } else if (inSync) {
         setSync('good')
       } else if (diff > 0.45) {
         setSync('bad')
@@ -319,9 +281,7 @@ export default function PandiPulse({
     setCleanCycles(c => {
       const next = c + 1
       setCalmLevel(Math.min(next / cyclesNeeded, 1))
-      if (next >= cyclesNeeded) {
-        completeSession()
-      }
+      if (next >= cyclesNeeded) completeSession()
       return next
     })
   }
@@ -341,7 +301,7 @@ export default function PandiPulse({
     stopAmbient()
     if (!muted) {
       vibrateSuccess(); playSuccessChime()
-      setTimeout(() => sayAsync(PANDI_VOICE.meditationEnd?.('') || 'Lo has hecho muy bien.'), 400)
+      setTimeout(() => sayAsync('Lo has hecho muy bien. Lleva esta calma contigo.'), 400)
     }
     addXP?.(cyclesNeeded * 8)
     onComplete?.({ cyclesCompleted: cyclesNeeded, technique: tech.name })
@@ -351,33 +311,30 @@ export default function PandiPulse({
     if (ambientRef.current) { ambientRef.current.pause(); ambientRef.current = null }
   }
 
-  function handleDrag(rel) {
-    setPosition(rel)
-  }
+  function handleDrag(rel) { setPosition(rel) }
 
   function handleClose() {
     stopAmbient(); stopSpeech()
     onClose?.()
   }
 
-  // Frame de mascota según fase
   const petFrame = phase === 'scared' ? assets.scared
     : phase === 'success' ? assets.calm
-    : calmLevel > 0.6 ? assets.calm
-    : assets.calming
+    : cycleDir === 'inhale' ? assets.inhale
+    : cycleDir === 'hold'   ? assets.hold
+    : assets.exhale
 
-  const inhaleScale = 1 + position * 0.18
+  const inhaleScale = 1 + position * 0.15
 
   return (
     <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
       style={{ position:'fixed', inset:0, zIndex:80, background:'#0f1420',
         display:'flex', flexDirection:'column', overflow:'hidden' }}>
 
-      {/* Fondo degradado que se serena con el progreso */}
       <motion.div
         animate={{
-          background: `radial-gradient(circle at 50% 35%, 
-            rgba(${100-calmLevel*60},${130+calmLevel*60},${200+calmLevel*30},0.35) 0%, 
+          background: `radial-gradient(circle at 35% 40%,
+            rgba(${100-calmLevel*60},${130+calmLevel*60},${200+calmLevel*30},0.35) 0%,
             #0f1420 70%)`
         }}
         style={{ position:'absolute', inset:0 }} />
@@ -395,12 +352,15 @@ export default function PandiPulse({
           textTransform:'uppercase', letterSpacing:'.05em' }}>
           El Pulso de Pandi
         </p>
-        <button onClick={() => setMuted(m => !m)}
-          style={{ width:36, height:36, borderRadius:12, border:'none', cursor:'pointer',
-            background:'rgba(255,255,255,0.1)', display:'flex', alignItems:'center',
-            justifyContent:'center', color:'white' }}>
-          {muted ? <VolumeX size={16} /> : <Volume2 size={16} />}
-        </button>
+        <div style={{ display:'flex', gap:8 }}>
+          <TutorialHelpButton onClick={tutorial.reopen} />
+          <button onClick={() => setMuted(m => !m)}
+            style={{ width:36, height:36, borderRadius:12, border:'none', cursor:'pointer',
+              background:'rgba(255,255,255,0.1)', display:'flex', alignItems:'center',
+              justifyContent:'center', color:'white' }}>
+            {muted ? <VolumeX size={16} /> : <Volume2 size={16} />}
+          </button>
+        </div>
       </div>
 
       <AnimatePresence mode="wait">
@@ -424,62 +384,70 @@ export default function PandiPulse({
 
         {(phase === 'playing' || phase === 'break') && (
           <motion.div key="playing" initial={{ opacity:0 }} animate={{ opacity:1 }}
-            style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center',
-              justifyContent:'space-between', padding:'12px 24px 32px' }}>
+            style={{ flex:1, display:'flex', padding:'12px 20px 28px', gap:16 }}>
 
-            {/* Mascota respirando */}
-            <div style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center',
-              position:'relative' }}>
-              <motion.div
-                animate={{ scale: inhaleScale }}
-                transition={{ type:'tween', duration:0.08 }}
-                style={{ position:'relative' }}>
-                {/* Glow de calma */}
-                <div style={{ position:'absolute', inset:-30, borderRadius:'50%',
-                  background:`radial-gradient(circle, rgba(46,196,182,${calmLevel*0.4}) 0%, transparent 70%)`,
-                  filter:'blur(20px)' }} />
-                <img src={petFrame} alt="Pandi"
-                  style={{ width:160, height:160, objectFit:'contain', position:'relative' }}
-                  onError={e => e.target.style.display='none'} />
-              </motion.div>
+            {/* Columna izquierda — Pandi + progreso */}
+            <div style={{ flex:1, display:'flex', flexDirection:'column',
+              alignItems:'center', justifyContent:'center' }}>
 
-              {/* Aviso de rotura */}
-              <AnimatePresence>
-                {phase === 'break' && (
-                  <motion.div
-                    initial={{ opacity:0, scale:0.8 }} animate={{ opacity:1, scale:1 }} exit={{ opacity:0 }}
-                    style={{ position:'absolute', top:'50%', left:'50%', transform:'translate(-50%,-50%)',
-                      background:'rgba(239,68,68,0.92)', borderRadius:20, padding:'10px 20px' }}>
-                    <p style={{ color:'white', fontWeight:800, fontSize:13 }}>Demasiado rápido 💨</p>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+              <div style={{ position:'relative', display:'flex', alignItems:'center',
+                justifyContent:'center', flex:1 }}>
+                <motion.div
+                  animate={{ scale: inhaleScale }}
+                  transition={{ type:'tween', duration:0.08 }}
+                  style={{ position:'relative' }}>
+                  <div style={{ position:'absolute', inset:-30, borderRadius:'50%',
+                    background:`radial-gradient(circle, rgba(46,196,182,${calmLevel*0.4}) 0%, transparent 70%)`,
+                    filter:'blur(20px)' }} />
+                  <AnimatePresence mode="wait">
+                    <motion.img key={petFrame} src={petFrame} alt="Pandi"
+                      initial={{ opacity:0.5 }} animate={{ opacity:1 }} transition={{ duration:0.25 }}
+                      style={{ width:150, height:150, objectFit:'contain', position:'relative' }}
+                      onError={e => e.target.style.display='none'} />
+                  </AnimatePresence>
+                </motion.div>
+
+                <AnimatePresence>
+                  {phase === 'break' && (
+                    <motion.div
+                      initial={{ opacity:0, scale:0.8 }} animate={{ opacity:1, scale:1 }} exit={{ opacity:0 }}
+                      style={{ position:'absolute', top:'50%', left:'50%', transform:'translate(-50%,-50%)',
+                        background:'rgba(239,68,68,0.92)', borderRadius:18, padding:'8px 16px' }}>
+                      <p style={{ color:'white', fontWeight:800, fontSize:12 }}>Demasiado rápido 💨</p>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+
+              {/* Indicador de fase actual */}
+              <div style={{ marginBottom:14 }}>
+                <p style={{ fontSize:13, fontWeight:800, color:'white', textAlign:'center', margin:0 }}>
+                  {cycleDir === 'inhale' ? '↑ Inhala' : cycleDir === 'hold' ? '✋ Mantén' : '↓ Exhala'}
+                </p>
+              </div>
+
+              {/* Progreso de calma */}
+              <div style={{ width:'100%', maxWidth:240 }}>
+                <div style={{ display:'flex', justifyContent:'space-between', marginBottom:6 }}>
+                  <span style={{ fontSize:11, color:'rgba(255,255,255,0.5)', fontWeight:700 }}>Calma</span>
+                  <span style={{ fontSize:11, color:'#2EC4B6', fontWeight:700 }}>
+                    {cleanCycles}/{cyclesNeeded} ciclos
+                  </span>
+                </div>
+                <div style={{ height:6, borderRadius:4, background:'rgba(255,255,255,0.1)', overflow:'hidden' }}>
+                  <motion.div animate={{ width:`${calmLevel*100}%` }} transition={{ duration:0.4 }}
+                    style={{ height:'100%', borderRadius:4,
+                      background:'linear-gradient(90deg,#2EC4B6,#86EFAC)' }} />
+                </div>
+              </div>
             </div>
 
-            {/* Progreso de calma */}
-            <div style={{ width:'100%', maxWidth:260, marginBottom:20 }}>
-              <div style={{ display:'flex', justifyContent:'space-between', marginBottom:6 }}>
-                <span style={{ fontSize:11, color:'rgba(255,255,255,0.5)', fontWeight:700 }}>Calma</span>
-                <span style={{ fontSize:11, color:'#2EC4B6', fontWeight:700 }}>
-                  {cleanCycles}/{cyclesNeeded} ciclos
-                </span>
-              </div>
-              <div style={{ height:6, borderRadius:4, background:'rgba(255,255,255,0.1)', overflow:'hidden' }}>
-                <motion.div animate={{ width:`${calmLevel*100}%` }} transition={{ duration:0.4 }}
-                  style={{ height:'100%', borderRadius:4,
-                    background:'linear-gradient(90deg,#2EC4B6,#86EFAC)' }} />
-              </div>
-            </div>
-
-            {/* Joystick + barra velocidad */}
-            <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:16 }}>
+            {/* Columna derecha — Joystick lateral + barra velocidad */}
+            <div style={{ width:80, display:'flex', flexDirection:'column',
+              alignItems:'center', justifyContent:'center', gap:14 }}>
               <VerticalJoystick position={position} sync={sync}
                 onDrag={handleDrag} disabled={phase === 'break'} />
-              <SpeedBar userSpeed={userSpeed} targetSpeed={tech.targetSpeed}
-                inZone={sync === 'good'} />
-              <p style={{ color:'rgba(255,255,255,0.4)', fontSize:11, fontWeight:600 }}>
-                {cycleDir === 'inhale' ? '↑ Arrastra hacia arriba' : '↓ Arrastra hacia abajo'}
-              </p>
+              <SpeedBar userSpeed={userSpeed} targetSpeed={tech.targetSpeed} inZone={sync === 'good'} />
             </div>
           </motion.div>
         )}
@@ -510,6 +478,20 @@ export default function PandiPulse({
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Tutorial explicativo — primera vez automático, luego con botón ? */}
+      <TutorialOverlay
+        show={tutorial.show}
+        onClose={tutorial.close}
+        title="El Pulso de Pandi"
+        subtitle="Ayuda a Pandi a calmarse siguiendo su respiración"
+        steps={[
+          { icon: '👆', text: 'Arrastra el control hacia arriba mientras Pandi inhala' },
+          { icon: '✋', text: 'Mantenlo arriba durante la pausa, si la técnica lo requiere' },
+          { icon: '👇', text: 'Arrastra hacia abajo mientras Pandi exhala' },
+          { icon: '⚡', text: 'Si vas muy rápido o muy lento, Pandi se agita — sigue su ritmo con calma' },
+        ]}
+      />
     </motion.div>
   )
 }

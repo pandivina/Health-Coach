@@ -185,14 +185,17 @@ export default function PandiPulse({
   const [userSpeed, setUserSpeed]     = useState(0)
   const [muted, setMuted]             = useState(false)
   const [cycleDir, setCycleDir]       = useState('inhale') // inhale | hold | exhale
+  const [secondsLeft, setSecondsLeft] = useState(0)
+  const [subtitle, setSubtitle]       = useState('')
 
   const ambientRef       = useRef(null)
   const lastPosRef        = useRef(0.5)
   const lastTimeRef       = useRef(Date.now())
   const cycleProgressRef  = useRef(0)
+  const lastDirRef        = useRef(null) // para detectar cambio de fase y disparar TTS
 
   useEffect(() => {
-    if (tutorial.show) return // esperar a que cierre el tutorial antes de empezar
+    if (tutorial.show) return
     if (mode === 'free') {
       setPhase('scared')
       setTimeout(() => setPhase('playing'), 2200)
@@ -200,6 +203,14 @@ export default function PandiPulse({
       setPhase('playing')
     }
   }, [mode, tutorial.show])
+
+  useEffect(() => {
+    if (phase === 'playing') {
+      lastDirRef.current = null // forzar disparo del primer subtítulo
+      cycleProgressRef.current = 0
+      lastTimeRef.current = Date.now()
+    }
+  }, [phase])
 
   useEffect(() => {
     if (phase !== 'playing' || muted) return
@@ -211,9 +222,6 @@ export default function PandiPulse({
   }, [phase, muted])
 
   useEffect(() => {
-    if (phase === 'playing' && !muted) {
-      sayAsync('Sigue mi ritmo con el control. Inhala...', { rate: 0.85 })
-    }
     return () => stopSpeech()
   }, [phase])
 
@@ -232,19 +240,22 @@ export default function PandiPulse({
       const holdFrac   = (tech.hold || 0) / tech.totalCycle
       const exhaleFrac = tech.exhale / tech.totalCycle
 
-      let expectedPos, dir
+      let expectedPos, dir, secsLeftInPhase
       const p = cycleProgressRef.current
 
       if (p <= inhaleFrac) {
         expectedPos = p / inhaleFrac
         dir = 'inhale'
+        secsLeftInPhase = Math.ceil((inhaleFrac - p) * tech.totalCycle)
       } else if (p <= inhaleFrac + holdFrac) {
         expectedPos = 1
         dir = 'hold'
+        secsLeftInPhase = Math.ceil((inhaleFrac + holdFrac - p) * tech.totalCycle)
       } else if (p <= 1) {
         const exhaleP = (p - inhaleFrac - holdFrac) / exhaleFrac
         expectedPos = 1 - exhaleP
         dir = 'exhale'
+        secsLeftInPhase = Math.ceil((1 - p) * tech.totalCycle)
       } else {
         cycleProgressRef.current = 0
         handleCycleComplete()
@@ -252,6 +263,20 @@ export default function PandiPulse({
       }
 
       setCycleDir(dir)
+      setSecondsLeft(Math.max(secsLeftInPhase, 0))
+
+      // Disparar subtítulo + TTS solo al ENTRAR en una fase nueva
+      if (lastDirRef.current !== dir) {
+        lastDirRef.current = dir
+        const subtitleText = dir === 'inhale' ? 'Inhala lentamente por la nariz'
+                            : dir === 'hold'   ? 'Mantén el aire, sin tensión'
+                            : 'Exhala despacio por la boca'
+        setSubtitle(subtitleText)
+        if (!muted) sayAsync(
+          dir === 'inhale' ? 'Inhala' : dir === 'hold' ? 'Mantén' : 'Exhala',
+          { rate: 0.85, volume: 0.7 }
+        )
+      }
 
       const userDelta = Math.abs(position - lastPosRef.current)
       const speed = userDelta / dt
@@ -419,11 +444,29 @@ export default function PandiPulse({
                 </AnimatePresence>
               </div>
 
-              {/* Indicador de fase actual */}
-              <div style={{ marginBottom:14 }}>
-                <p style={{ fontSize:13, fontWeight:800, color:'white', textAlign:'center', margin:0 }}>
-                  {cycleDir === 'inhale' ? '↑ Inhala' : cycleDir === 'hold' ? '✋ Mantén' : '↓ Exhala'}
-                </p>
+              {/* Indicador de fase actual + contador + subtítulo */}
+              <div style={{ marginBottom:14, textAlign:'center', minHeight:62 }}>
+                <div style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:8 }}>
+                  <p style={{ fontSize:14, fontWeight:800, color:'white', margin:0 }}>
+                    {cycleDir === 'inhale' ? '↑ Inhala' : cycleDir === 'hold' ? '✋ Mantén' : '↓ Exhala'}
+                  </p>
+                  <AnimatePresence mode="wait">
+                    <motion.span key={secondsLeft}
+                      initial={{ opacity:0, scale:0.7 }} animate={{ opacity:1, scale:1 }}
+                      exit={{ opacity:0 }} transition={{ duration:0.15 }}
+                      style={{ fontSize:18, fontWeight:900, color:'#2EC4B6', minWidth:20 }}>
+                      {secondsLeft}
+                    </motion.span>
+                  </AnimatePresence>
+                </div>
+                <AnimatePresence mode="wait">
+                  <motion.p key={subtitle}
+                    initial={{ opacity:0, y:4 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0 }}
+                    transition={{ duration:0.2 }}
+                    style={{ fontSize:11, color:'rgba(255,255,255,0.55)', margin:'4px 0 0' }}>
+                    {subtitle}
+                  </motion.p>
+                </AnimatePresence>
               </div>
 
               {/* Progreso de calma */}

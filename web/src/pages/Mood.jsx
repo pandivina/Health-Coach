@@ -16,6 +16,7 @@ import PandiContextualBubble from '../components/PandiContextualBubble'
 import PandiTips from '../components/PandiTips'
 import { speak, stopSpeech, sayAsync, PANDI_VOICE } from '../lib/tts'
 import PandiPulse from '../components/mood/PandiPulse'
+import SunJourney from '../components/mood/SunJourney'
 
 // ─── AUDIO ───────────────────────────────────────────────────────────────────
 const A = {
@@ -1062,6 +1063,7 @@ export default function Mood() {
   const [habitsChecked, setHabitsChecked] = useState({})
   const [sheetOpen,     setSheetOpen]     = useState(true)
   const [showPulse,     setShowPulse]     = useState(false)
+  const [showSunJourney, setShowSunJourney] = useState(false)
   const [pandiMode,     setPandiMode]     = useState('idle') // idle | meditate | celebrate
 
   // Pandi reacciona al tab activo
@@ -1134,12 +1136,20 @@ export default function Mood() {
             Bienestar con Pandi
           </p>
         </div>
-        <motion.button whileTap={{ scale:0.94 }} onClick={() => setShowPulse(true)}
-          style={{ width:38, height:38, borderRadius:12, border:'none', cursor:'pointer',
-            background:'rgba(255,255,255,0.85)', backdropFilter:'blur(12px)',
-            display:'flex', alignItems:'center', justifyContent:'center', fontSize:17 }}>
-          🫁
-        </motion.button>
+        <div style={{ display:'flex', gap:6 }}>
+          <motion.button whileTap={{ scale:0.94 }} onClick={() => setShowPulse(true)}
+            style={{ width:38, height:38, borderRadius:12, border:'none', cursor:'pointer',
+              background:'rgba(255,255,255,0.85)', backdropFilter:'blur(12px)',
+              display:'flex', alignItems:'center', justifyContent:'center', fontSize:17 }}>
+            🫁
+          </motion.button>
+          <motion.button whileTap={{ scale:0.94 }} onClick={() => setShowSunJourney(true)}
+            style={{ width:38, height:38, borderRadius:12, border:'none', cursor:'pointer',
+              background:'rgba(255,255,255,0.85)', backdropFilter:'blur(12px)',
+              display:'flex', alignItems:'center', justifyContent:'center', fontSize:17 }}>
+            ☀️
+          </motion.button>
+        </div>
       </div>
 
       {/* ── PANDI EN EL SANTUARIO ── */}
@@ -1147,6 +1157,7 @@ export default function Mood() {
         alignItems:'flex-end', justifyContent:'center', paddingBottom:12 }}>
         <SanctuaryPandi mood={currentMood} pandiMode={pandiMode} cfg={sanctuaryCfg} />
       </div>
+
 
       {/* ── BOTTOM SHEET ── */}
       <motion.div
@@ -1214,6 +1225,17 @@ export default function Mood() {
             mode="free"
             onClose={() => setShowPulse(false)}
             onComplete={() => setShowPulse(false)}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* El Viaje del Sol — modo libre, accesible siempre desde el header */}
+      <AnimatePresence>
+        {showSunJourney && (
+          <SunJourney
+            mode="free"
+            onClose={() => setShowSunJourney(false)}
+            onComplete={() => setShowSunJourney(false)}
           />
         )}
       </AnimatePresence>

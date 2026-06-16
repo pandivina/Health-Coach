@@ -4,10 +4,11 @@
 
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { TrendingUp, X, Search, ChevronRight } from 'lucide-react'
+import { TrendingUp, X, Search, ChevronRight, Trophy } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { useStore } from '../../store/useStore'
 import { useTheme } from '../../contexts/ThemeProvider'
+import { api } from '../../lib/api'
 
 // ─── GRÁFICO DE LÍNEA SIMPLE (SVG nativo, sin librerías) ─────────────────────
 function LineChart({ data, color, height = 140 }) {
@@ -61,6 +62,7 @@ export function ExerciseProgressModal({ exerciseName, onClose }) {
   const { user }  = useStore()
   const { theme } = useTheme()
   const [history, setHistory] = useState([])
+  const [pr,      setPr]      = useState(null)
   const [loading, setLoading] = useState(true)
   const [range,   setRange]   = useState('3m') // 1m | 3m | all
 
@@ -72,48 +74,13 @@ export function ExerciseProgressModal({ exerciseName, onClose }) {
   async function load() {
     setLoading(true)
     try {
-      const monthsBack = range === '1m' ? 1 : range === '3m' ? 3 : 24
-      const from = new Date()
-      from.setMonth(from.getMonth() - monthsBack)
-
-      // Buscar todas las series de este ejercicio agrupadas por sesión
-      const { data: workoutExercises } = await supabase
-        .from('workout_exercises')
-        .select('id, created_at, workout_sessions!inner(created_at, status)')
-        .eq('exercise_name', exerciseName)
-        .eq('workout_sessions.status', 'completed')
-        .gte('workout_sessions.created_at', from.toISOString())
-
-      if (!workoutExercises?.length) { setHistory([]); setLoading(false); return }
-
-      const exerciseIds = workoutExercises.map(e => e.id)
-
-      const { data: sets } = await supabase
-        .from('workout_sets')
-        .select('workout_exercise_id, weight_kg, reps, is_warmup, created_at')
-        .in('workout_exercise_id', exerciseIds)
-        .eq('is_warmup', false)
-        .order('created_at')
-
-      // Agrupar por fecha — el peso máximo de cada sesión
-      const byDate = {}
-      ;(sets || []).forEach(s => {
-        const we = workoutExercises.find(w => w.id === s.workout_exercise_id)
-        const date = we?.workout_sessions?.created_at?.split('T')[0]
-        if (!date) return
-        if (!byDate[date] || s.weight_kg > byDate[date].weight) {
-          byDate[date] = { weight: s.weight_kg, reps: s.reps }
-        }
-      })
-
-      const built = Object.entries(byDate)
-        .map(([date, d]) => ({ date, value: d.weight, reps: d.reps }))
-        .sort((a, b) => a.date.localeCompare(b.date))
-
-      setHistory(built)
+      const months = range === '1m' ? 1 : range === '3m' ? 3 : 24
+      const data = await api.workouts.getProgress(exerciseName, months)
+      setHistory(data.history || [])
+      setPr(data.personalRecord || null)
     } catch (err) {
       console.error('Progress load error:', err.message)
-      setHistory([])
+      setHistory([]); setPr(null)
     } finally {
       setLoading(false)
     }
@@ -194,6 +161,22 @@ export function ExerciseProgressModal({ exerciseName, onClose }) {
                   <p className="text-[10px]" style={{ color: theme.textMuted }}>Progreso</p>
                 </div>
               </div>
+
+              {/* Badge 1RM si hay PR registrado */}
+              {pr && (
+                <div className="flex items-center gap-3 p-3 rounded-2xl mb-4"
+                  style={{ background: '#FEF3C7', border: '1px solid #FCD34D' }}>
+                  <Trophy size={20} style={{ color: '#92400E' }} />
+                  <div>
+                    <p className="text-xs font-bold" style={{ color: '#92400E' }}>
+                      Récord personal: {pr.one_rep_max}kg (1RM estimado)
+                    </p>
+                    <p className="text-[10px]" style={{ color: '#78350F' }}>
+                      Conseguido con {pr.weight_kg}kg × {pr.reps} reps
+                    </p>
+                  </div>
+                </div>
+              )}
 
               {/* Gráfico */}
               <div className="rounded-2xl p-4 mb-4" style={{ background: theme.surface2 }}>

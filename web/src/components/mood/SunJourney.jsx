@@ -3,6 +3,7 @@
 // una parábola día/noche. Convertido de HTML/CSS/JS vanilla a React nativo.
 
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Volume2, VolumeX } from 'lucide-react'
 import { useStore } from '../../store/useStore'
@@ -76,29 +77,68 @@ function getPetAssets(petId = 'pandi') {
 
 // ─── DETECCIÓN DE ORIENTACIÓN ─────────────────────────────────────────────────
 function useIsLandscape() {
-  const [isLandscape, setIsLandscape] = useState(() =>
-    typeof window !== 'undefined' ? window.innerWidth > window.innerHeight : true
-  )
+  const getCurrent = () => {
+    if (typeof window === 'undefined') return true
+    // matchMedia es más fiable que innerWidth/innerHeight en algunos Android/webviews
+    if (window.matchMedia) {
+      return window.matchMedia('(orientation: landscape)').matches
+    }
+    return window.innerWidth > window.innerHeight
+  }
+
+  const [isLandscape, setIsLandscape] = useState(getCurrent)
+
   useEffect(() => {
-    const check = () => setIsLandscape(window.innerWidth > window.innerHeight)
+    const check = () => setIsLandscape(getCurrent())
+    const checkDelayed = () => {
+      setTimeout(check, 100)
+      setTimeout(check, 300) // segundo check por si el primero lee valores intermedios
+    }
+
     window.addEventListener('resize', check)
-    window.addEventListener('orientationchange', check)
+    window.addEventListener('orientationchange', checkDelayed)
+
+    let mq
+    if (window.matchMedia) {
+      mq = window.matchMedia('(orientation: landscape)')
+      mq.addEventListener?.('change', check)
+    }
+    if (window.screen?.orientation) {
+      window.screen.orientation.addEventListener('change', checkDelayed)
+    }
+
     check()
+
     return () => {
       window.removeEventListener('resize', check)
-      window.removeEventListener('orientationchange', check)
+      window.removeEventListener('orientationchange', checkDelayed)
+      mq?.removeEventListener?.('change', check)
+      if (window.screen?.orientation) {
+        window.screen.orientation.removeEventListener('change', checkDelayed)
+      }
     }
   }, [])
+
   return isLandscape
 }
 
 // ─── AVISO DE GIRAR EL MÓVIL ──────────────────────────────────────────────────
-function RotateDeviceNotice() {
+function RotateDeviceNotice({ onClose }) {
   return (
     <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
-      style={{ position:'fixed', inset:0, zIndex:90, background:'#0f1420',
+      style={{ position:'fixed', top:0, left:0, right:0, bottom:0, zIndex:9999,
+        background:'#0f1420', width:'100vw', height:'100vh',
         display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',
         padding:32, textAlign:'center' }}>
+
+      <button onClick={onClose}
+        style={{ position:'absolute', top:20, left:20, width:38, height:38,
+          borderRadius:12, border:'none', cursor:'pointer',
+          background:'rgba(255,255,255,0.1)', display:'flex', alignItems:'center',
+          justifyContent:'center', color:'white', fontSize:18 }}>
+        ←
+      </button>
+
       <motion.div
         animate={{ rotate:[0,90,90,0] }}
         transition={{ duration:2.2, repeat:Infinity, times:[0,0.4,0.85,1] }}
@@ -111,6 +151,13 @@ function RotateDeviceNotice() {
       <p style={{ color:'rgba(255,255,255,0.55)', fontSize:13, maxWidth:260, lineHeight:1.5 }}>
         El Viaje del Sol necesita la pantalla apaisada para que puedas seguir todo el recorrido
       </p>
+
+      <button onClick={onClose}
+        style={{ marginTop:28, padding:'10px 24px', borderRadius:14, border:'none',
+          cursor:'pointer', background:'rgba(255,255,255,0.1)', color:'rgba(255,255,255,0.6)',
+          fontWeight:700, fontSize:13 }}>
+        Salir
+      </button>
     </motion.div>
   )
 }
@@ -301,18 +348,20 @@ export default function SunJourney({
   const exhaleCloudPos = { x: -10 + 120*EXHALE_PROGRESS, y: getParabolaY(EXHALE_PROGRESS, minY, maxY) }
 
   if (!isLandscape) {
-    return (
+    return createPortal(
       <AnimatePresence>
-        <RotateDeviceNotice />
-      </AnimatePresence>
+        <RotateDeviceNotice onClose={handleClose} />
+      </AnimatePresence>,
+      document.body
     )
   }
 
-  return (
+  return createPortal(
     <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
       ref={containerRef}
       style={{
-        position:'fixed', inset:0, zIndex:80, overflow:'hidden',
+        position:'fixed', top:0, left:0, right:0, bottom:0, zIndex:9999,
+        width:'100vw', height:'100vh', overflow:'hidden',
         background: `linear-gradient(to bottom, ${skyColors.top}, ${skyColors.mid}, ${skyColors.bottom})`,
         transition: 'background 0.3s linear',
       }}>
@@ -476,6 +525,7 @@ export default function SunJourney({
           { icon: '🔄', text: 'Cada viaje completo alterna entre sol y luna, día y noche' },
         ]}
       />
-    </motion.div>
+    </motion.div>,
+    document.body
   )
 }

@@ -168,12 +168,12 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name }) {
     <div style={{
       position: 'relative',
       width: '100%',
-      height: isMobile ? '80vw' : '42vw',
-      maxHeight: isMobile ? 480 : 420,
+      height: isMobile ? '95vw' : '50vw',
+      maxHeight: isMobile ? 550 : 500,
       overflow: 'hidden',
       backgroundImage: `url(${bgImage})`,
       backgroundSize: 'cover',
-      backgroundPosition: 'center 30%',
+      backgroundPosition: 'center bottom',
       backgroundRepeat: 'no-repeat',
       backgroundColor: isNight ? '#1a2138'
                       : recoveryLight==='GREEN' ? '#e8f5ee'
@@ -248,7 +248,7 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name }) {
       <motion.div
         onClick={handlePandiTap}
         whileTap={{ scale:0.95 }}
-        style={{ position:'absolute', bottom:'14%', left:'50%', transform:'translateX(-50%)',
+        style={{ position:'absolute', bottom:'12%', left:'50%', transform:'translateX(-50%)',
           zIndex:5, width:isMobile ? '48%' : '22%', maxWidth:200, cursor:'pointer' }}>
         <div style={{ position:'relative' }}>
           <motion.div
@@ -892,7 +892,9 @@ export default function Home() {
 
       <Sanctuary recoveryLight={recoveryLight} profile={profile} theme={theme} greeting={greeting} name={name} />
 
-      <XPBar profile={profile} cfg={cfg} />
+      <div style={{ marginTop: '20px' }}>
+        <XPBar profile={profile} cfg={cfg} />
+      </div>
 
       <div style={{ padding:'0 16px', marginTop:8 }}>
 

@@ -12,6 +12,7 @@ import UpdateBanner from './components/UpdateBanner'
 import WorkoutView from './pages/WorkoutView'
 import { ToastProvider } from './components/ToastProvider'
 import { CoachAwarenessProvider } from './contexts/CoachAwarenessContext'
+import AppErrorBoundary from './components/AppErrorBoundary'
 
 
 // Public
@@ -112,51 +113,53 @@ export default function App() {
   }, [])
 
   return (
-    <ToastProvider>
-  <AchievementToastProvider>
-    <CoachAwarenessProvider>
-      <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-        <Routes>
-          <Route path="/" element={<SmartRoot />} />
+    <AppErrorBoundary>
+      <ToastProvider>
+    <AchievementToastProvider>
+      <CoachAwarenessProvider>
+        <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+          <Routes>
+            <Route path="/" element={<SmartRoot />} />
 
-          <Route path="/auth"        element={<Auth />} />
-          <Route path="/onboarding" element={<Onboarding />} />
-        
+            <Route path="/auth"        element={<Auth />} />
+            <Route path="/onboarding" element={<Onboarding />} />
           
-          <Route path="/privacy"     element={<PrivacyPolicy />} />
-          <Route path="/terms"       element={<TermsOfUse />} />
-          <Route path="/disclaimer"  element={<MedicalDisclaimerPage />} />
-          <Route path="/achievements" element={<Achievements />} />
-          
-          
+            
+            <Route path="/privacy"     element={<PrivacyPolicy />} />
+            <Route path="/terms"       element={<TermsOfUse />} />
+            <Route path="/disclaimer"  element={<MedicalDisclaimerPage />} />
+            <Route path="/achievements" element={<Achievements />} />
+            
+            
 
-          <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
-            <Route path="/calendar"  element={<Calendar />} />
-            <Route path="/home"      element={<Home />} />
-            <Route path="/coach"     element={<Coach />} />
-            <Route path="/report"    element={<DailyReport />} />
-            <Route path="/profile"   element={<Profile />} />
-            <Route path="/premium"   element={<Premium />} />
-            <Route path="/appearance" element={<Appearance />} />
-            <Route path="/pet"       element={<Pet />} />
-            <Route path="/nutrition" element={<Nutrition />} />
-            <Route path="/pantry"    element={<Navigate to="/nutrition" replace />} />
-            <Route path="/recipes"   element={<Navigate to="/nutrition" replace />} />
-            <Route path="/workout"   element={<WorkoutView />} />
-            <Route path="/sleep"     element={<Sleep />} />
-            <Route path="/mood"      element={<Mood />} />
-            <Route path="/hydration" element={<Hydration />} />
-            <Route path="/smoking"   element={<Smoking />} />
-            <Route path="/health"    element={<HealthTracking />} />
-          </Route>
+            <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+              <Route path="/calendar"  element={<Calendar />} />
+              <Route path="/home"      element={<Home />} />
+              <Route path="/coach"     element={<Coach />} />
+              <Route path="/report"    element={<DailyReport />} />
+              <Route path="/profile"   element={<Profile />} />
+              <Route path="/premium"   element={<Premium />} />
+              <Route path="/appearance" element={<Appearance />} />
+              <Route path="/pet"       element={<Pet />} />
+              <Route path="/nutrition" element={<Nutrition />} />
+              <Route path="/pantry"    element={<Navigate to="/nutrition" replace />} />
+              <Route path="/recipes"   element={<Navigate to="/nutrition" replace />} />
+              <Route path="/workout"   element={<WorkoutView />} />
+              <Route path="/sleep"     element={<Sleep />} />
+              <Route path="/mood"      element={<Mood />} />
+              <Route path="/hydration" element={<Hydration />} />
+              <Route path="/smoking"   element={<Smoking />} />
+              <Route path="/health"    element={<HealthTracking />} />
+            </Route>
 
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-        <CookieBanner />
-        <UpdateBanner />
-      </BrowserRouter>
-      </CoachAwarenessProvider>
-      </AchievementToastProvider>
-    </ToastProvider>
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+          <CookieBanner />
+          <UpdateBanner />
+        </BrowserRouter>
+        </CoachAwarenessProvider>
+        </AchievementToastProvider>
+      </ToastProvider>
+    </AppErrorBoundary>
   )
 }

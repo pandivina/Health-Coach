@@ -66,6 +66,27 @@ function getPetAssets(petId = 'pandi') {
   }
 }
 
+// ─── DETECCIÓN DE ORIENTACIÓN — SIMPLE, UN SOLO MÉTODO ───────────────────────
+// Solo innerWidth vs innerHeight. Sin matchMedia, sin debounce, sin RAF.
+// Un único listener de resize, que es el evento que SIEMPRE se dispara
+// al rotar un dispositivo, en cualquier navegador, sin excepción.
+function useIsLandscape() {
+  const [landscape, setLandscape] = useState(
+    () => window.innerWidth > window.innerHeight
+  )
+
+  useEffect(() => {
+    function check() {
+      setLandscape(window.innerWidth > window.innerHeight)
+    }
+    window.addEventListener('resize', check)
+    check()
+    return () => window.removeEventListener('resize', check)
+  }, [])
+
+  return landscape
+}
+
 // ─── AVISO DE GIRAR ───────────────────────────────────────────────────────────
 function RotateNotice() {
   return (

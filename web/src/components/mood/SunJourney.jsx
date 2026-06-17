@@ -354,23 +354,26 @@ export default function SunJourney({
 
       {/* Header */}
       <div style={{ position:'absolute', top:0, left:0, right:0, zIndex:20,
-        display:'flex', justifyContent:'space-between', alignItems:'center', padding:'14px 16px' }}>
+        display:'flex', justifyContent:'space-between', alignItems:'center',
+        padding:'10px 14px', gap:8 }}>
         <button onClick={handleClose}
-          style={{ width:34, height:34, borderRadius:11, border:'none', cursor:'pointer',
+          style={{ width:32, height:32, borderRadius:11, border:'none', cursor:'pointer',
             background:'rgba(255,255,255,0.25)', backdropFilter:'blur(8px)',
-            display:'flex', alignItems:'center', justifyContent:'center' }}>
+            display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
           <X size={15} color={skyColors.text} />
         </button>
         <p style={{ color:skyColors.text, fontSize:11, fontWeight:700,
-          textTransform:'uppercase', letterSpacing:'.05em', opacity:0.7 }}>
+          textTransform:'uppercase', letterSpacing:'.05em', opacity:0.7,
+          flex:1, textAlign:'center', minWidth:0, overflow:'hidden',
+          whiteSpace:'nowrap', textOverflow:'ellipsis' }}>
           El Viaje del Sol
         </p>
-        <div style={{ display:'flex', gap:6 }}>
+        <div style={{ display:'flex', gap:6, flexShrink:0 }}>
           <TutorialHelpButton onClick={tutorial.reopen} dark={false} />
           <button onClick={() => setMuted(m => !m)}
-            style={{ width:34, height:34, borderRadius:11, border:'none', cursor:'pointer',
+            style={{ width:32, height:32, borderRadius:11, border:'none', cursor:'pointer',
               background:'rgba(255,255,255,0.25)', backdropFilter:'blur(8px)',
-              display:'flex', alignItems:'center', justifyContent:'center' }}>
+              display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
             {muted ? <VolumeX size={15} color={skyColors.text} /> : <Volume2 size={15} color={skyColors.text} />}
           </button>
         </div>
@@ -438,7 +441,7 @@ export default function SunJourney({
           <motion.div
             initial={{ opacity:0, scale:0.85 }} animate={{ opacity:1, scale:1 }}
             exit={{ opacity:0, scale:0.85 }}
-            style={{ position:'absolute', top:'42%', left:'50%', transform:'translate(-50%,-50%)',
+            style={{ position:'absolute', top:'50%', left:'50%', transform:'translate(-50%,-50%)',
               zIndex:25, background:skyColors.cloudBg, borderRadius:36,
               padding:'34px 36px', textAlign:'center', minWidth:220,
               boxShadow:'0 16px 40px rgba(0,0,0,0.15)', pointerEvents: phase==='counting' ? 'none' : 'auto' }}>
@@ -465,7 +468,7 @@ export default function SunJourney({
         {phase === 'success' && (
           <motion.div
             initial={{ opacity:0, scale:0.85 }} animate={{ opacity:1, scale:1 }}
-            style={{ position:'absolute', top:'42%', left:'50%', transform:'translate(-50%,-50%)',
+            style={{ position:'absolute', top:'50%', left:'50%', transform:'translate(-50%,-50%)',
               zIndex:25, background:skyColors.cloudBg, borderRadius:36,
               padding:'34px 36px', textAlign:'center', minWidth:240,
               boxShadow:'0 16px 40px rgba(0,0,0,0.15)' }}>

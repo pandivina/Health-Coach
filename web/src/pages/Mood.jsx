@@ -156,7 +156,7 @@ function SanctuaryBg({ recoveryLight, mood }) {
           position: 'absolute', inset: 0,
           backgroundImage: `url(${cfg.bg})`,
           backgroundSize: 'cover',
-          backgroundPosition: 'center 30%',
+          backgroundPosition: 'center bottom',
           backgroundRepeat: 'no-repeat',
           backgroundColor: state === 'GREEN' ? '#e8f5ee' : state === 'YELLOW' ? '#fef3c7' : '#ffe4ec',
         }}

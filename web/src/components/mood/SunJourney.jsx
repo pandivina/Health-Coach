@@ -76,26 +76,18 @@ function getPetAssets(petId = 'pandi') {
 
 // ─── DETECCIÓN DE ORIENTACIÓN ─────────────────────────────────────────────────
 function useIsLandscape() {
-  const getCurrent = () => {
-    if (typeof window === 'undefined') return true
-    // matchMedia es más fiable que innerWidth/innerHeight en algunos Android/webviews
-    if (window.matchMedia) {
-      return window.matchMedia('(orientation: landscape)').matches
-    }
-    return window.innerWidth > window.innerHeight
-  }
-
-  const [isLandscape, setIsLandscape] = useState(getCurrent)
+  const [isLandscape, setIsLandscape] = useState(() => {
+    return typeof window !== 'undefined'
+      ? window.matchMedia('(orientation: landscape)').matches
+      : false
+  })
 
   useEffect(() => {
-    const check = () => setIsLandscape(getCurrent())
-    window.addEventListener('resize', check)
-    window.addEventListener('orientationchange', check)
-    check()
-    return () => {
-      window.removeEventListener('resize', check)
-      window.removeEventListener('orientationchange', check)
-    }
+    const mediaQuery = window.matchMedia('(orientation: landscape)')
+    const handler = (event) => setIsLandscape(event.matches)
+
+    mediaQuery.addEventListener('change', handler)
+    return () => mediaQuery.removeEventListener('change', handler)
   }, [])
 
   return isLandscape
@@ -106,7 +98,7 @@ function RotateDeviceNotice({ onClose }) {
   return (
     <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
       style={{ position:'fixed', top:0, left:0, right:0, bottom:0, zIndex:9999,
-        background:'#0f1420', width:'100vw', height:'100vh', minHeight:'100dvh',
+        background:'#0f1420', width:'100vw', height:'100svh', minHeight:'100dvh',
         touchAction:'none',
         display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',
         padding:32, textAlign:'center' }}>
@@ -354,7 +346,7 @@ export default function SunJourney({
       ref={containerRef}
       style={{
         position:'fixed', top:0, left:0, right:0, bottom:0, zIndex:9999,
-        width:'100vw', height:'100vh', minHeight:'100dvh', overflow:'hidden',
+        width:'100vw', height:'100svh', minHeight:'100dvh', overflow:'hidden',
         touchAction:'none',
         background: `linear-gradient(to bottom, ${skyColors.top}, ${skyColors.mid}, ${skyColors.bottom})`,
         transition: 'background 0.3s linear',

@@ -3,7 +3,6 @@
 // una parábola día/noche. Convertido de HTML/CSS/JS vanilla a React nativo.
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Volume2, VolumeX } from 'lucide-react'
 import { useStore } from '../../store/useStore'
@@ -90,36 +89,12 @@ function useIsLandscape() {
 
   useEffect(() => {
     const check = () => setIsLandscape(getCurrent())
-    const checkDelayed = () => {
-      setTimeout(check, 100)
-      setTimeout(check, 300)
-    }
-
     window.addEventListener('resize', check)
-    window.addEventListener('orientationchange', checkDelayed)
-
-    let mq
-    if (window.matchMedia) {
-      mq = window.matchMedia('(orientation: landscape)')
-      mq.addEventListener?.('change', check)
-    }
-    if (window.screen?.orientation) {
-      window.screen.orientation.addEventListener('change', checkDelayed)
-    }
-
-    // Polling de respaldo cada 400ms — por si ningún evento se dispara en este WebView
-    const poll = setInterval(check, 400)
-
+    window.addEventListener('orientationchange', check)
     check()
-
     return () => {
       window.removeEventListener('resize', check)
-      window.removeEventListener('orientationchange', checkDelayed)
-      mq?.removeEventListener?.('change', check)
-      if (window.screen?.orientation) {
-        window.screen.orientation.removeEventListener('change', checkDelayed)
-      }
-      clearInterval(poll)
+      window.removeEventListener('orientationchange', check)
     }
   }, [])
 
@@ -352,15 +327,14 @@ export default function SunJourney({
   const exhaleCloudPos = { x: -10 + 120*EXHALE_PROGRESS, y: getParabolaY(EXHALE_PROGRESS, minY, maxY) }
 
   if (!isLandscape) {
-    return createPortal(
+    return (
       <AnimatePresence>
         <RotateDeviceNotice onClose={handleClose} />
-      </AnimatePresence>,
-      document.body
+      </AnimatePresence>
     )
   }
 
-  return createPortal(
+  return (
     <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
       ref={containerRef}
       style={{
@@ -529,7 +503,6 @@ export default function SunJourney({
           { icon: '🔄', text: 'Cada viaje completo alterna entre sol y luna, día y noche' },
         ]}
       />
-    </motion.div>,
-    document.body
+    </motion.div>
   )
 }

@@ -88,7 +88,7 @@ function useIsLandscape() {
 }
 
 // ─── AVISO DE GIRAR ───────────────────────────────────────────────────────────
-function RotateNotice({ onClose }) {
+function RotateNotice() {
   return (
     <div style={{
       position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
@@ -96,25 +96,10 @@ function RotateNotice({ onClose }) {
       display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
       padding: 32, textAlign: 'center',
     }}>
-      <button onClick={onClose}
-        style={{ position:'absolute', top:20, left:20, width:36, height:36, borderRadius:12,
-          border:'none', background:'rgba(255,255,255,0.12)', color:'white', fontSize:18,
-          cursor:'pointer' }}>
-        ✕
-      </button>
       <div style={{ fontSize: 56, marginBottom: 20 }}>📱</div>
-      <p style={{ color: 'white', fontSize: 17, fontWeight: 800, margin: '0 0 8px' }}>
+      <p style={{ color: 'white', fontSize: 17, fontWeight: 800, margin: 0 }}>
         Gira tu móvil
       </p>
-      <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: 13, maxWidth: 260, lineHeight: 1.5 }}>
-        El Viaje del Sol necesita la pantalla apaisada
-      </p>
-      <button onClick={onClose}
-        style={{ marginTop: 24, padding: '11px 28px', borderRadius: 16, border: 'none',
-          cursor: 'pointer', background: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.7)',
-          fontWeight: 700, fontSize: 13 }}>
-        Salir
-      </button>
     </div>
   )
 }
@@ -320,7 +305,7 @@ export default function SunJourney({
 
   // ── Sin orientación correcta: mostrar aviso, NADA MÁS ──────────────────────
   if (!landscape) {
-    return <RotateNotice onClose={handleClose} />
+    return <RotateNotice />
   }
 
   return (

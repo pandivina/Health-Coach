@@ -106,7 +106,8 @@ function RotateDeviceNotice({ onClose }) {
   return (
     <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
       style={{ position:'fixed', top:0, left:0, right:0, bottom:0, zIndex:9999,
-        background:'#0f1420', width:'100vw', height:'100vh',
+        background:'#0f1420', width:'100vw', height:'100vh', minHeight:'100dvh',
+        touchAction:'none',
         display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',
         padding:32, textAlign:'center' }}>
 
@@ -159,6 +160,13 @@ export default function SunJourney({
   const [cyclesDone, setCyclesDone] = useState(0)
   const [isNight, setIsNight]     = useState(false)
   const [muted, setMuted]         = useState(false)
+
+  // Al girar a apaisado mientras estaba esperando — arrancar directo sin botón intermedio
+  useEffect(() => {
+    if (isLandscape && phase === 'ready') {
+      startJourney()
+    }
+  }, [isLandscape])
 
   // Posición visual del astro (en %)
   const [astroPos, setAstroPos]   = useState({ x: -10, y: 90 })
@@ -319,6 +327,13 @@ export default function SunJourney({
 
   useEffect(() => () => { cancelAnimationFrame(rafRef.current); stopSpeech() }, [])
 
+  // Bloquear scroll/interacción del body mientras el overlay está abierto
+  useEffect(() => {
+    const prevOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => { document.body.style.overflow = prevOverflow }
+  }, [])
+
   const astroEmoji = isNight ? '🌙' : '☀️'
   const astroGlow  = isNight ? '0 0 40px #f5f5f5, 0 0 15px #b0bec5' : '0 0 60px #ffb300, 0 0 20px #fff9c4'
 
@@ -339,7 +354,8 @@ export default function SunJourney({
       ref={containerRef}
       style={{
         position:'fixed', top:0, left:0, right:0, bottom:0, zIndex:9999,
-        width:'100vw', height:'100vh', overflow:'hidden',
+        width:'100vw', height:'100vh', minHeight:'100dvh', overflow:'hidden',
+        touchAction:'none',
         background: `linear-gradient(to bottom, ${skyColors.top}, ${skyColors.mid}, ${skyColors.bottom})`,
         transition: 'background 0.3s linear',
       }}>

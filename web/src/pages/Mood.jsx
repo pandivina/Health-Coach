@@ -1,422 +1,1245 @@
-// ─── components/mood/SunJourney.jsx ──────────────────────────────────────────
-// "El Viaje del Sol" — respiración 4-7-8 con sol/luna recorriendo el cielo
-// Reconstrucción simplificada: un solo listener de resize, sin matchMedia,
-// sin debounce, sin RAF complejo para la detección de orientación.
-
+import {
+  PANDI_MOOD_MESSAGES, PANDI_ACTIONS, PANDI_MOOD_FRAME, DEFAULT_HABITS,
+} from '../lib/pandiMessages'
 import { useState, useEffect, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Volume2, VolumeX } from 'lucide-react'
-import { useStore } from '../../store/useStore'
-import { sayAsync, stopSpeech } from '../../lib/tts'
-import { TutorialOverlay, TutorialHelpButton, useTutorial } from '../shared/TutorialOverlay'
+import { Play, Pause, RotateCcw, Volume2, VolumeX, Check, Smile, Heart, Sparkles, Lock, ChevronDown, ChevronUp } from 'lucide-react'
+import { supabase } from '../lib/supabase'
+import { useStore } from '../store/useStore'
+import { useTheme } from '../contexts/ThemeProvider'
+import { useSectionContext } from '../hooks/useSectionContext'
+import { usePandiState } from '../contexts/PandiStateContext'
+import CycleTab from '../components/mood/CycleTab'
+import WellnessCalendar from '../components/mood/WellnessCalendar'
+import PandiContextualBubble from '../components/PandiContextualBubble'
+import PandiTips from '../components/PandiTips'
+import { speak, stopSpeech, sayAsync, PANDI_VOICE } from '../lib/tts'
+import PandiPulse from '../components/mood/PandiPulse'
+import SunJourney from '../components/mood/SunJourney'
 
-const DURATION_INHALE = 4000
-const DURATION_HOLD   = 7000
-const DURATION_EXHALE = 8000
-const TOTAL_DURATION  = DURATION_INHALE + DURATION_HOLD + DURATION_EXHALE
-const PEAK_PROGRESS    = DURATION_INHALE / TOTAL_DURATION
-const EXHALE_PROGRESS  = (DURATION_INHALE + DURATION_HOLD) / TOTAL_DURATION
-
-function parseHex(hex) {
-  let c = hex.substring(1)
-  if (c.length === 3) c = c[0]+c[0]+c[1]+c[1]+c[2]+c[2]
-  return { r: parseInt(c.substring(0,2),16), g: parseInt(c.substring(2,4),16), b: parseInt(c.substring(4,6),16) }
-}
-function mixColors(c1hex, c2hex, weight) {
-  const c1 = parseHex(c1hex), c2 = parseHex(c2hex)
-  const r = Math.round(c1.r + (c2.r-c1.r)*weight)
-  const g = Math.round(c1.g + (c2.g-c1.g)*weight)
-  const b = Math.round(c1.b + (c2.b-c1.b)*weight)
-  return `rgb(${r}, ${g}, ${b})`
-}
-function getParabolaY(x, minY, maxY) {
-  const heightFactor = 4 * x * (1 - x)
-  return maxY - (maxY - minY) * heightFactor
-}
-
-export function calcCyclesNeeded(score = 0.5) {
-  const n = Math.round(3 + (1 - score) * 5)
-  return Math.min(Math.max(n, 3), 8)
+// ─── AUDIO ───────────────────────────────────────────────────────────────────
+const A = {
+  ambient: {
+    rain:    '/audio/ambient-rain.mp3',
+    ocean:   '/audio/ambient-ocean.mp3',
+    forest:  '/audio/ambient-forest.mp3',
+    bowls:   '/audio/ambient-bowls.mp3',
+    space:   '/audio/ambient-space.mp3',
+  },
+  breath: {
+    inhale:  '/audio/breath-inhale.mp3',
+    hold:    '/audio/breath-hold.mp3',
+    exhale:  '/audio/breath-exhale.mp3',
+  },
+  med: (n) => `/audio/med-${String(n).padStart(2, '0')}.mp3`,
 }
 
-function playSuccessChime() {
-  try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)()
-    ;[523, 659, 784].forEach((freq, i) => {
-      const osc = ctx.createOscillator(); const gain = ctx.createGain()
-      osc.connect(gain); gain.connect(ctx.destination)
-      osc.frequency.value = freq; osc.type = 'sine'
-      const t = ctx.currentTime + i * 0.12
-      gain.gain.setValueAtTime(0.2, t)
-      gain.gain.exponentialRampToValueAtTime(0.01, t + 0.4)
-      osc.start(t); osc.stop(t + 0.4)
-    })
-  } catch {}
-}
-function vibrateSuccess() {
-  if ('vibrate' in navigator) { try { navigator.vibrate([40,30,40,30,80,30,120]) } catch {} }
+// ─── CONSTANTES ──────────────────────────────────────────────────────────────
+const MOODS = [
+  { v: 1, emoji: '😩', label: 'Hundido', color: '#EF4444' },
+  { v: 2, emoji: '😞', label: 'Bajo',    color: '#F97316' },
+  { v: 3, emoji: '😐', label: 'Normal',  color: '#EAB308' },
+  { v: 4, emoji: '😊', label: 'Bien',    color: '#22C55E' },
+  { v: 5, emoji: '🤩', label: 'Genial',  color: '#2EC4B6' },
+]
+
+const TECHNIQUES = {
+  '478':    { name: '4-7-8',  inhale: 4, hold: 7, exhale: 8, holdOut: 0, desc: 'Para ansiedad'   },
+  'box':    { name: 'Box',    inhale: 4, hold: 4, exhale: 4, holdOut: 4, desc: 'Para equilibrio' },
+  'simple': { name: 'Simple', inhale: 4, hold: 0, exhale: 4, holdOut: 0, desc: 'Para empezar'    },
 }
 
-function getPetAssets(petId = 'pandi') {
-  const base = petId === 'pandi' ? '/panda' : `/${petId}`
-  return {
-    sit:   `${base}/avatar_neutro.png`,
-    relax: `${base}/avatar_happy.png`,
-    calm:  `${base}/avatar_celebrate.png`,
-  }
+const PHASES = {
+  inhale:  { label: 'Inhala', color: '#2EC4B6', scale: 1.4, breathFrame: 2 },
+  hold:    { label: 'Mantén', color: '#A78BFA', scale: 1.4, breathFrame: 3 },
+  exhale:  { label: 'Exhala', color: '#FF8FA3', scale: 1.0, breathFrame: 4 },
+  holdOut: { label: 'Pausa',  color: '#FCD34D', scale: 1.0, breathFrame: 1 },
 }
 
-// ─── DETECCIÓN DE ORIENTACIÓN — SIMPLE, UN SOLO MÉTODO ───────────────────────
-// Solo innerWidth vs innerHeight. Sin matchMedia, sin debounce, sin RAF.
-// Un único listener de resize, que es el evento que SIEMPRE se dispara
-// al rotar un dispositivo, en cualquier navegador, sin excepción.
-// (detección de orientación eliminada — el juego funciona en cualquier orientación)
+const AMBIENT = [
+  { id: 'rain',   emoji: '🌧️', label: 'Lluvia'  },
+  { id: 'ocean',  emoji: '🌊', label: 'Océano'  },
+  { id: 'forest', emoji: '🌲', label: 'Bosque'  },
+  { id: 'bowls',  emoji: '🎵', label: 'Cuencos' },
+  { id: 'space',  emoji: '🌌', label: 'Espacio' },
+]
 
-// ─── COMPONENTE PRINCIPAL ──────────────────────────────────────────────────────
-export default function SunJourney({
-  mode = 'free', score = 0.5, petId = 'pandi',
-  onClose, onComplete,
-}) {
-  const { addXP } = useStore()
-  const assets = getPetAssets(petId)
-  const tutorial = useTutorial('sun_journey')
-  // (sin detección de orientación — funciona en cualquier orientación)
+const MASCOTAS_COLECCIONABLES = [
+  { id: 'pandi',  nombreDefault: 'Pandi',  especie: 'Oso Panda',  desc: 'Tu compañero fiel inicial.', nivelRequerido: 1  },
+  { id: 'slothi', nombreDefault: 'Slothi', especie: 'Perezoso',   desc: 'Experto en calma profunda.', nivelRequerido: 4  },
+  { id: 'lumi',   nombreDefault: 'Lumi',   especie: 'Luciérnaga', desc: 'Brilla en tus momentos oscuros.', nivelRequerido: 8 },
+]
 
-  const cyclesNeeded = mode === 'guided' ? calcCyclesNeeded(score) : 3
+// Santuario según estado de recuperación
+const SANCTUARY_CONFIG = {
+  GREEN:  { bg: '/panda/sanctuary_green.png',  glow: 'rgba(46,196,182,0.4)',  dot: '#2EC4B6' },
+  YELLOW: { bg: '/panda/sanctuary_yellow.png', glow: 'rgba(245,158,11,0.4)', dot: '#F59E0B' },
+  RED:    { bg: '/panda/sanctuary_red.png',    glow: 'rgba(255,143,163,0.4)', dot: '#FF8FA3' },
+}
 
-  const [phase, setPhase]         = useState('ready') // ready | counting | running | success
-  const [breathState, setBreathState] = useState('inhale')
-  const [countdownText, setCountdownText] = useState('')
-  const [cyclesDone, setCyclesDone] = useState(0)
-  const [isNight, setIsNight]     = useState(false)
-  const [muted, setMuted]         = useState(false)
-  const [astroPos, setAstroPos]   = useState({ x: -10, y: 90 })
-  const [skyColors, setSkyColors] = useState({
-    top: '#ff7043', mid: '#ffb74d', bottom: '#ffe082',
-    horizon: '#7cb342', mountain1: '#9ccc65', mountain2: '#8bc34a',
-    text: '#263238', cloudBg: 'rgba(255,255,255,0.85)',
-  })
-  const [peakOpacity, setPeakOpacity]     = useState(0)
-  const [exhaleOpacity, setExhaleOpacity] = useState(0)
+// Frames de Pandi según mood
+const PANDI_FRAMES = {
+  idle:      ['/panda/panda_base.png', '/panda/panda_happy.png'],
+  happy:     ['/panda/panda_happy.png', '/panda/avatar_happy.png'],
+  thinking:  ['/panda/thinking_1.png'],
+  meditate:  ['/panda/meditate_1.png', '/panda/meditate_2.png'],
+  celebrate: ['/panda/avatar_celebrate.png'],
+  blink:     '/panda/panda_blink.png',
+}
 
-  const startTimeRef = useRef(null)
-  const rafRef        = useRef(null)
-  const stateRef       = useRef('inhale')
-  const isNightRef     = useRef(false)
-  const timeoutsRef    = useRef([])
+const MED_SESSIONS = { 2: [1,2,3], 5: [4,5,6,7], 10: [8,9,10] }
+const pickSession  = (m) => { const p = MED_SESSIONS[m] ?? [1]; return p[Math.floor(Math.random()*p.length)] }
 
-  const minY = 12
-  const maxY = 90
+// ─── AUDIO HELPERS ───────────────────────────────────────────────────────────
+function fadeIn(audio, targetVol = 0.45, step = 0.03) {
+  audio.volume = 0
+  const id = setInterval(() => {
+    const v = Math.min(audio.volume + step, targetVol)
+    audio.volume = v
+    if (v >= targetVol) clearInterval(id)
+  }, 90)
+}
 
-  function clearAllTimeouts() {
-    timeoutsRef.current.forEach(clearTimeout)
-    timeoutsRef.current = []
-  }
+function fadeOut(audio, onDone, step = 0.04) {
+  const id = setInterval(() => {
+    const v = Math.max(audio.volume - step, 0)
+    audio.volume = v
+    if (v <= 0) { clearInterval(id); audio.pause(); onDone?.() }
+  }, 80)
+}
 
-  function updateEnvironment(progress, heightPercent, night) {
-    if (!night) {
-      let top, mid, bottom
-      if (progress < PEAK_PROGRESS) {
-        const p = progress / PEAK_PROGRESS
-        top = mixColors('#ff7043', '#29b6f6', p)
-        mid = mixColors('#ffb74d', '#e1f5fe', p)
-        bottom = mixColors('#ffe082', '#b3e5fc', p)
-      } else if (progress < EXHALE_PROGRESS) {
-        top = '#29b6f6'; mid = '#e1f5fe'; bottom = '#b3e5fc'
-      } else {
-        const p = (progress - EXHALE_PROGRESS) / (1 - EXHALE_PROGRESS)
-        top    = p < 0.5 ? mixColors('#29b6f6','#4a148c', p*2) : mixColors('#4a148c','#030712', (p-0.5)*2)
-        mid    = p < 0.5 ? mixColors('#e1f5fe','#ff5722', p*2) : mixColors('#ff5722','#0b132b', (p-0.5)*2)
-        bottom = p < 0.5 ? mixColors('#b3e5fc','#311b92', p*2) : mixColors('#311b92','#1c2541', (p-0.5)*2)
-      }
-      const groundP = progress > EXHALE_PROGRESS ? (progress-EXHALE_PROGRESS)/(1-EXHALE_PROGRESS) : 0
-      setSkyColors({
-        top, mid, bottom,
-        horizon:   mixColors('#7cb342','#050814', groundP),
-        mountain1: mixColors('#9ccc65','#080d1a', groundP),
-        mountain2: mixColors('#8bc34a','#0c1326', groundP),
-        text:      mixColors('#263238','#f1f5f9', progress),
-        cloudBg:   mixColors('rgba(255,255,255,0.85)','rgba(30,41,59,0.85)', progress),
-      })
-    } else {
-      let top, mid, bottom, m1, m2, hor
-      if (progress < EXHALE_PROGRESS) {
-        top = '#030712'; mid = '#0b132b'; bottom = '#1c2541'
-        m1  = mixColors('#080d1a','#223344', heightPercent)
-        m2  = mixColors('#0c1326','#2e445c', heightPercent)
-        hor = mixColors('#050814','#1f3047', heightPercent)
-      } else {
-        const p = (progress - EXHALE_PROGRESS) / (1 - EXHALE_PROGRESS)
-        top = mixColors('#030712','#ff7043', p)
-        mid = mixColors('#0b132b','#ffb74d', p)
-        bottom = mixColors('#1c2541','#ffe082', p)
-        const cm1 = mixColors('#080d1a','#223344', heightPercent)
-        const cm2 = mixColors('#0c1326','#2e445c', heightPercent)
-        const chor = mixColors('#050814','#1f3047', heightPercent)
-        m1  = mixColors(cm1,'#7cb342', p)
-        m2  = mixColors(cm2,'#689f38', p)
-        hor = mixColors(chor,'#558b2f', p)
-      }
-      setSkyColors({
-        top, mid, bottom, horizon: hor, mountain1: m1, mountain2: m2,
-        text:    mixColors('#f1f5f9','#263238', progress),
-        cloudBg: mixColors('rgba(30,41,59,0.85)','rgba(255,255,255,0.85)', progress),
-      })
-    }
-  }
+function playAmbient(soundId, ref) {
+  stopAmbient(ref)
+  const audio = new Audio(A.ambient[soundId])
+  audio.loop = true; ref.current = audio
+  audio.play().catch(() => {}); fadeIn(audio)
+}
 
-  function animate(timestamp) {
-    if (!startTimeRef.current) startTimeRef.current = timestamp
-    const elapsed = timestamp - startTimeRef.current
+function stopAmbient(ref) {
+  const audio = ref.current
+  if (!audio) return
+  ref.current = null; fadeOut(audio)
+}
 
-    let st
-    if (elapsed < DURATION_INHALE) st = 'inhale'
-    else if (elapsed < DURATION_INHALE + DURATION_HOLD) st = 'hold'
-    else if (elapsed < TOTAL_DURATION) st = 'exhale'
-    else { handleCycleEnd(); return }
+// ─── PANDA IMG ───────────────────────────────────────────────────────────────
+function PandaImg({ name, size = 48, fallback = '🐼', style = {} }) {
+  const [err, setErr] = useState(false)
+  if (err) return (
+    <span style={{ fontSize: size * 0.65, lineHeight: 1, display: 'flex',
+      alignItems: 'center', justifyContent: 'center', width: size, height: size, ...style }}>
+      {fallback}
+    </span>
+  )
+  return (
+    <img src={`/panda/${name}.png`} alt="Pandi"
+      style={{ width: size, height: size, objectFit: 'contain', ...style }}
+      onError={() => setErr(true)} />
+  )
+}
 
-    if (st !== stateRef.current) {
-      stateRef.current = st
-      setBreathState(st)
-      if (st === 'hold')   { setPeakOpacity(1); if (!muted) sayAsync('Mantén', { rate:0.85, volume:0.7 }) }
-      if (st === 'exhale') { setPeakOpacity(0); setExhaleOpacity(1); if (!muted) sayAsync('Exhala', { rate:0.85, volume:0.7 }) }
-    }
-
-    const progress = elapsed / TOTAL_DURATION
-    const x = -10 + 120 * progress
-    const y = getParabolaY(progress, minY, maxY)
-    const heightPercent = (maxY - y) / (maxY - minY)
-
-    updateEnvironment(progress, heightPercent, isNightRef.current)
-    setAstroPos({ x, y })
-
-    rafRef.current = requestAnimationFrame(animate)
-  }
-
-  function handleCycleEnd() {
-    cancelAnimationFrame(rafRef.current)
-    isNightRef.current = !isNightRef.current
-    setIsNight(isNightRef.current)
-    setPeakOpacity(0); setExhaleOpacity(0)
-
-    const next = cyclesDone + 1
-    setCyclesDone(next)
-
-    if (next >= cyclesNeeded) {
-      completeSession()
-    } else {
-      runCountdown()
-    }
-  }
-
-  function runCountdown() {
-    setPhase('counting')
-    setCountdownText('¿Preparado?')
-
-    timeoutsRef.current.push(setTimeout(() => setCountdownText('3'), 1500))
-    timeoutsRef.current.push(setTimeout(() => setCountdownText('2'), 2300))
-    timeoutsRef.current.push(setTimeout(() => setCountdownText('1'), 3100))
-    timeoutsRef.current.push(setTimeout(() => {
-      setCountdownText('¡Inhala!')
-      if (!muted) sayAsync('Inhala', { rate:0.85, volume:0.7 })
-      timeoutsRef.current.push(setTimeout(() => {
-        setPhase('running')
-        startTimeRef.current = null
-        stateRef.current = 'inhale'
-        setBreathState('inhale')
-        rafRef.current = requestAnimationFrame(animate)
-      }, 600))
-    }, 3900))
-  }
-
-  function startJourney() {
-    setAstroPos({ x: -10, y: maxY })
-    runCountdown()
-  }
-
-  function completeSession() {
-    cancelAnimationFrame(rafRef.current)
-    setPhase('success')
-    if (!muted) {
-      vibrateSuccess(); playSuccessChime()
-      timeoutsRef.current.push(setTimeout(() => sayAsync('Has completado el viaje.'), 400))
-    }
-    addXP?.(cyclesNeeded * 10)
-    onComplete?.({ cyclesCompleted: cyclesNeeded })
-  }
-
-  function handleClose() {
-    cancelAnimationFrame(rafRef.current)
-    clearAllTimeouts()
-    stopSpeech()
-    onClose?.()
-  }
-
-  useEffect(() => {
-    return () => {
-      cancelAnimationFrame(rafRef.current)
-      clearAllTimeouts()
-      stopSpeech()
-    }
-  }, [])
-
-  useEffect(() => {
-    const prevOverflow = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
-    return () => { document.body.style.overflow = prevOverflow }
-  }, [])
-
-  const astroEmoji = isNight ? '🌙' : '☀️'
-  const astroGlow  = isNight ? '0 0 40px #f5f5f5, 0 0 15px #b0bec5' : '0 0 60px #ffb300, 0 0 20px #fff9c4'
-  const peakCloudPos   = { x: -10 + 120*PEAK_PROGRESS,   y: getParabolaY(PEAK_PROGRESS, minY, maxY) }
-  const exhaleCloudPos = { x: -10 + 120*EXHALE_PROGRESS, y: getParabolaY(EXHALE_PROGRESS, minY, maxY) }
+// ─── SANTUARIO FONDO — reutiliza la misma lógica que Home ────────────────────
+function SanctuaryBg({ recoveryLight, mood }) {
+  // Determinar estado del santuario
+  const state = mood
+    ? (mood >= 4 ? 'GREEN' : mood === 3 ? 'YELLOW' : 'RED')
+    : (recoveryLight || 'GREEN')
+  const cfg = SANCTUARY_CONFIG[state] || SANCTUARY_CONFIG.GREEN
 
   return (
-    <div style={{
-      position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
-      zIndex: 99999, overflow: 'hidden',
-      background: `linear-gradient(to bottom, ${skyColors.top}, ${skyColors.mid}, ${skyColors.bottom})`,
-    }}>
+    <AnimatePresence mode="wait">
+      <motion.div
+        key={state}
+        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+        transition={{ duration: 1.2 }}
+        style={{
+          position: 'absolute', inset: 0,
+          backgroundImage: `url(${cfg.bg})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center bottom',
+          backgroundRepeat: 'no-repeat',
+          backgroundColor: state === 'GREEN' ? '#e8f5ee' : state === 'YELLOW' ? '#fef3c7' : '#ffe4ec',
+        }}
+      />
+    </AnimatePresence>
+  )
+}
 
-      {/* Header */}
-      <div style={{ position:'absolute', top:0, left:0, right:0, zIndex:20,
-        display:'flex', justifyContent:'space-between', alignItems:'center', padding:'10px 14px', gap:8 }}>
-        <button onClick={handleClose}
-          style={{ width:32, height:32, borderRadius:11, border:'none', cursor:'pointer',
-            background:'rgba(255,255,255,0.25)', display:'flex', alignItems:'center',
-            justifyContent:'center', flexShrink:0 }}>
-          <X size={15} color={skyColors.text} />
-        </button>
-        <p style={{ color:skyColors.text, fontSize:11, fontWeight:700, textTransform:'uppercase',
-          letterSpacing:'.05em', opacity:0.7, flex:1, textAlign:'center', minWidth:0,
-          overflow:'hidden', whiteSpace:'nowrap', textOverflow:'ellipsis' }}>
-          El Viaje del Sol
+// ─── PANDI ANIMADA ───────────────────────────────────────────────────────────
+function SanctuaryPandi({ mood, pandiMode, cfg }) {
+  const [frameIdx, setFrameIdx] = useState(0)
+  const [blinking, setBlinking] = useState(false)
+  const [imgErr,   setImgErr]   = useState(false)
+
+  const frames = pandiMode === 'meditate'  ? PANDI_FRAMES.meditate
+               : pandiMode === 'celebrate' ? PANDI_FRAMES.celebrate
+               : mood >= 4                 ? PANDI_FRAMES.happy
+               : mood && mood <= 2         ? PANDI_FRAMES.thinking
+               : PANDI_FRAMES.idle
+
+  useEffect(() => {
+    if (frames.length <= 1) return
+    const t = setInterval(() => setFrameIdx(i => (i + 1) % frames.length), 4500)
+    return () => clearInterval(t)
+  }, [pandiMode, mood])
+
+  useEffect(() => {
+    const schedule = () => setTimeout(() => {
+      setBlinking(true)
+      setTimeout(() => { setBlinking(false); schedule() }, 120)
+    }, 3000 + Math.random() * 4000)
+    const t = schedule()
+    return () => clearTimeout(t)
+  }, [])
+
+  const src = blinking ? PANDI_FRAMES.blink : (Array.isArray(frames) ? frames[frameIdx] : frames)
+  const glow = cfg?.glow || 'rgba(46,196,182,0.4)'
+
+  return (
+    <motion.div
+      animate={{ y: [0, -8, 0] }}
+      transition={{ duration: 3.2, repeat: Infinity, ease: 'easeInOut' }}
+      style={{ position: 'relative', width: '48%', maxWidth: 200 }}>
+      {/* Glow */}
+      <motion.div
+        animate={{ opacity: [0.3, 0.55, 0.3] }}
+        transition={{ duration: 3, repeat: Infinity }}
+        style={{ position: 'absolute', top: '50%', left: '50%',
+          transform: 'translate(-50%,-50%)', width: '80%', height: '80%',
+          borderRadius: '50%', background: `radial-gradient(circle, ${glow} 0%, transparent 65%)`,
+          filter: 'blur(24px)', zIndex: -1, pointerEvents: 'none' }}
+      />
+      {/* Sombra suelo */}
+      <motion.div
+        animate={{ scaleX: [1, 1.04, 1], opacity: [0.2, 0.3, 0.2] }}
+        transition={{ duration: 3, repeat: Infinity }}
+        style={{ position: 'absolute', bottom: -4, left: '50%',
+          transform: 'translateX(-50%)', width: '50%', height: 8,
+          borderRadius: '50%', background: 'rgba(0,0,0,0.15)',
+          filter: 'blur(4px)', zIndex: -1 }}
+      />
+      {imgErr
+        ? <span style={{ fontSize: 80, display: 'block', textAlign: 'center' }}>🐾</span>
+        : <img src={src} alt="Pandi"
+            style={{ width: '100%', height: 'auto', objectFit: 'contain', display: 'block',
+              filter: `drop-shadow(0 12px 20px ${glow})` }}
+            onError={() => setImgErr(true)} />
+      }
+    </motion.div>
+  )
+}
+
+// ─── TABS ─────────────────────────────────────────────────────────────────────
+
+function CheckinTab({ theme, userId, addXP, onTabChange, onMoodSaved, profile }) {
+  const [logs,         setLogs]         = useState([])
+  const [mood,         setMood]         = useState(null)
+  const [notes,        setNotes]        = useState('')
+  const [saved,        setSaved]        = useState(false)
+  const [pandiMessage, setPandiMessage] = useState('')
+  const [loadingCoach, setLoadingCoach] = useState(false)
+  const today = new Date().toISOString().split('T')[0]
+
+  async function load() {
+    const { data } = await supabase.from('mood_logs').select('*')
+      .eq('user_id', userId).order('date', { ascending: false }).limit(7)
+    setLogs(data || [])
+    const t = data?.find(l => l.date === today)
+    if (t) {
+      setMood(t.mood); setNotes(t.notes || ''); setSaved(true)
+      setPandiMessage(PANDI_MOOD_MESSAGES.already_saved[t.mood] || '')
+      onMoodSaved?.(t.mood)
+    }
+  }
+
+  useEffect(() => {
+    if (userId) load()
+    // Saludo de voz al entrar
+    const name = profile?.name?.split(' ')[0] || ''
+    setTimeout(() => sayAsync(PANDI_VOICE.greeting(name)), 800)
+  }, [userId])
+
+  async function save() {
+    if (!mood) return
+    setLoadingCoach(true)
+    await supabase.from('mood_logs').upsert(
+      { user_id: userId, date: today, mood, notes },
+      { onConflict: 'user_id,date' }
+    )
+    await addXP(10)
+    setSaved(true)
+    onMoodSaved?.(mood)
+    // TTS respuesta al mood
+    sayAsync(PANDI_VOICE.moodResponse[mood])
+    try {
+      const moodLabel = MOODS.find(m => m.v === mood)?.label || 'Desconocido'
+      const promptOculto = `[SISTEMA: El usuario acaba de hacer Check-in. Estado: "${moodLabel}" (${mood}/5). Notas: "${notes || 'Sin notas'}". Respuesta corta, máx 3 líneas, empática, sin introducciones.]`
+      const res  = await fetch('/api/coach', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: promptOculto, userId }),
+      })
+      const data = await res.json()
+      setPandiMessage(data?.response || PANDI_MOOD_MESSAGES.first[mood] || '')
+    } catch {
+      setPandiMessage(PANDI_MOOD_MESSAGES.first[mood] ?? '')
+    } finally {
+      setLoadingCoach(false); load()
+    }
+  }
+
+  const consecutiveLow = (() => {
+    if (logs.length < 3) return false
+    return [0, 1, 2].every(i => {
+      const d = new Date(); d.setDate(d.getDate() - i)
+      const ds = d.toISOString().split('T')[0]
+      const l  = logs.find(x => x.date === ds)
+      return l && l.mood <= 2
+    })
+  })()
+
+  const finalMessage = saved ? pandiMessage : (PANDI_MOOD_MESSAGES.first[mood] ?? '')
+  const action       = (!saved && mood) ? PANDI_ACTIONS[mood] : null
+  const moodData     = MOODS.find(m => m.v === mood)
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      {/* Selector mood */}
+      <div style={{ background: 'rgba(255,255,255,0.88)', backdropFilter: 'blur(16px)',
+        borderRadius: 24, padding: '20px 16px' }}>
+        <p style={{ fontWeight: 800, textAlign: 'center', marginBottom: 20, fontSize: 15, color: '#1A2332' }}>
+          ¿Cómo llegamos hoy?
         </p>
-        <div style={{ display:'flex', gap:6, flexShrink:0 }}>
-          <TutorialHelpButton onClick={tutorial.reopen} dark={false} />
-          <button onClick={() => setMuted(m => !m)}
-            style={{ width:32, height:32, borderRadius:11, border:'none', cursor:'pointer',
-              background:'rgba(255,255,255,0.25)', display:'flex', alignItems:'center',
-              justifyContent:'center', flexShrink:0 }}>
-            {muted ? <VolumeX size={15} color={skyColors.text} /> : <Volume2 size={15} color={skyColors.text} />}
-          </button>
+        <div style={{ display: 'flex', justifyContent: 'space-around', marginBottom: 16 }}>
+          {MOODS.map(m => (
+            <motion.button key={m.v} whileTap={{ scale: 0.85 }}
+              onClick={() => { setMood(m.v); setSaved(false); setPandiMessage('') }}
+              style={{
+                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+                padding: '10px 8px', borderRadius: 16, border: 'none', cursor: 'pointer',
+                background: mood === m.v ? `${m.color}22` : 'transparent',
+                outline: mood === m.v ? `2px solid ${m.color}70` : '2px solid transparent',
+                opacity: mood && mood !== m.v ? 0.35 : 1,
+                transition: 'all 0.2s',
+              }}>
+              <span style={{ fontSize: 32 }}>{m.emoji}</span>
+              <span style={{ fontSize: 10, fontWeight: 700,
+                color: mood === m.v ? m.color : '#9CA3AF' }}>{m.label}</span>
+            </motion.button>
+          ))}
+        </div>
+        <input
+          style={{ width: '100%', padding: '12px 16px', borderRadius: 14, border: '1.5px solid rgba(0,0,0,0.08)',
+            background: 'rgba(255,255,255,0.7)', fontSize: 14, outline: 'none', boxSizing: 'border-box',
+            marginBottom: 12, color: '#1A2332' }}
+          placeholder="¿Qué ha influido? (opcional)…"
+          value={notes} onChange={e => setNotes(e.target.value)} disabled={loadingCoach}
+        />
+        <motion.button whileTap={{ scale: 0.97 }} onClick={save}
+          disabled={!mood || saved || loadingCoach}
+          style={{
+            width: '100%', padding: '14px', borderRadius: 16, border: 'none', cursor: 'pointer',
+            background: mood && !saved ? `linear-gradient(135deg, ${moodData?.color || '#2EC4B6'}, #FF8FA3)` : 'rgba(0,0,0,0.08)',
+            color: mood && !saved ? 'white' : '#9CA3AF',
+            fontSize: 15, fontWeight: 700, opacity: !mood || loadingCoach ? 0.5 : 1,
+          }}>
+          {loadingCoach ? '🧠 Pandi analizando...' : saved ? '✅ Guardado hoy' : '💾 Guardar (+10 XP)'}
+        </motion.button>
+      </div>
+
+      {/* Respuesta Pandi */}
+      <AnimatePresence>
+        {mood && (finalMessage || loadingCoach) && (
+          <motion.div key={mood} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            style={{ background: 'rgba(255,255,255,0.88)', backdropFilter: 'blur(16px)',
+              borderRadius: 24, padding: '16px', borderLeft: `4px solid ${moodData?.color}` }}>
+            <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start', marginBottom: 12 }}>
+              <PandaImg name={mood >= 4 ? 'avatar_happy' : 'avatar_neutro'} size={44}
+                style={{ borderRadius: 12, flexShrink: 0 }} />
+              <div style={{ flex: 1 }}>
+                <p style={{ fontSize: 10, fontWeight: 800, color: theme.primary,
+                  textTransform: 'uppercase', letterSpacing: '.05em', margin: '0 0 6px' }}>
+                  Pandi Coach (IA)
+                </p>
+                {loadingCoach ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    <div style={{ height: 12, borderRadius: 6, background: 'rgba(0,0,0,0.08)',
+                      width: '75%', animation: 'pulse 1.5s infinite' }} />
+                    <div style={{ height: 12, borderRadius: 6, background: 'rgba(0,0,0,0.08)',
+                      width: '90%', animation: 'pulse 1.5s infinite' }} />
+                  </div>
+                ) : (
+                  <p style={{ fontSize: 13, lineHeight: 1.6, color: '#1A2332', margin: 0 }}>{finalMessage}</p>
+                )}
+              </div>
+            </div>
+            {action && !loadingCoach && (
+              <motion.button whileTap={{ scale: 0.96 }}
+                onClick={() => action.tab && onTabChange(action.tab)}
+                style={{ width: '100%', padding: '12px', borderRadius: 14, border: 'none',
+                  cursor: 'pointer', background: `linear-gradient(135deg, ${moodData?.color}, #FF8FA3)`,
+                  color: 'white', fontSize: 14, fontWeight: 700 }}>
+                {action.label}
+              </motion.button>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Alerta días difíciles */}
+      <AnimatePresence>
+        {consecutiveLow && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+            style={{ background: 'rgba(254,243,199,0.95)', backdropFilter: 'blur(12px)',
+              borderRadius: 20, padding: '16px', border: '1px solid #FCD34D', textAlign: 'center' }}>
+            <p style={{ fontSize: 14, fontWeight: 700, color: '#92400E', margin: '0 0 6px' }}>
+              Llevas varios días difíciles 🤍
+            </p>
+            <p style={{ fontSize: 12, color: '#78350F', margin: 0 }}>
+              Si lo necesitas, hablar con alguien de confianza siempre ayuda.
+            </p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  )
+}
+
+function BreathingTab({ theme }) {
+  const [tech,    setTech]    = useState('478')
+  const [running, setRunning] = useState(false)
+  const [phase,   setPhase]   = useState('inhale')
+  const [count,   setCount]   = useState(0)
+  const [rounds,  setRounds]  = useState(0)
+  const timerRef    = useRef(null)
+  const intervalRef = useRef(null)
+  const breathAudio = useRef({
+    inhale: new Audio(A.breath.inhale),
+    hold:   new Audio(A.breath.hold),
+    exhale: new Audio(A.breath.exhale),
+  })
+
+  function playCue(k) {
+    const key = k === 'holdOut' ? 'hold' : k
+    const a   = breathAudio.current[key]
+    if (!a) return
+    a.currentTime = 0; a.volume = 0.8; a.play().catch(() => {})
+  }
+
+  function buildSeq(tk) {
+    const t = TECHNIQUES[tk]
+    return [
+      { key: 'inhale',  dur: t.inhale },
+      ...(t.hold    > 0 ? [{ key: 'hold',    dur: t.hold    }] : []),
+      { key: 'exhale',  dur: t.exhale },
+      ...(t.holdOut > 0 ? [{ key: 'holdOut', dur: t.holdOut }] : []),
+    ]
+  }
+
+  function stop() {
+    clearTimeout(timerRef.current); clearInterval(intervalRef.current)
+    stopSpeech()
+    setRunning(false); setPhase('inhale'); setCount(0)
+  }
+
+  function runPhase(seq, idx, rc) {
+    const p = seq[idx]
+    setPhase(p.key); setCount(p.dur); playCue(p.key)
+    // TTS fase
+    sayAsync(PANDI_VOICE.breathPhase[p.key] || p.key, { rate: 0.8, volume: 0.7 })
+    let c = p.dur
+    intervalRef.current = setInterval(() => {
+      c--; setCount(c)
+      if (c <= 0) {
+        clearInterval(intervalRef.current)
+        const ni = (idx + 1) % seq.length
+        const nr = ni === 0 ? rc + 1 : rc
+        if (ni === 0) setRounds(nr)
+        timerRef.current = setTimeout(() => runPhase(seq, ni, nr), 300)
+      }
+    }, 1000)
+  }
+
+  function start() {
+    stop()
+    const seq = buildSeq(tech)
+    setRunning(true); setRounds(0); runPhase(seq, 0, 0)
+  }
+
+  useEffect(() => () => stop(), [])
+
+  const t         = TECHNIQUES[tech]
+  const phaseInfo = PHASES[phase]
+  const animDur   = phase === 'inhale' ? t.inhale : phase === 'exhale' ? t.exhale
+                  : phase === 'hold'   ? t.hold   : t.holdOut
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      {/* Selector técnica */}
+      <div style={{ background: 'rgba(255,255,255,0.88)', backdropFilter: 'blur(16px)',
+        borderRadius: 24, padding: '16px' }}>
+        <p style={{ fontSize: 13, fontWeight: 700, marginBottom: 12, color: '#1A2332' }}>Técnica</p>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8 }}>
+          {Object.entries(TECHNIQUES).map(([k, v]) => (
+            <button key={k} onClick={() => { if (running) stop(); setTech(k) }}
+              style={{
+                borderRadius: 16, padding: '12px 8px', textAlign: 'center', border: 'none',
+                cursor: 'pointer', transition: 'all 0.2s',
+                background: tech === k ? 'linear-gradient(135deg,#2EC4B6,#FF8FA3)' : 'rgba(0,0,0,0.05)',
+                color: tech === k ? '#fff' : '#6B7280',
+              }}>
+              <p style={{ fontWeight: 700, fontSize: 13, margin: '0 0 2px' }}>{v.name}</p>
+              <p style={{ fontSize: 10, margin: 0 }}>{v.desc}</p>
+            </button>
+          ))}
         </div>
       </div>
 
-      {/* Astro */}
-      {(phase === 'running' || phase === 'counting') && (
-        <div style={{
-          position:'absolute', left:`${astroPos.x}%`, top:`${astroPos.y}%`,
-          transform:'translate(-50%,-50%)', width:60, height:60, borderRadius:'50%',
-          background: isNight ? '#eceff1' : '#ffca28',
-          boxShadow: astroGlow, zIndex:5, display:'flex', alignItems:'center', justifyContent:'center',
-          fontSize:24,
-        }}>
-          {astroEmoji}
+      {/* Círculo respiración */}
+      <div style={{ background: 'rgba(255,255,255,0.88)', backdropFilter: 'blur(16px)',
+        borderRadius: 24, padding: '24px 16px', display: 'flex', flexDirection: 'column',
+        alignItems: 'center', gap: 20 }}>
+        <div style={{ position: 'relative', display: 'flex', alignItems: 'center',
+          justifyContent: 'center', width: 170, height: 170 }}>
+          <motion.div
+            animate={{ scale: running ? phaseInfo.scale : 1, opacity: running ? 0.2 : 0.1 }}
+            transition={{ duration: animDur, ease: 'easeInOut' }}
+            style={{ position: 'absolute', width: 170, height: 170, borderRadius: '50%',
+              background: phaseInfo.color }} />
+          <motion.div
+            animate={{ scale: running ? phaseInfo.scale * 0.72 : 0.72, opacity: running ? 0.38 : 0.12 }}
+            transition={{ duration: animDur, ease: 'easeInOut' }}
+            style={{ position: 'absolute', width: 170, height: 170, borderRadius: '50%',
+              background: phaseInfo.color }} />
+          <motion.div
+            animate={{ scale: running ? (phase === 'inhale' || phase === 'hold' ? 1.13 : 0.9) : 1 }}
+            transition={{ duration: animDur, ease: 'easeInOut' }}
+            style={{ position: 'relative', zIndex: 2, width: 78, height: 78, borderRadius: '50%',
+              background: '#fff', boxShadow: `0 4px 24px ${phaseInfo.color}40`,
+              display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <AnimatePresence mode="wait">
+              <motion.div key={phaseInfo.breathFrame}
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                transition={{ duration: 0.4 }}>
+                <PandaImg name={`breath_${phaseInfo.breathFrame}`} size={62}
+                  style={{ borderRadius: '50%' }} />
+              </motion.div>
+            </AnimatePresence>
+          </motion.div>
         </div>
-      )}
 
-      {/* Nubes guía */}
-      {phase === 'running' && (
-        <>
-          <div style={{ position:'absolute', left:`${peakCloudPos.x}%`, top:`${peakCloudPos.y}%`,
-            transform:'translate(-50%,-50%)', background:skyColors.cloudBg, borderRadius:30,
-            padding:'10px 18px', zIndex:4, fontSize:12, fontWeight:800, color:skyColors.text,
-            opacity:peakOpacity, transition:'opacity 0.3s' }}>
-            RETÉN
-          </div>
-          <div style={{ position:'absolute', left:`${exhaleCloudPos.x}%`, top:`${exhaleCloudPos.y}%`,
-            transform:'translate(-50%,-50%)', background:skyColors.cloudBg, borderRadius:30,
-            padding:'10px 18px', zIndex:4, fontSize:12, fontWeight:800, color:skyColors.text,
-            opacity:exhaleOpacity, transition:'opacity 0.3s' }}>
-            EXHALA
-          </div>
-        </>
-      )}
+        <div style={{ textAlign: 'center', minHeight: 64, display: 'flex',
+          flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+          <AnimatePresence mode="wait">
+            <motion.p key={phase}
+              initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 8 }}
+              style={{ fontSize: 22, fontWeight: 800, color: phaseInfo.color, margin: 0 }}>
+              {running ? phaseInfo.label : 'Listo para empezar'}
+            </motion.p>
+          </AnimatePresence>
+          {running && (
+            <motion.p key={count} initial={{ scale: 1.4, opacity: 0.6 }} animate={{ scale: 1, opacity: 1 }}
+              style={{ fontSize: 52, fontWeight: 900, margin: '4px 0 0', color: '#1A2332' }}>{count}</motion.p>
+          )}
+          {rounds > 0 && (
+            <p style={{ fontSize: 11, color: '#9CA3AF', margin: '4px 0 0' }}>
+              {rounds} {rounds === 1 ? 'ronda' : 'rondas'} completadas 🔄
+            </p>
+          )}
+        </div>
 
-      {/* Montañas + horizonte */}
-      <div style={{ position:'absolute', bottom:40, left:'10%', zIndex:2,
-        width:0, height:0, borderLeft:'80px solid transparent', borderRight:'80px solid transparent',
-        borderBottom:`70px solid ${skyColors.mountain1}` }} />
-      <div style={{ position:'absolute', bottom:40, right:'15%', zIndex:2,
-        width:0, height:0, borderLeft:'100px solid transparent', borderRight:'100px solid transparent',
-        borderBottom:`95px solid ${skyColors.mountain2}` }} />
-      <div style={{ position:'absolute', bottom:0, left:0, right:0, height:40,
-        background:skyColors.horizon, zIndex:6 }} />
+        {!running ? (
+          <motion.button whileTap={{ scale: 0.94 }} onClick={start}
+            style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 32px',
+              borderRadius: 20, border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 15,
+              background: 'linear-gradient(135deg,#2EC4B6,#FF8FA3)', color: 'white' }}>
+            <Play size={16} /> Iniciar
+          </motion.button>
+        ) : (
+          <motion.button whileTap={{ scale: 0.94 }} onClick={stop}
+            style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 32px',
+              borderRadius: 20, border: 'none', cursor: 'pointer', fontWeight: 700,
+              background: 'rgba(0,0,0,0.07)', color: '#1A2332' }}>
+            <Pause size={16} /> Pausar
+          </motion.button>
+        )}
+        <p style={{ fontSize: 11, color: '#9CA3AF', textAlign: 'center' }}>
+          {t.inhale}s inhala
+          {t.hold    > 0 ? ` · ${t.hold}s mantén`  : ''}
+          {` · ${t.exhale}s exhala`}
+          {t.holdOut > 0 ? ` · ${t.holdOut}s pausa` : ''}
+        </p>
+      </div>
+    </div>
+  )
+}
 
-      {/* Pandi */}
-      {(phase === 'running' || phase === 'counting') && (
-        <img src={breathState === 'exhale' ? assets.relax : assets.sit} alt="Pandi"
-          style={{ position:'absolute', bottom:'10%', left:'45%', width:60, height:60,
-            objectFit:'contain', zIndex:7 }}
-          onError={e => e.target.style.display='none'} />
-      )}
+function MeditationTab({ theme, profile }) {
+  const [duration, setDuration] = useState(5)
+  const [sound,    setSound]    = useState(null)
+  const [running,  setRunning]  = useState(false)
+  const [elapsed,  setElapsed]  = useState(0)
+  const [muted,    setMuted]    = useState(false)
+  const [done,     setDone]     = useState(false)
+  const ambientRef  = useRef(null)
+  const medAudioRef = useRef(null)
+  const intervalRef = useRef(null)
 
-      {/* Nube central — ready / counting */}
-      {(phase === 'ready' || phase === 'counting') && (
-        <div style={{ position:'absolute', top:'50%', left:'50%', transform:'translate(-50%,-50%)',
-          zIndex:25, background:skyColors.cloudBg, borderRadius:36, padding:'34px 36px',
-          textAlign:'center', minWidth:220 }}>
-          <p style={{ color:skyColors.text, fontSize:phase==='counting' ? 26 : 18, fontWeight:800, margin:0 }}>
-            {phase === 'ready' ? 'Iniciar viaje' : countdownText}
-          </p>
-          {phase === 'ready' && (
+  const total    = duration * 60
+  const left     = Math.max(total - elapsed, 0)
+  const mm       = String(Math.floor(left / 60)).padStart(2, '0')
+  const ss       = String(left % 60).padStart(2, '0')
+  const progress = total > 0 ? elapsed / total : 0
+
+  function stopAll() {
+    clearInterval(intervalRef.current)
+    stopAmbient(ambientRef)
+    stopSpeech()
+    const med = medAudioRef.current
+    if (med) { fadeOut(med); medAudioRef.current = null }
+  }
+
+  async function start() {
+    stopAll()
+    // TTS inicio
+    const name = profile?.name?.split(' ')[0] || ''
+    await speak(PANDI_VOICE.meditationStart(duration), { rate: 0.85 })
+    if (sound) playAmbient(sound, ambientRef)
+    const session = pickSession(duration)
+    const med = new Audio(A.med(session))
+    med.volume = 0.75; med.play().catch(() => {})
+    medAudioRef.current = med
+    setElapsed(0); setRunning(true); setDone(false)
+    intervalRef.current = setInterval(() => {
+      setElapsed(e => {
+        if (e + 1 >= total) {
+          clearInterval(intervalRef.current)
+          setRunning(false); setDone(true); stopAll()
+          useStore.getState().addXP?.(duration * 5)
+          useStore.getState().addBondXP?.(10)
+          // TTS fin
+          setTimeout(() => sayAsync(PANDI_VOICE.meditationEnd(name)), 500)
+          return total
+        }
+        return e + 1
+      })
+    }, 1000)
+  }
+
+  function reset() {
+    stopAll(); setRunning(false); setElapsed(0); setDone(false); setMuted(false)
+  }
+
+  function toggleMute() {
+    const amb = ambientRef.current; const med = medAudioRef.current
+    if (!amb && !med) return
+    const nm = !muted
+    if (amb) amb.volume = nm ? 0 : 0.45
+    if (med) med.volume = nm ? 0 : 0.75
+    setMuted(nm)
+  }
+
+  useEffect(() => () => stopAll(), [])
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <div style={{ background: 'rgba(255,255,255,0.88)', backdropFilter: 'blur(16px)',
+        borderRadius: 24, padding: '16px' }}>
+        <p style={{ fontSize: 13, fontWeight: 700, marginBottom: 12, color: '#1A2332' }}>Duración</p>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8 }}>
+          {[2, 5, 10].map(d => (
+            <button key={d} onClick={() => !running && setDuration(d)} disabled={running}
+              style={{ padding: '12px', borderRadius: 16, fontWeight: 700, fontSize: 14, border: 'none',
+                cursor: running ? 'default' : 'pointer', transition: 'all 0.2s',
+                background: duration === d ? 'linear-gradient(135deg,#2EC4B6,#FF8FA3)' : 'rgba(0,0,0,0.05)',
+                color: duration === d ? '#fff' : '#6B7280' }}>
+              {d} min
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div style={{ background: 'rgba(255,255,255,0.88)', backdropFilter: 'blur(16px)',
+        borderRadius: 24, padding: '16px' }}>
+        <p style={{ fontSize: 13, fontWeight: 700, marginBottom: 12, color: '#1A2332' }}>Sonido ambiental</p>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5,1fr)', gap: 8 }}>
+          {AMBIENT.map(a => (
+            <button key={a.id} onClick={() => !running && setSound(s => s === a.id ? null : a.id)}
+              disabled={running}
+              style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+                padding: '10px 4px', borderRadius: 16, border: 'none', cursor: 'pointer',
+                background: sound === a.id ? '#2EC4B618' : 'rgba(0,0,0,0.05)',
+                outline: `2px solid ${sound === a.id ? '#2EC4B6' : 'transparent'}` }}>
+              <span style={{ fontSize: 20 }}>{a.emoji}</span>
+              <span style={{ fontSize: 9, fontWeight: 700,
+                color: sound === a.id ? '#2EC4B6' : '#9CA3AF' }}>{a.label}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Temporizador + Pandi meditando */}
+      <div style={{ background: 'rgba(255,255,255,0.88)', backdropFilter: 'blur(16px)',
+        borderRadius: 24, padding: '24px 16px', display: 'flex', flexDirection: 'column',
+        alignItems: 'center', gap: 16 }}>
+        <div style={{ width: '100%', display: 'flex', alignItems: 'center',
+          justifyContent: 'center', minHeight: 260 }}>
+          {done
+            ? <motion.span initial={{ scale: 1 }} animate={{ scale: [1,1.3,1] }}
+                transition={{ duration: 0.6 }} style={{ fontSize: 100 }}>🎉</motion.span>
+            : <MeditationPandi running={running} />
+          }
+        </div>
+
+        {/* Barra progreso */}
+        <div style={{ width: '100%', height: 8, borderRadius: 4,
+          background: 'rgba(0,0,0,0.08)', overflow: 'hidden' }}>
+          <motion.div style={{ height: '100%', borderRadius: 4,
+            background: 'linear-gradient(90deg,#2EC4B6,#FF8FA3)' }}
+            animate={{ width: `${progress * 100}%` }}
+            transition={{ duration: 1, ease: 'linear' }} />
+        </div>
+
+        <p style={{ fontSize: 44, fontWeight: 900, color: '#1A2332', margin: 0 }}>
+          {done ? '¡Completado!' : `${mm}:${ss}`}
+        </p>
+
+        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+          {!running && !done && (
+            <motion.button whileTap={{ scale: 0.94 }} onClick={start}
+              style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 32px',
+                borderRadius: 20, border: 'none', cursor: 'pointer', fontWeight: 700,
+                background: 'linear-gradient(135deg,#2EC4B6,#FF8FA3)', color: 'white' }}>
+              <Play size={16} /> Iniciar
+            </motion.button>
+          )}
+          {running && (
             <>
-              <p style={{ color:skyColors.text, opacity:0.6, fontSize:12, margin:'8px 0 18px' }}>
-                Respiración 4-7-8 · {cyclesNeeded} ciclos
-              </p>
-              <button onClick={startJourney}
-                style={{ padding:'12px 32px', borderRadius:18, border:'none', cursor:'pointer',
-                  background:'linear-gradient(135deg,#FF9800,#FFC107)', color:'white',
-                  fontWeight:800, fontSize:14 }}>
-                Empezar
+              <motion.button whileTap={{ scale: 0.94 }} onClick={reset}
+                style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 24px',
+                  borderRadius: 20, border: 'none', cursor: 'pointer', fontWeight: 700,
+                  background: 'rgba(0,0,0,0.07)', color: '#1A2332' }}>
+                <RotateCcw size={15} /> Reiniciar
+              </motion.button>
+              <button onClick={toggleMute}
+                style={{ width: 44, height: 44, borderRadius: 16, border: 'none',
+                  cursor: 'pointer', background: 'rgba(0,0,0,0.07)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                {muted ? <VolumeX size={18} color="#9CA3AF" /> : <Volume2 size={18} color="#2EC4B6" />}
               </button>
             </>
           )}
+          {done && (
+            <motion.button initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
+              whileTap={{ scale: 0.94 }} onClick={reset}
+              style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 24px',
+                borderRadius: 20, border: 'none', cursor: 'pointer', fontWeight: 700,
+                background: 'linear-gradient(135deg,#2EC4B6,#FF8FA3)', color: 'white' }}>
+              <RotateCcw size={15} /> Nueva sesión
+            </motion.button>
+          )}
         </div>
-      )}
+      </div>
+    </div>
+  )
+}
 
-      {phase === 'success' && (
-        <div style={{ position:'absolute', top:'50%', left:'50%', transform:'translate(-50%,-50%)',
-          zIndex:25, background:skyColors.cloudBg, borderRadius:36, padding:'34px 36px',
-          textAlign:'center', minWidth:240 }}>
-          <p style={{ fontSize:36, margin:'0 0 8px' }}>🌅</p>
-          <p style={{ color:skyColors.text, fontSize:17, fontWeight:800, margin:0 }}>Viaje completado</p>
-          <p style={{ color:skyColors.text, opacity:0.6, fontSize:12, margin:'6px 0 18px' }}>
-            +{cyclesNeeded * 10} XP de calma
+function MeditationPandi({ running }) {
+  const [frame, setFrame] = useState(1)
+  const [err,   setErr]   = useState(false)
+
+  useEffect(() => {
+    if (!running) { setFrame(1); return }
+    const id = setTimeout(() => setFrame(2), 15000)
+    return () => clearTimeout(id)
+  }, [running])
+
+  if (err) return (
+    <motion.span animate={running ? { scale:[1,1.06,1] } : {}}
+      transition={{ duration:5, repeat:Infinity }} style={{ fontSize:100 }}>🧘</motion.span>
+  )
+
+  return (
+    <div style={{ position:'relative', display:'flex', alignItems:'center',
+      justifyContent:'center', width:'100%', maxWidth:280 }}>
+      <motion.div
+        animate={running ? { scale:[1,1.15,1], opacity:[0.35,0.55,0.35] } : { scale:1, opacity:0.2 }}
+        transition={{ duration:5, repeat:Infinity, ease:'easeInOut' }}
+        style={{ position:'absolute', width:'85%', height:'85%', borderRadius:'50%',
+          background:'radial-gradient(circle,#e9d5ff 0%,#c084fc 35%,#a855f7 60%,transparent 80%)',
+          filter:'blur(28px)', zIndex:0 }}
+      />
+      <motion.div
+        animate={running ? { scale:[1,1.055,1] } : { scale:1 }}
+        transition={running ? { duration:5, repeat:Infinity, ease:'easeInOut' } : { duration:0.4 }}
+        style={{ position:'relative', zIndex:1, width:'100%', height:260 }}>
+        <AnimatePresence mode="wait">
+          <motion.img key={frame} src={`/panda/meditate_${frame}.png`} alt="Pandi meditando"
+            initial={{ opacity:0, scale:0.96 }} animate={{ opacity:1, scale:1 }}
+            exit={{ opacity:0, scale:0.96 }} transition={{ duration:1.8, ease:'easeInOut' }}
+            style={{ width:'100%', height:'100%', objectFit:'contain' }}
+            onError={() => setErr(true)} />
+        </AnimatePresence>
+      </motion.div>
+    </div>
+  )
+}
+
+function HabitsTab({ theme, userId, onHabitsUpdate, profile }) {
+  const today      = new Date().toISOString().split('T')[0]
+  const storageKey = `pandi_habits_${today}`
+  const configKey  = 'pandi_habit_config'
+
+  const [habits, setHabits] = useState(() => {
+    try {
+      const saved = localStorage.getItem(configKey)
+      return saved ? JSON.parse(saved) : DEFAULT_HABITS.map(h => ({ ...h, enabled: true }))
+    } catch { return DEFAULT_HABITS.map(h => ({ ...h, enabled: true })) }
+  })
+  const [checked, setChecked] = useState(() => {
+    try {
+      const saved = localStorage.getItem(storageKey)
+      return saved ? JSON.parse(saved) : {}
+    } catch { return {} }
+  })
+  const [celebrated, setCelebrated] = useState(false)
+
+  const active    = habits.filter(h => h.enabled)
+  const doneCount = active.filter(h => checked[h.id]).length
+  const allDone   = active.length > 0 && doneCount === active.length
+
+  useEffect(() => { onHabitsUpdate?.(checked) }, [checked])
+
+  function toggle(id) {
+    const next = { ...checked, [id]: !checked[id] }
+    setChecked(next)
+    try { localStorage.setItem(storageKey, JSON.stringify(next)) } catch {}
+    if (!checked[id] && active.every(h => h.id === id ? true : checked[h.id])) {
+      setCelebrated(true)
+      useStore.getState().addBondXP?.(5)
+      const name = profile?.name?.split(' ')[0] || ''
+      setTimeout(() => sayAsync(PANDI_VOICE.habitsDone(name)), 300)
+      setTimeout(() => setCelebrated(false), 3000)
+    }
+  }
+
+  return (
+    <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
+      <div style={{ background:'rgba(255,255,255,0.88)', backdropFilter:'blur(16px)',
+        borderRadius:24, padding:'16px', display:'flex', alignItems:'center', gap:12,
+        border:`1px solid ${theme.primary}20` }}>
+        <AnimatePresence mode="wait">
+          {allDone
+            ? <motion.div key="celebrate" initial={{ scale:0.5 }} animate={{ scale:1 }}>
+                <PandaImg name="avatar_celebrate" size={48} />
+              </motion.div>
+            : <motion.div key="normal">
+                <PandaImg name="avatar_neutro" size={48} />
+              </motion.div>
+          }
+        </AnimatePresence>
+        <div style={{ flex:1 }}>
+          <p style={{ fontWeight:700, fontSize:14, color:'#1A2332', margin:'0 0 2px' }}>
+            {allDone ? '¡Todo listo hoy! 🎉' : `${doneCount} de ${active.length} hábitos`}
           </p>
-          <button onClick={handleClose}
-            style={{ padding:'12px 32px', borderRadius:18, border:'none', cursor:'pointer',
-              background:'linear-gradient(135deg,#FF9800,#FFC107)', color:'white',
-              fontWeight:800, fontSize:14 }}>
-            Continuar
-          </button>
+          <p style={{ fontSize:12, color:'#9CA3AF', margin:0 }}>
+            {allDone ? 'Pandi está proud de ti 🐾' : 'Cada hábito cuenta. Uno a la vez.'}
+          </p>
         </div>
-      )}
+        {active.length > 0 && (
+          <p style={{ fontSize:22, fontWeight:900, color:theme.primary, margin:0 }}>
+            {Math.round((doneCount/active.length)*100)}%
+          </p>
+        )}
+      </div>
 
-      {/* Progreso */}
-      {(phase === 'running' || phase === 'counting') && (
-        <div style={{ position:'absolute', bottom:50, left:'50%', transform:'translateX(-50%)',
-          zIndex:10, display:'flex', gap:6 }}>
-          {Array.from({ length: cyclesNeeded }).map((_, i) => (
-            <div key={i} style={{ width: i < cyclesDone ? 18 : 7, height:7, borderRadius:4,
-              background: i < cyclesDone ? '#FF9800' : 'rgba(255,255,255,0.4)' }} />
+      <AnimatePresence>
+        {celebrated && (
+          <motion.div initial={{ opacity:0, scale:0.9 }} animate={{ opacity:1, scale:1 }}
+            exit={{ opacity:0 }}
+            style={{ background:'rgba(255,255,255,0.92)', backdropFilter:'blur(16px)',
+              borderRadius:24, padding:'20px', textAlign:'center' }}>
+            <p style={{ fontSize:32, margin:'0 0 8px' }}>🎊</p>
+            <p style={{ fontWeight:700, color:'#1A2332', margin:'0 0 4px' }}>
+              ¡Todos los hábitos completados!
+            </p>
+            <p style={{ fontSize:12, color:'#9CA3AF', margin:0 }}>Pandi está muy orgulloso 🐼</p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <div style={{ background:'rgba(255,255,255,0.88)', backdropFilter:'blur(16px)',
+        borderRadius:24, padding:'16px' }}>
+        <p style={{ fontSize:14, fontWeight:700, color:'#1A2332', margin:'0 0 12px' }}>Hoy</p>
+        <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+          {active.map(h => (
+            <motion.button key={h.id} whileTap={{ scale:0.97 }} onClick={() => toggle(h.id)}
+              style={{ display:'flex', alignItems:'center', gap:12, padding:'12px',
+                borderRadius:16, border:'none', cursor:'pointer', textAlign:'left', width:'100%',
+                background: checked[h.id] ? `${theme.primary}12` : 'rgba(0,0,0,0.04)',
+                outline:`2px solid ${checked[h.id] ? theme.primary+'60' : 'transparent'}`,
+                transition:'all 0.2s' }}>
+              <div style={{ width:36, height:36, borderRadius:12, flexShrink:0, fontSize:20,
+                display:'flex', alignItems:'center', justifyContent:'center',
+                background: checked[h.id] ? `${theme.primary}20` : 'rgba(0,0,0,0.06)' }}>
+                {h.icon}
+              </div>
+              <p style={{ flex:1, fontSize:14, fontWeight:600, margin:0,
+                color: checked[h.id] ? theme.primary : '#1A2332',
+                textDecoration: checked[h.id] ? 'line-through' : 'none' }}>{h.name}</p>
+              <div style={{ width:22, height:22, borderRadius:'50%', flexShrink:0,
+                border:`2px solid ${checked[h.id] ? theme.primary : '#D1D5DB'}`,
+                background: checked[h.id] ? theme.primary : 'transparent',
+                display:'flex', alignItems:'center', justifyContent:'center' }}>
+                {checked[h.id] && <Check size={12} color="white" />}
+              </div>
+            </motion.button>
           ))}
         </div>
-      )}
+      </div>
+    </div>
+  )
+}
 
-      <TutorialOverlay
-        show={tutorial.show}
-        onClose={tutorial.close}
-        title="El Viaje del Sol"
-        subtitle="Sigue al sol y a la luna respirando con calma"
-        steps={[
-          { icon: '☀️', text: 'Inhala mientras el sol sube — 4 segundos' },
-          { icon: '☁️', text: 'Mantén el aire en la nube «RETÉN» — 7 segundos' },
-          { icon: '🌙', text: 'Exhala hacia la nube «EXHALA» — 8 segundos' },
-          { icon: '🔄', text: 'Cada viaje alterna entre día y noche' },
-        ]}
-      />
+function SantuarioTab({ theme, userLevel, currentMood, habitsChecked }) {
+  const [mascotaActiva,   setMascotaActiva]   = useState(() => {
+    try { return localStorage.getItem('pandi_active_pet') || 'pandi' } catch { return 'pandi' }
+  })
+  const [nombresMascotas, setNombresMascotas] = useState(() => {
+    try {
+      const saved = localStorage.getItem('pandi_pet_names')
+      return saved ? JSON.parse(saved) : { pandi: 'Pandi', slothi: 'Slothi', lumi: 'Lumi' }
+    } catch { return { pandi: 'Pandi', slothi: 'Slothi', lumi: 'Lumi' } }
+  })
+  const [editingName,  setEditingName]  = useState(false)
+  const [newNameInput, setNewNameInput] = useState('')
+
+  const menteStatus  = currentMood ? (currentMood / 5) * 100 : 50
+  const totalHabits  = Object.keys(habitsChecked).length || 3
+  const doneHabits   = Object.values(habitsChecked).filter(Boolean).length
+  const rutinaStatus = Math.min(Math.round((doneHabits / totalHabits) * 100) || 0, 100)
+  const almaStatus   = 75
+
+  const infoMascota  = MASCOTAS_COLECCIONABLES.find(m => m.id === mascotaActiva)
+  const nombreActual = nombresMascotas[mascotaActiva] || infoMascota?.nombreDefault
+
+  let sufijoEstado = 'neutro'
+  if (currentMood >= 4)     sufijoEstado = 'happy'
+  if (rutinaStatus === 100) sufijoEstado = 'celebrate'
+
+  const prefijoMascota    = mascotaActiva === 'pandi' ? 'avatar' : mascotaActiva
+  const pathImagenMascota = `/panda/${prefijoMascota}_${sufijoEstado}.png`
+
+  function cambiarNombre() {
+    if (!newNameInput.trim()) return
+    const next = { ...nombresMascotas, [mascotaActiva]: newNameInput }
+    setNombresMascotas(next)
+    try { localStorage.setItem('pandi_pet_names', JSON.stringify(next)) } catch {}
+    setEditingName(false)
+  }
+
+  return (
+    <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
+      {/* Mascota activa */}
+      <div style={{ background:'rgba(255,255,255,0.88)', backdropFilter:'blur(16px)',
+        borderRadius:24, padding:'24px 16px', display:'flex', flexDirection:'column', alignItems:'center' }}>
+        <div style={{ textAlign:'center', marginBottom:16 }}>
+          {editingName ? (
+            <div style={{ display:'flex', gap:8, alignItems:'center', justifyContent:'center' }}>
+              <input value={newNameInput} onChange={e => setNewNameInput(e.target.value)} maxLength={12}
+                style={{ padding:'6px 12px', borderRadius:12, border:'1.5px solid rgba(0,0,0,0.1)',
+                  fontSize:15, fontWeight:700, textAlign:'center', outline:'none' }} />
+              <button onClick={cambiarNombre}
+                style={{ padding:'6px 10px', borderRadius:10, border:'none', cursor:'pointer',
+                  background:'#22C55E', color:'white' }}>
+                <Check size={14} />
+              </button>
+            </div>
+          ) : (
+            <div onClick={() => { setNewNameInput(nombreActual); setEditingName(true) }}
+              style={{ cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:6 }}>
+              <p style={{ fontSize:22, fontWeight:900, color:'#1A2332', margin:0 }}>{nombreActual}</p>
+              <span style={{ fontSize:12, opacity:0.5 }}>✏️</span>
+            </div>
+          )}
+          <p style={{ fontSize:10, textTransform:'uppercase', fontWeight:700, letterSpacing:'.1em',
+            color:'#9CA3AF', margin:'4px 0 0' }}>{infoMascota?.especie}</p>
+        </div>
+
+        <div style={{ position:'relative', width:180, height:200, display:'flex',
+          alignItems:'center', justifyContent:'center', marginBottom:16 }}>
+          <div style={{ position:'absolute', width:160, height:160, borderRadius:'50%',
+            background: currentMood <= 2 ? 'rgba(249,115,22,0.15)' : 'rgba(46,196,182,0.15)',
+            filter:'blur(30px)', animation:'pulse 3s infinite' }} />
+          <motion.img src={pathImagenMascota} alt={nombreActual}
+            initial={{ scale:0.9, opacity:0 }} animate={{ scale:1, opacity:1 }}
+            style={{ width:160, height:160, objectFit:'contain', position:'relative', zIndex:1 }}
+            onError={e => { e.target.style.display='none' }} />
+        </div>
+
+        {/* Stats */}
+        <div style={{ width:'100%', display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:8 }}>
+          {[
+            { icon:'😊', label:'Mente',  value:menteStatus,  color:'#F59E0B' },
+            { icon:'❤️', label:'Rutina', value:rutinaStatus, color:'#EF4444' },
+            { icon:'✨', label:'Alma',   value:almaStatus,   color:'#8B5CF6' },
+          ].map(({ icon, label, value, color }) => (
+            <div key={label} style={{ background:'rgba(0,0,0,0.04)', borderRadius:16,
+              padding:'10px 8px', display:'flex', flexDirection:'column', gap:6 }}>
+              <div style={{ display:'flex', alignItems:'center', gap:4, fontSize:11, fontWeight:700, color:'#1A2332' }}>
+                <span style={{ fontSize:12 }}>{icon}</span> {label}
+              </div>
+              <div style={{ height:5, borderRadius:3, background:'rgba(0,0,0,0.08)', overflow:'hidden' }}>
+                <div style={{ height:'100%', borderRadius:3, background:color,
+                  width:`${value}%`, transition:'width 0.6s ease' }} />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Coleccionables */}
+      <div style={{ background:'rgba(255,255,255,0.88)', backdropFilter:'blur(16px)',
+        borderRadius:24, padding:'16px' }}>
+        <p style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'.08em',
+          color:'#9CA3AF', margin:'0 0 12px' }}>Tus Coleccionables</p>
+        <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+          {MASCOTAS_COLECCIONABLES.map(m => {
+            const desbloqueado  = userLevel >= m.nivelRequerido
+            const esActiva      = mascotaActiva === m.id
+            const nombreMascota = nombresMascotas[m.id] || m.nombreDefault
+            return (
+              <div key={m.id} style={{ display:'flex', alignItems:'center', gap:12, padding:'10px',
+                borderRadius:18, transition:'all 0.2s', opacity:desbloqueado ? 1 : 0.6,
+                background: esActiva ? `${theme.primary}10` : 'rgba(0,0,0,0.04)',
+                border:`1px solid ${esActiva ? theme.primary+'40' : 'transparent'}` }}>
+                <div style={{ width:48, height:48, borderRadius:14, background:'rgba(255,255,255,0.8)',
+                  display:'flex', alignItems:'center', justifyContent:'center', fontSize:24 }}>
+                  {!desbloqueado
+                    ? <Lock size={16} color="#9CA3AF" />
+                    : <img src={m.id === 'pandi' ? '/panda/avatar_neutro.png' : `/panda/${m.id}_neutro.png`}
+                        alt={m.id} style={{ width:36, height:36, objectFit:'contain' }}
+                        onError={e => { e.target.style.display='none' }} />
+                  }
+                </div>
+                <div style={{ flex:1, minWidth:0 }}>
+                  <p style={{ fontSize:14, fontWeight:700, color:'#1A2332', margin:'0 0 2px' }}>{nombreMascota}</p>
+                  <p style={{ fontSize:11, color:'#9CA3AF', margin:0, overflow:'hidden',
+                    textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{m.desc}</p>
+                </div>
+                {desbloqueado ? (
+                  <button onClick={() => { setMascotaActiva(m.id); try { localStorage.setItem('pandi_active_pet', m.id) } catch {} }}
+                    style={{ fontSize:12, fontWeight:700, padding:'6px 12px', borderRadius:12,
+                      border:'none', cursor:'pointer',
+                      background: esActiva ? theme.primary : 'rgba(0,0,0,0.06)',
+                      color: esActiva ? 'white' : '#1A2332' }}>
+                    {esActiva ? 'Activa' : 'Elegir'}
+                  </button>
+                ) : (
+                  <div style={{ fontSize:10, fontWeight:700, padding:'4px 8px', borderRadius:10,
+                    background:'rgba(0,0,0,0.06)', color:'#9CA3AF' }}>
+                    Nivel {m.nivelRequerido}
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── MAIN ─────────────────────────────────────────────────────────────────────
+export default function Mood() {
+  const { theme }       = useTheme()
+  const { user, profile, addXP } = useStore()
+  const { recoveryLight } = usePandiState()
+  const navigate = useNavigate()
+
+  const [activeTab,     setActiveTab]     = useState('checkin')
+  const [currentMood,   setCurrentMood]   = useState(null)
+  const [habitsChecked, setHabitsChecked] = useState({})
+  const [sheetOpen,     setSheetOpen]     = useState(true)
+  const [showPulse,     setShowPulse]     = useState(false)
+  const [showSunJourney, setShowSunJourney] = useState(false)
+  const [pandiMode,     setPandiMode]     = useState('idle') // idle | meditate | celebrate
+
+  // Pandi reacciona al tab activo
+  useEffect(() => {
+    if (activeTab === 'meditation') setPandiMode('meditate')
+    else if (activeTab === 'breathing') setPandiMode('idle')
+    else setPandiMode('idle')
+  }, [activeTab])
+
+  useEffect(() => {
+    if (!user?.id) return
+    const today = new Date().toISOString().split('T')[0]
+    supabase.from('mood_logs').select('mood')
+      .eq('user_id', user.id).eq('date', today).maybeSingle()
+      .then(({ data }) => { if (data?.mood) setCurrentMood(data.mood) })
+    // Limpiar TTS al salir
+    return () => stopSpeech()
+  }, [user?.id])
+
+  const doneHabits  = Object.values(habitsChecked).filter(Boolean).length
+  const totalHabits = Object.keys(habitsChecked).length || 1
+
+  // Estado del santuario según mood actual
+  const sanctuaryState = currentMood
+    ? (currentMood >= 4 ? 'GREEN' : currentMood === 3 ? 'YELLOW' : 'RED')
+    : (recoveryLight || 'GREEN')
+  const sanctuaryCfg = SANCTUARY_CONFIG[sanctuaryState] || SANCTUARY_CONFIG.GREEN
+
+  useSectionContext('mood', {
+    todayMood: currentMood, activeTab,
+    habitsCompleted: doneHabits, habitsTotal: totalHabits,
+    habitsPct: Math.round((doneHabits / totalHabits) * 100),
+    isBreathing: activeTab === 'breathing',
+    isMeditating: activeTab === 'meditation',
+  })
+
+  const tabs = [
+    { id: 'checkin',    label: 'Check-in',  emoji: '📝' },
+    { id: 'santuario',  label: 'Santuario', emoji: '🐾' },
+    { id: 'breathing',  label: 'Respirar',  emoji: '🫁' },
+    { id: 'meditation', label: 'Meditar',   emoji: '🧘' },
+  ]
+
+  return (
+    <div style={{ position:'fixed', inset:0, zIndex:50, display:'flex', flexDirection:'column',
+      background:'#f8fafa', overflow:'hidden' }}>
+
+      {/* ── SANTUARIO FONDO (fullscreen) ── */}
+      <SanctuaryBg recoveryLight={recoveryLight} mood={currentMood} />
+
+      {/* Overlay oscuro suave para legibilidad */}
+      <div style={{ position:'absolute', inset:0, background:'rgba(0,0,0,0.08)',
+        pointerEvents:'none', zIndex:1 }} />
+
+      {/* ── HEADER ── */}
+      <div style={{ position:'relative', zIndex:10, display:'flex', alignItems:'center',
+        justifyContent:'space-between', padding:'14px 16px', paddingTop:'calc(env(safe-area-inset-top) + 14px)' }}>
+        <motion.button whileTap={{ scale:0.94 }} onClick={() => { stopSpeech(); navigate(-1) }}
+          style={{ width:38, height:38, borderRadius:12, border:'none', cursor:'pointer',
+            background:'rgba(255,255,255,0.85)', backdropFilter:'blur(12px)',
+            display:'flex', alignItems:'center', justifyContent:'center', fontSize:18 }}>
+          ←
+        </motion.button>
+        <div style={{ textAlign:'center' }}>
+          <p style={{ fontSize:12, color:'rgba(255,255,255,0.8)', margin:0, fontWeight:600 }}>
+            Tu Santuario
+          </p>
+          <p style={{ fontSize:16, fontWeight:900, color:'white', margin:0,
+            textShadow:'0 2px 8px rgba(0,0,0,0.3)' }}>
+            Bienestar con Pandi
+          </p>
+        </div>
+        <div style={{ display:'flex', gap:6 }}>
+          <motion.button whileTap={{ scale:0.94 }} onClick={() => setShowPulse(true)}
+            style={{ width:38, height:38, borderRadius:12, border:'none', cursor:'pointer',
+              background:'rgba(255,255,255,0.85)', backdropFilter:'blur(12px)',
+              display:'flex', alignItems:'center', justifyContent:'center', fontSize:17 }}>
+            🫁
+          </motion.button>
+          <motion.button whileTap={{ scale:0.94 }} onClick={() => setShowSunJourney(true)}
+            style={{ width:38, height:38, borderRadius:12, border:'none', cursor:'pointer',
+              background:'rgba(255,255,255,0.85)', backdropFilter:'blur(12px)',
+              display:'flex', alignItems:'center', justifyContent:'center', fontSize:17 }}>
+            ☀️
+          </motion.button>
+        </div>
+      </div>
+
+      {/* ── PANDI EN EL SANTUARIO ── */}
+      <div style={{ position:'relative', zIndex:5, flex:1, display:'flex',
+        alignItems:'flex-end', justifyContent:'center', paddingBottom:12 }}>
+        <SanctuaryPandi mood={currentMood} pandiMode={pandiMode} cfg={sanctuaryCfg} />
+      </div>
+
+
+      {/* ── BOTTOM SHEET ── */}
+      <motion.div
+        initial={{ y: 0 }}
+        animate={{ y: sheetOpen ? 0 : 'calc(100% - 60px)' }}
+        transition={{ type:'spring', damping:28, stiffness:260 }}
+        style={{ position:'relative', zIndex:20, maxHeight:'68vh',
+          background:'rgba(248,250,250,0.97)', backdropFilter:'blur(20px)',
+          borderRadius:'28px 28px 0 0',
+          boxShadow:'0 -4px 32px rgba(0,0,0,0.12)',
+          display:'flex', flexDirection:'column',
+          paddingBottom:'calc(env(safe-area-inset-bottom) + 80px)' }}>
+
+        {/* Handle + toggle */}
+        <div onClick={() => setSheetOpen(o => !o)}
+          style={{ display:'flex', flexDirection:'column', alignItems:'center',
+            padding:'12px 0 8px', cursor:'pointer', flexShrink:0 }}>
+          <div style={{ width:40, height:4, borderRadius:2, background:'rgba(0,0,0,0.15)' }} />
+          <div style={{ marginTop:6, color:'#9CA3AF' }}>
+            {sheetOpen ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
+          </div>
+        </div>
+
+        {/* Tabs */}
+        <div style={{ display:'flex', gap:6, overflowX:'auto', padding:'0 16px 10px',
+          scrollbarWidth:'none', flexShrink:0 }}>
+          {tabs.map(t => (
+            <button key={t.id} onClick={() => setActiveTab(t.id)}
+              style={{ display:'flex', alignItems:'center', gap:5, padding:'8px 14px',
+                borderRadius:20, fontSize:12, fontWeight:700, border:'none', cursor:'pointer',
+                flexShrink:0, transition:'all 0.2s',
+                background: activeTab === t.id ? theme.primary : 'rgba(0,0,0,0.06)',
+                color: activeTab === t.id ? 'white' : '#6B7280',
+                boxShadow: activeTab === t.id ? `0 4px 12px ${theme.primary}30` : 'none' }}>
+              <span>{t.emoji}</span><span>{t.label}</span>
+            </button>
+          ))}
+        </div>
+
+        {/* Contenido scrollable */}
+        <div style={{ flex:1, overflowY:'auto', padding:'0 16px' }}>
+          <motion.div key={activeTab} initial={{ opacity:0, y:8 }} animate={{ opacity:1, y:0 }}
+            transition={{ duration:0.2 }}>
+            {activeTab === 'checkin' && (
+              <CheckinTab theme={theme} userId={user?.id} addXP={addXP} profile={profile}
+                onTabChange={setActiveTab} onMoodSaved={setCurrentMood} />
+            )}
+            {activeTab === 'santuario' && (
+              <SantuarioTab theme={theme} userLevel={profile?.level || 1}
+                currentMood={currentMood} habitsChecked={habitsChecked} />
+            )}
+            {activeTab === 'breathing'  && <BreathingTab  theme={theme} />}
+            {activeTab === 'meditation' && <MeditationTab theme={theme} profile={profile} />}
+            {activeTab === 'habits' && null}
+            {activeTab === 'calendar' && null}
+            {activeTab === 'cycles'   && null}
+          </motion.div>
+        </div>
+      </motion.div>
+
+      {/* El Pulso de Pandi — modo libre, accesible siempre desde el header */}
+      <AnimatePresence>
+        {showPulse && (
+          <PandiPulse
+            mode="free"
+            onClose={() => setShowPulse(false)}
+            onComplete={() => setShowPulse(false)}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* El Viaje del Sol — modo libre, accesible siempre desde el header */}
+      <AnimatePresence>
+        {showSunJourney && (
+          <SunJourney
+            mode="free"
+            onClose={() => setShowSunJourney(false)}
+            onComplete={() => setShowSunJourney(false)}
+          />
+        )}
+      </AnimatePresence>
+
     </div>
   )
 }

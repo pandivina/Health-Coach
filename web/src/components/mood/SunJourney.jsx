@@ -84,10 +84,17 @@ function useIsLandscape() {
 
   useEffect(() => {
     const mediaQuery = window.matchMedia('(orientation: landscape)')
-    const handler = (event) => setIsLandscape(event.matches)
+    let timeoutId
+    const handler = (event) => {
+      clearTimeout(timeoutId)
+      timeoutId = setTimeout(() => setIsLandscape(event.matches), 100)
+    }
 
     mediaQuery.addEventListener('change', handler)
-    return () => mediaQuery.removeEventListener('change', handler)
+    return () => {
+      clearTimeout(timeoutId)
+      mediaQuery.removeEventListener('change', handler)
+    }
   }, [])
 
   return isLandscape
@@ -176,7 +183,8 @@ export default function SunJourney({
   const isNightRef     = useRef(false)
   const containerRef   = useRef(null)
 
-  const minY = 12, maxY = 90 // % de la pantalla
+  const minY = isLandscape ? 15 : 12
+  const maxY = isLandscape ? 70 : 90
 
   function updateEnvironment(progress, heightPercent, night) {
     if (!night) {
@@ -349,7 +357,6 @@ export default function SunJourney({
         width:'100vw', height:'100svh', minHeight:'100dvh', overflow:'hidden',
         touchAction:'none',
         background: `linear-gradient(to bottom, ${skyColors.top}, ${skyColors.mid}, ${skyColors.bottom})`,
-        transition: 'background 0.3s linear',
       }}>
 
       {/* Header */}
@@ -430,7 +437,11 @@ export default function SunJourney({
           alt="Pandi"
           animate={{ scale: breathState === 'inhale' ? [1, 1.04] : 1 }}
           transition={{ duration: DURATION_INHALE/1000, ease:'easeInOut' }}
-          style={{ position:'absolute', bottom:32, left:'8%', width:54, height:54,
+          style={{ position:'absolute',
+            bottom: isLandscape ? '10%' : 32,
+            left: isLandscape ? '45%' : '8%',
+            width: isLandscape ? 60 : 54,
+            height: isLandscape ? 60 : 54,
             objectFit:'contain', zIndex:7 }}
           onError={e => e.target.style.display='none'} />
       )}

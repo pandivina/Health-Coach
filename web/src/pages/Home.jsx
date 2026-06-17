@@ -248,8 +248,8 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name }) {
       <motion.div
         onClick={handlePandiTap}
         whileTap={{ scale:0.95 }}
-        style={{ position:'absolute', bottom:'12%', left:'50%', transform:'translateX(-50%)',
-          zIndex:5, width:isMobile ? '48%' : '22%', maxWidth:200, cursor:'pointer' }}>
+        style={{ position:'absolute', bottom:'15%', left:'50%', transform:'translateX(-50%)',
+          zIndex:5, width:isMobile ? '50%' : '22%', maxWidth:200, cursor:'pointer' }}>
         <div style={{ position:'relative' }}>
           <motion.div
             animate={{ opacity: isNight ? [0.15,0.3,0.15] : [0.3,0.5,0.3] }}

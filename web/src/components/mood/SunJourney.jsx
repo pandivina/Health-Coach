@@ -70,43 +70,7 @@ function getPetAssets(petId = 'pandi') {
 // Solo innerWidth vs innerHeight. Sin matchMedia, sin debounce, sin RAF.
 // Un único listener de resize, que es el evento que SIEMPRE se dispara
 // al rotar un dispositivo, en cualquier navegador, sin excepción.
-function useIsLandscape() {
-  const [landscape, setLandscape] = useState(false);
-
-  useEffect(() => {
-    function check() {
-      // Usamos innerWidth > innerHeight como base
-      const isLand = window.innerWidth > window.innerHeight;
-      setLandscape(isLand);
-    }
-    
-    // Forzamos la comprobación inmediatamente después de montar
-    check();
-    
-    window.addEventListener('resize', check);
-    return () => window.removeEventListener('resize', check);
-  }, []);
-
-  return landscape;
-}
-
-// ─── AVISO DE GIRAR ───────────────────────────────────────────────────────────
-function RotateNotice({ onForceStart }) {
-  return (
-    <div style={{ /* ... tus estilos ... */ }}>
-      <div style={{ fontSize: 56, marginBottom: 20 }}>📱</div>
-      <p style={{ color: 'white', fontSize: 17, fontWeight: 800 }}>Gira tu móvil</p>
-      
-      {/* Añade este botón para saltar la detección si falla */}
-      <button 
-        onClick={onForceStart}
-        style={{ marginTop: 20, background: 'none', border: '1px solid white', color: 'white', padding: '8px 16px', borderRadius: 8 }}
-      >
-        O tocar aquí para forzar inicio
-      </button>
-    </div>
-  )
-}
+// (detección de orientación eliminada — el juego funciona en cualquier orientación)
 
 // ─── COMPONENTE PRINCIPAL ──────────────────────────────────────────────────────
 export default function SunJourney({
@@ -116,7 +80,7 @@ export default function SunJourney({
   const { addXP } = useStore()
   const assets = getPetAssets(petId)
   const tutorial = useTutorial('sun_journey')
-  const landscape = useIsLandscape()
+  // (sin detección de orientación — funciona en cualquier orientación)
 
   const cyclesNeeded = mode === 'guided' ? calcCyclesNeeded(score) : 3
 
@@ -141,8 +105,8 @@ export default function SunJourney({
   const isNightRef     = useRef(false)
   const timeoutsRef    = useRef([])
 
-  const minY = landscape ? 15 : 12
-  const maxY = landscape ? 70 : 90
+  const minY = 12
+  const maxY = 90
 
   function clearAllTimeouts() {
     timeoutsRef.current.forEach(clearTimeout)
@@ -306,14 +270,6 @@ export default function SunJourney({
   const astroGlow  = isNight ? '0 0 40px #f5f5f5, 0 0 15px #b0bec5' : '0 0 60px #ffb300, 0 0 20px #fff9c4'
   const peakCloudPos   = { x: -10 + 120*PEAK_PROGRESS,   y: getParabolaY(PEAK_PROGRESS, minY, maxY) }
   const exhaleCloudPos = { x: -10 + 120*EXHALE_PROGRESS, y: getParabolaY(EXHALE_PROGRESS, minY, maxY) }
-
-  // ── Sin orientación correcta: mostrar aviso, NADA MÁS ──────────────────────
-  if (!landscape) {
-  return <RotateNotice onForceStart={() => {
-    // Si el usuario toca forzar, ignoramos el bloqueo y empezamos
-    startJourney();
-  }} />;
-}
 
   return (
     <div style={{

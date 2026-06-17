@@ -71,35 +71,39 @@ function getPetAssets(petId = 'pandi') {
 // Un único listener de resize, que es el evento que SIEMPRE se dispara
 // al rotar un dispositivo, en cualquier navegador, sin excepción.
 function useIsLandscape() {
-  const [landscape, setLandscape] = useState(
-    () => window.innerWidth > window.innerHeight
-  )
+  const [landscape, setLandscape] = useState(false);
 
   useEffect(() => {
     function check() {
-      setLandscape(window.innerWidth > window.innerHeight)
+      // Usamos innerWidth > innerHeight como base
+      const isLand = window.innerWidth > window.innerHeight;
+      setLandscape(isLand);
     }
-    window.addEventListener('resize', check)
-    check()
-    return () => window.removeEventListener('resize', check)
-  }, [])
+    
+    // Forzamos la comprobación inmediatamente después de montar
+    check();
+    
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
 
-  return landscape
+  return landscape;
 }
 
 // ─── AVISO DE GIRAR ───────────────────────────────────────────────────────────
-function RotateNotice() {
+function RotateNotice({ onForceStart }) {
   return (
-    <div style={{
-      position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
-      zIndex: 99999, background: '#0f1420',
-      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-      padding: 32, textAlign: 'center',
-    }}>
+    <div style={{ /* ... tus estilos ... */ }}>
       <div style={{ fontSize: 56, marginBottom: 20 }}>📱</div>
-      <p style={{ color: 'white', fontSize: 17, fontWeight: 800, margin: 0 }}>
-        Gira tu móvil
-      </p>
+      <p style={{ color: 'white', fontSize: 17, fontWeight: 800 }}>Gira tu móvil</p>
+      
+      {/* Añade este botón para saltar la detección si falla */}
+      <button 
+        onClick={onForceStart}
+        style={{ marginTop: 20, background: 'none', border: '1px solid white', color: 'white', padding: '8px 16px', borderRadius: 8 }}
+      >
+        O tocar aquí para forzar inicio
+      </button>
     </div>
   )
 }
@@ -305,8 +309,11 @@ export default function SunJourney({
 
   // ── Sin orientación correcta: mostrar aviso, NADA MÁS ──────────────────────
   if (!landscape) {
-    return <RotateNotice />
-  }
+  return <RotateNotice onForceStart={() => {
+    // Si el usuario toca forzar, ignoramos el bloqueo y empezamos
+    startJourney();
+  }} />;
+}
 
   return (
     <div style={{

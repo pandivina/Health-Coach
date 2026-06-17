@@ -103,6 +103,7 @@ export default function SunJourney({
   const rafRef        = useRef(null)
   const stateRef       = useRef('inhale')
   const isNightRef     = useRef(false)
+  const cyclesDoneRef  = useRef(0)
   const timeoutsRef    = useRef([])
 
   const minY = 12
@@ -199,7 +200,8 @@ export default function SunJourney({
     setIsNight(isNightRef.current)
     setPeakOpacity(0); setExhaleOpacity(0)
 
-    const next = cyclesDone + 1
+    const next = cyclesDoneRef.current + 1
+    cyclesDoneRef.current = next
     setCyclesDone(next)
 
     if (next >= cyclesNeeded) {
@@ -230,6 +232,8 @@ export default function SunJourney({
   }
 
   function startJourney() {
+    cyclesDoneRef.current = 0
+    setCyclesDone(0)
     setAstroPos({ x: -10, y: maxY })
     runCountdown()
   }

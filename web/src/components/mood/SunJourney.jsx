@@ -77,23 +77,36 @@ function getPetAssets(petId = 'pandi') {
 // ─── DETECCIÓN DE ORIENTACIÓN ─────────────────────────────────────────────────
 function useIsLandscape() {
   const [isLandscape, setIsLandscape] = useState(() => {
-    return typeof window !== 'undefined'
-      ? window.matchMedia('(orientation: landscape)').matches
-      : false
+    if (typeof window === 'undefined') return false
+    return window.matchMedia('(orientation: landscape)').matches
+      || window.innerWidth > window.innerHeight
   })
 
   useEffect(() => {
     const mediaQuery = window.matchMedia('(orientation: landscape)')
+
+    const getCurrent = () =>
+      mediaQuery.matches || window.innerWidth > window.innerHeight
+
+    // Forzar lectura real inmediatamente al montar (por si el useState inicial
+    // no capturó el estado correcto en este WebView/dispositivo)
+    setIsLandscape(getCurrent())
+
     let timeoutId
-    const handler = (event) => {
+    const update = () => {
       clearTimeout(timeoutId)
-      timeoutId = setTimeout(() => setIsLandscape(event.matches), 100)
+      timeoutId = setTimeout(() => setIsLandscape(getCurrent()), 100)
     }
 
-    mediaQuery.addEventListener('change', handler)
+    mediaQuery.addEventListener('change', update)
+    window.addEventListener('resize', update)       // respaldo si matchMedia falla
+    window.addEventListener('orientationchange', update)
+
     return () => {
       clearTimeout(timeoutId)
-      mediaQuery.removeEventListener('change', handler)
+      mediaQuery.removeEventListener('change', update)
+      window.removeEventListener('resize', update)
+      window.removeEventListener('orientationchange', update)
     }
   }, [])
 
@@ -150,6 +163,10 @@ export default function SunJourney({
   const assets = getPetAssets(petId)
   const tutorial = useTutorial('sun_journey')
   const isLandscape = useIsLandscape()
+
+  useEffect(() => {
+    console.log('[SunJourney] orientación:', isLandscape ? 'landscape' : 'portrait')
+  }, [isLandscape])
 
   const cyclesNeeded = mode === 'guided' ? calcCyclesNeeded(score) : 3
 

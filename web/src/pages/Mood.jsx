@@ -1154,7 +1154,7 @@ export default function Mood() {
 
       {/* ── PANDI EN EL SANTUARIO ── */}
       <div style={{ position:'relative', zIndex:5, flex:1, display:'flex',
-        alignItems:'flex-end', justifyContent:'center', paddingBottom:12 }}>
+        alignItems:'flex-end', justifyContent:'center', paddingBottom:0 }}>
         <SanctuaryPandi mood={currentMood} pandiMode={pandiMode} cfg={sanctuaryCfg} />
       </div>
 

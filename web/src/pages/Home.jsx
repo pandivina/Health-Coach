@@ -256,7 +256,7 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name, userId }) {
         onClick={handlePandiTap}
         whileTap={{ scale:0.95 }}
         style={{ position:'absolute', bottom:'12%', left:'50%', transform:'translateX(-50%)',
-          zIndex:5, width:isMobile ? '48%' : '22%', maxWidth:200, cursor:'pointer',
+          zIndex:5, width:isMobile ? '50%' : '22%', maxWidth:200, cursor:'pointer',
           touchAction:'manipulation' }}>
         <div style={{ position:'relative' }}>
           <motion.div

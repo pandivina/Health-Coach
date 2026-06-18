@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useStore } from '../store/useStore'
+import { NotificationBell, default as NotificationPanel } from '../components/NotificationPanel'
 import { useTheme } from '../contexts/ThemeProvider'
 import { usePandiState } from '../contexts/PandiStateContext'
 import { supabase } from '../lib/supabase'
@@ -90,7 +91,7 @@ function useIsMobile() {
   return isMobile
 }
 
-function Sanctuary({ recoveryLight, profile, theme, greeting, name }) {
+function Sanctuary({ recoveryLight, profile, theme, greeting, name, userId }) {
   const cfg      = STATE_CONFIG[recoveryLight] || STATE_CONFIG.GREEN
   const isMobile = useIsMobile()
   const isNight  = useNightMode()
@@ -100,6 +101,7 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name }) {
   const [imgErr,   setImgErr]   = useState(false)
   const [blinking, setBlinking] = useState(false)
   const [zzzOn,    setZzzOn]    = useState(true)
+  const [notifOpen, setNotifOpen] = useState(false)
   const [waking,   setWaking]   = useState(false)
   const [wakeFrame,setWakeFrame]= useState(0)
   const [showPrompt, setShowPrompt] = useState(false)
@@ -215,15 +217,14 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name }) {
             letterSpacing:'-.02em', textShadow:'0 2px 8px rgba(0,0,0,0.3)' }}>{name} 👋</h1>
         </div>
 
-        <Link to="/calendar">
-          <div style={{ width:36, height:36, borderRadius:12, background:'rgba(255,255,255,0.88)',
-            backdropFilter:'blur(8px)', display:'flex', alignItems:'center', justifyContent:'center',
-            fontSize:18, position:'relative' }}>
-            🔔
-            <div style={{ position:'absolute', top:-3, right:-3, width:10, height:10,
-              borderRadius:'50%', background:'#EF4444', border:'2px solid white' }} />
-          </div>
-        </Link>
+        <div style={{ position:'relative' }}>
+          <NotificationBell userId={userId} onOpen={() => setNotifOpen(o => !o)} hasUnseen={true} />
+          <AnimatePresence>
+            {notifOpen && (
+              <NotificationPanel userId={userId} onClose={() => setNotifOpen(false)} />
+            )}
+          </AnimatePresence>
+        </div>
       </div>
 
       {/* Estrellas decorativas — solo de noche */}
@@ -248,8 +249,9 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name }) {
       <motion.div
         onClick={handlePandiTap}
         whileTap={{ scale:0.95 }}
-        style={{ position:'absolute', bottom:'15%', left:'50%', transform:'translateX(-50%)',
-          zIndex:5, width:isMobile ? '50%' : '22%', maxWidth:200, cursor:'pointer' }}>
+        style={{ position:'absolute', bottom:'12%', left:'50%', transform:'translateX(-50%)',
+          zIndex:5, width:isMobile ? '48%' : '22%', maxWidth:200, cursor:'pointer',
+          touchAction:'manipulation' }}>
         <div style={{ position:'relative' }}>
           <motion.div
             animate={{ opacity: isNight ? [0.15,0.3,0.15] : [0.3,0.5,0.3] }}
@@ -269,8 +271,8 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name }) {
           <div style={{ filter:`drop-shadow(0 12px 20px ${isNight ? 'rgba(120,140,220,0.3)' : cfg.glow})` }}>
             {imgErr
               ? <span style={{ fontSize:'15vw', display:'block', textAlign:'center' }}>{isNight ? '😴' : '🐾'}</span>
-              : <motion.img key={currentFrame} src={currentFrame} alt="Pandi"
-                  initial={{ opacity:0.7 }} animate={{ opacity:1 }} transition={{ duration:0.3 }}
+              : <motion.img src={currentFrame} alt="Pandi"
+                  animate={{ opacity:1 }} transition={{ duration:0.15 }}
                   style={{ width:'100%', height:'auto', objectFit:'contain', display:'block' }}
                   onError={() => setImgErr(true)} />
             }
@@ -890,7 +892,7 @@ export default function Home() {
   return (
     <div style={{ minHeight:'100vh', background:'#f8fafa', paddingBottom:100 }}>
 
-      <Sanctuary recoveryLight={recoveryLight} profile={profile} theme={theme} greeting={greeting} name={name} />
+      <Sanctuary recoveryLight={recoveryLight} profile={profile} theme={theme} greeting={greeting} name={name} userId={user?.id} />
 
       <div style={{ marginTop: '20px' }}>
         <XPBar profile={profile} cfg={cfg} />

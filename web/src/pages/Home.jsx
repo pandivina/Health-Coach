@@ -38,7 +38,7 @@ const STATE_CONFIG = {
     glow:          'rgba(245,158,11,0.4)',
     dot:           '#F59E0B',
     msg:           'Ritmo moderado. Ajustando tu plan.',
-    frames:        ['/panda/panda_base.png','/panda/panda_happy.png','/panda/panda_happy.png','/panda/panda_base.png','/panda/panda_happy.png','/panda/panda_base.png'],
+    frames:        ['/panda/panda_base.png','/panda/thinking_1.png','/panda/panda_base.png','/panda/thinking_1.png'],
     frameDuration: 3000,
   },
   RED: {
@@ -47,7 +47,7 @@ const STATE_CONFIG = {
     glow:          'rgba(255,143,163,0.4)',
     dot:           '#FF8FA3',
     msg:           'Hoy el descanso ES el entrenamiento.',
-    frames:        ['/panda/panda_base.png','/panda/panda_happy.png','/panda/panda_happy.png','/panda/panda_base.png','/panda/panda_happy.png','/panda/panda_base.png'],
+    frames:        ['/panda/panda_base.png','/panda/thinking_1.png','/panda/panda_base.png','/panda/thinking_1.png'],
     frameDuration: 3500,
   },
 }
@@ -144,7 +144,7 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name, userId }) {
   }, [isNight])
 
   function handlePandiTap() {
-    if (!isNight) { navigate('/mood'); return }
+    if (!isNight) { navigate('/sanctuary'); return }
     if (waking) return
     // Secuencia de despertar
     setWaking(true)
@@ -156,7 +156,7 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name, userId }) {
 
   function goToSanctuary() {
     setShowPrompt(false); setWaking(false)
-    navigate('/mood')
+    navigate('/sanctuary')
   }
 
   function letSleep() {
@@ -251,86 +251,43 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name, userId }) {
         </div>
       )}
 
-{/* PANDI (Perrito) — Ubicación perfecta sobre la plataforma con transición ultra fluida */}
+      {/* PANDI — de día navega directo, de noche hay que despertarla */}
       <motion.div
         onClick={handlePandiTap}
-        whileTap={{ scale: 0.95 }}
-        style={{ 
-          position: 'absolute', 
-          bottom: isMobile ? '23%' : '20%', // Posiciona al personaje centrado en la plataforma del fondo
-          left: '50%', 
-          transform: 'translateX(-50%)',
-          zIndex: 5, 
-          width: isMobile ? '45%' : '18%', // Tamaño aumentado para que no se vea chiquito
-          cursor: 'pointer',
-          touchAction: 'manipulation' 
-        }}
-      >
-        <div style={{ position: 'relative', width: '100%' }}>
-          {/* Brillo de fondo */}
+        whileTap={{ scale:0.95 }}
+        style={{ position:'absolute', bottom:'6%', left:'50%', transform:'translateX(-50%)',
+          zIndex:5, width:isMobile ? '48%' : '22%', maxWidth:200, cursor:'pointer',
+          touchAction:'manipulation' }}>
+        <div style={{ position:'relative' }}>
           <motion.div
-            animate={{ opacity: isNight ? [0.15, 0.3, 0.15] : [0.3, 0.5, 0.3] }}
-            transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-            style={{ 
-              position: 'absolute', top: '50%', left: '50%',
-              transform: 'translate(-50%,-50%)', width: '100%', height: '100%',
-              borderRadius: '50%',
-              background: `radial-gradient(circle, ${isNight ? 'rgba(120,140,220,0.35)' : cfg.glow} 0%, transparent 65%)`,
-              filter: 'blur(24px)', zIndex: -1, pointerEvents: 'none' 
-            }} 
-          />
-          
-          {/* Sombra en la base de la plataforma */}
+            animate={{ opacity: isNight ? [0.15,0.3,0.15] : [0.3,0.5,0.3] }}
+            transition={{ duration:3, repeat:Infinity, ease:'easeInOut' }}
+            style={{ position:'absolute', top:'50%', left:'50%',
+              transform:'translate(-50%,-50%)', width:'80%', height:'80%',
+              borderRadius:'50%',
+              background:`radial-gradient(circle, ${isNight ? 'rgba(120,140,220,0.35)' : cfg.glow} 0%, transparent 65%)`,
+              filter:'blur(24px)', zIndex:-1, pointerEvents:'none' }} />
           <motion.div
-            animate={{ scaleX: [1, 1.04, 1], opacity: [0.2, 0.3, 0.2] }}
-            transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-            style={{ 
-              position: 'absolute', bottom: -2, left: '50%',
-              transform: 'translateX(-50%)', width: '60%', height: 6,
-              borderRadius: '50%', background: 'rgba(0,0,0,0.2)',
-              filter: 'blur(4px)', zIndex: -1 
-            }} 
-          />
-
-          {/* Contenedor dinámico */}
-          <div style={{ 
-            filter: `drop-shadow(0 8px 16px ${isNight ? 'rgba(0,0,0,0.4)' : 'rgba(0,0,0,0.15)'})`,
-            display: 'block',
-            width: '100%'
-          }}>
-            {imgErr ? (
-              <span style={{ fontSize: '15vw', display: 'block', textAlign: 'center' }}>
-                {isNight ? '😴' : '🐾'}
-              </span>
-            ) : (
-              /* popLayout mantiene congelado el frame anterior en su sitio mientras se desvanece el nuevo, eliminando el parpadeo */
-              <AnimatePresence mode="popLayout">
-                <motion.img 
-                  key={currentFrame} 
-                  src={currentFrame} 
-                  alt="Pandi"
-                  initial={{ opacity: 0 }} 
-                  animate={{ opacity: 1 }} 
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.18, ease: "linear" }} // Transición limpia sin saltos de tamaño
-                  style={{ 
-                    width: '100%', 
-                    height: 'auto', 
-                    display: 'block' 
-                  }}
-                  onError={() => setImgErr(true)} 
-                />
-              </AnimatePresence>
-            )}
+            animate={{ scaleX:[1,1.04,1], opacity:[0.2,0.3,0.2] }}
+            transition={{ duration:3, repeat:Infinity, ease:'easeInOut' }}
+            style={{ position:'absolute', bottom:-4, left:'50%',
+              transform:'translateX(-50%)', width:'50%', height:8,
+              borderRadius:'50%', background:'rgba(0,0,0,0.15)',
+              filter:'blur(4px)', zIndex:-1 }} />
+          <div style={{ filter:`drop-shadow(0 12px 20px ${isNight ? 'rgba(120,140,220,0.3)' : cfg.glow})` }}>
+            {imgErr
+              ? <span style={{ fontSize:'15vw', display:'block', textAlign:'center' }}>{isNight ? '😴' : '🐾'}</span>
+              : <motion.img src={currentFrame} alt="Pandi"
+                  animate={{ opacity:1 }} transition={{ duration:0.15 }}
+                  style={{ width:'100%', height:'auto', objectFit:'contain', display:'block' }}
+                  onError={() => setImgErr(true)} />
+            }
           </div>
-
           {!isNight && profile?.tummy_state && profile.tummy_state !== 'neutral' && (
-            <div style={{ 
-              position: 'absolute', top: '6%', right: '2%',
-              width: 26, height: 26, borderRadius: '50%', background: 'white',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 14, boxShadow: '0 2px 8px rgba(0,0,0,0.15)', zIndex: 6
-            }}>
+            <div style={{ position:'absolute', top:'6%', right:'2%',
+              width:26, height:26, borderRadius:'50%', background:'white',
+              display:'flex', alignItems:'center', justifyContent:'center',
+              fontSize:14, boxShadow:'0 2px 8px rgba(0,0,0,0.15)' }}>
               {TUMMY_EMOJI[profile.tummy_state] || '😐'}
             </div>
           )}
@@ -937,7 +894,9 @@ export default function Home() {
   )
 
   const hour           = new Date().getHours()
-  const greeting       = hour<12 ? '¡Buenos días' : hour<20 ? '¡Buenas tardes' : '¡Buenas noches'
+  const greeting = hour >= 20 || hour < 7 ? '¡Buenas noches'
+                 : hour < 12 ? '¡Buenos días'
+                 : '¡Buenas tardes'
   const name           = profile?.name?.split(' ')[0] || 'Compi'
   const MOODS          = {1:'😩',2:'😞',3:'😐',4:'😊',5:'🤩'}
   const MOOD_LABELS    = {1:'Muy mal',2:'Mal',3:'Regular',4:'Bien',5:'Genial'}

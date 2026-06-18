@@ -8,6 +8,8 @@ import { supabase } from '../../lib/supabase'
 import { useStore } from '../../store/useStore'
 import { useTheme } from '../../contexts/ThemeProvider'
 import { searchLocal, FOOD_CATEGORIES, getFoodsByCategory, SPANISH_FOODS } from '../../lib/spanishFoods'
+import CalorieTrendWidget from './CalorieTrendWidget'
+import FrequentMeals from './FrequentMeals'
 
 const MEAL_TYPES  = ['breakfast', 'lunch', 'dinner', 'snack']
 const MEAL_LABELS = { breakfast: '🌅 Desayuno', lunch: '☀️ Comida', dinner: '🌙 Cena', snack: '🍎 Snack' }
@@ -702,6 +704,18 @@ export default function DiarioTab({ onAnalyze, onScan, onRecipes, onSummaryChang
     load()
   }
 
+  // Quick-add desde Recetas Frecuentes — usa 100g por defecto, va a snack
+  async function quickAddFrequent(food) {
+    const r = 1 // 100g por defecto
+    await addMeal('snack', {
+      food_name: food.food_name,
+      calories:  Math.round((food.calories_per_100g||0) * r),
+      protein_g: Math.round((food.protein_per_100g||0) * r * 10) / 10,
+      carbs_g:   Math.round((food.carbs_per_100g||0)   * r * 10) / 10,
+      fat_g:     Math.round((food.fat_per_100g||0)     * r * 10) / 10,
+    })
+  }
+
   const totalCals    = meals.reduce((s, m) => s + (m.calories  || 0), 0)
   const totalProtein = meals.reduce((s, m) => s + (m.protein_g || 0), 0)
   const totalCarbs   = meals.reduce((s, m) => s + (m.carbs_g   || 0), 0)
@@ -712,6 +726,10 @@ export default function DiarioTab({ onAnalyze, onScan, onRecipes, onSummaryChang
   return (
     <>
       <div className="space-y-4">
+
+        {/* Tendencia calórica + frecuentes */}
+        <CalorieTrendWidget userId={user?.id} theme={theme} calorieGoal={goals.calories} />
+        <FrequentMeals userId={user?.id} theme={theme} onQuickAdd={quickAddFrequent} />
 
         {/* Hero calorías */}
         <motion.div initial={{ opacity:0, y:-10 }} animate={{ opacity:1, y:0 }}

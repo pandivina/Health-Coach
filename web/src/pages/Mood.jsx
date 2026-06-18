@@ -15,6 +15,8 @@ import WellnessCalendar from '../components/mood/WellnessCalendar'
 import PandiContextualBubble from '../components/PandiContextualBubble'
 import PandiTips from '../components/PandiTips'
 import { speak, stopSpeech, sayAsync, PANDI_VOICE } from '../lib/tts'
+import { registerMeditationSession } from '../lib/meditationStreak'
+import JournalEntry from '../components/mood/JournalEntry'
 import PandiPulse from '../components/mood/PandiPulse'
 import SunJourney from '../components/mood/SunJourney'
 import CalmScreen, { CalmButton } from '../components/mood/CalmButton'
@@ -403,6 +405,9 @@ function CheckinTab({ theme, userId, addXP, onTabChange, onMoodSaved, profile })
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Diario emocional */}
+      <JournalEntry theme={theme} userId={userId} currentMood={mood} />
     </div>
   )
 }
@@ -576,13 +581,14 @@ function BreathingTab({ theme }) {
   )
 }
 
-function MeditationTab({ theme, profile }) {
+function MeditationTab({ theme, profile, userId }) {
   const [duration, setDuration] = useState(5)
   const [sound,    setSound]    = useState(null)
   const [running,  setRunning]  = useState(false)
   const [elapsed,  setElapsed]  = useState(0)
   const [muted,    setMuted]    = useState(false)
   const [done,     setDone]     = useState(false)
+  const [streakInfo, setStreakInfo] = useState(null) // { streak, newAccessory }
   const ambientRef  = useRef(null)
   const medAudioRef = useRef(null)
   const intervalRef = useRef(null)
@@ -619,6 +625,7 @@ function MeditationTab({ theme, profile }) {
           setRunning(false); setDone(true); stopAll()
           useStore.getState().addXP?.(duration * 5)
           useStore.getState().addBondXP?.(10)
+          registerMeditationSession(userId).then(setStreakInfo)
           // TTS fin
           setTimeout(() => sayAsync(PANDI_VOICE.meditationEnd(name)), 500)
           return total
@@ -629,7 +636,7 @@ function MeditationTab({ theme, profile }) {
   }
 
   function reset() {
-    stopAll(); setRunning(false); setElapsed(0); setDone(false); setMuted(false)
+    stopAll(); setRunning(false); setElapsed(0); setDone(false); setMuted(false); setStreakInfo(null)
   }
 
   function toggleMute() {
@@ -705,6 +712,21 @@ function MeditationTab({ theme, profile }) {
         <p style={{ fontSize: 44, fontWeight: 900, color: '#1A2332', margin: 0 }}>
           {done ? '¡Completado!' : `${mm}:${ss}`}
         </p>
+
+        {done && streakInfo && (
+          <motion.div initial={{ opacity:0, y:6 }} animate={{ opacity:1, y:0 }}
+            style={{ textAlign:'center' }}>
+            <p style={{ fontSize:13, color:'#F97316', fontWeight:700, margin:0 }}>
+              🔥 {streakInfo.streak} día{streakInfo.streak > 1 ? 's' : ''} seguidos meditando
+            </p>
+            {streakInfo.newAccessory && (
+              <motion.p initial={{ scale:0.8 }} animate={{ scale:1 }}
+                style={{ fontSize:13, color:'#92400E', fontWeight:800, margin:'4px 0 0' }}>
+                {streakInfo.newAccessory.emoji} ¡Desbloqueaste {streakInfo.newAccessory.name}!
+              </motion.p>
+            )}
+          </motion.div>
+        )}
 
         <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
           {!running && !done && (
@@ -1213,7 +1235,7 @@ export default function Mood() {
                 currentMood={currentMood} habitsChecked={habitsChecked} />
             )}
             {activeTab === 'breathing'  && <BreathingTab  theme={theme} />}
-            {activeTab === 'meditation' && <MeditationTab theme={theme} profile={profile} />}
+            {activeTab === 'meditation' && <MeditationTab theme={theme} profile={profile} userId={user?.id} />}
             {activeTab === 'habits' && null}
             {activeTab === 'calendar' && null}
             {activeTab === 'cycles'   && null}

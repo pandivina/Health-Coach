@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useStore } from '../store/useStore'
 import { NotificationBell, default as NotificationPanel } from '../components/NotificationPanel'
+import QuickBreathModal, { QuickBreathButton } from '../components/QuickBreath'
 import { useTheme } from '../contexts/ThemeProvider'
 import { usePandiState } from '../contexts/PandiStateContext'
 import { supabase } from '../lib/supabase'
@@ -817,6 +818,7 @@ export default function Home() {
   const [todaySleep,   setTodaySleep]   = useState(null)
   const [todayMood,    setTodayMood]    = useState(null)
   const [waterGlasses, setWaterGlasses] = useState(0)
+  const [showQuickBreath, setShowQuickBreath] = useState(false)
 
   useTour('home')
 
@@ -923,6 +925,11 @@ export default function Home() {
         {/* MINI WIDGET SEMANAL */}
         <MiniWeekWidget userId={user?.id} theme={theme} />
 
+        {/* RESPIRACIÓN RÁPIDA */}
+        <div style={{ marginBottom:12 }}>
+          <QuickBreathButton onActivate={() => setShowQuickBreath(true)} />
+        </div>
+
         {/* TIP DE PANDI */}
         <PandiTipCard theme={theme} userId={user?.id} />
 
@@ -981,6 +988,12 @@ export default function Home() {
       </div>
 
       <DailyCheckin />
+
+      <AnimatePresence>
+        {showQuickBreath && (
+          <QuickBreathModal onClose={() => setShowQuickBreath(false)} />
+        )}
+      </AnimatePresence>
     </div>
   )
 }

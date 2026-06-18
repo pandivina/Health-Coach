@@ -251,139 +251,91 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name, userId }) {
         </div>
       )}
 
-      {/* PANDI (Perrito) — Ubicación perfecta sobre la plataforma con transición ultra fluida */}
-<motion.div
-  onClick={handlePandiTap}
-  whileTap={{ scale: 0.95 }}
-  style={{ 
-    position: 'absolute', 
-    bottom: isMobile ? '25%' : '20%', // Sube al perrito justo encima de la plataforma circular
-    left: '50%', 
-    transform: 'translateX(-50%)',
-    zIndex: 5, 
-    width: isMobile ? '45%' : '18%', // Lo hacemos más grande y presente
-    cursor: 'pointer',
-    touchAction: 'manipulation' 
-  }}
->
-  <div style={{ position: 'relative', width: '100%' }}>
-    {/* Brillo de fondo */}
-    <motion.div
-      animate={{ opacity: isNight ? [0.15, 0.3, 0.15] : [0.3, 0.5, 0.3] }}
-      transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-      style={{ 
-        position: 'absolute', top: '50%', left: '50%',
-        transform: 'translate(-50%,-50%)', width: '100%', height: '100%',
-        borderRadius: '50%',
-        background: `radial-gradient(circle, ${isNight ? 'rgba(120,140,220,0.35)' : cfg.glow} 0%, transparent 65%)`,
-        filter: 'blur(24px)', zIndex: -1, pointerEvents: 'none' 
-      }} 
-    />
-    
-    {/* Sombra en la base de la plataforma */}
-    <motion.div
-      animate={{ scaleX: [1, 1.04, 1], opacity: [0.2, 0.3, 0.2] }}
-      transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-      style={{ 
-        position: 'absolute', bottom: -2, left: '50%',
-        transform: 'translateX(-50%)', width: '60%', height: 6,
-        borderRadius: '50%', background: 'rgba(0,0,0,0.2)',
-        filter: 'blur(4px)', zIndex: -1 
-      }} 
-    />
-
-    {/* Contenedor dinámico */}
-    <div style={{ 
-      filter: `drop-shadow(0 8px 16px ${isNight ? 'rgba(0,0,0,0.4)' : 'rgba(0,0,0,0.15)'})`,
-      display: 'block',
-      width: '100%'
-    }}>
-      {imgErr ? (
-        <span style={{ fontSize: '15vw', display: 'block', textAlign: 'center' }}>
-          {isNight ? '😴' : '🐾'}
-        </span>
-      ) : (
-        /* popLayout mantiene el frame viejo fijo mientras entra el nuevo sin alterar el diseño */
-        <AnimatePresence mode="popLayout">
-          <motion.img 
-            key={currentFrame} 
-            src={currentFrame} 
-            alt="Pandi"
-            initial={{ opacity: 0 }} 
-            animate={{ opacity: 1 }} 
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2, ease: "linear" }} // Transición cruzada ultra limpia
+{/* PANDI (Perrito) — Ubicación perfecta sobre la plataforma con transición ultra fluida */}
+      <motion.div
+        onClick={handlePandiTap}
+        whileTap={{ scale: 0.95 }}
+        style={{ 
+          position: 'absolute', 
+          bottom: isMobile ? '23%' : '20%', // Posiciona al personaje centrado en la plataforma del fondo
+          left: '50%', 
+          transform: 'translateX(-50%)',
+          zIndex: 5, 
+          width: isMobile ? '45%' : '18%', // Tamaño aumentado para que no se vea chiquito
+          cursor: 'pointer',
+          touchAction: 'manipulation' 
+        }}
+      >
+        <div style={{ position: 'relative', width: '100%' }}>
+          {/* Brillo de fondo */}
+          <motion.div
+            animate={{ opacity: isNight ? [0.15, 0.3, 0.15] : [0.3, 0.5, 0.3] }}
+            transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
             style={{ 
-              width: '100%', 
-              height: 'auto', 
-              display: 'block' 
-            }}
-            onError={() => setImgErr(true)} 
+              position: 'absolute', top: '50%', left: '50%',
+              transform: 'translate(-50%,-50%)', width: '100%', height: '100%',
+              borderRadius: '50%',
+              background: `radial-gradient(circle, ${isNight ? 'rgba(120,140,220,0.35)' : cfg.glow} 0%, transparent 65%)`,
+              filter: 'blur(24px)', zIndex: -1, pointerEvents: 'none' 
+            }} 
           />
-        </AnimatePresence>
-      )}
-    </div>
-
-    {!isNight && profile?.tummy_state && profile.tummy_state !== 'neutral' && (
-      <div style={{ 
-        position: 'absolute', top: '6%', right: '2%',
-        width: 26, height: 26, borderRadius: '50%', background: 'white',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontSize: 14, boxShadow: '0 2px 8px rgba(0,0,0,0.15)', zIndex: 6
-      }}>
-        {TUMMY_EMOJI[profile.tummy_state] || '😐'}
-      </div>
-    )}
-  </div>
-</motion.div>
-      
-    {/* CONTENEDOR DE LA IMAGEN CON ALTO FIJO Y ANIMACIÓN FLUIDA */}
-    <div style={{ 
-      filter: `drop-shadow(0 12px 20px ${isNight ? 'rgba(120,140,220,0.3)' : cfg.glow})`,
-      height: isMobile ? '160px' : '230px', // Forzamos un contenedor rígido
-      display: 'flex',
-      alignItems: 'flex-end', // Anclamos los pies del panda al suelo
-      justifyContent: 'center'
-    }}>
-      {imgErr ? (
-        <span style={{ fontSize: '15vw', display: 'block', textAlign: 'center' }}>
-          {isNight ? '😴' : '🐾'}
-        </span>
-      ) : (
-        <AnimatePresence mode="wait">
-          <motion.img 
-            key={currentFrame} // Al cambiar de frame, react detecta el cambio e inicia la transición
-            src={currentFrame} 
-            alt="Pandi"
-            initial={{ opacity: 0.85 }} // Evita parpadeos en blanco al desmontar
-            animate={{ opacity: 1 }} 
-            exit={{ opacity: 0.85 }}
-            transition={{ duration: 0.12, ease: "linear" }} // Transición ultra rápida y limpia
+          
+          {/* Sombra en la base de la plataforma */}
+          <motion.div
+            animate={{ scaleX: [1, 1.04, 1], opacity: [0.2, 0.3, 0.2] }}
+            transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
             style={{ 
-              width: '100%', 
-              height: '100%', 
-              objectFit: 'contain', // Mantiene las proporciones originales del dibujo
-              objectPosition: 'center bottom', // Asegura estabilidad en la base
-              display: 'block' 
-            }}
-            onError={() => setImgErr(true)} 
+              position: 'absolute', bottom: -2, left: '50%',
+              transform: 'translateX(-50%)', width: '60%', height: 6,
+              borderRadius: '50%', background: 'rgba(0,0,0,0.2)',
+              filter: 'blur(4px)', zIndex: -1 
+            }} 
           />
-        </AnimatePresence>
-      )}
-    </div>
 
-    {!isNight && profile?.tummy_state && profile.tummy_state !== 'neutral' && (
-      <div style={{ 
-        position: 'absolute', top: '6%', right: '2%',
-        width: 26, height: 26, borderRadius: '50%', background: 'white',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontSize: 14, boxShadow: '0 2px 8px rgba(0,0,0,0.15)' 
-      }}>
-        {TUMMY_EMOJI[profile.tummy_state] || '😐'}
-      </div>
-    )}
-  </div>
-</motion.div>
+          {/* Contenedor dinámico */}
+          <div style={{ 
+            filter: `drop-shadow(0 8px 16px ${isNight ? 'rgba(0,0,0,0.4)' : 'rgba(0,0,0,0.15)'})`,
+            display: 'block',
+            width: '100%'
+          }}>
+            {imgErr ? (
+              <span style={{ fontSize: '15vw', display: 'block', textAlign: 'center' }}>
+                {isNight ? '😴' : '🐾'}
+              </span>
+            ) : (
+              /* popLayout mantiene congelado el frame anterior en su sitio mientras se desvanece el nuevo, eliminando el parpadeo */
+              <AnimatePresence mode="popLayout">
+                <motion.img 
+                  key={currentFrame} 
+                  src={currentFrame} 
+                  alt="Pandi"
+                  initial={{ opacity: 0 }} 
+                  animate={{ opacity: 1 }} 
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.18, ease: "linear" }} // Transición limpia sin saltos de tamaño
+                  style={{ 
+                    width: '100%', 
+                    height: 'auto', 
+                    display: 'block' 
+                  }}
+                  onError={() => setImgErr(true)} 
+                />
+              </AnimatePresence>
+            )}
+          </div>
+
+          {!isNight && profile?.tummy_state && profile.tummy_state !== 'neutral' && (
+            <div style={{ 
+              position: 'absolute', top: '6%', right: '2%',
+              width: 26, height: 26, borderRadius: '50%', background: 'white',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 14, boxShadow: '0 2px 8px rgba(0,0,0,0.15)', zIndex: 6
+            }}>
+              {TUMMY_EMOJI[profile.tummy_state] || '😐'}
+            </div>
+          )}
+        </div>
+      </motion.div>
 
       {/* Prompt: ¿entramos o la dejamos dormir? */}
       <AnimatePresence>

@@ -336,6 +336,7 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name, userId }) {
     )}
   </div>
 </motion.div>
+      
     {/* CONTENEDOR DE LA IMAGEN CON ALTO FIJO Y ANIMACIÓN FLUIDA */}
     <div style={{ 
       filter: `drop-shadow(0 12px 20px ${isNight ? 'rgba(120,140,220,0.3)' : cfg.glow})`,

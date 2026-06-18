@@ -38,6 +38,7 @@ import Workout from './pages/Workout'
 // Wellness
 import Sleep from './pages/Sleep'
 import Mood from './pages/Mood'
+import Sanctuary from './pages/Sanctuary'
 import Hydration from './pages/Hydration'
 import Smoking from './pages/Smoking'
 
@@ -147,6 +148,7 @@ export default function App() {
               <Route path="/workout"   element={<WorkoutView />} />
               <Route path="/sleep"     element={<Sleep />} />
               <Route path="/mood"      element={<Mood />} />
+            <Route path="/sanctuary" element={<Sanctuary />} />
               <Route path="/hydration" element={<Hydration />} />
               <Route path="/smoking"   element={<Smoking />} />
               <Route path="/health"    element={<HealthTracking />} />

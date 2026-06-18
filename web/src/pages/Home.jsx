@@ -489,7 +489,7 @@ async function buildPandiContext(userId) {
     situation = 'great_day'
   } else if (hour >= 19 && totalCal < goals.calories * 0.5) {
     situation = 'low_calories_evening'
-  } else if (totalProtein > 0 && totalProtein < goals.protein_g * 0.4 && hour >= 14) {
+  } else if (totalProtein > 0 && totalProtein < goals.protein_g * 0.5 && hour >= 18) {
     situation = 'low_protein'
   } else if (hour >= 22 || hour < 7) {
     situation = 'deep_night_calm'
@@ -509,7 +509,7 @@ async function buildPandiContext(userId) {
 
 // Mensajes instantáneos sin API — para situaciones claras
 function getInstantMessage(ctx) {
-  const { situation, hour, glasses, waterGoal, totalCal, calorieGoal, mood } = ctx
+  const { situation, hour, glasses, waterGoal, totalCal, calorieGoal, mood, totalProtein, proteinGoal } = ctx
   switch (situation) {
     case 'no_sleep_logged_night':
       return { text: 'Ya es tarde 🌙 ¿Vas a dormir pronto? Registra tu sueño antes de cerrar el día — es el dato más importante para tu recuperación.', type:'reminder' }
@@ -528,7 +528,7 @@ function getInstantMessage(ctx) {
     case 'low_calories_evening':
       return { text: `Son las ${hour}h y llevas ${Math.round(totalCal)} de ${calorieGoal} kcal. Una cena con proteína te ayudará a recuperarte esta noche. 🍳`, type:'nutrition' }
     case 'low_protein':
-      return { text: `Proteína baja para esta hora del día. Añade una fuente proteica en tu próxima comida — huevo, pollo, atún o yogur griego van perfecto. 💪`, type:'nutrition' }
+      return { text: `Son las ${hour}h y llevas ${Math.round(totalProtein)}g de ${proteinGoal}g de proteína. Añade huevo, pollo, atún o yogur griego en tu próxima comida. 💪`, type:'nutrition' }
     case 'deep_night_calm':
       return { text: 'Has cerrado bien el día. Ahora toca descansar — el cuerpo se recupera mientras duermes. Hasta mañana 🌙', type:'mood' }
     default:

@@ -4,6 +4,9 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useStore } from '../store/useStore'
 import { NotificationBell, default as NotificationPanel } from '../components/NotificationPanel'
 import QuickBreathModal, { QuickBreathButton } from '../components/QuickBreath'
+import { checkAchievements } from '../lib/achievements'
+import AchievementUnlockedModal from '../components/AchievementUnlockedModal'
+import WeeklyChallengesWidget from '../components/WeeklyChallengesWidget'
 import { useTheme } from '../contexts/ThemeProvider'
 import { usePandiState } from '../contexts/PandiStateContext'
 import { supabase } from '../lib/supabase'
@@ -16,6 +19,8 @@ import DailyCheckin from '../components/DailyCheckin'
 import PandiPulse from '../components/mood/PandiPulse'
 // CoachAwarenessContext — disponible cuando el provider esté en App.jsx
 // import { useModuleAwareness } from '../contexts/CoachAwarenessContext'
+
+const TUMMY_EMOJI = { great:'😋', good:'🙂', neutral:'😐', bad:'😕', terrible:'🤢' }
 
 const STATE_CONFIG = {
   GREEN: {
@@ -278,6 +283,14 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name, userId }) {
                   onError={() => setImgErr(true)} />
             }
           </div>
+          {!isNight && profile?.tummy_state && profile.tummy_state !== 'neutral' && (
+            <div style={{ position:'absolute', top:'6%', right:'2%',
+              width:26, height:26, borderRadius:'50%', background:'white',
+              display:'flex', alignItems:'center', justifyContent:'center',
+              fontSize:14, boxShadow:'0 2px 8px rgba(0,0,0,0.15)' }}>
+              {TUMMY_EMOJI[profile.tummy_state] || '😐'}
+            </div>
+          )}
         </div>
       </motion.div>
 
@@ -819,6 +832,14 @@ export default function Home() {
   const [todayMood,    setTodayMood]    = useState(null)
   const [waterGlasses, setWaterGlasses] = useState(0)
   const [showQuickBreath, setShowQuickBreath] = useState(false)
+  const [newAchievement, setNewAchievement] = useState(null)
+
+  useEffect(() => {
+    if (!user) return
+    checkAchievements(user.id).then(unlocked => {
+      if (unlocked.length > 0) setNewAchievement(unlocked[0])
+    })
+  }, [user])
 
   useTour('home')
 
@@ -930,6 +951,9 @@ export default function Home() {
           <QuickBreathButton onActivate={() => setShowQuickBreath(true)} />
         </div>
 
+        {/* RETOS SEMANALES */}
+        <WeeklyChallengesWidget theme={theme} />
+
         {/* TIP DE PANDI */}
         <PandiTipCard theme={theme} userId={user?.id} />
 
@@ -994,6 +1018,8 @@ export default function Home() {
           <QuickBreathModal onClose={() => setShowQuickBreath(false)} />
         )}
       </AnimatePresence>
+
+      <AchievementUnlockedModal achievement={newAchievement} onClose={() => setNewAchievement(null)} />
     </div>
   )
 }

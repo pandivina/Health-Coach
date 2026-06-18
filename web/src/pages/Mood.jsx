@@ -17,6 +17,7 @@ import PandiTips from '../components/PandiTips'
 import { speak, stopSpeech, sayAsync, PANDI_VOICE } from '../lib/tts'
 import PandiPulse from '../components/mood/PandiPulse'
 import SunJourney from '../components/mood/SunJourney'
+import CalmScreen, { CalmButton } from '../components/mood/CalmButton'
 
 // ─── AUDIO ───────────────────────────────────────────────────────────────────
 const A = {
@@ -1064,6 +1065,7 @@ export default function Mood() {
   const [sheetOpen,     setSheetOpen]     = useState(true)
   const [showPulse,     setShowPulse]     = useState(false)
   const [showSunJourney, setShowSunJourney] = useState(false)
+  const [showCalm,       setShowCalm]       = useState(false)
   const [pandiMode,     setPandiMode]     = useState('idle') // idle | meditate | celebrate
 
   // Pandi reacciona al tab activo
@@ -1149,6 +1151,7 @@ export default function Mood() {
               display:'flex', alignItems:'center', justifyContent:'center', fontSize:17 }}>
             ☀️
           </motion.button>
+          <CalmButton onActivate={() => setShowCalm(true)} />
         </div>
       </div>
 
@@ -1237,6 +1240,13 @@ export default function Mood() {
             onClose={() => setShowSunJourney(false)}
             onComplete={() => setShowSunJourney(false)}
           />
+        )}
+      </AnimatePresence>
+
+      {/* Calma rápida — sonido de bosque + respiración visual */}
+      <AnimatePresence>
+        {showCalm && (
+          <CalmScreen onClose={() => setShowCalm(false)} />
         )}
       </AnimatePresence>
 

@@ -57,6 +57,7 @@ app.use('/api/pantry',       pantryRoutes);
 app.use('/api/recipes',      recipesRoutes);
 app.use('/api/report',       reportsRoutes);
 app.use('/api/workouts',     workoutsRoutes);
+app.use('/api/challenges', require('./routes/challenges'));
 app.use('/api/health',       healthRoutes);
 app.use('/api/labs',         labsRoutes);
 app.use('/api/achievements', achievementsRoutes);

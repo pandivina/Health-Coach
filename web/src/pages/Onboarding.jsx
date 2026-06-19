@@ -421,16 +421,15 @@ export default function Onboarding() {
 <AnimatePresence>
   {showOrb && (
     <motion.div key="orb"
-      initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
-      transition={{ duration:1.2 }}
-      style={{ 
-        position:'absolute', inset:0, zIndex:15,
-        display:'flex', flexDirection:'column',
-        alignItems:'center',        // ← centra horizontalmente
-        justifyContent:'flex-start', // ← empieza desde arriba
-        paddingTop:'15%',           // ← mueve el orbe hacia abajo (ajusta este %)
-      }}>
-
+  initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
+  transition={{ duration:1.2 }}
+  style={{ 
+    position:'absolute', inset:0, zIndex:15,
+    display:'flex', flexDirection:'column',
+    alignItems:'center',
+    justifyContent:'flex-end',   // ← ancla desde abajo
+    paddingBottom:'44vh',        // ← ajusta este valor para subir/bajar el orbe
+  }}>
             {/* ── ZONA IMAGEN — altura fija, mismo patrón que Sanctuary del Home ── */}
             <div style={{
               position:'relative', height:'56vh', minHeight:300, maxHeight:480,

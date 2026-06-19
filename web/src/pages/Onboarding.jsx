@@ -402,19 +402,21 @@ export default function Onboarding() {
       onClick={handleFirstInteraction}>
 
       {/* ── FONDOS ── */}
-      <motion.img src="/panda/onboarding_orb_baby_blur.png" alt=""
-        animate={{ opacity: showBlur ? 1 : 0 }}
-        transition={{ duration:1.5 }}
-        style={{ position:'absolute', inset:0, width:'100%', height:'100%', objectFit:'cover', objectPosition:'top center', zIndex:1 }}
-        onError={()=>setImgErrs(e=>({...e,blur:true}))}
-      />
-      <motion.img src="/panda/onboarding_clouds.png" alt=""
-        animate={{ opacity: showClouds ? 1 : 0 }}
-        transition={{ duration:1.8, delay: showClouds ? 0.5 : 0 }}
-        style={{ position:'absolute', inset:0, width:'100%', height:'100%', objectFit:'cover', objectPosition:'top center', zIndex:3 }}
-        onError={()=>setImgErrs(e=>({...e,clouds:true}))}
-      />
-
+<motion.img src="/panda/onboarding_orb_baby_blur.png" alt=""
+  animate={{ opacity: showBlur ? 1 : 0 }}
+  transition={{ duration:1.5 }}
+  style={{ position:'absolute', inset:0, width:'100%', height:'100%', 
+    objectFit:'cover', objectPosition:'top center', zIndex:1 }}
+  onError={()=>setImgErrs(e=>({...e,blur:true}))}
+/>
+<motion.img src="/panda/onboarding_clouds.png" alt=""
+  animate={{ opacity: showClouds ? 1 : 0 }}
+  transition={{ duration:1.8, delay: showClouds ? 0.5 : 0 }}
+  style={{ position:'absolute', inset:0, width:'100%', height:'100%',
+    objectFit:'cover', objectPosition:'top center',
+    zIndex: showClouds ? 3 : 0 }}
+  onError={()=>setImgErrs(e=>({...e,clouds:true}))}
+/>
       {/* ── ORB ── */}
       <AnimatePresence>
         {showOrb && (
@@ -435,16 +437,16 @@ export default function Onboarding() {
             {/* COLUMNA DE LUZ desde arriba */}
             <motion.div
               initial={{ opacity:0, scaleY:0 }}
-              animate={{ opacity:[0,0.6,0.4], scaleY:1 }}
+              animate={{ opacity:[0,0.9,0.7], scaleY:1 }}
               transition={{ duration:2, ease:'easeOut' }}
               style={{
                 position:'absolute',
                 top:0, left:'50%',
                 transform:'translateX(-50%)',
-                width:'45vw', maxWidth:200,
-                height:'60%',
-                background:'linear-gradient(to bottom, rgba(255,240,180,0.5) 0%, rgba(255,220,140,0.2) 60%, transparent 100%)',
-                filter:'blur(18px)',
+                width:'60vw', maxWidth:260,
+                height:'70%',
+                background: 'linear-gradient(to bottom, rgba(255,240,180,0.85) 0%, rgba(255,220,140,0.5) 60%, transparent 100%)',
+                filter:'blur(10px)',
                 transformOrigin:'top center',
                 pointerEvents:'none',
               }}
@@ -588,12 +590,15 @@ export default function Onboarding() {
                   transition={{ duration:2, repeat:Infinity }}
                   onClick={activateOrb}
                   style={{
-                    position:'fixed',
-                    margintop:'120', left:'0%',
-                    transform:'translate(-50%, -50%)',
-                    background:'transparent', border:'none',
-                    cursor:'pointer', zIndex:25,
-                    pointerEvents:'all',
+                    position: 'fixed',
+                    bottom: 100,        // ← ajusta este número
+                    left: '20%',
+                    transform: 'translateX(-50%)',
+                    background: 'transparent',
+                    border: 'none',
+                    cursor: 'pointer',
+                    zIndex: 25,
+                    pointerEvents: 'all',
                   }}>
                   <img src="/panda/boton_1.png" alt="Despertar"
                     style={{ width:100, height:100, objectFit:'contain' }}

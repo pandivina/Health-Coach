@@ -23,6 +23,10 @@ const ASSETS = {
     sad:       '/panda/panda_sad.png',
     walkL:     '/panda/panda_walk_l.png',
     walkR:     '/panda/panda_walk_r.png',
+    meditating:'/panda/panda_meditating.png',
+    sitting:   '/panda/panda_sitting.png',
+    looking:   '/panda/panda_looking.png',
+    laydown:   '/panda/panda_laydown.png',
   },
 }
 
@@ -30,12 +34,42 @@ const ASSETS = {
 const WORLD_W = 1200
 const WORLD_H = 800
 
-// ─── ZONAS ───────────────────────────────────────────────────────────────────
+// ─── ZONA PROHIBIDA — área del estanque que Pandi no puede pisar ─────────────
+// Coordenadas aproximadas del estanque en el mundo 1200x800
+// Ajusta estos valores con el modo edición cuando tengas el fondo real
+const WATER_ZONE = { x1:430, y1:290, x2:770, y2:560 }
+
+function isInWater(wx, wy) {
+  return wx > WATER_ZONE.x1 && wx < WATER_ZONE.x2 &&
+         wy > WATER_ZONE.y1 && wy < WATER_ZONE.y2
+}
+
+// Desviar un punto que cae en el agua al borde más cercano
+function avoidWater(wx, wy) {
+  if (!isInWater(wx, wy)) return { wx, wy }
+  const cx = (WATER_ZONE.x1 + WATER_ZONE.x2) / 2
+  const cy = (WATER_ZONE.y1 + WATER_ZONE.y2) / 2
+  const dx = wx - cx, dy = wy - cy
+  // Empujar hacia el borde más cercano
+  const toLeft   = Math.abs(wx - WATER_ZONE.x1)
+  const toRight  = Math.abs(wx - WATER_ZONE.x2)
+  const toTop    = Math.abs(wy - WATER_ZONE.y1)
+  const toBottom = Math.abs(wy - WATER_ZONE.y2)
+  const min = Math.min(toLeft, toRight, toTop, toBottom)
+  if (min === toLeft)   return { wx: WATER_ZONE.x1 - 30, wy }
+  if (min === toRight)  return { wx: WATER_ZONE.x2 + 30, wy }
+  if (min === toTop)    return { wx, wy: WATER_ZONE.y1 - 30 }
+  return { wx, wy: WATER_ZONE.y2 + 30 }
+}
 // Coordenadas en px dentro del mundo (0-WORLD_W, 0-WORLD_H)
 const DEFAULT_ZONES = [
-  { id:'bed',  label:'Cama',    emoji:'🛏️', wx:600, wy:340, frame:'sleeping', action:'sleep', color:'#818CF8' },
-  { id:'food', label:'Cuenco',  emoji:'🍚', wx:280, wy:520, frame:'eating',   action:'feed',  color:'#F97316' },
-  { id:'toy',  label:'Juguete', emoji:'⚽', wx:920, wy:520, frame:'playing',  action:'play',  color:'#2EC4B6' },
+  { id:'bed',      label:'Cama',     emoji:'🛏️', wx:600, wy:340, frame:'sleeping',   action:'sleep',    color:'#818CF8' },
+  { id:'food',     label:'Cuenco',   emoji:'🍚', wx:280, wy:520, frame:'eating',     action:'feed',     color:'#F97316' },
+  { id:'toy',      label:'Juguete',  emoji:'⚽', wx:920, wy:520, frame:'playing',    action:'play',     color:'#2EC4B6' },
+  { id:'meditate', label:'Meditar',  emoji:'🧘', wx:600, wy:560, frame:'meditating', action:'meditate', color:'#A78BFA' },
+  { id:'sit',      label:'Sentarse', emoji:'🪑', wx:380, wy:420, frame:'sitting',    action:'sit',      color:'#34D399' },
+  { id:'look',     label:'Mirar',    emoji:'👀', wx:820, wy:380, frame:'looking',    action:'look',     color:'#60A5FA' },
+  { id:'laydown',  label:'Tumbarse', emoji:'😴', wx:200, wy:350, frame:'laydown',    action:'laydown',  color:'#F472B6' },
 ]
 const ZONES_KEY = 'sanctuary_zones_v2'
 function loadZones() {
@@ -171,6 +205,7 @@ export default function Sanctuary() {
   const worldRef   = useRef(null)
   const pressRef   = useRef(null)
   const movingRef  = useRef(null)
+  const moveDurationRef = useRef(1.2)
 
   // Pan del mundo
   const [offset,    setOffset]    = useState({ x:0, y:0 })
@@ -197,8 +232,27 @@ export default function Sanctuary() {
   const [energy,    setEnergy]    = useState(profile?.pandi_energy    ?? 80)
   const [happiness, setHappiness] = useState(profile?.pandi_happiness ?? 80)
   const [toast,     setToast]     = useState(null)
+  const [meditatingActive, setMeditatingActive] = useState(false)
 
-  // Centrar el mundo al montar y al cambiar orientación
+  function movePandi(targetWx, targetWy, onArrive) {
+    const safe = avoidWater(targetWx, targetWy)
+    const goingLeft = safe.wx < pandiPos.wx
+    setPandiFlip(goingLeft)
+    setPandiFrame(goingLeft ? 'walkL' : 'walkR')
+
+    // Velocidad proporcional a la distancia — mínimo 1s, máximo 3s
+    const dist = Math.sqrt(Math.pow(safe.wx - pandiPos.wx, 2) + Math.pow(safe.wy - pandiPos.wy, 2))
+    const duration = Math.min(Math.max(dist / 300, 1), 3)
+
+    setPandiPos({ wx: safe.wx, wy: safe.wy })
+    moveDurationRef.current = duration
+    setTimeout(() => {
+      setPandiFrame('idle')
+      onArrive?.()
+    }, duration * 1000)
+
+    return duration
+  }
   useEffect(() => {
     if (!landscape) return
     const vw = window.innerWidth, vh = window.innerHeight
@@ -216,17 +270,14 @@ export default function Sanctuary() {
     setPandiFrame(hunger < 30 ? 'sad' : 'idle')
   }, [isNight, hunger])
 
-  // Movimiento autónomo
+  // Movimiento autónomo — usa movePandi para evitar agua y animar correctamente
   useEffect(() => {
     if (isNight || editMode) return
     const wander = () => {
-      const z = zones[Math.floor(Math.random()*zones.length)]
-      setPandiFlip(z.wx < pandiPos.wx)
-      setPandiPos({ wx:z.wx, wy:z.wy })
-      setPandiFrame('walkR')
-      setTimeout(() => setPandiFrame(z.frame), 1200)
+      const z = zones[Math.floor(Math.random() * zones.length)]
+      movePandi(z.wx, z.wy, () => setPandiFrame(z.frame))
     }
-    movingRef.current = setInterval(wander, 7000 + Math.random()*5000)
+    movingRef.current = setInterval(wander, 8000 + Math.random() * 6000)
     return () => clearInterval(movingRef.current)
   }, [isNight, editMode, zones])
 
@@ -278,12 +329,10 @@ export default function Sanctuary() {
     })
     if (nearest) { setZoomZone(nearest); return }
 
-    // Mover Pandi
-    setPandiFlip(wx < pandiPos.wx)
-    setPandiPos({ wx, wy })
-    setPandiFrame('walkR')
+    // Mover Pandi libremente — evita agua y anima dirección correcta
     clearInterval(movingRef.current)
-    setTimeout(() => setPandiFrame('idle'), 1200)
+    setMeditatingActive(false)
+    movePandi(wx, wy, () => setPandiFrame('idle'))
   }
 
   // ── Arrastrar zona en modo edición ──────────────────────────────────────
@@ -307,29 +356,50 @@ export default function Sanctuary() {
 
   // ── Interacción con zona ────────────────────────────────────────────────
   async function triggerZoneAction(zone) {
-    setPandiFlip(zone.wx < pandiPos.wx)
-    setPandiPos({ wx:zone.wx, wy:zone.wy })
-    setPandiFrame('walkR')
+    setMeditatingActive(false)
     clearInterval(movingRef.current)
-    setTimeout(async () => {
+    movePandi(zone.wx, zone.wy, async () => {
       setPandiFrame(zone.frame)
       if (zone.action==='feed') {
         const h=Math.min(hunger+25,100), hap=Math.min(happiness+10,100)
         setHunger(h); setHappiness(hap); showToast('¡Pandi come feliz! 😋'); addXP?.(5)
         await saveCare(h, energy, hap)
+        setTimeout(() => setPandiFrame('idle'), 2500)
       }
       if (zone.action==='play') {
         const e2=Math.max(energy-15,0), hap=Math.min(happiness+20,100)
         setEnergy(e2); setHappiness(hap); showToast('¡Pandi juega contigo! 🎉'); addXP?.(10)
         await saveCare(hunger, e2, hap)
+        setTimeout(() => setPandiFrame('idle'), 2500)
       }
       if (zone.action==='sleep') {
         const e2=Math.min(energy+20,100)
         setEnergy(e2); showToast('Pandi descansa 💤'); addXP?.(5)
         await saveCare(hunger, e2, happiness)
+        setTimeout(() => setPandiFrame('idle'), 3000)
       }
-      setTimeout(() => setPandiFrame('idle'), 2500)
-    }, 1200)
+      if (zone.action==='meditate') {
+        const hap=Math.min(happiness+15,100), e2=Math.min(energy+10,100)
+        setHappiness(hap); setEnergy(e2)
+        showToast('Pandi medita... Tócala para unirte 🧘')
+        addXP?.(8); await saveCare(hunger, e2, hap)
+        setMeditatingActive(true)
+      }
+      if (zone.action==='sit') {
+        showToast('Pandi se sienta tranquila 🪑')
+        setTimeout(() => setPandiFrame('idle'), 3000)
+      }
+      if (zone.action==='look') {
+        showToast('Pandi observa el santuario 👀')
+        setTimeout(() => { setPandiFrame('happy'); setTimeout(()=>setPandiFrame('idle'),1500) }, 2000)
+      }
+      if (zone.action==='laydown') {
+        const e2=Math.min(energy+10,100)
+        setEnergy(e2); showToast('Pandi se tumba a descansar 😴'); addXP?.(3)
+        await saveCare(hunger, e2, happiness)
+        setTimeout(() => setPandiFrame('idle'), 4000)
+      }
+    })
   }
 
   async function saveCare(h, e, hap) {
@@ -407,12 +477,24 @@ export default function Sanctuary() {
         {/* Pandi */}
         <motion.div
           animate={{ left:pandiPos.wx, top:pandiPos.wy }}
-          transition={{ duration:1.2, ease:'easeInOut' }}
+          transition={{ duration: moveDurationRef.current, ease:'linear' }}
+          onClick={() => {
+            if (meditatingActive) navigate('/mood')
+          }}
           style={{ position:'absolute', transform:'translate(-50%,-100%)',
-            zIndex:5, width:100, pointerEvents:'none' }}>
+            zIndex:5, width:100,
+            cursor: meditatingActive ? 'pointer' : 'default' }}>
           <motion.div
             animate={pandiFrame==='idle' ? {y:[0,-5,0]} : {}}
             transition={{ duration:2.5, repeat:Infinity, ease:'easeInOut' }}>
+            {meditatingActive && (
+              <motion.div animate={{ opacity:[0,1,0] }} transition={{ duration:1.5, repeat:Infinity }}
+                style={{ position:'absolute', top:-28, left:'50%', transform:'translateX(-50%)',
+                  background:'#A78BFA', borderRadius:10, padding:'3px 8px',
+                  fontSize:9, fontWeight:800, color:'white', whiteSpace:'nowrap', zIndex:10 }}>
+                Tócame para meditar juntos
+              </motion.div>
+            )}
             <img
               src={ASSETS.pandi[pandiFrame] || ASSETS.pandi.idle}
               alt="Pandi"

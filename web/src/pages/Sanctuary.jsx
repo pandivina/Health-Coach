@@ -37,7 +37,15 @@ const WORLD_H = 800
 // ─── ZONA PROHIBIDA — área del estanque que Pandi no puede pisar ─────────────
 // Coordenadas aproximadas del estanque en el mundo 1200x800
 // Ajusta estos valores con el modo edición cuando tengas el fondo real
-const WATER_ZONE = { x1:430, y1:290, x2:770, y2:560 }
+const WATER_ZONE  = { x1:430, y1:290, x2:770, y2:560 }
+const PLAY_BOUNDS = { x1:180, y1:300, x2:1050, y2:730 } // área segura dentro del rombo
+
+function clampToBounds(wx, wy) {
+  return {
+    wx: Math.min(Math.max(wx, PLAY_BOUNDS.x1), PLAY_BOUNDS.x2),
+    wy: Math.min(Math.max(wy, PLAY_BOUNDS.y1), PLAY_BOUNDS.y2),
+  }
+}
 
 function isInWater(wx, wy) {
   return wx > WATER_ZONE.x1 && wx < WATER_ZONE.x2 &&
@@ -46,11 +54,11 @@ function isInWater(wx, wy) {
 
 // Desviar un punto que cae en el agua al borde más cercano
 function avoidWater(wx, wy) {
+  // Primero confinar dentro de los límites jugables
+  const clamped = clampToBounds(wx, wy)
+  wx = clamped.wx; wy = clamped.wy
+
   if (!isInWater(wx, wy)) return { wx, wy }
-  const cx = (WATER_ZONE.x1 + WATER_ZONE.x2) / 2
-  const cy = (WATER_ZONE.y1 + WATER_ZONE.y2) / 2
-  const dx = wx - cx, dy = wy - cy
-  // Empujar hacia el borde más cercano
   const toLeft   = Math.abs(wx - WATER_ZONE.x1)
   const toRight  = Math.abs(wx - WATER_ZONE.x2)
   const toTop    = Math.abs(wy - WATER_ZONE.y1)
@@ -585,7 +593,7 @@ export default function Sanctuary() {
         )}
       </div>
 
-      {/* Abajo derecha — ajustes */}
+      {/* Abajo derecha — ajustes + reset */}
       <div style={{ position:'fixed', bottom:'calc(env(safe-area-inset-bottom, 0px) + 68px)',
         right:12, zIndex:50, display:'flex', flexDirection:'column', gap:8 }}>
         <motion.button whileTap={{ scale:0.92 }}
@@ -599,21 +607,22 @@ export default function Sanctuary() {
             display:'flex', alignItems:'center', justifyContent:'center',
             boxShadow:'0 2px 8px rgba(0,0,0,0.1)' }}>
           <Settings size={16} color='#6B7280' />
-          <motion.button whileTap={{ scale:0.92 }}
-  onClick={() => {
-    localStorage.removeItem('sanctuary_zones_v2')
-    setZones(DEFAULT_ZONES)
-    showToast('Zonas reseteadas ✓')
-  }}
-  style={{ width:42, height:42, borderRadius:12, border:'none', cursor:'pointer',
-    background:'rgba(255,255,255,0.85)', backdropFilter:'blur(8px)',
-    display:'flex', alignItems:'center', justifyContent:'center',
-    boxShadow:'0 2px 8px rgba(0,0,0,0.1)' }}>
-  🔄
-</motion.button>
+        </motion.button>
+        <motion.button whileTap={{ scale:0.92 }}
+          onClick={() => {
+            localStorage.removeItem('sanctuary_zones_v2')
+            setZones(DEFAULT_ZONES)
+            showToast('Zonas reseteadas ✓')
+          }}
+          title="Resetear zonas"
+          style={{ width:42, height:42, borderRadius:12, border:'none', cursor:'pointer',
+            background:'rgba(255,255,255,0.85)', backdropFilter:'blur(8px)',
+            display:'flex', alignItems:'center', justifyContent:'center',
+            boxShadow:'0 2px 8px rgba(0,0,0,0.1)', fontSize:18 }}>
+          🔄
         </motion.button>
       </div>
-      
+
       {/* Alertas — centro superior */}
       {careLevel < 40 && !isNight && !editMode && (
         <motion.div animate={{ opacity:[0.8,1,0.8] }} transition={{ duration:2, repeat:Infinity }}

@@ -38,7 +38,7 @@ const STATE_CONFIG = {
     glow:          'rgba(245,158,11,0.4)',
     dot:           '#F59E0B',
     msg:           'Ritmo moderado. Ajustando tu plan.',
-    frames:        ['/panda/panda_base.png','/panda/panda_happy.png','/panda/panda_happy.png','/panda/panda_base.png','/panda/panda_happy.png','/panda/panda_base.png'],
+    frames:        ['/panda/panda_base.png','/panda/thinking_1.png','/panda/panda_base.png','/panda/thinking_1.png'],
     frameDuration: 3000,
   },
   RED: {
@@ -47,7 +47,7 @@ const STATE_CONFIG = {
     glow:          'rgba(255,143,163,0.4)',
     dot:           '#FF8FA3',
     msg:           'Hoy el descanso ES el entrenamiento.',
-    frames:        ['/panda/panda_base.png','/panda/panda_happy.png','/panda/panda_happy.png','/panda/panda_base.png','/panda/panda_happy.png','/panda/panda_base.png'],
+    frames:        ['/panda/panda_base.png','/panda/thinking_1.png','/panda/panda_base.png','/panda/thinking_1.png'],
     frameDuration: 3500,
   },
 }
@@ -202,15 +202,16 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name, userId }) {
         pointerEvents:'none' }} />
 
       {/* Botón Santuario — acceso directo sin animación */}
-      <motion.button whileTap={{ scale:0.95 }}
-        onClick={() => navigate('/sanctuary')}
-        style={{ position:'absolute', bottom:'4%', left:'50%', transform:'translateX(-50%)',
-          zIndex:8, padding:'8px 22px', borderRadius:20, border:'none', cursor:'pointer',
-          background:'rgba(255,255,255,0.45)', backdropFilter:'blur(8px)',
-          fontSize:12, fontWeight:800, color:'rgba(0,0,100,1)',
-          letterSpacing:'.04em' }}>
-        ✨ SANTUARIO
-      </motion.button>
+      <div style={{ position:'absolute', bottom:'4%', left:'50%', transform:'translateX(-50%)', zIndex:8 }}>
+        <motion.button whileTap={{ scale:0.95 }}
+          onClick={() => navigate('/sanctuary')}
+          style={{ padding:'8px 22px', borderRadius:20, border:'none', cursor:'pointer',
+            background:'rgba(255,255,255,0.45)', backdropFilter:'blur(8px)',
+            fontSize:12, fontWeight:800, color:'rgba(0,0,0,0.6)',
+            letterSpacing:'.04em', display:'block' }}>
+          ✨ Santuario
+        </motion.button>
+      </div>
 
       {/* HEADER */}
       <div style={{ position:'absolute', top:0, left:0, right:0, zIndex:10,
@@ -262,12 +263,12 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name, userId }) {
       )}
 
       {/* PANDI — de día navega directo, de noche hay que despertarla */}
-      <motion.div
-        onClick={handlePandiTap}
-        whileTap={{ scale:0.95 }}
-        style={{ position:'absolute', bottom:'14%', left:'50%', transform:'translateX(-50%)',
-          zIndex:5, width:isMobile ? '48%' : '22%', maxWidth:200, cursor:'pointer',
-          touchAction:'manipulation' }}>
+      <div style={{ position:'absolute', bottom:'6%', left:'50%', transform:'translateX(-50%)',
+        zIndex:5, width:isMobile ? '48%' : '22%', maxWidth:200 }}>
+        <motion.div
+          onClick={handlePandiTap}
+          whileTap={{ scale:0.95 }}
+          style={{ cursor:'pointer', touchAction:'manipulation' }}>
         <div style={{ position:'relative' }}>
           <motion.div
             animate={{ opacity: isNight ? [0.15,0.3,0.15] : [0.3,0.5,0.3] }}
@@ -302,7 +303,8 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name, userId }) {
             </div>
           )}
         </div>
-      </motion.div>
+        </motion.div>
+      </div>
 
       {/* Prompt: ¿entramos o la dejamos dormir? */}
       <AnimatePresence>

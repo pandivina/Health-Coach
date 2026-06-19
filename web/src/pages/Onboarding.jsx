@@ -428,7 +428,7 @@ export default function Onboarding() {
     display:'flex', flexDirection:'column',
     alignItems:'center',
     justifyContent:'flex-end',   // ← ancla desde abajo
-    paddingBottom:'44vh',        // ← ajusta este valor para subir/bajar el orbe
+    paddingBottom:'20vh',        // ← ajusta este valor para subir/bajar el orbe
   }}>
             {/* ── ZONA IMAGEN — altura fija, mismo patrón que Sanctuary del Home ── */}
             <div style={{

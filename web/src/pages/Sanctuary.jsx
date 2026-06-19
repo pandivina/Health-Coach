@@ -184,8 +184,11 @@ export default function Sanctuary() {
   const [zoomZone,   setZoomZone]   = useState(null)
   const [draggingZoneId, setDraggingZoneId] = useState(null)
 
-  // Estado de Pandi (coordenadas en px del mundo)
-  const [pandiPos,   setPandiPos]   = useState({ wx:600, wy:460 })
+  // Estado de Pandi — posición aleatoria entre las zonas al montar
+  const [pandiPos,   setPandiPos]   = useState(() => {
+    const z = DEFAULT_ZONES[Math.floor(Math.random() * DEFAULT_ZONES.length)]
+    return { wx: z.wx, wy: z.wy }
+  })
   const [pandiFrame, setPandiFrame] = useState('idle')
   const [pandiFlip,  setPandiFlip]  = useState(false)
 
@@ -435,88 +438,108 @@ export default function Sanctuary() {
         </AnimatePresence>
       </div>
 
-      {/* HUD fijo — siempre encima del pan */}
-      <div style={{ position:'fixed', top:0, left:0, right:0, zIndex:50,
-        display:'flex', alignItems:'center', justifyContent:'space-between',
-        padding:'12px 16px',
-        background:'linear-gradient(to bottom,rgba(0,0,0,0.55),transparent)',
-        pointerEvents:'none' }}>
-        <button onClick={() => navigate(-1)} style={{ pointerEvents:'all',
-          width:36, height:36, borderRadius:12, border:'none', cursor:'pointer',
-          background:'rgba(255,255,255,0.15)', display:'flex', alignItems:'center',
-          justifyContent:'center', color:'white' }}>
-          <ArrowLeft size={16} />
+      {/* ── HUD FLOTANTE — esquinas, estilo referencia ── */}
+
+      {/* Arriba izquierda — botón volver + título */}
+      <div style={{ position:'fixed', top:12, left:12, zIndex:50, display:'flex', gap:8, alignItems:'center' }}>
+        <button onClick={() => navigate(-1)}
+          style={{ width:36, height:36, borderRadius:12, border:'none', cursor:'pointer',
+            background:'rgba(255,255,255,0.85)', backdropFilter:'blur(8px)',
+            display:'flex', alignItems:'center', justifyContent:'center' }}>
+          <ArrowLeft size={16} color='#1A2332' />
         </button>
+        {editMode && (
+          <div style={{ background:'rgba(255,255,255,0.85)', backdropFilter:'blur(8px)',
+            borderRadius:12, padding:'6px 12px' }}>
+            <p style={{ fontSize:11, fontWeight:800, color:'#1A2332', margin:0 }}>✏️ Arrastra las zonas</p>
+          </div>
+        )}
+      </div>
 
-        <p style={{ color:'white', fontSize:13, fontWeight:800, margin:0, opacity:0.85 }}>
-          {editMode ? '✏️ Arrastra las zonas' : 'Tu Santuario'}
-        </p>
-
-        <div style={{ display:'flex', flexDirection:'column', gap:5, pointerEvents:'none' }}>
+      {/* Arriba derecha — panel PET CARE */}
+      <div style={{ position:'fixed', top:12, right:12, zIndex:50,
+        background:'rgba(255,255,255,0.88)', backdropFilter:'blur(12px)',
+        borderRadius:16, padding:'10px 14px', minWidth:160,
+        boxShadow:'0 4px 16px rgba(0,0,0,0.12)' }}>
+        <p style={{ fontSize:9, fontWeight:900, color:'#9CA3AF', textTransform:'uppercase',
+          letterSpacing:'.08em', margin:'0 0 8px' }}>Pet Care</p>
+        <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
           <CareBar icon={Heart} value={hunger}    color='#FF8FA3' />
           <CareBar icon={Zap}   value={energy}    color='#FCD34D' />
           <CareBar icon={Star}  value={happiness} color='#2EC4B6' />
         </div>
       </div>
 
-      {/* Footer fijo — acciones */}
-      <div style={{ position:'fixed', bottom:0, left:0, right:0, zIndex:50,
-        display:'flex', gap:10, justifyContent:'center', alignItems:'center',
-        padding:'10px 20px',
-        paddingBottom:'calc(env(safe-area-inset-bottom, 0px) + 60px)', // respeta nav inferior
-        background:'linear-gradient(to top,rgba(0,0,0,0.6) 60%,transparent)' }}>
+      {/* Abajo izquierda — inventario/acciones */}
+      <div style={{ position:'fixed', bottom:'calc(env(safe-area-inset-bottom, 0px) + 68px)',
+        left:12, zIndex:50 }}>
         {editMode ? (
           <motion.button whileTap={{ scale:0.95 }} onClick={saveEdit}
-            style={{ display:'flex', alignItems:'center', gap:8, padding:'11px 28px',
-              borderRadius:18, border:'none', cursor:'pointer',
+            style={{ display:'flex', alignItems:'center', gap:8, padding:'11px 20px',
+              borderRadius:16, border:'none', cursor:'pointer',
               background:'linear-gradient(135deg,#2EC4B6,#86EFAC)', color:'white',
-              fontWeight:800, fontSize:14 }}>
-            <Check size={16} /> Guardar zonas
+              fontWeight:800, fontSize:13, boxShadow:'0 4px 16px rgba(46,196,182,0.4)' }}>
+            <Check size={15} /> Guardar zonas
           </motion.button>
         ) : (
-          <>
+          <div style={{ background:'rgba(255,255,255,0.88)', backdropFilter:'blur(12px)',
+            borderRadius:16, padding:'8px', display:'flex', gap:6,
+            boxShadow:'0 4px 16px rgba(0,0,0,0.12)' }}>
+            <p style={{ position:'absolute', top:-18, left:4, fontSize:9, fontWeight:900,
+              color:'rgba(255,255,255,0.8)', textTransform:'uppercase', letterSpacing:'.08em', margin:0 }}>
+              Inventario
+            </p>
             {zones.filter(z=>z.action).map(z => (
-              <motion.button key={z.id} whileTap={{ scale:0.92 }}
+              <motion.button key={z.id} whileTap={{ scale:0.9 }}
                 onClick={() => setZoomZone(z)}
-                style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:4,
-                  padding:'9px 18px', borderRadius:16, border:'none', cursor:'pointer',
-                  background:'rgba(255,255,255,0.12)', color:'white', backdropFilter:'blur(8px)' }}>
+                style={{ width:52, height:52, borderRadius:12, border:'none', cursor:'pointer',
+                  background:`${z.color}18`, display:'flex', flexDirection:'column',
+                  alignItems:'center', justifyContent:'center', gap:2 }}>
                 <span style={{ fontSize:22 }}>{z.emoji}</span>
-                <span style={{ fontSize:10, fontWeight:700 }}>{z.label}</span>
+                <span style={{ fontSize:8, fontWeight:700, color:'#1A2332' }}>{z.label}</span>
               </motion.button>
             ))}
-            {/* Botón edición — click doble para PC, long press para móvil */}
-            <motion.button whileTap={{ scale:0.92 }}
-              onDoubleClick={e => { e.stopPropagation(); setEditMode(true) }}
-              onPointerDown={e => { e.stopPropagation(); startEditPress() }}
-              onPointerUp={e => { e.stopPropagation(); endEditPress() }}
-              onPointerLeave={endEditPress}
-              title="Doble clic para editar zonas"
-              style={{ width:42, height:42, borderRadius:12, border:'none', cursor:'pointer',
-                background:'rgba(255,255,255,0.08)', backdropFilter:'blur(8px)',
-                display:'flex', alignItems:'center', justifyContent:'center' }}>
-              <Settings size={16} color='rgba(255,255,255,0.4)' />
-            </motion.button>
-          </>
+          </div>
         )}
       </div>
 
-      {/* Alertas */}
+      {/* Abajo derecha — ajustes */}
+      <div style={{ position:'fixed', bottom:'calc(env(safe-area-inset-bottom, 0px) + 68px)',
+        right:12, zIndex:50, display:'flex', flexDirection:'column', gap:8 }}>
+        <motion.button whileTap={{ scale:0.92 }}
+          onDoubleClick={e => { e.stopPropagation(); setEditMode(true) }}
+          onPointerDown={e => { e.stopPropagation(); startEditPress() }}
+          onPointerUp={e => { e.stopPropagation(); endEditPress() }}
+          onPointerLeave={endEditPress}
+          title="Doble clic para editar zonas"
+          style={{ width:42, height:42, borderRadius:12, border:'none', cursor:'pointer',
+            background:'rgba(255,255,255,0.85)', backdropFilter:'blur(8px)',
+            display:'flex', alignItems:'center', justifyContent:'center',
+            boxShadow:'0 2px 8px rgba(0,0,0,0.1)' }}>
+          <Settings size={16} color='#6B7280' />
+        </motion.button>
+      </div>
+
+      {/* Alertas — centro superior */}
       {careLevel < 40 && !isNight && !editMode && (
         <motion.div animate={{ opacity:[0.8,1,0.8] }} transition={{ duration:2, repeat:Infinity }}
-          style={{ position:'fixed', top:70, left:'50%', transform:'translateX(-50%)',
-            zIndex:51, background:'rgba(254,243,199,0.95)', borderRadius:14,
-            padding:'8px 14px', display:'flex', alignItems:'center', gap:8 }}>
+          style={{ position:'fixed', top:16, left:'50%', transform:'translateX(-50%)',
+            zIndex:51, background:'rgba(254,243,199,0.95)', backdropFilter:'blur(8px)',
+            borderRadius:14, padding:'7px 14px', display:'flex', alignItems:'center', gap:6,
+            boxShadow:'0 4px 12px rgba(0,0,0,0.1)' }}>
           <span>💛</span>
           <p style={{ fontSize:11, fontWeight:700, color:'#92400E', margin:0 }}>Pandi te necesita</p>
         </motion.div>
       )}
 
       {isNight && (
-        <p style={{ position:'fixed', top:70, left:'50%', transform:'translateX(-50%)',
-          zIndex:51, color:'rgba(255,255,255,0.55)', fontSize:11, fontWeight:700, margin:0 }}>
-          Pandi descansa 🌙
-        </p>
+        <div style={{ position:'fixed', top:60, left:'50%', transform:'translateX(-50%)',
+          zIndex:51, background:'rgba(15,20,45,0.7)', backdropFilter:'blur(8px)',
+          borderRadius:14, padding:'7px 14px' }}>
+          <p style={{ color:'rgba(255,255,255,0.7)', fontSize:11, fontWeight:700, margin:0 }}>
+            Pandi descansa 🌙
+          </p>
+        </div>
       )}
 
       {/* Popup de objeto */}

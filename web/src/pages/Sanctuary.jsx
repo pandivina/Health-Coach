@@ -602,6 +602,19 @@ export default function Sanctuary() {
         </motion.button>
       </div>
 
+      <motion.button whileTap={{ scale:0.92 }}
+  onClick={() => {
+    localStorage.removeItem('sanctuary_zones_v2')
+    setZones(DEFAULT_ZONES)
+    showToast('Zonas reseteadas ✓')
+  }}
+  style={{ width:42, height:42, borderRadius:12, border:'none', cursor:'pointer',
+    background:'rgba(255,255,255,0.85)', backdropFilter:'blur(8px)',
+    display:'flex', alignItems:'center', justifyContent:'center',
+    boxShadow:'0 2px 8px rgba(0,0,0,0.1)' }}>
+  🔄
+</motion.button>
+
       {/* Alertas — centro superior */}
       {careLevel < 40 && !isNight && !editMode && (
         <motion.div animate={{ opacity:[0.8,1,0.8] }} transition={{ duration:2, repeat:Infinity }}

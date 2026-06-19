@@ -263,7 +263,7 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name, userId }) {
       )}
 
       {/* PANDI — de día navega directo, de noche hay que despertarla */}
-      <div style={{ position:'absolute', bottom:'14%', left:'50%', transform:'translateX(-50%)',
+      <div style={{ position:'absolute', bottom:'6%', left:'50%', transform:'translateX(-50%)',
         zIndex:5, width:isMobile ? '48%' : '22%', maxWidth:200 }}>
         <motion.div
           onClick={handlePandiTap}
@@ -843,7 +843,12 @@ export default function Home() {
   const [todaySleep,   setTodaySleep]   = useState(null)
   const [todayMood,    setTodayMood]    = useState(null)
   const [waterGlasses, setWaterGlasses] = useState(0)
-  const [showQuickBreath, setShowQuickBreath] = useState(false)
+  const [showCheckin, setShowCheckin] = useState(() => {
+    try {
+      const done = localStorage.getItem('daily_checkin_done')
+      return done !== new Date().toISOString().split('T')[0]
+    } catch { return true }
+  })
   const [newAchievement, setNewAchievement] = useState(null)
 
   useEffect(() => {
@@ -1025,7 +1030,10 @@ export default function Home() {
         <TourHelpButton tourKey="home" />
       </div>
 
-      <DailyCheckin />
+      {showCheckin && <DailyCheckin onComplete={() => {
+        try { localStorage.setItem('daily_checkin_done', new Date().toISOString().split('T')[0]) } catch {}
+        setShowCheckin(false)
+      }} />}
 
       <AnimatePresence>
         {showQuickBreath && (

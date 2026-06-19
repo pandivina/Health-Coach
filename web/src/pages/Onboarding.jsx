@@ -408,12 +408,6 @@ export default function Onboarding() {
         style={{ position:'absolute', inset:0, width:'100%', height:'100%', objectFit:'cover', objectPosition:'top center', zIndex:1 }}
         onError={()=>setImgErrs(e=>({...e,blur:true}))}
       />
-      <motion.img src="/panda/onboarding_sanctuary_open.png" alt=""
-        animate={{ opacity: showOpen ? 1 : 0 }}
-        transition={{ duration: openFading ? 1.2 : 1.8 }}
-        style={{ position:'absolute', inset:0, width:'100%', height:'100%', objectFit:'cover', objectPosition:'top center', zIndex:2 }}
-        onError={()=>setImgErrs(e=>({...e,open:true}))}
-      />
       <motion.img src="/panda/onboarding_clouds.png" alt=""
         animate={{ opacity: showClouds ? 1 : 0 }}
         transition={{ duration:1.8, delay: showClouds ? 0.5 : 0 }}
@@ -595,14 +589,14 @@ export default function Onboarding() {
                   onClick={activateOrb}
                   style={{
                     position:'fixed',
-                    margintop:'20%', left:'0%',
+                    margintop:'120', left:'0%',
                     transform:'translate(-50%, -50%)',
                     background:'transparent', border:'none',
                     cursor:'pointer', zIndex:25,
                     pointerEvents:'all',
                   }}>
                   <img src="/panda/boton_1.png" alt="Despertar"
-                    style={{ width:700, height:700, objectFit:'contain' }}
+                    style={{ width:100, height:100, objectFit:'contain' }}
                     onError={e => {
                       e.target.style.display='none'
                     }}
@@ -618,7 +612,7 @@ export default function Onboarding() {
             {/* ── ZONA PREGUNTAS — flujo normal, scrollable, sin fixed/safe-area ── */}
             {orbOpened && !orbClosing && (
               <div style={{
-                flex:1, minHeight:0, overflowY:'auto',
+                maxHeight: '45vh', minHeight:0, overflowY:'auto',
                 padding:'8px 16px 24px',
                 background:'linear-gradient(to top, rgba(245,240,232,0.97) 70%, transparent 100%)',
                 backdropFilter:'blur(8px)',

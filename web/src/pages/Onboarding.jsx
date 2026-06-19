@@ -418,13 +418,18 @@ export default function Onboarding() {
   onError={()=>setImgErrs(e=>({...e,clouds:true}))}
 />
       {/* ── ORB ── */}
-      <AnimatePresence>
-        {showOrb && (
-          <motion.div key="orb"
-            initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
-            transition={{ duration:1.2 }}
-            style={{ position:'absolute', inset:0, zIndex:15,
-              display:'flex', flexDirection:'column' }}>
+<AnimatePresence>
+  {showOrb && (
+    <motion.div key="orb"
+      initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
+      transition={{ duration:1.2 }}
+      style={{ 
+        position:'absolute', inset:0, zIndex:15,
+        display:'flex', flexDirection:'column',
+        alignItems:'center',        // ← centra horizontalmente
+        justifyContent:'flex-start', // ← empieza desde arriba
+        paddingTop:'5%',           // ← mueve el orbe hacia abajo (ajusta este %)
+      }}>
 
             {/* ── ZONA IMAGEN — altura fija, mismo patrón que Sanctuary del Home ── */}
             <div style={{

@@ -55,12 +55,41 @@ function useNightMode() {
 }
 
 function useOrientation() {
-  const [landscape, setLandscape] = useState(() => window.innerWidth > window.innerHeight)
+  const getLandscape = () => {
+    // screen.orientation es lo más fiable en móvil
+    if (screen?.orientation?.type) {
+      return screen.orientation.type.includes('landscape')
+    }
+    // fallback
+    return window.innerWidth > window.innerHeight
+  }
+
+  const [landscape, setLandscape] = useState(getLandscape)
+
   useEffect(() => {
-    const check = () => setLandscape(window.innerWidth > window.innerHeight)
-    window.addEventListener('resize', check)
-    return () => window.removeEventListener('resize', check)
+    const update = () => setLandscape(getLandscape())
+
+    // screen.orientation change — el más fiable en Android/iOS PWA
+    if (screen?.orientation) {
+      screen.orientation.addEventListener('change', update)
+    }
+    // resize — fallback para navegadores de escritorio
+    window.addEventListener('resize', update)
+    // orientationchange — fallback para Safari iOS
+    window.addEventListener('orientationchange', update)
+
+    // Polling ligero cada 500ms como último recurso
+    const poll = setInterval(update, 500)
+
+    update()
+    return () => {
+      screen?.orientation?.removeEventListener?.('change', update)
+      window.removeEventListener('resize', update)
+      window.removeEventListener('orientationchange', update)
+      clearInterval(poll)
+    }
   }, [])
+
   return landscape
 }
 

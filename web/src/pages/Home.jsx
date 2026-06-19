@@ -207,9 +207,9 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name, userId }) {
         style={{ position:'absolute', bottom:'4%', left:'50%', transform:'translateX(-50%)',
           zIndex:8, padding:'8px 22px', borderRadius:20, border:'none', cursor:'pointer',
           background:'rgba(255,255,255,0.45)', backdropFilter:'blur(8px)',
-          fontSize:12, fontWeight:800, color:'rgba(0,0,0,0.6)',
+          fontSize:12, fontWeight:800, color:'rgba(0,0,100,1)',
           letterSpacing:'.04em' }}>
-        ✨ Santuario
+        ✨ SANTUARIO
       </motion.button>
 
       {/* HEADER */}

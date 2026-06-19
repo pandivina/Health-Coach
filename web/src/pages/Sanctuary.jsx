@@ -320,7 +320,8 @@ export default function Sanctuary() {
   if (!landscape) return <RotateNotice />
 
   return (
-    <div style={{ position:'fixed', inset:0, background:'#0f1612', overflow:'hidden' }}
+    <div style={{ position:'fixed', inset:0, background:'#0f1612', overflow:'hidden',
+      paddingBottom:'calc(env(safe-area-inset-bottom, 0px) + 56px)' }}
       onPointerDown={onPointerDown}
       onPointerMove={e => { onPointerMove(e); onZoneDragMove(e) }}
       onPointerUp={e => { onPointerUp(e); onZoneDragEnd() }}
@@ -433,7 +434,8 @@ export default function Sanctuary() {
       <div style={{ position:'fixed', bottom:0, left:0, right:0, zIndex:50,
         display:'flex', gap:10, justifyContent:'center', alignItems:'center',
         padding:'10px 20px',
-        background:'linear-gradient(to top,rgba(0,0,0,0.6),transparent)' }}>
+        paddingBottom:'calc(env(safe-area-inset-bottom, 0px) + 60px)', // respeta nav inferior
+        background:'linear-gradient(to top,rgba(0,0,0,0.6) 60%,transparent)' }}>
         {editMode ? (
           <motion.button whileTap={{ scale:0.95 }} onClick={saveEdit}
             style={{ display:'flex', alignItems:'center', gap:8, padding:'11px 28px',
@@ -454,9 +456,13 @@ export default function Sanctuary() {
                 <span style={{ fontSize:10, fontWeight:700 }}>{z.label}</span>
               </motion.button>
             ))}
+            {/* Botón edición — click doble para PC, long press para móvil */}
             <motion.button whileTap={{ scale:0.92 }}
+              onDoubleClick={e => { e.stopPropagation(); setEditMode(true) }}
               onPointerDown={e => { e.stopPropagation(); startEditPress() }}
               onPointerUp={e => { e.stopPropagation(); endEditPress() }}
+              onPointerLeave={endEditPress}
+              title="Doble clic para editar zonas"
               style={{ width:42, height:42, borderRadius:12, border:'none', cursor:'pointer',
                 background:'rgba(255,255,255,0.08)', backdropFilter:'blur(8px)',
                 display:'flex', alignItems:'center', justifyContent:'center' }}>

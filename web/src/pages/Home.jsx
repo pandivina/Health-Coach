@@ -146,7 +146,6 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name, userId }) {
   function handlePandiTap() {
     if (!isNight) { navigate('/sanctuary'); return }
     if (waking) return
-    // Secuencia de despertar
     setWaking(true)
     setWakeFrame(0)
     setTimeout(() => setWakeFrame(1), 500)
@@ -202,6 +201,17 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name, userId }) {
         background:'linear-gradient(to top, #f8fafa 0%, transparent 100%)',
         pointerEvents:'none' }} />
 
+      {/* Botón Santuario — acceso directo sin animación */}
+      <motion.button whileTap={{ scale:0.95 }}
+        onClick={() => navigate('/sanctuary')}
+        style={{ position:'absolute', bottom:'4%', left:'50%', transform:'translateX(-50%)',
+          zIndex:8, padding:'8px 22px', borderRadius:20, border:'none', cursor:'pointer',
+          background:'rgba(255,255,255,0.45)', backdropFilter:'blur(8px)',
+          fontSize:12, fontWeight:800, color:'rgba(0,0,0,0.6)',
+          letterSpacing:'.04em' }}>
+        ✨ Santuario
+      </motion.button>
+
       {/* HEADER */}
       <div style={{ position:'absolute', top:0, left:0, right:0, zIndex:10,
         padding:'14px 16px', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
@@ -255,7 +265,7 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name, userId }) {
       <motion.div
         onClick={handlePandiTap}
         whileTap={{ scale:0.95 }}
-        style={{ position:'absolute', bottom:'13%', left:'50%', transform:'translateX(-50%)',
+        style={{ position:'absolute', bottom:'6%', left:'50%', transform:'translateX(-50%)',
           zIndex:5, width:isMobile ? '48%' : '22%', maxWidth:200, cursor:'pointer',
           touchAction:'manipulation' }}>
         <div style={{ position:'relative' }}>

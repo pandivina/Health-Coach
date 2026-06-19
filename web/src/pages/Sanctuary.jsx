@@ -124,7 +124,7 @@ export default function Sanctuary() {
   const [happiness, setHappiness] = useState(profile?.pandi_happiness ?? 80)
 
   // Estado de Pandi
-  const [pandiPos,   setPandiPos]   = useState({ x:0.5, y:0.65 })
+  const [pandiPos,   setPandiPos]   = useState({ x:0.5, y:0.55 })
   const [pandiFrame, setPandiFrame] = useState('idle')
   const [pandiFlip,  setPandiFlip]  = useState(false)
   const [toast,      setToast]      = useState(null)
@@ -167,8 +167,8 @@ export default function Sanctuary() {
     if (isNight) return
     const wander = () => {
       const targets = [
-        { x:0.35, y:0.65 }, { x:0.65, y:0.65 },
-        { x:0.50, y:0.72 }, { x:0.40, y:0.58 }, { x:0.60, y:0.58 },
+        { x:0.35, y:0.52 }, { x:0.65, y:0.52 },
+        { x:0.50, y:0.58 }, { x:0.40, y:0.48 }, { x:0.60, y:0.48 },
       ]
       const target = targets[Math.floor(Math.random() * targets.length)]
       setPandiFlip(target.x < pandiPos.x)

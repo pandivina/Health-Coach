@@ -428,7 +428,7 @@ export default function Onboarding() {
         display:'flex', flexDirection:'column',
         alignItems:'center',        // ← centra horizontalmente
         justifyContent:'flex-start', // ← empieza desde arriba
-        paddingTop:'5%',           // ← mueve el orbe hacia abajo (ajusta este %)
+        paddingTop:'10%',           // ← mueve el orbe hacia abajo (ajusta este %)
       }}>
 
             {/* ── ZONA IMAGEN — altura fija, mismo patrón que Sanctuary del Home ── */}

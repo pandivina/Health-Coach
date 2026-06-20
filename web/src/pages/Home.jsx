@@ -849,6 +849,7 @@ export default function Home() {
       return done !== new Date().toISOString().split('T')[0]
     } catch { return true }
   })
+  const [showQuickBreath, setShowQuickBreath] = useState(false)
   const [newAchievement, setNewAchievement] = useState(null)
 
   useEffect(() => {

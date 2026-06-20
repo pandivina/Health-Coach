@@ -61,13 +61,6 @@ function getDiamondCenter(d) {
     hh: (d.bottom.wy - d.top.wy) / 2,
   }
 }
-  return {
-    cx: (d.left.wx + d.right.wx) / 2,
-    cy: (d.top.wy  + d.bottom.wy) / 2,
-    hw: (d.right.wx - d.left.wx) / 2,  // semi-ancho
-    hh: (d.bottom.wy - d.top.wy) / 2,  // semi-alto
-  }
-}
 
 function isInDiamond(wx, wy, diamond = PLAY_DIAMOND) {
   const { cx, cy, hw, hh } = getDiamondCenter(diamond)

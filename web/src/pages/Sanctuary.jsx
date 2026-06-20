@@ -238,23 +238,35 @@ export default function Sanctuary() {
   }
   const moveDurationRef = useRef(1.2)
 
-  // Pan del mundo
-  const [offset,    setOffset]    = useState({ x:0, y:0 })
+  // ── Pan fluido — offset como ref, DOM directo, sin re-renders ────────────
+  const offsetRef   = useRef({ x:0, y:0 })
+  const [offset,    setOffset]    = useState({ x:0, y:0 }) // solo para tap/coords
   const panStart    = useRef(null)
-  const offsetStart = useRef({ x:0, y:0 })
   const isDragging  = useRef(false)
+
+  function applyOffset(ox, oy) {
+    const vw = window.innerWidth, vh = window.innerHeight
+    const cx = Math.min(Math.max(ox, Math.min(0, vw-WORLD_W)), Math.max(0, vw-WORLD_W))
+    const cy = Math.min(Math.max(oy, Math.min(0, vh-WORLD_H)), Math.max(0, vh-WORLD_H))
+    offsetRef.current = { x:cx, y:cy }
+    // Aplicar directamente al DOM — sin setState, sin re-render
+    if (worldRef.current) {
+      worldRef.current.style.transform = `translate(${cx}px,${cy}px)`
+    }
+  }
 
   // Zonas y modos
   const [zones,      setZones]      = useState(loadZones)
   const [editMode,   setEditMode]   = useState(false)
   const [zoomZone,   setZoomZone]   = useState(null)
-  const [draggingZoneId, setDraggingZoneId] = useState(null)
+  const [draggingZoneId_UNUSED, _] = [null, null] // eliminado — ahora es ref en línea 369
 
   // Estado de Pandi — posición aleatoria entre las zonas al montar
   const [pandiPos,   setPandiPos]   = useState(() => {
     const z = DEFAULT_ZONES[Math.floor(Math.random() * DEFAULT_ZONES.length)]
     return { wx: z.wx, wy: z.wy }
   })
+  const pandiPosRef = useRef({ wx: 600, wy: 500 })
   const [pandiFrame, setPandiFrame] = useState('idle')
   const [pandiFlip,  setPandiFlip]  = useState(false)
 
@@ -267,14 +279,15 @@ export default function Sanctuary() {
 
   function movePandi(targetWx, targetWy, onArrive) {
     const safe = avoidWater(targetWx, targetWy)
-    const goingLeft = safe.wx < pandiPos.wx
+    const cur = pandiPosRef.current
+    const goingLeft = safe.wx < cur.wx
     setPandiFlip(goingLeft)
     setPandiFrame(goingLeft ? 'walkL' : 'walkR')
 
-    // Velocidad proporcional a la distancia — mínimo 1s, máximo 3s
-    const dist = Math.sqrt(Math.pow(safe.wx - pandiPos.wx, 2) + Math.pow(safe.wy - pandiPos.wy, 2))
+    const dist = Math.sqrt(Math.pow(safe.wx - cur.wx, 2) + Math.pow(safe.wy - cur.wy, 2))
     const duration = Math.min(Math.max(dist / 300, 1), 3)
 
+    pandiPosRef.current = { wx: safe.wx, wy: safe.wy }
     setPandiPos({ wx: safe.wx, wy: safe.wy })
     moveDurationRef.current = duration
     setTimeout(() => {
@@ -286,7 +299,8 @@ export default function Sanctuary() {
   }
   useEffect(() => {
     const vw = window.innerWidth, vh = window.innerHeight
-    setOffset({ x:(vw-WORLD_W)/2, y:(vh-WORLD_H)/2 })
+    applyOffset((vw-WORLD_W)/2, (vh-WORLD_H)/2)
+    setOffset(offsetRef.current)
   }, [])
 
   // Frame según estado
@@ -312,34 +326,31 @@ export default function Sanctuary() {
   }, [isNight, editMode, zones])
 
   // ── Pan handlers ────────────────────────────────────────────────────────
-  function clampOffset(ox, oy) {
-    const vw = window.innerWidth, vh = window.innerHeight
-    return {
-      x: Math.min(Math.max(ox, Math.min(0, vw-WORLD_W)), Math.max(0, vw-WORLD_W)),
-      y: Math.min(Math.max(oy, Math.min(0, vh-WORLD_H)), Math.max(0, vh-WORLD_H)),
-    }
-  }
+
 
   function onPointerDown(e) {
-    if (editMode && draggingZoneId) return
-    panStart.current = { x:e.clientX, y:e.clientY }
-    offsetStart.current = { ...offset }
+    if (draggingZoneId.current) return
+    panStart.current = { x:e.clientX, y:e.clientY, ox:offsetRef.current.x, oy:offsetRef.current.y }
     isDragging.current = false
   }
 
   function onPointerMove(e) {
-    if (!panStart.current) return
+    if (!panStart.current || draggingZoneId.current) return
     const dx = e.clientX - panStart.current.x
     const dy = e.clientY - panStart.current.y
-    if (Math.abs(dx)+Math.abs(dy) > 5) isDragging.current = true
+    if (Math.abs(dx)+Math.abs(dy) > 4) isDragging.current = true
     if (isDragging.current) {
-      setOffset(clampOffset(offsetStart.current.x+dx, offsetStart.current.y+dy))
+      applyOffset(panStart.current.ox + dx, panStart.current.oy + dy)
     }
   }
 
   function onPointerUp(e) {
     if (!panStart.current) return
-    if (!isDragging.current) handleTap(e)
+    if (!isDragging.current) {
+      // sincronizar offset ref → state para calcular coordenadas del tap
+      setOffset({ ...offsetRef.current })
+      handleTap(e)
+    }
     panStart.current = null
     isDragging.current = false
   }
@@ -347,9 +358,9 @@ export default function Sanctuary() {
   // ── Tap en el mundo ─────────────────────────────────────────────────────
   function handleTap(e) {
     if (editMode || isNight || zoomZone) return
-    // Coordenadas dentro del mundo
-    const wx = e.clientX - offset.x
-    const wy = e.clientY - offset.y
+    const o = offsetRef.current
+    const wx = e.clientX - o.x
+    const wy = e.clientY - o.y
 
     // ¿Cerca de una zona?
     let nearest = null, minDist = 80
@@ -366,23 +377,34 @@ export default function Sanctuary() {
   }
 
   // ── Arrastrar zona en modo edición ──────────────────────────────────────
+  const draggingZoneId = useRef(null) // ref en vez de state — sin delay asíncrono
+
   function onZoneDragStart(e, zoneId) {
     e.stopPropagation()
-    setDraggingZoneId(zoneId)
+    e.preventDefault()
+    draggingZoneId.current = zoneId
     panStart.current = null
+    // setPointerCapture garantiza que movimiento y fin van a este elemento en móvil
+    try { e.currentTarget.setPointerCapture(e.pointerId) } catch {}
   }
 
   function onZoneDragMove(e) {
-    if (!draggingZoneId) return
+    if (!draggingZoneId.current) return
+    e.stopPropagation()
     const wx = e.clientX - offset.x
     const wy = e.clientY - offset.y
-    setZones(zs => zs.map(z => z.id===draggingZoneId
+    const id = draggingZoneId.current
+    setZones(zs => zs.map(z => z.id === id
       ? { ...z, wx:Math.max(40,Math.min(wx,WORLD_W-40)), wy:Math.max(40,Math.min(wy,WORLD_H-40)) }
       : z
     ))
   }
 
-  function onZoneDragEnd() { setDraggingZoneId(null) }
+  function onZoneDragEnd(e) {
+    if (!draggingZoneId.current) return
+    e.stopPropagation()
+    draggingZoneId.current = null
+  }
 
   // ── Interacción con zona ────────────────────────────────────────────────
   async function triggerZoneAction(zone) {
@@ -469,12 +491,13 @@ export default function Sanctuary() {
         )}
       </AnimatePresence>
 
-      {/* MUNDO — se desplaza todo junto */}
+      {/* MUNDO — se desplaza todo junto via transform (DOM directo, sin re-renders) */}
       <div ref={worldRef} style={{
         position:'absolute',
-        left:offset.x, top:offset.y,
+        left:0, top:0,
+        transform:`translate(${offset.x}px,${offset.y}px)`,
         width:WORLD_W, height:WORLD_H,
-        userSelect:'none',
+        userSelect:'none', willChange:'transform',
       }}>
         {/* Fondo */}
         <img src={bgImage} alt="Santuario"
@@ -495,8 +518,12 @@ export default function Sanctuary() {
         {editMode && zones.map(z => (
           <div key={z.id}
             onPointerDown={e => onZoneDragStart(e, z.id)}
+            onPointerMove={onZoneDragMove}
+            onPointerUp={onZoneDragEnd}
+            onPointerCancel={onZoneDragEnd}
             style={{ position:'absolute', left:z.wx, top:z.wy,
-              transform:'translate(-50%,-50%)', zIndex:20, cursor:'grab', touchAction:'none' }}>
+              transform:'translate(-50%,-50%)', zIndex:20, cursor:'grab',
+              touchAction:'none', userSelect:'none' }}>
             <div style={{ position:'absolute', width:100, height:100, borderRadius:'50%',
               border:`2px dashed ${z.color}`, background:`${z.color}15`,
               transform:'translate(-50%,-50%)', top:'50%', left:'50%', pointerEvents:'none' }} />

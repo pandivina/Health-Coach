@@ -1,7 +1,7 @@
 // ─── pages/Sanctuary.jsx ─────────────────────────────────────────────────────
-// Santuario — solo landscape. Portrait muestra aviso de girar.
-// En landscape: mundo completo con pan libre (todo se mueve junto como un mapa)
-// Zonas arrastrables en modo edición. Zoom controlado sobre objetos.
+// Santuario — mundo isométrico con pan libre.
+// Primera visita: overlay semitransparente "Gira tu móvil" + botón Iniciar.
+// Visitas siguientes: acceso directo sin overlay.
 
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -37,19 +37,30 @@ const WORLD_H = 800
 // ─── ZONA PROHIBIDA — área del estanque que Pandi no puede pisar ─────────────
 // Coordenadas aproximadas del estanque en el mundo 1200x800
 // Ajusta estos valores con el modo edición cuando tengas el fondo real
-// ─── LÍMITES ISOMÉTRICOS ──────────────────────────────────────────────────────
-// El suelo isométrico es un ROMBO, no un rectángulo.
-// Se define por 4 puntos: top, right, bottom, left del rombo visible.
-// Ajusta estos valores con el editor de límites (triple tap en ⚙️)
+// ─── LÍMITES ISOMÉTRICOS — coordenadas fijas en el mundo 1200×800 ─────────────
 const PLAY_DIAMOND = {
-  top:   { wx: 600, wy: 140 }, // punta superior del rombo
-  right: { wx:1100, wy: 430 }, // punta derecha
-  bottom:{ wx: 600, wy: 760 }, // punta inferior
-  left:  { wx: 100, wy: 430 }, // punta izquierda
+  top:   { wx:623,  wy:201 },
+  right: { wx:1118, wy:510 },
+  bottom:{ wx:595,  wy:815 },
+  left:  { wx:90,   wy:516 },
+}
+
+const WATER_DIAMOND = {
+  top:   { wx:604,  wy:259 },
+  right: { wx:887,  wy:423 },
+  bottom:{ wx:605,  wy:589 },
+  left:  { wx:324,  wy:419 },
 }
 
 // Centro y semiejes del rombo
 function getDiamondCenter(d) {
+  return {
+    cx: (d.left.wx + d.right.wx) / 2,
+    cy: (d.top.wy  + d.bottom.wy) / 2,
+    hw: (d.right.wx - d.left.wx) / 2,
+    hh: (d.bottom.wy - d.top.wy) / 2,
+  }
+}
   return {
     cx: (d.left.wx + d.right.wx) / 2,
     cy: (d.top.wy  + d.bottom.wy) / 2,
@@ -130,58 +141,43 @@ function useNightMode() {
   return isNight
 }
 
-function useOrientation() {
-  const query = '(orientation: landscape)'
+// ─── PANTALLA DE INTRO — solo la primera vez ──────────────────────────────────
+const INTRO_KEY = 'sanctuary_intro_done'
 
-  const getLandscape = () => {
-    // matchMedia es el más fiable — lo usa el navegador para CSS media queries
-    try { return window.matchMedia(query).matches } catch {}
-    // fallback
-    try {
-      if (screen?.orientation?.type) return screen.orientation.type.includes('landscape')
-    } catch {}
-    return window.innerWidth > window.innerHeight
-  }
+function SanctuaryIntro({ onStart }) {
+  return (
+    <div style={{
+      position:'fixed', inset:0, zIndex:999,
+      background:'rgba(15,20,28,0.75)', backdropFilter:'blur(6px)',
+      display:'flex', flexDirection:'column',
+      alignItems:'center', justifyContent:'center',
+      padding:32, textAlign:'center', gap:20,
+    }}>
+      <motion.div
+        animate={{ rotate:[0, 15, -15, 0] }}
+        transition={{ duration:1.5, repeat:Infinity, ease:'easeInOut' }}
+        style={{ fontSize:56 }}>
+        📱
+      </motion.div>
 
-  const [landscape, setLandscape] = useState(getLandscape)
+      <div>
+        <p style={{ color:'white', fontSize:18, fontWeight:800, margin:'0 0 8px' }}>
+          Gira tu móvil
+        </p>
+        <p style={{ color:'rgba(255,255,255,0.6)', fontSize:13, margin:0, lineHeight:1.5 }}>
+          El Santuario se disfruta mejor<br/>en horizontal
+        </p>
+      </div>
 
-  useEffect(() => {
-    const update = () => setLandscape(getLandscape())
-
-    // matchMedia listener — el más inmediato y fiable en Android/iOS/PWA
-    let mql = null
-    try {
-      mql = window.matchMedia(query)
-      if (mql.addEventListener) mql.addEventListener('change', update)
-      else mql.addListener(update) // Safari antiguo
-    } catch {}
-
-    // screen.orientation — segundo nivel
-    try { screen?.orientation?.addEventListener('change', update) } catch {}
-
-    // orientationchange — Safari iOS
-    window.addEventListener('orientationchange', () => {
-      // Safari necesita un pequeño delay tras orientationchange
-      setTimeout(update, 100)
-    })
-
-    // resize — desktop fallback
-    window.addEventListener('resize', update)
-
-    update()
-
-    return () => {
-      try {
-        if (mql?.removeEventListener) mql.removeEventListener('change', update)
-        else mql?.removeListener(update)
-      } catch {}
-      try { screen?.orientation?.removeEventListener('change', update) } catch {}
-      window.removeEventListener('orientationchange', update)
-      window.removeEventListener('resize', update)
-    }
-  }, [])
-
-  return landscape
+      <motion.button whileTap={{ scale:0.95 }} onClick={onStart}
+        style={{ marginTop:8, padding:'14px 36px', borderRadius:20, border:'none',
+          cursor:'pointer', background:'linear-gradient(135deg,#2EC4B6,#86EFAC)',
+          color:'white', fontWeight:800, fontSize:15,
+          boxShadow:'0 8px 24px rgba(46,196,182,0.4)' }}>
+        ✨ Iniciar Santuario
+      </motion.button>
+    </div>
+  )
 }
 
 // ─── BARRA DE CUIDADO ─────────────────────────────────────────────────────────
@@ -236,127 +232,25 @@ function ObjectPopup({ zone, onClose, onInteract }) {
   )
 }
 
-// ─── AVISO DE GIRAR ───────────────────────────────────────────────────────────
-function RotateNotice() {
-  return (
-    <div style={{ position:'fixed', inset:0, zIndex:200, background:'#0f1612',
-      display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',
-      padding:32, textAlign:'center' }}>
-      <div style={{ fontSize:56, marginBottom:20 }}>📱</div>
-      <p style={{ color:'white', fontSize:17, fontWeight:800, margin:'0 0 8px' }}>
-        Gira tu móvil
-      </p>
-      <p style={{ color:'rgba(255,255,255,0.5)', fontSize:13, maxWidth:260, lineHeight:1.5, margin:0 }}>
-        El Santuario se ve mejor en horizontal
-      </p>
-    </div>
-  )
-}
-
-// ─── EDITOR DE LÍMITES ISOMÉTRICOS ───────────────────────────────────────────
-function BoundsEditor({ offset, onClose }) {
-  const [play,  setPlay]  = useState(() => ({ ...PLAY_DIAMOND }))
-  const [water, setWater] = useState(() => ({ ...WATER_DIAMOND }))
-  const [exported, setExported] = useState(false)
-  const dragging = useRef(null)
-
-  const CORNERS = ['top', 'right', 'bottom', 'left']
-  const CORNER_OFFSET = { top:{x:0,y:-1}, right:{x:1,y:0}, bottom:{x:0,y:1}, left:{x:-1,y:0} }
-
-  function startDrag(e, diamond, setDiamond, corner) {
-    e.stopPropagation()
-    dragging.current = { setDiamond, corner, startX:e.clientX, startY:e.clientY,
-      startPt:{ ...diamond[corner] } }
-    window.addEventListener('pointermove', onMove)
-    window.addEventListener('pointerup', onUp)
-  }
-
-  function onMove(e) {
-    if (!dragging.current) return
-    const { setDiamond, corner, startX, startY, startPt } = dragging.current
-    const dx = e.clientX - startX, dy = e.clientY - startY
-    setDiamond(d => ({ ...d, [corner]:{ wx: Math.round(startPt.wx+dx), wy: Math.round(startPt.wy+dy) } }))
-  }
-
-  function onUp() {
-    dragging.current = null
-    window.removeEventListener('pointermove', onMove)
-    window.removeEventListener('pointerup', onUp)
-  }
-
-  function exportValues() {
-    const fmt = (d, name) =>
-      `const ${name} = {\n` +
-      `  top:   { wx:${d.top.wx},  wy:${d.top.wy}  },\n` +
-      `  right: { wx:${d.right.wx}, wy:${d.right.wy} },\n` +
-      `  bottom:{ wx:${d.bottom.wx}, wy:${d.bottom.wy} },\n` +
-      `  left:  { wx:${d.left.wx},  wy:${d.left.wy}  },\n}`
-    const text = fmt(play, 'PLAY_DIAMOND') + '\n\n' + fmt(water, 'WATER_DIAMOND')
-    try { navigator.clipboard.writeText(text) } catch {}
-    setExported(true); setTimeout(() => setExported(false), 3000)
-  }
-
-  function DiamondOverlay({ diamond, color, label }) {
-    const pts = ['top','right','bottom','left'].map(k =>
-      `${offset.x + diamond[k].wx},${offset.y + diamond[k].wy}`).join(' ')
-    return (
-      <svg style={{ position:'fixed', inset:0, width:'100%', height:'100%',
-        zIndex:200, pointerEvents:'none' }}>
-        <polygon points={pts} fill={`${color}18`} stroke={color} strokeWidth={2} strokeDasharray="6,3" />
-        <text x={offset.x + diamond.top.wx} y={offset.y + diamond.top.wy - 10}
-          textAnchor="middle" fill={color} fontSize={11} fontWeight="bold">{label}</text>
-        {CORNERS.map(k => (
-          <circle key={k} cx={offset.x + diamond[k].wx} cy={offset.y + diamond[k].wy}
-            r={12} fill={color} style={{ pointerEvents:'all', cursor:'move' }}
-            onPointerDown={e => color === '#22C55E'
-              ? startDrag(e, play,  setPlay,  k)
-              : startDrag(e, water, setWater, k)} />
-        ))}
-      </svg>
-    )
-  }
-
-  return (
-    <>
-      <DiamondOverlay diamond={play}  color='#22C55E' label='SUELO JUGABLE' />
-      <DiamondOverlay diamond={water} color='#EF4444' label='AGUA' />
-
-      <div style={{ position:'fixed', bottom:80, left:'50%', transform:'translateX(-50%)',
-        zIndex:300, background:'white', borderRadius:20, padding:'14px 18px',
-        boxShadow:'0 8px 32px rgba(0,0,0,0.25)', display:'flex', flexDirection:'column',
-        gap:8, minWidth:300 }}>
-        <p style={{ fontSize:11, fontWeight:800, color:'#1A2332', margin:0, textAlign:'center' }}>
-          🛠 Editor de límites isométricos
-        </p>
-        <p style={{ fontSize:10, color:'#9CA3AF', margin:0, textAlign:'center', lineHeight:1.5 }}>
-          Arrastra los 4 puntos de cada rombo<br/>
-          🟢 Suelo jugable · 🔴 Zona de agua
-        </p>
-        <div style={{ display:'flex', gap:8 }}>
-          <button onClick={onClose}
-            style={{ flex:1, padding:'9px', borderRadius:12, border:'none', cursor:'pointer',
-              background:'#F3F4F6', fontWeight:700, fontSize:12, color:'#6B7280' }}>
-            Cerrar
-          </button>
-          <button onClick={exportValues}
-            style={{ flex:2, padding:'9px', borderRadius:12, border:'none', cursor:'pointer',
-              background: exported ? '#22C55E' : '#1A2332',
-              fontWeight:700, fontSize:12, color:'white' }}>
-            {exported ? '✓ Copiado' : 'Copiar valores para CES'}
-          </button>
-        </div>
-      </div>
-    </>
-  )
-}
+// ─── COMPONENTE PRINCIPAL ────────────────────────────────────────────────────
 export default function Sanctuary() {
   const { user, profile, addXP } = useStore()
   const navigate   = useNavigate()
   const isNight    = useNightMode()
-  const landscape  = useOrientation()
   const worldRef   = useRef(null)
   const pressRef   = useRef(null)
   const movingRef  = useRef(null)
+
+  // Intro — solo la primera vez
+  const [showIntro, setShowIntro] = useState(() => {
+    try { return !localStorage.getItem(INTRO_KEY) }
+    catch { return true }
+  })
+
+  function handleStart() {
+    try { localStorage.setItem(INTRO_KEY, '1') } catch {}
+    setShowIntro(false)
+  }
   const moveDurationRef = useRef(1.2)
 
   // Pan del mundo
@@ -385,14 +279,6 @@ export default function Sanctuary() {
   const [happiness, setHappiness] = useState(profile?.pandi_happiness ?? 80)
   const [toast,     setToast]     = useState(null)
   const [meditatingActive, setMeditatingActive] = useState(false)
-  const [devMode,   setDevMode]   = useState(false)
-  const devTapRef = useRef(0)
-
-  function handleSettingsTap() {
-    devTapRef.current += 1
-    if (devTapRef.current >= 3) { devTapRef.current = 0; setDevMode(true) }
-    setTimeout(() => { devTapRef.current = 0 }, 1000)
-  }
 
   function movePandi(targetWx, targetWy, onArrive) {
     const safe = avoidWater(targetWx, targetWy)
@@ -414,10 +300,9 @@ export default function Sanctuary() {
     return duration
   }
   useEffect(() => {
-    if (!landscape) return
     const vw = window.innerWidth, vh = window.innerHeight
     setOffset({ x:(vw-WORLD_W)/2, y:(vh-WORLD_H)/2 })
-  }, [landscape])
+  }, [])
 
   // Frame según estado
   useEffect(() => {
@@ -579,15 +464,25 @@ export default function Sanctuary() {
   const bgImage = isNight ? ASSETS.bg_night : ASSETS.bg_day
 
   // Portrait → aviso
-  if (!landscape) return <RotateNotice />
+  // Sin bloqueo por orientación — el overlay de intro guía al usuario
 
   return (
     <div style={{ position:'fixed', inset:0, background:'#0f1612', overflow:'hidden',
       paddingBottom:'calc(env(safe-area-inset-bottom, 0px) + 56px)' }}
-      onPointerDown={onPointerDown}
-      onPointerMove={e => { onPointerMove(e); onZoneDragMove(e) }}
-      onPointerUp={e => { onPointerUp(e); onZoneDragEnd() }}
-      onPointerLeave={onZoneDragEnd}>
+      onPointerDown={showIntro ? undefined : onPointerDown}
+      onPointerMove={showIntro ? undefined : e => { onPointerMove(e); onZoneDragMove(e) }}
+      onPointerUp={showIntro ? undefined : e => { onPointerUp(e); onZoneDragEnd() }}
+      onPointerLeave={showIntro ? undefined : onZoneDragEnd}>
+
+      {/* Overlay de intro — solo la primera vez */}
+      <AnimatePresence>
+        {showIntro && (
+          <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
+            style={{ position:'fixed', inset:0, zIndex:999 }}>
+            <SanctuaryIntro onStart={handleStart} />
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* MUNDO — se desplaza todo junto */}
       <div ref={worldRef} style={{
@@ -753,8 +648,7 @@ export default function Sanctuary() {
           onPointerDown={e => { e.stopPropagation(); startEditPress() }}
           onPointerUp={e => { e.stopPropagation(); endEditPress() }}
           onPointerLeave={endEditPress}
-          onClick={e => { e.stopPropagation(); handleSettingsTap() }}
-          title="Doble clic para editar zonas · Triple tap para editor de límites"
+          title="Doble clic para editar zonas"
           style={{ width:42, height:42, borderRadius:12, border:'none', cursor:'pointer',
             background:'rgba(255,255,255,0.85)', backdropFilter:'blur(8px)',
             display:'flex', alignItems:'center', justifyContent:'center',
@@ -797,9 +691,6 @@ export default function Sanctuary() {
           </p>
         </div>
       )}
-
-      {/* Editor de límites — solo para desarrollador, triple tap en ⚙️ */}
-      {devMode && <BoundsEditor offset={offset} onClose={() => setDevMode(false)} />}
 
       {/* Popup de objeto */}
       <AnimatePresence>

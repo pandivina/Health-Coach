@@ -97,12 +97,15 @@ function useNightMode() {
 }
 
 function useOrientation() {
+  const query = '(orientation: landscape)'
+
   const getLandscape = () => {
-    // screen.orientation es lo más fiable en móvil
-    if (screen?.orientation?.type) {
-      return screen.orientation.type.includes('landscape')
-    }
+    // matchMedia es el más fiable — lo usa el navegador para CSS media queries
+    try { return window.matchMedia(query).matches } catch {}
     // fallback
+    try {
+      if (screen?.orientation?.type) return screen.orientation.type.includes('landscape')
+    } catch {}
     return window.innerWidth > window.innerHeight
   }
 
@@ -111,24 +114,36 @@ function useOrientation() {
   useEffect(() => {
     const update = () => setLandscape(getLandscape())
 
-    // screen.orientation change — el más fiable en Android/iOS PWA
-    if (screen?.orientation) {
-      screen.orientation.addEventListener('change', update)
-    }
-    // resize — fallback para navegadores de escritorio
-    window.addEventListener('resize', update)
-    // orientationchange — fallback para Safari iOS
-    window.addEventListener('orientationchange', update)
+    // matchMedia listener — el más inmediato y fiable en Android/iOS/PWA
+    let mql = null
+    try {
+      mql = window.matchMedia(query)
+      if (mql.addEventListener) mql.addEventListener('change', update)
+      else mql.addListener(update) // Safari antiguo
+    } catch {}
 
-    // Polling ligero cada 500ms como último recurso
-    const poll = setInterval(update, 500)
+    // screen.orientation — segundo nivel
+    try { screen?.orientation?.addEventListener('change', update) } catch {}
+
+    // orientationchange — Safari iOS
+    window.addEventListener('orientationchange', () => {
+      // Safari necesita un pequeño delay tras orientationchange
+      setTimeout(update, 100)
+    })
+
+    // resize — desktop fallback
+    window.addEventListener('resize', update)
 
     update()
+
     return () => {
-      screen?.orientation?.removeEventListener?.('change', update)
-      window.removeEventListener('resize', update)
+      try {
+        if (mql?.removeEventListener) mql.removeEventListener('change', update)
+        else mql?.removeListener(update)
+      } catch {}
+      try { screen?.orientation?.removeEventListener('change', update) } catch {}
       window.removeEventListener('orientationchange', update)
-      clearInterval(poll)
+      window.removeEventListener('resize', update)
     }
   }, [])
 

@@ -37,37 +37,71 @@ const WORLD_H = 800
 // ─── ZONA PROHIBIDA — área del estanque que Pandi no puede pisar ─────────────
 // Coordenadas aproximadas del estanque en el mundo 1200x800
 // Ajusta estos valores con el modo edición cuando tengas el fondo real
-const WATER_ZONE  = { x1:430, y1:290, x2:770, y2:560 }
-const PLAY_BOUNDS = { x1:180, y1:300, x2:1050, y2:730 } // área segura dentro del rombo
+// ─── LÍMITES ISOMÉTRICOS ──────────────────────────────────────────────────────
+// El suelo isométrico es un ROMBO, no un rectángulo.
+// Se define por 4 puntos: top, right, bottom, left del rombo visible.
+// Ajusta estos valores con el editor de límites (triple tap en ⚙️)
+const PLAY_DIAMOND = {
+  top:   { wx: 600, wy: 140 }, // punta superior del rombo
+  right: { wx:1100, wy: 430 }, // punta derecha
+  bottom:{ wx: 600, wy: 760 }, // punta inferior
+  left:  { wx: 100, wy: 430 }, // punta izquierda
+}
 
-function clampToBounds(wx, wy) {
+// Centro y semiejes del rombo
+function getDiamondCenter(d) {
   return {
-    wx: Math.min(Math.max(wx, PLAY_BOUNDS.x1), PLAY_BOUNDS.x2),
-    wy: Math.min(Math.max(wy, PLAY_BOUNDS.y1), PLAY_BOUNDS.y2),
+    cx: (d.left.wx + d.right.wx) / 2,
+    cy: (d.top.wy  + d.bottom.wy) / 2,
+    hw: (d.right.wx - d.left.wx) / 2,  // semi-ancho
+    hh: (d.bottom.wy - d.top.wy) / 2,  // semi-alto
   }
 }
 
-function isInWater(wx, wy) {
-  return wx > WATER_ZONE.x1 && wx < WATER_ZONE.x2 &&
-         wy > WATER_ZONE.y1 && wy < WATER_ZONE.y2
+function isInDiamond(wx, wy, diamond = PLAY_DIAMOND) {
+  const { cx, cy, hw, hh } = getDiamondCenter(diamond)
+  return (Math.abs(wx - cx) / hw) + (Math.abs(wy - cy) / hh) <= 1
 }
 
-// Desviar un punto que cae en el agua al borde más cercano
-function avoidWater(wx, wy) {
-  // Primero confinar dentro de los límites jugables
-  const clamped = clampToBounds(wx, wy)
-  wx = clamped.wx; wy = clamped.wy
+// Empujar un punto hacia el interior del rombo si está fuera
+function clampToDiamond(wx, wy, diamond = PLAY_DIAMOND) {
+  if (isInDiamond(wx, wy, diamond)) return { wx, wy }
+  const { cx, cy, hw, hh } = getDiamondCenter(diamond)
+  // Escalar hacia el centro hasta quedar dentro (con margen de 30px)
+  const margin = 0.93
+  const dx = wx - cx, dy = wy - cy
+  const factor = margin / ((Math.abs(dx) / hw) + (Math.abs(dy) / hh))
+  return { wx: Math.round(cx + dx * factor), wy: Math.round(cy + dy * factor) }
+}
 
+// ─── ZONA PROHIBIDA — estanque (también rombo en isométrico) ─────────────────
+const WATER_DIAMOND = {
+  top:   { wx: 600, wy: 290 },
+  right: { wx: 790, wy: 420 },
+  bottom:{ wx: 600, wy: 560 },
+  left:  { wx: 410, wy: 420 },
+}
+
+function isInWater(wx, wy) {
+  return isInDiamond(wx, wy, WATER_DIAMOND)
+}
+
+// Combinar: confinar dentro del suelo Y evitar el agua
+function avoidWater(wx, wy) {
+  // 1. Confinar al rombo jugable
+  const safe = clampToDiamond(wx, wy)
+  wx = safe.wx; wy = safe.wy
+
+  // 2. Si cae en el agua, empujar hacia afuera del agua
   if (!isInWater(wx, wy)) return { wx, wy }
-  const toLeft   = Math.abs(wx - WATER_ZONE.x1)
-  const toRight  = Math.abs(wx - WATER_ZONE.x2)
-  const toTop    = Math.abs(wy - WATER_ZONE.y1)
-  const toBottom = Math.abs(wy - WATER_ZONE.y2)
-  const min = Math.min(toLeft, toRight, toTop, toBottom)
-  if (min === toLeft)   return { wx: WATER_ZONE.x1 - 30, wy }
-  if (min === toRight)  return { wx: WATER_ZONE.x2 + 30, wy }
-  if (min === toTop)    return { wx, wy: WATER_ZONE.y1 - 30 }
-  return { wx, wy: WATER_ZONE.y2 + 30 }
+  const { cx, cy, hw, hh } = getDiamondCenter(WATER_DIAMOND)
+  const margin = 1.08 // justo fuera del borde del agua
+  const dx = wx - cx, dy = wy - cy
+  const norm = (Math.abs(dx) / hw) + (Math.abs(dy) / hh)
+  const factor = margin / norm
+  const pushed = { wx: Math.round(cx + dx * factor), wy: Math.round(cy + dy * factor) }
+  // Asegurar que el punto empujado sigue dentro del rombo jugable
+  return clampToDiamond(pushed.wx, pushed.wy)
 }
 // Coordenadas en px dentro del mundo (0-WORLD_W, 0-WORLD_H)
 const DEFAULT_ZONES = [
@@ -219,34 +253,29 @@ function RotateNotice() {
   )
 }
 
-// ─── EDITOR DE LÍMITES (solo desarrollador) ───────────────────────────────────
+// ─── EDITOR DE LÍMITES ISOMÉTRICOS ───────────────────────────────────────────
 function BoundsEditor({ offset, onClose }) {
-  const [play, setPlay] = useState({ ...PLAY_BOUNDS })
-  const [water, setWater] = useState({ ...WATER_ZONE })
+  const [play,  setPlay]  = useState(() => ({ ...PLAY_DIAMOND }))
+  const [water, setWater] = useState(() => ({ ...WATER_DIAMOND }))
   const [exported, setExported] = useState(false)
-  const dragging = useRef(null) // { rect, corner, startX, startY, startRect }
+  const dragging = useRef(null)
 
-  function onPointerDown(e, rect, setRect, corner) {
+  const CORNERS = ['top', 'right', 'bottom', 'left']
+  const CORNER_OFFSET = { top:{x:0,y:-1}, right:{x:1,y:0}, bottom:{x:0,y:1}, left:{x:-1,y:0} }
+
+  function startDrag(e, diamond, setDiamond, corner) {
     e.stopPropagation()
-    dragging.current = { rect, setRect, corner,
-      startX: e.clientX, startY: e.clientY, startRect: { ...rect } }
+    dragging.current = { setDiamond, corner, startX:e.clientX, startY:e.clientY,
+      startPt:{ ...diamond[corner] } }
     window.addEventListener('pointermove', onMove)
     window.addEventListener('pointerup', onUp)
   }
 
   function onMove(e) {
     if (!dragging.current) return
-    const { setRect, corner, startX, startY, startRect } = dragging.current
-    const dx = e.clientX - startX
-    const dy = e.clientY - startY
-    setRect(r => {
-      const n = { ...startRect }
-      if (corner === 'tl') { n.x1 = Math.round(startRect.x1 + dx); n.y1 = Math.round(startRect.y1 + dy) }
-      if (corner === 'tr') { n.x2 = Math.round(startRect.x2 + dx); n.y1 = Math.round(startRect.y1 + dy) }
-      if (corner === 'bl') { n.x1 = Math.round(startRect.x1 + dx); n.y2 = Math.round(startRect.y2 + dy) }
-      if (corner === 'br') { n.x2 = Math.round(startRect.x2 + dx); n.y2 = Math.round(startRect.y2 + dy) }
-      return n
-    })
+    const { setDiamond, corner, startX, startY, startPt } = dragging.current
+    const dx = e.clientX - startX, dy = e.clientY - startY
+    setDiamond(d => ({ ...d, [corner]:{ wx: Math.round(startPt.wx+dx), wy: Math.round(startPt.wy+dy) } }))
   }
 
   function onUp() {
@@ -256,72 +285,64 @@ function BoundsEditor({ offset, onClose }) {
   }
 
   function exportValues() {
-    const text = `PLAY_BOUNDS = { x1:${play.x1}, y1:${play.y1}, x2:${play.x2}, y2:${play.y2} }\nWATER_ZONE  = { x1:${water.x1}, y1:${water.y1}, x2:${water.x2}, y2:${water.y2} }`
+    const fmt = (d, name) =>
+      `const ${name} = {\n` +
+      `  top:   { wx:${d.top.wx},  wy:${d.top.wy}  },\n` +
+      `  right: { wx:${d.right.wx}, wy:${d.right.wy} },\n` +
+      `  bottom:{ wx:${d.bottom.wx}, wy:${d.bottom.wy} },\n` +
+      `  left:  { wx:${d.left.wx},  wy:${d.left.wy}  },\n}`
+    const text = fmt(play, 'PLAY_DIAMOND') + '\n\n' + fmt(water, 'WATER_DIAMOND')
     try { navigator.clipboard.writeText(text) } catch {}
-    setExported(true)
-    setTimeout(() => setExported(false), 3000)
+    setExported(true); setTimeout(() => setExported(false), 3000)
   }
 
-  function RectHandle({ rect, setRect, color, label }) {
-    const l = offset.x + rect.x1, t = offset.y + rect.y1
-    const w = rect.x2 - rect.x1, h = rect.y2 - rect.y1
-    const corners = [
-      { id:'tl', style:{ left:0,   top:0   } },
-      { id:'tr', style:{ right:0,  top:0   } },
-      { id:'bl', style:{ left:0,   bottom:0} },
-      { id:'br', style:{ right:0,  bottom:0} },
-    ]
+  function DiamondOverlay({ diamond, color, label }) {
+    const pts = ['top','right','bottom','left'].map(k =>
+      `${offset.x + diamond[k].wx},${offset.y + diamond[k].wy}`).join(' ')
     return (
-      <div style={{ position:'fixed', left:l, top:t, width:w, height:h,
-        border:`2px solid ${color}`, background:`${color}18`, zIndex:200, pointerEvents:'none' }}>
-        <span style={{ position:'absolute', top:4, left:6, fontSize:10,
-          fontWeight:800, color:color, background:'white', borderRadius:4, padding:'1px 5px' }}>
-          {label}
-        </span>
-        {corners.map(c => (
-          <div key={c.id} onPointerDown={e => onPointerDown(e, rect, setRect, c.id)}
-            style={{ position:'absolute', width:18, height:18, borderRadius:4,
-              background:color, cursor:'move', pointerEvents:'all', ...c.style,
-              transform: c.id.includes('r') ? 'translateX(9px)' : 'translateX(-9px)',
-              marginTop: c.id.includes('b') ? 9 : -9 }} />
+      <svg style={{ position:'fixed', inset:0, width:'100%', height:'100%',
+        zIndex:200, pointerEvents:'none' }}>
+        <polygon points={pts} fill={`${color}18`} stroke={color} strokeWidth={2} strokeDasharray="6,3" />
+        <text x={offset.x + diamond.top.wx} y={offset.y + diamond.top.wy - 10}
+          textAnchor="middle" fill={color} fontSize={11} fontWeight="bold">{label}</text>
+        {CORNERS.map(k => (
+          <circle key={k} cx={offset.x + diamond[k].wx} cy={offset.y + diamond[k].wy}
+            r={12} fill={color} style={{ pointerEvents:'all', cursor:'move' }}
+            onPointerDown={e => color === '#22C55E'
+              ? startDrag(e, play,  setPlay,  k)
+              : startDrag(e, water, setWater, k)} />
         ))}
-      </div>
+      </svg>
     )
   }
 
   return (
     <>
-      <RectHandle rect={play}  setRect={setPlay}  color='#22C55E' label='PLAY_BOUNDS' />
-      <RectHandle rect={water} setRect={setWater} color='#EF4444' label='WATER_ZONE'  />
+      <DiamondOverlay diamond={play}  color='#22C55E' label='SUELO JUGABLE' />
+      <DiamondOverlay diamond={water} color='#EF4444' label='AGUA' />
 
-      {/* Panel de exportar */}
       <div style={{ position:'fixed', bottom:80, left:'50%', transform:'translateX(-50%)',
         zIndex:300, background:'white', borderRadius:20, padding:'14px 18px',
-        boxShadow:'0 8px 32px rgba(0,0,0,0.2)', display:'flex', flexDirection:'column',
-        gap:8, minWidth:280 }}>
+        boxShadow:'0 8px 32px rgba(0,0,0,0.25)', display:'flex', flexDirection:'column',
+        gap:8, minWidth:300 }}>
         <p style={{ fontSize:11, fontWeight:800, color:'#1A2332', margin:0, textAlign:'center' }}>
-          🛠 Editor de límites
+          🛠 Editor de límites isométricos
         </p>
-        <p style={{ fontSize:10, color:'#9CA3AF', margin:0, textAlign:'center', lineHeight:1.4 }}>
-          Arrastra las esquinas de cada rectángulo.<br/>
-          🟢 Área jugable · 🔴 Zona de agua
+        <p style={{ fontSize:10, color:'#9CA3AF', margin:0, textAlign:'center', lineHeight:1.5 }}>
+          Arrastra los 4 puntos de cada rombo<br/>
+          🟢 Suelo jugable · 🔴 Zona de agua
         </p>
-        <div style={{ fontFamily:'monospace', fontSize:10, background:'#F3F4F6',
-          borderRadius:10, padding:'8px 10px', color:'#374151', lineHeight:1.8 }}>
-          <div>PLAY: x1:{play.x1} y1:{play.y1} x2:{play.x2} y2:{play.y2}</div>
-          <div>WATER: x1:{water.x1} y1:{water.y1} x2:{water.x2} y2:{water.y2}</div>
-        </div>
         <div style={{ display:'flex', gap:8 }}>
           <button onClick={onClose}
             style={{ flex:1, padding:'9px', borderRadius:12, border:'none', cursor:'pointer',
               background:'#F3F4F6', fontWeight:700, fontSize:12, color:'#6B7280' }}>
-            Cancelar
+            Cerrar
           </button>
           <button onClick={exportValues}
             style={{ flex:2, padding:'9px', borderRadius:12, border:'none', cursor:'pointer',
               background: exported ? '#22C55E' : '#1A2332',
               fontWeight:700, fontSize:12, color:'white' }}>
-            {exported ? '✓ Copiado al portapapeles' : 'Copiar valores'}
+            {exported ? '✓ Copiado' : 'Copiar valores para CES'}
           </button>
         </div>
       </div>

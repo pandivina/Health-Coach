@@ -78,14 +78,6 @@ function clampToDiamond(wx, wy, diamond = PLAY_DIAMOND) {
   return { wx: Math.round(cx + dx * factor), wy: Math.round(cy + dy * factor) }
 }
 
-// ─── ZONA PROHIBIDA — estanque (también rombo en isométrico) ─────────────────
-const WATER_DIAMOND = {
-  top:   { wx: 600, wy: 290 },
-  right: { wx: 790, wy: 420 },
-  bottom:{ wx: 600, wy: 560 },
-  left:  { wx: 410, wy: 420 },
-}
-
 function isInWater(wx, wy) {
   return isInDiamond(wx, wy, WATER_DIAMOND)
 }

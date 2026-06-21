@@ -1,12 +1,11 @@
 // ─── pages/Sanctuary.jsx ─────────────────────────────────────────────────────
 // Santuario — mundo isométrico con pan libre.
-// Primera visita: overlay semitransparente "Gira tu móvil" + botón Iniciar.
-// Visitas siguientes: acceso directo sin overlay.
+// Versión optimizada con aceleración por hardware (GPU) y HUD inmersivo.
 
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, Heart, Zap, Star, Settings, Check, X } from 'lucide-react'
+import { ArrowLeft, Heart, Zap, Star, Settings, Check } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useStore } from '../store/useStore'
 
@@ -30,11 +29,9 @@ const ASSETS = {
   },
 }
 
-// Tamaño del mundo en px — más grande que la pantalla para poder hacer pan
 const WORLD_W = 1200
 const WORLD_H = 800
 
-// ─── ZONA PROHIBIDA — área del estanque que Pandi no puede pisar ─────────────
 const PLAY_DIAMOND = {
   top:   { wx:623,  wy:201 },
   right: { wx:1118, wy:510 },
@@ -99,6 +96,7 @@ const DEFAULT_ZONES = [
   { id:'look',     label:'Mirar',    emoji:'👀', wx:820, wy:380, frame:'looking',    action:'look',     color:'#60A5FA' },
   { id:'laydown',  label:'Tumbarse', emoji:'😴', wx:200, wy:350, frame:'laydown',    action:'laydown',  color:'#F472B6' },
 ]
+
 const ZONES_KEY = 'sanctuary_zones_v2'
 function loadZones() {
   try { const s = localStorage.getItem(ZONES_KEY); return s ? JSON.parse(s) : DEFAULT_ZONES }
@@ -121,7 +119,7 @@ function SanctuaryIntro({ onStart }) {
   return (
     <div style={{
       position:'fixed', inset:0, zIndex:999,
-      background:'rgba(15,20,28,0.75)', backdropFilter:'blur(6px)',
+      background:'rgba(15,20,28,0.85)', backdropFilter:'blur(8px)',
       display:'flex', flexDirection:'column',
       alignItems:'center', justifyContent:'center',
       padding:32, textAlign:'center', gap:20,
@@ -132,16 +130,14 @@ function SanctuaryIntro({ onStart }) {
         style={{ fontSize:56 }}>
         📱
       </motion.div>
-
       <div>
         <p style={{ color:'white', fontSize:18, fontWeight:800, margin:'0 0 8px' }}>
           Gira tu móvil
         </p>
         <p style={{ color:'rgba(255,255,255,0.6)', fontSize:13, margin:0, lineHeight:1.5 }}>
-          El Santuario se disfruta mejor<br/>en horizontal
+          El Santuario se disfruta mejor<br/>en horizontal libre de menús.
         </p>
       </div>
-
       <motion.button whileTap={{ scale:0.95 }} onClick={onStart}
         style={{ marginTop:8, padding:'14px 36px', borderRadius:20, border:'none',
           cursor:'pointer', background:'linear-gradient(135deg,#2EC4B6,#86EFAC)',
@@ -181,12 +177,7 @@ function ObjectPopup({ zone, onClose, onInteract }) {
           minWidth:220, maxWidth:300, boxShadow:'0 20px 60px rgba(0,0,0,0.4)' }}>
         <div style={{ fontSize:64, marginBottom:12 }}>{zone.emoji}</div>
         <p style={{ fontSize:16, fontWeight:800, color:'#1A2332', margin:'0 0 6px' }}>{zone.label}</p>
-        <p style={{ fontSize:12, color:'#9CA3AF', margin:'0 0 20px' }}>
-          {zone.action==='feed'  ? '¿Le damos de comer a Pandi?' :
-           zone.action==='play'  ? '¿Jugamos con Pandi?' :
-           zone.action==='sleep' ? '¿Pandi descansa un momento?' : ''}
-        </p>
-        <div style={{ display:'flex', gap:10 }}>
+        <div style={{ display:'flex', gap:10, marginTop:20 }}>
           <button onClick={onClose}
             style={{ flex:1, padding:'11px', borderRadius:14, border:'none', cursor:'pointer',
               background:'#F3F4F6', color:'#6B7280', fontWeight:700, fontSize:13 }}>
@@ -203,7 +194,6 @@ function ObjectPopup({ zone, onClose, onInteract }) {
   )
 }
 
-// ─── COMPONENTE PRINCIPAL ────────────────────────────────────────────────────
 export default function Sanctuary() {
   const { user, profile, addXP } = useStore()
   const navigate   = useNavigate()
@@ -212,24 +202,18 @@ export default function Sanctuary() {
   const pressRef   = useRef(null)
   const movingRef  = useRef(null)
 
-  // Control de orientación automática
   const [isLandscape, setIsLandscape] = useState(window.innerWidth > window.innerHeight)
 
   useEffect(() => {
-    // 1. Intentar forzar la API nativa de bloqueo de pantalla
     if (screen.orientation && screen.orientation.lock) {
-      screen.orientation.lock('landscape').catch((err) => {
-        console.log("El bloqueo nativo de orientación requiere pantalla completa o interacción previa:", err)
-      })
+      screen.orientation.lock('landscape').catch(() => {})
     }
 
-    // 2. Listener para saber si el dispositivo físicamente cambió su orientación
     const handleResize = () => {
       setIsLandscape(window.innerWidth > window.innerHeight)
     }
     window.addEventListener('resize', handleResize)
 
-    // Al salir de la sección, devolvemos el comportamiento normal
     return () => {
       window.removeEventListener('resize', handleResize)
       if (screen.orientation && screen.orientation.unlock) {
@@ -246,28 +230,26 @@ export default function Sanctuary() {
   function handleStart() {
     try { localStorage.setItem(INTRO_KEY, '1') } catch {}
     setShowIntro(false)
-    
-    // Volver a pedir el lock tras interacción del usuario (requerido por navegadores)
     if (screen.orientation && screen.orientation.lock) {
       screen.orientation.lock('landscape').catch(() => {})
     }
   }
-  const moveDurationRef = useRef(1.2)
 
+  const moveDurationRef = useRef(1.2)
   const offsetRef   = useRef({ x:0, y:0 })
   const [offset,    setOffset]    = useState({ x:0, y:0 }) 
   const panStart    = useRef(null)
   const isDragging  = useRef(false)
 
+  // OPTIMIZACIÓN CRÍTICA DE RENDIMIENTO: translate3d activa aceleración GPU de forma nativa
   function applyOffset(ox, oy) {
-    // Si estamos forzando rotación por CSS, invertimos las dimensiones lógicas de la ventana
     const vw = !isLandscape ? window.innerHeight : window.innerWidth
     const vh = !isLandscape ? window.innerWidth : window.innerHeight
     const cx = Math.min(Math.max(ox, Math.min(0, vw-WORLD_W)), Math.max(0, vw-WORLD_W))
     const cy = Math.min(Math.max(oy, Math.min(0, vh-WORLD_H)), Math.max(0, vh-WORLD_H))
     offsetRef.current = { x:cx, y:cy }
     if (worldRef.current) {
-      worldRef.current.style.transform = `translate(${cx}px,${cy}px)`
+      worldRef.current.style.transform = `translate3d(${cx}px, ${cy}px, 0px)`
     }
   }
 
@@ -348,14 +330,13 @@ export default function Sanctuary() {
     let dx = e.clientX - panStart.current.x
     let dy = e.clientY - panStart.current.y
 
-    // Si el CSS está rotado artificialmente, adaptamos los deltas del arrastre
     if (!isLandscape) {
       const temp = dx
       dx = dy
       dy = -temp
     }
 
-    if (Math.abs(dx)+Math.abs(dy) > 4) isDragging.current = true
+    if (Math.abs(dx)+Math.abs(dy) > 2) isDragging.current = true
     if (isDragging.current) {
       applyOffset(panStart.current.ox + dx, panStart.current.oy + dy)
     }
@@ -377,7 +358,6 @@ export default function Sanctuary() {
     let clientX = e.clientX
     let clientY = e.clientY
 
-    // Corregir coordenadas si está rotado por CSS
     if (!isLandscape) {
       clientX = e.clientY
       clientY = window.innerWidth - e.clientX
@@ -497,8 +477,6 @@ export default function Sanctuary() {
   const careLevel = (hunger+energy+happiness)/3
   const bgImage = isNight ? ASSETS.bg_night : ASSETS.bg_day
 
-  // ── ESTILOS DE ROTACIÓN DINÁMICA DE CONTENEDOR PRINCIPAL ──
-  // Si físicamente sigue en vertical, rotamos el layout 90 grados por CSS y reajustamos el viewport
   const rotationStyles = !isLandscape ? {
     width: '100vh',
     height: '100vw',
@@ -507,9 +485,11 @@ export default function Sanctuary() {
     position: 'fixed',
     top: 0,
     left: '100%',
+    zIndex: 9999, // Superponerse a cualquier Navbar global persistente
   } : {
     position: 'fixed',
     inset: 0,
+    zIndex: 9999,
   };
 
   return (
@@ -519,31 +499,28 @@ export default function Sanctuary() {
       onPointerUp={showIntro ? undefined : e => { onPointerUp(e); onZoneDragEnd() }}
       onPointerLeave={showIntro ? undefined : onZoneDragEnd}>
 
-      {/* Overlay de intro — solo la primera vez */}
       <AnimatePresence>
         {showIntro && (
           <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
-            style={{ position:'fixed', inset:0, zIndex:999 }}>
+            style={{ position:'fixed', inset:0, zIndex:10000 }}>
             <SanctuaryIntro onStart={handleStart} />
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* MUNDO */}
+      {/* MUNDO INTERNO (Usa translate3d para un movimiento súper fluido) */}
       <div ref={worldRef} style={{
         position:'absolute',
         left:0, top:0,
-        transform:`translate(${offset.x}px,${offset.y}px)`,
+        transform:`translate3d(${offset.x}px, ${offset.y}px, 0px)`,
         width:WORLD_W, height:WORLD_H,
         userSelect:'none', willChange:'transform',
       }}>
-        {/* Fondo */}
         <img src={bgImage} alt="Santuario"
           style={{ position:'absolute', inset:0, width:'100%', height:'100%',
             objectFit:'cover', objectPosition:'center', zIndex:0, pointerEvents:'none' }}
           onError={e => e.target.style.background='#1a2438'} />
 
-        {/* Puntos de zona */}
         {!editMode && zones.map(z => (
           <div key={z.id} style={{ position:'absolute', left:z.wx, top:z.wy,
             transform:'translate(-50%,-50%)', zIndex:3, pointerEvents:'none' }}>
@@ -552,7 +529,6 @@ export default function Sanctuary() {
           </div>
         ))}
 
-        {/* Marcadores arrastrables en modo edición */}
         {editMode && zones.map(z => (
           <div key={z.id}
             onPointerDown={e => onZoneDragStart(e, z.id)}
@@ -571,11 +547,6 @@ export default function Sanctuary() {
               position:'absolute', top:'50%', left:'50%', transform:'translate(-50%,-50%)' }}>
               {z.emoji}
             </div>
-            <div style={{ position:'absolute', top:'calc(50% + 30px)', left:'50%',
-              transform:'translateX(-50%)', background:'rgba(0,0,0,0.7)', borderRadius:8,
-              padding:'2px 10px', fontSize:11, fontWeight:700, color:'white', whiteSpace:'nowrap' }}>
-              {z.label}
-            </div>
           </div>
         ))}
 
@@ -583,70 +554,37 @@ export default function Sanctuary() {
         <motion.div
           animate={{ left:pandiPos.wx, top:pandiPos.wy }}
           transition={{ duration: moveDurationRef.current, ease:'linear' }}
-          onClick={() => {
-            if (meditatingActive) navigate('/mood')
-          }}
-          style={{ position:'absolute', transform:'translate(-50%,-100%)',
-            zIndex:5, width:100,
-            cursor: meditatingActive ? 'pointer' : 'default' }}>
-          <motion.div
-            animate={pandiFrame==='idle' ? {y:[0,-5,0]} : {}}
-            transition={{ duration:2.5, repeat:Infinity, ease:'easeInOut' }}>
-            {meditatingActive && (
-              <motion.div animate={{ opacity:[0,1,0] }} transition={{ duration:1.5, repeat:Infinity }}
-                style={{ position:'absolute', top:-28, left:'50%', transform:'translateX(-50%)',
-                  background:'#A78BFA', borderRadius:10, padding:'3px 8px',
-                  fontSize:9, fontWeight:800, color:'white', whiteSpace:'nowrap', zIndex:10 }}>
-                Tócame para meditar juntos
-              </motion.div>
-            )}
-            <img
-              src={ASSETS.pandi[pandiFrame] || ASSETS.pandi.idle}
-              alt="Pandi"
-              style={{ width:'100%', height:'auto', objectFit:'contain',
-                transform: pandiFlip ? 'scaleX(-1)' : 'scaleX(1)',
-                filter:'drop-shadow(0 10px 20px rgba(0,0,0,0.35))' }}
-              onError={e => { e.target.src = ASSETS.pandi.idle }} />
+          onClick={() => { if (meditatingActive) navigate('/mood') }}
+          style={{ position:'absolute', transform:'translate(-50%,-100%)', zIndex:5, width:100 }}>
+          <motion.div animate={pandiFrame=='idle' ? {y:[0,-5,0]} : {}} transition={{ duration:2.5, repeat:Infinity }}>
+            <img src={ASSETS.pandi[pandiFrame] || ASSETS.pandi.idle} alt="Pandi"
+              style={{ width:'100%', height:'auto', transform: pandiFlip ? 'scaleX(-1)' : 'scaleX(1)' }} />
           </motion.div>
         </motion.div>
 
-        {/* Toast dentro del mundo */}
         <AnimatePresence>
           {toast && (
             <motion.div initial={{ opacity:0, y:10 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0 }}
-              style={{ position:'absolute', left:pandiPos.wx, top:pandiPos.wy - 120,
-                transform:'translateX(-50%)', zIndex:15,
-                background:'rgba(255,255,255,0.95)', borderRadius:14, padding:'8px 16px',
-                boxShadow:'0 8px 20px rgba(0,0,0,0.2)', fontSize:13, fontWeight:700,
-                color:'#1A2332', whiteSpace:'nowrap' }}>
+              style={{ position:'absolute', left:pandiPos.wx, top:pandiPos.wy - 120, transform:'translateX(-50%)',
+                zIndex:15, background:'white', borderRadius:14, padding:'8px 16px', color:'#1A2332', fontWeight:700 }}>
               {toast}
             </motion.div>
           )}
         </AnimatePresence>
       </div>
 
-      {/* HUD FLOTANTE */}
-      <div style={{ position:'absolute', top:12, left:12, zIndex:50, display:'flex', gap:8, alignItems:'center' }}>
+      {/* HUD TOTALMENTE ABSOLUTO — Inmune a menús del sistema de rutas */}
+      <div style={{ position:'absolute', top:16, left:16, zIndex:50, display:'flex', gap:8 }}>
         <button onClick={() => navigate(-1)}
-          style={{ width:36, height:36, borderRadius:12, border:'none', cursor:'pointer',
-            background:'rgba(255,255,255,0.85)', backdropFilter:'blur(8px)',
-            display:'flex', alignItems:'center', justifyContent:'center' }}>
-          <ArrowLeft size={16} color='#1A2332' />
+          style={{ width:40, height:40, borderRadius:12, border:'none', cursor:'pointer',
+            background:'rgba(255,255,255,0.9)', display:'flex', alignItems:'center', justifyContent:'center',
+            boxShadow:'0 4px 12px rgba(0,0,0,0.15)' }}>
+          <ArrowLeft size={20} color='#1A2332' />
         </button>
-        {editMode && (
-          <div style={{ background:'rgba(255,255,255,0.85)', backdropFilter:'blur(8px)',
-            borderRadius:12, padding:'6px 12px' }}>
-            <p style={{ fontSize:11, fontWeight:800, color:'#1A2332', margin:0 }}>✏️ Arrastra las zonas</p>
-          </div>
-        )}
       </div>
 
-      <div style={{ position:'absolute', top:12, right:12, zIndex:50,
-        background:'rgba(255,255,255,0.88)', backdropFilter:'blur(12px)',
-        borderRadius:16, padding:'10px 14px', minWidth:160,
-        boxShadow:'0 4px 16px rgba(0,0,0,0.12)' }}>
-        <p style={{ fontSize:9, fontWeight:900, color:'#9CA3AF', textTransform:'uppercase',
-          letterSpacing:'.08em', margin:'0 0 8px' }}>Pet Care</p>
+      <div style={{ position:'absolute', top:16, right:16, zIndex:50,
+        background:'rgba(255,255,255,0.9)', borderRadius:16, padding:'12px', minWidth:160 }}>
         <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
           <CareBar icon={Heart} value={hunger}    color='#FF8FA3' />
           <CareBar icon={Zap}   value={energy}    color='#FCD34D' />
@@ -654,91 +592,40 @@ export default function Sanctuary() {
         </div>
       </div>
 
-      <div style={{ position:'absolute', bottom:16, left:12, zIndex:50 }}>
+      <div style={{ position:'absolute', bottom:16, left:16, zIndex:50 }}>
         {editMode ? (
-          <motion.button whileTap={{ scale:0.95 }} onClick={saveEdit}
-            style={{ display:'flex', alignItems:'center', gap:8, padding:'11px 20px',
-              borderRadius:16, border:'none', cursor:'pointer',
-              background:'linear-gradient(135deg,#2EC4B6,#86EFAC)', color:'white',
-              fontWeight:800, fontSize:13, boxShadow:'0 4px 16px rgba(46,196,182,0.4)' }}>
-            <Check size={15} /> Guardar zonas
-          </motion.button>
+          <button onClick={saveEdit} style={{ padding:'12px 24px', borderRadius:16, background:'#2EC4B6', color:'white', fontWeight:800 }}>
+            <Check size={16} /> Guardar
+          </button>
         ) : (
-          <div style={{ background:'rgba(255,255,255,0.88)', backdropFilter:'blur(12px)',
-            borderRadius:16, padding:'8px', display:'flex', gap:6,
-            boxShadow:'0 4px 16px rgba(0,0,0,0.12)' }}>
-            <p style={{ position:'absolute', top:-18, left:4, fontSize:9, fontWeight:900,
-              color:'rgba(255,255,255,0.8)', textTransform:'uppercase', letterSpacing:'.08em', margin:0 }}>
-              Inventario
-            </p>
+          <div style={{ background:'rgba(255,255,255,0.9)', borderRadius:16, padding:'8px', display:'flex', gap:6 }}>
             {zones.filter(z=>z.action).map(z => (
-              <motion.button key={z.id} whileTap={{ scale:0.9 }}
-                onClick={() => setZoomZone(z)}
-                style={{ width:52, height:52, borderRadius:12, border:'none', cursor:'pointer',
-                  background:`${z.color}18`, display:'flex', flexDirection:'column',
-                  alignItems:'center', justifyContent:'center', gap:2 }}>
+              <button key={z.id} onClick={() => setZoomZone(z)}
+                style={{ width:56, height:56, borderRadius:12, border:'none', background:`${z.color}15`, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center' }}>
                 <span style={{ fontSize:22 }}>{z.emoji}</span>
-                <span style={{ fontSize:8, fontWeight:700, color:'#1A2332' }}>{z.label}</span>
-              </motion.button>
+                <span style={{ fontSize:9, fontWeight:700 }}>{z.label}</span>
+              </button>
             ))}
           </div>
         )}
       </div>
 
-      <div style={{ position:'absolute', bottom:16, right:12, zIndex:50, display:'flex', flexDirection:'column', gap:8 }}>
-        <motion.button whileTap={{ scale:0.92 }}
-          onDoubleClick={e => { e.stopPropagation(); setEditMode(true) }}
-          onPointerDown={e => { e.stopPropagation(); startEditPress() }}
-          onPointerUp={e => { e.stopPropagation(); endEditPress() }}
-          onPointerLeave={endEditPress}
-          title="Doble clic para editar zonas"
-          style={{ width:42, height:42, borderRadius:12, border:'none', cursor:'pointer',
-            background:'rgba(255,255,255,0.85)', backdropFilter:'blur(8px)',
-            display:'flex', alignItems:'center', justifyContent:'center',
-            boxShadow:'0 2px 8px rgba(0,0,0,0.1)' }}>
-          <Settings size={16} color='#6B7280' />
-        </motion.button>
-        <motion.button whileTap={{ scale:0.92 }}
-          onClick={() => {
-            localStorage.removeItem('sanctuary_zones_v2')
-            setZones(DEFAULT_ZONES)
-            showToast('Zonas reseteadas ✓')
-          }}
-          title="Resetear zonas"
-          style={{ width:42, height:42, borderRadius:12, border:'none', cursor:'pointer',
-            background:'rgba(255,255,255,0.85)', backdropFilter:'blur(8px)',
-            display:'flex', alignItems:'center', justifyContent:'center',
-            boxShadow:'0 2px 8px rgba(0,0,0,0.1)', fontSize:18 }}>
-          🔄
-        </motion.button>
+      <div style={{ position:'absolute', bottom:16, right:16, zIndex:50, display:'flex', gap:8 }}>
+        <button onPointerDown={() => startEditPress()} onPointerUp={() => endEditPress()}
+          style={{ width:44, height:44, borderRadius:12, background:'white', border:'none' }}>
+          <Settings size={18} color='#6B7280' />
+        </button>
       </div>
 
-      {careLevel < 40 && !isNight && !editMode && (
-        <motion.div animate={{ opacity:[0.8,1,0.8] }} transition={{ duration:2, repeat:Infinity }}
-          style={{ position:'absolute', top:16, left:'50%', transform:'translateX(-50%)',
-            zIndex:51, background:'rgba(254,243,199,0.95)', backdropFilter:'blur(8px)',
-            borderRadius:14, padding:'7px 14px', display:'flex', alignItems:'center', gap:6,
-            boxShadow:'0 4px 12px rgba(0,0,0,0.1)' }}>
-          <span>💛</span>
-          <p style={{ fontSize:11, fontWeight:700, color:'#92400E', margin:0 }}>Pandi te necesita</p>
-        </motion.div>
-      )}
-
       {isNight && (
-        <div style={{ position:'absolute', top:60, left:'50%', transform:'translateX(-50%)',
-          zIndex:51, background:'rgba(15,20,45,0.7)', backdropFilter:'blur(8px)',
-          borderRadius:14, padding:'7px 14px' }}>
-          <p style={{ color:'rgba(255,255,255,0.7)', fontSize:11, fontWeight:700, margin:0 }}>
-            Pandi descansa 🌙
-          </p>
+        <div style={{ position:'absolute', top:20, left:'50%', transform:'translateX(-50%)', zIndex:51, background:'rgba(15,20,45,0.8)', padding:'6px 16px', borderRadius:20 }}>
+          <p style={{ color:'white', margin:0, fontSize:12 }}>Pandi descansa 🌙</p>
         </div>
       )}
 
       <AnimatePresence>
         {zoomZone && (
-          <ObjectPopup zone={zoomZone}
-            onClose={() => setZoomZone(null)}
-            onInteract={z => { setZoomZone(null); triggerZoneAction(z) }} />
+          <ObjectPopup zone={zoomZone} onClose={() => setZoomZone(null)} onInteract={z => { setZoomZone(null); triggerZoneAction(z) }} />
         )}
       </AnimatePresence>
     </div>

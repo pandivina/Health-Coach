@@ -35,9 +35,6 @@ const WORLD_W = 1200
 const WORLD_H = 800
 
 // ─── ZONA PROHIBIDA — área del estanque que Pandi no puede pisar ─────────────
-// Coordenadas aproximadas del estanque en el mundo 1200x800
-// Ajusta estos valores con el modo edición cuando tengas el fondo real
-// ─── LÍMITES ISOMÉTRICOS — coordenadas fijas en el mundo 1200×800 ─────────────
 const PLAY_DIAMOND = {
   top:   { wx:623,  wy:201 },
   right: { wx:1118, wy:510 },
@@ -52,7 +49,6 @@ const WATER_DIAMOND = {
   left:  { wx:324,  wy:419 },
 }
 
-// Centro y semiejes del rombo
 function getDiamondCenter(d) {
   return {
     cx: (d.left.wx + d.right.wx) / 2,
@@ -67,11 +63,9 @@ function isInDiamond(wx, wy, diamond = PLAY_DIAMOND) {
   return (Math.abs(wx - cx) / hw) + (Math.abs(wy - cy) / hh) <= 1
 }
 
-// Empujar un punto hacia el interior del rombo si está fuera
 function clampToDiamond(wx, wy, diamond = PLAY_DIAMOND) {
   if (isInDiamond(wx, wy, diamond)) return { wx, wy }
   const { cx, cy, hw, hh } = getDiamondCenter(diamond)
-  // Escalar hacia el centro hasta quedar dentro (con margen de 30px)
   const margin = 0.93
   const dx = wx - cx, dy = wy - cy
   const factor = margin / ((Math.abs(dx) / hw) + (Math.abs(dy) / hh))
@@ -82,24 +76,20 @@ function isInWater(wx, wy) {
   return isInDiamond(wx, wy, WATER_DIAMOND)
 }
 
-// Combinar: confinar dentro del suelo Y evitar el agua
 function avoidWater(wx, wy) {
-  // 1. Confinar al rombo jugable
   const safe = clampToDiamond(wx, wy)
-  wx = safe.wx; wy = safe.wy
+  let wx2 = safe.wx; let wy2 = safe.wy
 
-  // 2. Si cae en el agua, empujar hacia afuera del agua
-  if (!isInWater(wx, wy)) return { wx, wy }
+  if (!isInWater(wx2, wy2)) return { wx: wx2, wy: wy2 }
   const { cx, cy, hw, hh } = getDiamondCenter(WATER_DIAMOND)
-  const margin = 1.08 // justo fuera del borde del agua
-  const dx = wx - cx, dy = wy - cy
+  const margin = 1.08 
+  const dx = wx2 - cx, dy = wy2 - cy
   const norm = (Math.abs(dx) / hw) + (Math.abs(dy) / hh)
   const factor = margin / norm
   const pushed = { wx: Math.round(cx + dx * factor), wy: Math.round(cy + dy * factor) }
-  // Asegurar que el punto empujado sigue dentro del rombo jugable
   return clampToDiamond(pushed.wx, pushed.wy)
 }
-// Coordenadas en px dentro del mundo (0-WORLD_W, 0-WORLD_H)
+
 const DEFAULT_ZONES = [
   { id:'bed',      label:'Cama',     emoji:'🛏️', wx:600, wy:340, frame:'sleeping',   action:'sleep',    color:'#818CF8' },
   { id:'food',     label:'Cuenco',   emoji:'🍚', wx:280, wy:520, frame:'eating',     action:'feed',     color:'#F97316' },
@@ -116,7 +106,6 @@ function loadZones() {
 }
 function saveZones(z) { try { localStorage.setItem(ZONES_KEY, JSON.stringify(z)) } catch {} }
 
-// ─── HOOKS ───────────────────────────────────────────────────────────────────
 function useNightMode() {
   const [isNight, setIsNight] = useState(() => { const h=new Date().getHours(); return h>=22||h<7 })
   useEffect(() => {
@@ -126,7 +115,6 @@ function useNightMode() {
   return isNight
 }
 
-// ─── PANTALLA DE INTRO — solo la primera vez ──────────────────────────────────
 const INTRO_KEY = 'sanctuary_intro_done'
 
 function SanctuaryIntro({ onStart }) {
@@ -165,7 +153,6 @@ function SanctuaryIntro({ onStart }) {
   )
 }
 
-// ─── BARRA DE CUIDADO ─────────────────────────────────────────────────────────
 function CareBar({ icon: Icon, value, color }) {
   return (
     <div style={{ display:'flex', alignItems:'center', gap:5 }}>
@@ -181,7 +168,6 @@ function CareBar({ icon: Icon, value, color }) {
   )
 }
 
-// ─── POPUP DE OBJETO ──────────────────────────────────────────────────────────
 function ObjectPopup({ zone, onClose, onInteract }) {
   return (
     <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
@@ -226,7 +212,32 @@ export default function Sanctuary() {
   const pressRef   = useRef(null)
   const movingRef  = useRef(null)
 
-  // Intro — solo la primera vez
+  // Control de orientación automática
+  const [isLandscape, setIsLandscape] = useState(window.innerWidth > window.innerHeight)
+
+  useEffect(() => {
+    // 1. Intentar forzar la API nativa de bloqueo de pantalla
+    if (screen.orientation && screen.orientation.lock) {
+      screen.orientation.lock('landscape').catch((err) => {
+        console.log("El bloqueo nativo de orientación requiere pantalla completa o interacción previa:", err)
+      })
+    }
+
+    // 2. Listener para saber si el dispositivo físicamente cambió su orientación
+    const handleResize = () => {
+      setIsLandscape(window.innerWidth > window.innerHeight)
+    }
+    window.addEventListener('resize', handleResize)
+
+    // Al salir de la sección, devolvemos el comportamiento normal
+    return () => {
+      window.removeEventListener('resize', handleResize)
+      if (screen.orientation && screen.orientation.unlock) {
+        screen.orientation.unlock()
+      }
+    }
+  }, [])
+
   const [showIntro, setShowIntro] = useState(() => {
     try { return !localStorage.getItem(INTRO_KEY) }
     catch { return true }
@@ -235,33 +246,35 @@ export default function Sanctuary() {
   function handleStart() {
     try { localStorage.setItem(INTRO_KEY, '1') } catch {}
     setShowIntro(false)
+    
+    // Volver a pedir el lock tras interacción del usuario (requerido por navegadores)
+    if (screen.orientation && screen.orientation.lock) {
+      screen.orientation.lock('landscape').catch(() => {})
+    }
   }
   const moveDurationRef = useRef(1.2)
 
-  // ── Pan fluido — offset como ref, DOM directo, sin re-renders ────────────
   const offsetRef   = useRef({ x:0, y:0 })
-  const [offset,    setOffset]    = useState({ x:0, y:0 }) // solo para tap/coords
+  const [offset,    setOffset]    = useState({ x:0, y:0 }) 
   const panStart    = useRef(null)
   const isDragging  = useRef(false)
 
   function applyOffset(ox, oy) {
-    const vw = window.innerWidth, vh = window.innerHeight
+    // Si estamos forzando rotación por CSS, invertimos las dimensiones lógicas de la ventana
+    const vw = !isLandscape ? window.innerHeight : window.innerWidth
+    const vh = !isLandscape ? window.innerWidth : window.innerHeight
     const cx = Math.min(Math.max(ox, Math.min(0, vw-WORLD_W)), Math.max(0, vw-WORLD_W))
     const cy = Math.min(Math.max(oy, Math.min(0, vh-WORLD_H)), Math.max(0, vh-WORLD_H))
     offsetRef.current = { x:cx, y:cy }
-    // Aplicar directamente al DOM — sin setState, sin re-render
     if (worldRef.current) {
       worldRef.current.style.transform = `translate(${cx}px,${cy}px)`
     }
   }
 
-  // Zonas y modos
   const [zones,      setZones]      = useState(loadZones)
   const [editMode,   setEditMode]   = useState(false)
   const [zoomZone,   setZoomZone]   = useState(null)
-  const [draggingZoneId_UNUSED, _] = [null, null] // eliminado — ahora es ref en línea 369
 
-  // Estado de Pandi — posición aleatoria entre las zonas al montar
   const [pandiPos,   setPandiPos]   = useState(() => {
     const z = DEFAULT_ZONES[Math.floor(Math.random() * DEFAULT_ZONES.length)]
     return { wx: z.wx, wy: z.wy }
@@ -270,7 +283,6 @@ export default function Sanctuary() {
   const [pandiFrame, setPandiFrame] = useState('idle')
   const [pandiFlip,  setPandiFlip]  = useState(false)
 
-  // Cuidado
   const [hunger,    setHunger]    = useState(profile?.pandi_hunger    ?? 80)
   const [energy,    setEnergy]    = useState(profile?.pandi_energy    ?? 80)
   const [happiness, setHappiness] = useState(profile?.pandi_happiness ?? 80)
@@ -297,27 +309,14 @@ export default function Sanctuary() {
 
     return duration
   }
-  // Intentar bloquear orientación landscape al entrar (Android/PWA)
-  // En iOS no está soportado — el overlay de intro actúa de fallback
-  useEffect(() => {
-    let locked = false
-    async function lockLandscape() {
-      try {
-        await screen.orientation.lock('landscape')
-        locked = true
-      } catch {
-        // iOS Safari o navegador no compatible — sin bloqueo, el overlay guía al usuario
-      }
-    }
-    lockLandscape()
-    return () => {
-      if (locked) {
-        try { screen.orientation.unlock() } catch {}
-      }
-    }
-  }, [])
 
-  // Frame según estado
+  useEffect(() => {
+    const vw = !isLandscape ? window.innerHeight : window.innerWidth
+    const vh = !isLandscape ? window.innerWidth : window.innerHeight
+    applyOffset((vw-WORLD_W)/2, (vh-WORLD_H)/2)
+    setOffset(offsetRef.current)
+  }, [isLandscape])
+
   useEffect(() => {
     if (isNight) {
       const bed = zones.find(z=>z.id==='bed')
@@ -329,11 +328,6 @@ export default function Sanctuary() {
   }, [isNight, hunger])
 
   useEffect(() => {
-    const vw = window.innerWidth, vh = window.innerHeight
-    applyOffset((vw-WORLD_W)/2, (vh-WORLD_H)/2)
-    setOffset(offsetRef.current)
-  }, [])
-  useEffect(() => {
     if (isNight || editMode) return
     const wander = () => {
       const z = zones[Math.floor(Math.random() * zones.length)]
@@ -343,9 +337,6 @@ export default function Sanctuary() {
     return () => clearInterval(movingRef.current)
   }, [isNight, editMode, zones])
 
-  // ── Pan handlers ────────────────────────────────────────────────────────
-
-
   function onPointerDown(e) {
     if (draggingZoneId.current) return
     panStart.current = { x:e.clientX, y:e.clientY, ox:offsetRef.current.x, oy:offsetRef.current.y }
@@ -354,8 +345,16 @@ export default function Sanctuary() {
 
   function onPointerMove(e) {
     if (!panStart.current || draggingZoneId.current) return
-    const dx = e.clientX - panStart.current.x
-    const dy = e.clientY - panStart.current.y
+    let dx = e.clientX - panStart.current.x
+    let dy = e.clientY - panStart.current.y
+
+    // Si el CSS está rotado artificialmente, adaptamos los deltas del arrastre
+    if (!isLandscape) {
+      const temp = dx
+      dx = dy
+      dy = -temp
+    }
+
     if (Math.abs(dx)+Math.abs(dy) > 4) isDragging.current = true
     if (isDragging.current) {
       applyOffset(panStart.current.ox + dx, panStart.current.oy + dy)
@@ -365,7 +364,6 @@ export default function Sanctuary() {
   function onPointerUp(e) {
     if (!panStart.current) return
     if (!isDragging.current) {
-      // sincronizar offset ref → state para calcular coordenadas del tap
       setOffset({ ...offsetRef.current })
       handleTap(e)
     }
@@ -373,14 +371,21 @@ export default function Sanctuary() {
     isDragging.current = false
   }
 
-  // ── Tap en el mundo ─────────────────────────────────────────────────────
   function handleTap(e) {
     if (editMode || isNight || zoomZone) return
     const o = offsetRef.current
-    const wx = e.clientX - o.x
-    const wy = e.clientY - o.y
+    let clientX = e.clientX
+    let clientY = e.clientY
 
-    // ¿Cerca de una zona?
+    // Corregir coordenadas si está rotado por CSS
+    if (!isLandscape) {
+      clientX = e.clientY
+      clientY = window.innerWidth - e.clientX
+    }
+
+    const wx = clientX - o.x
+    const wy = clientY - o.y
+
     let nearest = null, minDist = 80
     zones.forEach(z => {
       const d = Math.sqrt(Math.pow(wx-z.wx,2)+Math.pow(wy-z.wy,2))
@@ -388,29 +393,34 @@ export default function Sanctuary() {
     })
     if (nearest) { setZoomZone(nearest); return }
 
-    // Mover Pandi libremente — evita agua y anima dirección correcta
     clearInterval(movingRef.current)
     setMeditatingActive(false)
     movePandi(wx, wy, () => setPandiFrame('idle'))
   }
 
-  // ── Arrastrar zona en modo edición ──────────────────────────────────────
-  const draggingZoneId = useRef(null) // ref en vez de state — sin delay asíncrono
+  const draggingZoneId = useRef(null)
 
   function onZoneDragStart(e, zoneId) {
     e.stopPropagation()
     e.preventDefault()
     draggingZoneId.current = zoneId
     panStart.current = null
-    // setPointerCapture garantiza que movimiento y fin van a este elemento en móvil
     try { e.currentTarget.setPointerCapture(e.pointerId) } catch {}
   }
 
   function onZoneDragMove(e) {
     if (!draggingZoneId.current) return
     e.stopPropagation()
-    const wx = e.clientX - offset.x
-    const wy = e.clientY - offset.y
+    let clientX = e.clientX
+    let clientY = e.clientY
+
+    if (!isLandscape) {
+      clientX = e.clientY
+      clientY = window.innerWidth - e.clientX
+    }
+
+    const wx = clientX - offset.x
+    const wy = clientY - offset.y
     const id = draggingZoneId.current
     setZones(zs => zs.map(z => z.id === id
       ? { ...z, wx:Math.max(40,Math.min(wx,WORLD_W-40)), wy:Math.max(40,Math.min(wy,WORLD_H-40)) }
@@ -424,7 +434,6 @@ export default function Sanctuary() {
     draggingZoneId.current = null
   }
 
-  // ── Interacción con zona ────────────────────────────────────────────────
   async function triggerZoneAction(zone) {
     setMeditatingActive(false)
     clearInterval(movingRef.current)
@@ -488,12 +497,23 @@ export default function Sanctuary() {
   const careLevel = (hunger+energy+happiness)/3
   const bgImage = isNight ? ASSETS.bg_night : ASSETS.bg_day
 
-  // Portrait → aviso
-  // Sin bloqueo por orientación — el overlay de intro guía al usuario
+  // ── ESTILOS DE ROTACIÓN DINÁMICA DE CONTENEDOR PRINCIPAL ──
+  // Si físicamente sigue en vertical, rotamos el layout 90 grados por CSS y reajustamos el viewport
+  const rotationStyles = !isLandscape ? {
+    width: '100vh',
+    height: '100vw',
+    transform: 'rotate(90deg)',
+    transformOrigin: 'top left',
+    position: 'fixed',
+    top: 0,
+    left: '100%',
+  } : {
+    position: 'fixed',
+    inset: 0,
+  };
 
   return (
-    <div style={{ position:'fixed', inset:0, background:'#0f1612', overflow:'hidden',
-      paddingBottom:'calc(env(safe-area-inset-bottom, 0px) + 56px)' }}
+    <div style={{ ...rotationStyles, background:'#0f1612', overflow:'hidden' }}
       onPointerDown={showIntro ? undefined : onPointerDown}
       onPointerMove={showIntro ? undefined : e => { onPointerMove(e); onZoneDragMove(e) }}
       onPointerUp={showIntro ? undefined : e => { onPointerUp(e); onZoneDragEnd() }}
@@ -509,7 +529,7 @@ export default function Sanctuary() {
         )}
       </AnimatePresence>
 
-      {/* MUNDO — se desplaza todo junto via transform (DOM directo, sin re-renders) */}
+      {/* MUNDO */}
       <div ref={worldRef} style={{
         position:'absolute',
         left:0, top:0,
@@ -523,7 +543,7 @@ export default function Sanctuary() {
             objectFit:'cover', objectPosition:'center', zIndex:0, pointerEvents:'none' }}
           onError={e => e.target.style.background='#1a2438'} />
 
-        {/* Puntos de zona (siempre visibles) */}
+        {/* Puntos de zona */}
         {!editMode && zones.map(z => (
           <div key={z.id} style={{ position:'absolute', left:z.wx, top:z.wy,
             transform:'translate(-50%,-50%)', zIndex:3, pointerEvents:'none' }}>
@@ -605,10 +625,8 @@ export default function Sanctuary() {
         </AnimatePresence>
       </div>
 
-      {/* ── HUD FLOTANTE — esquinas, estilo referencia ── */}
-
-      {/* Arriba izquierda — botón volver + título */}
-      <div style={{ position:'fixed', top:12, left:12, zIndex:50, display:'flex', gap:8, alignItems:'center' }}>
+      {/* HUD FLOTANTE */}
+      <div style={{ position:'absolute', top:12, left:12, zIndex:50, display:'flex', gap:8, alignItems:'center' }}>
         <button onClick={() => navigate(-1)}
           style={{ width:36, height:36, borderRadius:12, border:'none', cursor:'pointer',
             background:'rgba(255,255,255,0.85)', backdropFilter:'blur(8px)',
@@ -623,8 +641,7 @@ export default function Sanctuary() {
         )}
       </div>
 
-      {/* Arriba derecha — panel PET CARE */}
-      <div style={{ position:'fixed', top:12, right:12, zIndex:50,
+      <div style={{ position:'absolute', top:12, right:12, zIndex:50,
         background:'rgba(255,255,255,0.88)', backdropFilter:'blur(12px)',
         borderRadius:16, padding:'10px 14px', minWidth:160,
         boxShadow:'0 4px 16px rgba(0,0,0,0.12)' }}>
@@ -637,9 +654,7 @@ export default function Sanctuary() {
         </div>
       </div>
 
-      {/* Abajo izquierda — inventario/acciones */}
-      <div style={{ position:'fixed', bottom:'calc(env(safe-area-inset-bottom, 0px) + 68px)',
-        left:12, zIndex:50 }}>
+      <div style={{ position:'absolute', bottom:16, left:12, zIndex:50 }}>
         {editMode ? (
           <motion.button whileTap={{ scale:0.95 }} onClick={saveEdit}
             style={{ display:'flex', alignItems:'center', gap:8, padding:'11px 20px',
@@ -670,9 +685,7 @@ export default function Sanctuary() {
         )}
       </div>
 
-      {/* Abajo derecha — ajustes + reset */}
-      <div style={{ position:'fixed', bottom:'calc(env(safe-area-inset-bottom, 0px) + 68px)',
-        right:12, zIndex:50, display:'flex', flexDirection:'column', gap:8 }}>
+      <div style={{ position:'absolute', bottom:16, right:12, zIndex:50, display:'flex', flexDirection:'column', gap:8 }}>
         <motion.button whileTap={{ scale:0.92 }}
           onDoubleClick={e => { e.stopPropagation(); setEditMode(true) }}
           onPointerDown={e => { e.stopPropagation(); startEditPress() }}
@@ -700,10 +713,9 @@ export default function Sanctuary() {
         </motion.button>
       </div>
 
-      {/* Alertas — centro superior */}
       {careLevel < 40 && !isNight && !editMode && (
         <motion.div animate={{ opacity:[0.8,1,0.8] }} transition={{ duration:2, repeat:Infinity }}
-          style={{ position:'fixed', top:16, left:'50%', transform:'translateX(-50%)',
+          style={{ position:'absolute', top:16, left:'50%', transform:'translateX(-50%)',
             zIndex:51, background:'rgba(254,243,199,0.95)', backdropFilter:'blur(8px)',
             borderRadius:14, padding:'7px 14px', display:'flex', alignItems:'center', gap:6,
             boxShadow:'0 4px 12px rgba(0,0,0,0.1)' }}>
@@ -713,7 +725,7 @@ export default function Sanctuary() {
       )}
 
       {isNight && (
-        <div style={{ position:'fixed', top:60, left:'50%', transform:'translateX(-50%)',
+        <div style={{ position:'absolute', top:60, left:'50%', transform:'translateX(-50%)',
           zIndex:51, background:'rgba(15,20,45,0.7)', backdropFilter:'blur(8px)',
           borderRadius:14, padding:'7px 14px' }}>
           <p style={{ color:'rgba(255,255,255,0.7)', fontSize:11, fontWeight:700, margin:0 }}>
@@ -722,7 +734,6 @@ export default function Sanctuary() {
         </div>
       )}
 
-      {/* Popup de objeto */}
       <AnimatePresence>
         {zoomZone && (
           <ObjectPopup zone={zoomZone}

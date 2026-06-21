@@ -297,10 +297,24 @@ export default function Sanctuary() {
 
     return duration
   }
+  // Intentar bloquear orientación landscape al entrar (Android/PWA)
+  // En iOS no está soportado — el overlay de intro actúa de fallback
   useEffect(() => {
-    const vw = window.innerWidth, vh = window.innerHeight
-    applyOffset((vw-WORLD_W)/2, (vh-WORLD_H)/2)
-    setOffset(offsetRef.current)
+    let locked = false
+    async function lockLandscape() {
+      try {
+        await screen.orientation.lock('landscape')
+        locked = true
+      } catch {
+        // iOS Safari o navegador no compatible — sin bloqueo, el overlay guía al usuario
+      }
+    }
+    lockLandscape()
+    return () => {
+      if (locked) {
+        try { screen.orientation.unlock() } catch {}
+      }
+    }
   }, [])
 
   // Frame según estado
@@ -314,7 +328,11 @@ export default function Sanctuary() {
     setPandiFrame(hunger < 30 ? 'sad' : 'idle')
   }, [isNight, hunger])
 
-  // Movimiento autónomo — usa movePandi para evitar agua y animar correctamente
+  useEffect(() => {
+    const vw = window.innerWidth, vh = window.innerHeight
+    applyOffset((vw-WORLD_W)/2, (vh-WORLD_H)/2)
+    setOffset(offsetRef.current)
+  }, [])
   useEffect(() => {
     if (isNight || editMode) return
     const wander = () => {

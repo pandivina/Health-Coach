@@ -7,6 +7,7 @@ import { useStore } from '../store/useStore'
 import { useTheme } from '../contexts/ThemeProvider'
 import { supabase } from '../lib/supabase'
 import { MedicalDisclaimerModal } from '../components/legal/MedicalDisclaimer'
+import { useCoachAwareness, useModuleAwareness } from '../contexts/CoachAwarenessContext'
 
 const SUGGESTIONS = [
   '¿Cómo voy hoy con mis macros?',
@@ -23,12 +24,9 @@ const INBOX_CATEGORIES = [
   { id: 'general',   emoji: '📌', label: 'General'   },
 ]
 
-// ─── MODAL GUARDAR ────────────────────────────────────────────────────────────
-
 function SaveModal({ message, onSave, onClose, theme }) {
   const [category, setCategory] = useState('general')
   const [note,     setNote]     = useState('')
-
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
       className="fixed inset-0 z-50 flex items-end justify-center"
@@ -37,7 +35,6 @@ function SaveModal({ message, onSave, onClose, theme }) {
         transition={{ type: 'spring', damping: 30, stiffness: 300 }}
         className="w-full max-w-lg rounded-t-3xl p-5"
         style={{ background: theme.bg }} onClick={e => e.stopPropagation()}>
-
         <div className="flex items-center justify-between mb-4">
           <p className="font-extrabold text-base" style={{ color: theme.text }}>Guardar recomendación</p>
           <button onClick={onClose} className="w-8 h-8 rounded-xl flex items-center justify-center"
@@ -45,14 +42,10 @@ function SaveModal({ message, onSave, onClose, theme }) {
             <X size={16} style={{ color: theme.textMuted }} />
           </button>
         </div>
-
-        {/* Preview mensaje */}
         <div className="p-3 rounded-2xl mb-4 text-sm leading-relaxed"
           style={{ background: theme.surface2, color: theme.text }}>
           {message.length > 150 ? message.slice(0, 150) + '…' : message}
         </div>
-
-        {/* Categoría */}
         <p className="text-xs font-bold mb-2" style={{ color: theme.textMuted }}>Categoría</p>
         <div className="grid grid-cols-5 gap-2 mb-4">
           {INBOX_CATEGORIES.map(c => (
@@ -70,12 +63,9 @@ function SaveModal({ message, onSave, onClose, theme }) {
             </button>
           ))}
         </div>
-
-        {/* Nota */}
         <textarea className="input resize-none mb-4" rows={2}
           placeholder="Nota personal (opcional)…"
           value={note} onChange={e => setNote(e.target.value)} />
-
         <motion.button whileTap={{ scale: 0.97 }} onClick={() => onSave(category, note)}
           className="w-full py-3 rounded-2xl font-bold text-white flex items-center justify-center gap-2"
           style={{ background: `linear-gradient(135deg, ${theme.primary}, #FF8FA3)` }}>
@@ -86,17 +76,14 @@ function SaveModal({ message, onSave, onClose, theme }) {
   )
 }
 
-// ─── BANDEJA ──────────────────────────────────────────────────────────────────
-
 function InboxPanel({ userId, theme, onClose }) {
-  const [items,    setItems]    = useState([])
-  const [loading,  setLoading]  = useState(true)
-  const [filter,   setFilter]   = useState('all')
+  const [items,   setItems]   = useState([])
+  const [loading, setLoading] = useState(true)
+  const [filter,  setFilter]  = useState('all')
 
   useEffect(() => {
     if (!userId) return
-    supabase.from('coach_inbox')
-      .select('*').eq('user_id', userId)
+    supabase.from('coach_inbox').select('*').eq('user_id', userId)
       .order('created_at', { ascending: false })
       .then(({ data }) => { setItems(data || []); setLoading(false) })
   }, [userId])
@@ -105,7 +92,6 @@ function InboxPanel({ userId, theme, onClose }) {
     await supabase.from('coach_inbox').delete().eq('id', id)
     setItems(prev => prev.filter(i => i.id !== id))
   }
-
   async function toggleDone(item) {
     await supabase.from('coach_inbox').update({ done: !item.done }).eq('id', item.id)
     setItems(prev => prev.map(i => i.id === item.id ? { ...i, done: !i.done } : i))
@@ -118,8 +104,6 @@ function InboxPanel({ userId, theme, onClose }) {
       transition={{ type: 'spring', damping: 30, stiffness: 300 }}
       className="fixed inset-0 z-50 flex flex-col max-w-lg mx-auto"
       style={{ background: theme.bg }}>
-
-      {/* Header */}
       <div className="flex items-center gap-3 px-4 pt-6 pb-3"
         style={{ borderBottom: `1px solid ${theme.border}` }}>
         <button onClick={onClose} className="w-9 h-9 rounded-xl flex items-center justify-center"
@@ -133,8 +117,6 @@ function InboxPanel({ userId, theme, onClose }) {
           </p>
         </div>
       </div>
-
-      {/* Filtros */}
       <div className="flex gap-2 px-4 py-3 overflow-x-auto">
         {[{ id: 'all', emoji: '📋', label: 'Todo' }, ...INBOX_CATEGORIES].map(c => (
           <button key={c.id} onClick={() => setFilter(c.id)}
@@ -147,8 +129,6 @@ function InboxPanel({ userId, theme, onClose }) {
           </button>
         ))}
       </div>
-
-      {/* Lista */}
       <div className="flex-1 overflow-y-auto px-4 py-2 space-y-2">
         {loading && (
           <div className="flex items-center justify-center py-12">
@@ -158,9 +138,7 @@ function InboxPanel({ userId, theme, onClose }) {
         {!loading && filtered.length === 0 && (
           <div className="text-center py-12">
             <p style={{ fontSize: 48 }}>📭</p>
-            <p className="mt-3 font-semibold text-sm" style={{ color: theme.text }}>
-              Bandeja vacía
-            </p>
+            <p className="mt-3 font-semibold text-sm" style={{ color: theme.text }}>Bandeja vacía</p>
             <p className="text-xs mt-1" style={{ color: theme.textMuted }}>
               Guarda recomendaciones del coach con el botón 🔖
             </p>
@@ -169,8 +147,7 @@ function InboxPanel({ userId, theme, onClose }) {
         {filtered.map(item => {
           const cat = INBOX_CATEGORIES.find(c => c.id === item.category)
           return (
-            <motion.div key={item.id} layout
-              className="p-3 rounded-2xl"
+            <motion.div key={item.id} layout className="p-3 rounded-2xl"
               style={{
                 background: item.done ? theme.surface2 : theme.surface,
                 border: `1px solid ${item.done ? 'transparent' : theme.border}`,
@@ -190,7 +167,7 @@ function InboxPanel({ userId, theme, onClose }) {
                     <span style={{ fontSize: 12 }}>{cat?.emoji}</span>
                     <span className="text-[10px] font-bold uppercase tracking-wide"
                       style={{ color: theme.textMuted }}>{cat?.label}</span>
-                    <span className="text-[10px]" style={{ color: theme.textLight }}>
+                    <span className="text-[10px]" style={{ color: theme.textMuted }}>
                       {new Date(item.created_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
                     </span>
                   </div>
@@ -220,26 +197,28 @@ function InboxPanel({ userId, theme, onClose }) {
 }
 
 // ─── COACH PRINCIPAL ──────────────────────────────────────────────────────────
-
 export default function Coach() {
-  const { profile, user } = useStore()
-  const { theme }         = useTheme()
+  const { profile, user }      = useStore()
+  const { theme }              = useTheme()
+  const { buildCoachContext }  = useCoachAwareness()
+
+  // Registrar módulo activo
+  useModuleAwareness('coach', {})
 
   const [messages,    setMessages]    = useState([{
     role: 'assistant',
-    content: `¡Hola${profile?.name ? ` ${profile.name}` : ''}! 👋 Soy tu Coach IA. Estoy aquí para ayudarte con nutrición, entrenamiento, sueño y bienestar. ¿En qué puedo ayudarte hoy?`,
+    content: `¡Hola${profile?.name ? ` ${profile.name}` : ''}! 👋 Soy Pandi, tu coach personal. Estoy al día con tus datos de hoy. ¿En qué puedo ayudarte?`,
   }])
-  const [input,       setInput]       = useState('')
-  const [loading,     setLoading]     = useState(false)
-  const [showUpgrade, setShowUpgrade] = useState(false)
-  const [saveModal,   setSaveModal]   = useState(null)  // mensaje a guardar
-  const [showInbox,   setShowInbox]   = useState(false)
-  const [inboxCount,  setInboxCount]  = useState(0)
+  const [input,      setInput]      = useState('')
+  const [loading,    setLoading]    = useState(false)
+  const [showUpgrade,setShowUpgrade]= useState(false)
+  const [saveModal,  setSaveModal]  = useState(null)
+  const [showInbox,  setShowInbox]  = useState(false)
+  const [inboxCount, setInboxCount] = useState(0)
   const bottomRef = useRef(null)
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [messages, loading])
 
-  // Cargar contador bandeja
   useEffect(() => {
     if (!user?.id) return
     supabase.from('coach_inbox').select('id', { count: 'exact' })
@@ -254,8 +233,15 @@ export default function Coach() {
     const newMessages = [...messages, { role: 'user', content }]
     setMessages(newMessages)
     setLoading(true)
+
     try {
-      const { reply } = await api.coach.chat(newMessages.slice(-10))
+      // Construir contexto real del usuario desde CoachAwareness
+      const coachContext = buildCoachContext()
+
+      const { reply } = await api.coach.chat(
+        newMessages.slice(-10),
+        coachContext  // ← contexto real enviado al backend
+      )
       setMessages(m => [...m, { role: 'assistant', content: reply }])
       useStore.getState().addBondXP?.(5)
     } catch (err) {
@@ -263,7 +249,7 @@ export default function Coach() {
       if (isLimit) {
         setMessages(m => [...m, {
           role: 'assistant',
-          content: `⚠️ Has alcanzado el límite de 10 mensajes diarios del plan gratuito.\n\n✨ Actualiza a Premium para conversaciones ilimitadas con contexto clínico completo.`,
+          content: `⚠️ Has alcanzado el límite de 10 mensajes diarios del plan gratuito.\n\n✨ Actualiza a Premium para conversaciones ilimitadas.`,
         }])
         setShowUpgrade(true)
       } else {
@@ -275,11 +261,7 @@ export default function Coach() {
   async function saveToInbox(category, note) {
     if (!saveModal || !user?.id) return
     await supabase.from('coach_inbox').insert({
-      user_id:  user.id,
-      content:  saveModal,
-      category,
-      note:     note || null,
-      done:     false,
+      user_id: user.id, content: saveModal, category, note: note || null, done: false,
     })
     setSaveModal(null)
     setInboxCount(n => n + 1)
@@ -298,10 +280,9 @@ export default function Coach() {
             <h1 className="font-bold text-lg" style={{ color: theme.text }}>Coach IA</h1>
             <p className="text-xs flex items-center gap-1" style={{ color: theme.textMuted }}>
               <span className="w-1.5 h-1.5 rounded-full inline-block" style={{ background: theme.success }} />
-              En línea · Basado en tus datos
+              En línea · Basado en tus datos de hoy
             </p>
           </div>
-          {/* Botón bandeja */}
           <button onClick={() => setShowInbox(true)}
             className="relative w-9 h-9 rounded-xl flex items-center justify-center"
             style={{ background: theme.surface2 }}>
@@ -323,8 +304,8 @@ export default function Coach() {
             <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
               className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} gap-2`}>
               {msg.role === 'assistant' && (
-                <img src="/icons/icon-192.png" alt="Coach"
-                  style={{ width: 32, height: 32, borderRadius: 10, flexShrink: 0, alignSelf: 'flex-end' }} />
+                <img src="/panda/panda_base.png" alt="Pandi"
+                  style={{ width: 32, height: 32, borderRadius: 10, flexShrink: 0, alignSelf: 'flex-end', objectFit:'contain' }} />
               )}
               <div className="flex flex-col gap-1 max-w-[80%]">
                 <div className="rounded-2xl px-4 py-3 text-sm leading-relaxed"
@@ -333,34 +314,31 @@ export default function Coach() {
                     : { background: theme.surface, color: theme.text, border: `1px solid ${theme.border}`, borderBottomLeftRadius: '4px' }}>
                   {msg.content}
                 </div>
-                {/* Botón guardar solo en mensajes del coach */}
                 {msg.role === 'assistant' && i > 0 && (
                   <button onClick={() => setSaveModal(msg.content)}
-                    className="flex items-center gap-1 self-start px-2 py-0.5 rounded-lg text-[10px] font-medium transition-all"
-                    style={{ color: theme.textLight, background: 'transparent' }}>
+                    className="flex items-center gap-1 self-start px-2 py-0.5 rounded-lg text-[10px] font-medium"
+                    style={{ color: theme.textMuted }}>
                     <BookmarkPlus size={11} /> Guardar
                   </button>
                 )}
               </div>
             </motion.div>
           ))}
+
           {loading && (
             <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
               className="flex items-end gap-2">
-              <motion.img src="/icons/icon-192.png" alt="Coach"
+              <motion.img src="/panda/panda_base.png" alt="Pandi"
                 animate={{ scale: [1, 1.08, 1] }}
-                transition={{ duration: 1.2, repeat: Infinity, ease: 'easeInOut' }}
-                style={{ width: 32, height: 32, borderRadius: 10, flexShrink: 0 }} />
+                transition={{ duration: 1.2, repeat: Infinity }}
+                style={{ width: 32, height: 32, borderRadius: 10, flexShrink: 0, objectFit:'contain' }} />
               <div className="rounded-2xl px-4 py-3 flex flex-col gap-1"
                 style={{ background: theme.surface, border: `1px solid ${theme.border}` }}>
-                <p className="text-xs font-medium" style={{ color: theme.primary }}>
-                  Pandi está pensando...
-                </p>
+                <p className="text-xs font-medium" style={{ color: theme.primary }}>Pandi está pensando…</p>
                 <div className="flex items-center gap-1">
-                  {[0, 1, 2].map(i => (
-                    <motion.div key={i}
-                      animate={{ y: [0, -4, 0] }}
-                      transition={{ duration: 0.6, repeat: Infinity, delay: i * 0.15, ease: 'easeInOut' }}
+                  {[0,1,2].map(i => (
+                    <motion.div key={i} animate={{ y: [0,-4,0] }}
+                      transition={{ duration: 0.6, repeat: Infinity, delay: i * 0.15 }}
                       style={{ width: 6, height: 6, borderRadius: '50%', background: theme.primary }} />
                   ))}
                 </div>
@@ -369,7 +347,6 @@ export default function Coach() {
           )}
         </AnimatePresence>
 
-        {/* Banner upgrade */}
         {showUpgrade && (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
             className="mx-1 p-3 rounded-2xl flex items-center gap-3"
@@ -379,14 +356,12 @@ export default function Coach() {
               <p className="text-xs font-bold" style={{ color: theme.text }}>Límite diario alcanzado</p>
               <p className="text-[10px]" style={{ color: theme.textMuted }}>Vuelve mañana o hazte Premium</p>
             </div>
-            <Link to="/premium"
-              className="text-xs font-bold px-3 py-1.5 rounded-xl text-white flex-shrink-0"
+            <Link to="/premium" className="text-xs font-bold px-3 py-1.5 rounded-xl text-white flex-shrink-0"
               style={{ background: theme.primary }}>
               Premium
             </Link>
           </motion.div>
         )}
-
         <div ref={bottomRef} />
       </div>
 
@@ -397,7 +372,7 @@ export default function Coach() {
           <div className="flex gap-2 overflow-x-auto pb-2 mb-3">
             {SUGGESTIONS.map(s => (
               <button key={s} onClick={() => send(s)}
-                className="flex-shrink-0 text-xs rounded-full px-3 py-1.5 transition-all"
+                className="flex-shrink-0 text-xs rounded-full px-3 py-1.5"
                 style={{ background: theme.surface2, border: `1px solid ${theme.border}`, color: theme.textMuted }}>
                 {s}
               </button>
@@ -405,30 +380,24 @@ export default function Coach() {
           </div>
         )}
         <div className="flex gap-2">
-          <input className="input flex-1 text-sm" placeholder="Pregunta algo a tu coach…"
+          <input className="input flex-1 text-sm" placeholder="Pregunta algo a Pandi…"
             value={input} onChange={e => setInput(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && send()} />
           <button onClick={() => send()} disabled={!input.trim() || loading}
-            className="w-11 h-11 rounded-xl flex items-center justify-center active:scale-90 transition-all flex-shrink-0 disabled:opacity-40"
+            className="w-11 h-11 rounded-xl flex items-center justify-center active:scale-90 flex-shrink-0 disabled:opacity-40"
             style={{ background: theme.primary }}>
             <Send size={16} color="#fff" />
           </button>
         </div>
       </div>
 
-      {/* Modal guardar */}
       <AnimatePresence>
         {saveModal && (
-          <SaveModal message={saveModal} theme={theme}
-            onSave={saveToInbox} onClose={() => setSaveModal(null)} />
+          <SaveModal message={saveModal} theme={theme} onSave={saveToInbox} onClose={() => setSaveModal(null)} />
         )}
       </AnimatePresence>
-
-      {/* Panel bandeja */}
       <AnimatePresence>
-        {showInbox && (
-          <InboxPanel userId={user?.id} theme={theme} onClose={() => setShowInbox(false)} />
-        )}
+        {showInbox && <InboxPanel userId={user?.id} theme={theme} onClose={() => setShowInbox(false)} />}
       </AnimatePresence>
     </div>
   )

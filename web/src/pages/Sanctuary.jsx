@@ -1,5 +1,5 @@
 // ─── pages/Sanctuary.jsx ─────────────────────────────────────────────────────
-// Santuario — Ajustado al 100% de la pantalla, ultra-fluido y libre de errores.
+// Santuario — Ajustado al 100% de la pantalla, ultra-fluido y blindado sin subcomponentes externos.
 
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -109,21 +109,6 @@ function useNightMode() {
     return () => clearInterval(t)
   }, [])
   return isNight
-}
-
-function CareBar({ icon: Icon, value = 80, color }) {
-  return (
-    <div style={{ display:'flex', alignItems:'center', gap:5 }}>
-      <Icon size={12} color={color} />
-      <div style={{ width:70, height:5, borderRadius:3, background:'rgba(255,255,255,0.2)', overflow:'hidden' }}>
-        <motion.div animate={{ width:`${value}%` }} transition={{ duration:0.5 }}
-          style={{ height:'100%', borderRadius:3, background:color }} />
-      </div>
-      <span style={{ fontSize:10, color:'rgba(255,255,255,0.7)', fontWeight:700, minWidth:24 }}>
-        {Math.round(value)}
-      </span>
-    </div>
-  )
 }
 
 function ObjectPopup({ zone, onClose, onInteract }) {
@@ -236,8 +221,8 @@ export default function Sanctuary() {
   function handleScreenTap(e) {
     if (editMode || isNight || zoomZone) return
 
-    const vw = !isLandscape ? dimensions.h : dimensions.w
-    const vh = !isLandscape ? dimensions.w : dimensions.h
+    const viewWidth = !isLandscape ? dimensions.h : dimensions.w
+    const viewHeight = !isLandscape ? dimensions.w : dimensions.h
 
     let clientX = e.clientX
     let clientY = e.clientY
@@ -247,8 +232,8 @@ export default function Sanctuary() {
       clientY = dimensions.w - e.clientX
     }
 
-    const logicalWx = (clientX / (vw || 1)) * BASE_W
-    const logicalWy = (clientY / (vh || 1)) * BASE_H
+    const logicalWx = (clientX / (viewWidth || 1)) * BASE_W
+    const logicalWy = (clientY / (viewHeight || 1)) * BASE_H
 
     let nearest = null, minDist = 65
     zones.forEach(z => {
@@ -270,10 +255,19 @@ export default function Sanctuary() {
     try { e.currentTarget.setPointerCapture(e.pointerId) } catch {}
   }
 
+  // Sincronización del perfil de usuario si cambia asíncronamente en el store global
+  useEffect(() => {
+    if (profile) {
+      if (profile.pandi_hunger !== undefined) setHunger(profile.pandi_hunger)
+      if (profile.pandi_energy !== undefined) setEnergy(profile.pandi_energy)
+      if (profile.pandi_happiness !== undefined) setHappiness(profile.pandi_happiness)
+    }
+  }, [profile])
+
   function onZoneDragMove(e) {
     if (!draggingZoneId.current) return
-    const vw = !isLandscape ? dimensions.h : dimensions.w
-    const vh = !isLandscape ? dimensions.w : dimensions.h
+    const viewWidth = !isLandscape ? dimensions.h : dimensions.w
+    const viewHeight = !isLandscape ? dimensions.w : dimensions.h
 
     let clientX = e.clientX
     let clientY = e.clientY
@@ -282,8 +276,8 @@ export default function Sanctuary() {
       clientY = dimensions.w - e.clientX
     }
 
-    const logicalWx = (clientX / (vw || 1)) * BASE_W
-    const logicalWy = (clientY / (vh || 1)) * BASE_H
+    const logicalWx = (clientX / (viewWidth || 1)) * BASE_W
+    const logicalWy = (clientY / (viewHeight || 1)) * BASE_H
     const id = draggingZoneId.current
 
     setZones(zs => zs.map(z => z.id === id
@@ -327,11 +321,17 @@ export default function Sanctuary() {
   }
 
   async function saveCare(h, e, hap) {
-    if (!user?.id) return
-    await supabase.from('user_profiles').update({
-      pandi_hunger: Math.round(h), pandi_energy: Math.round(e),
-      pandi_happiness: Math.round(hap), pandi_care_updated_at: new Date().toISOString()
-    }).eq('id', user.id)
+    if (!user?.id) return // Blindaje ante llamadas sin sesión cargada todavía
+    try {
+      await supabase.from('user_profiles').update({
+        pandi_hunger: Math.round(h), 
+        pandi_energy: Math.round(e),
+        pandi_happiness: Math.round(hap), 
+        pandi_care_updated_at: new Date().toISOString()
+      }).eq('id', user.id)
+    } catch (err) {
+      console.error("Error actualizando perfil en Supabase:", err)
+    }
   }
 
   function showToast(t) { setToast(t); setTimeout(() => setToast(null), 2500) }
@@ -365,7 +365,7 @@ export default function Sanctuary() {
       onPointerMove={onZoneDragMove}
       onPointerUp={onZoneDragEnd}
     >
-      {/* MAPA ADAPTADO AL 100% */}
+      {/* MAPA RESPONSIVO COMPLETO AL 100% */}
       <div style={{
         position: 'absolute',
         width: BASE_W,
@@ -416,7 +416,7 @@ export default function Sanctuary() {
         </AnimatePresence>
       </div>
 
-      {/* HUD SEGURO (Z-INDEX SUPERIOR A LA BARRA GLOBAL) */}
+      {/* INTERFAZ DE USUARIO (HUD) TOTALMENTE INLINE - EVITA EL PROBLEMA DE BUNDLING EN PRODUCCIÓN */}
       <div style={{ position:'absolute', top:16, left:16, zIndex:10010 }}>
         <button onClick={(e) => { e.stopPropagation(); navigate(-1); }}
           style={{ width:42, height:42, borderRadius:12, border:'none', background:'white', display:'flex', alignItems:'center', justifyContent:'center', boxShadow:'0 4px 12px rgba(0,0,0,0.15)', cursor:'pointer' }}>
@@ -424,11 +424,33 @@ export default function Sanctuary() {
         </button>
       </div>
 
+      {/* PANEL DE NECESIDADES RENDEREADO DIRECTAMENTE INLINE */}
       <div style={{ position:'absolute', top:16, right:16, zIndex:10010, background:'rgba(255,255,255,0.95)', borderRadius:16, padding:'12px', minWidth:160, boxShadow:'0 4px 12px rgba(0,0,0,0.1)' }}>
         <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
-          <CareBar icon={Heart} value={hunger}    color='#FF8FA3' />
-          <CareBar icon={Zap}   value={energy}    color='#FCD34D' />
-          <CareBar icon={Star}  value={happiness} color='#2EC4B6' />
+          {/* Barra de Hambre */}
+          <div style={{ display:'flex', alignItems:'center', gap:5 }}>
+            <Heart size={12} color='#FF8FA3' />
+            <div style={{ width:70, height:5, borderRadius:3, background:'rgba(0,0,0,0.1)', overflow:'hidden' }}>
+              <motion.div animate={{ width:`${hunger}%` }} transition={{ duration:0.5 }} style={{ height:'100%', borderRadius:3, background:'#FF8FA3' }} />
+            </div>
+            <span style={{ fontSize:10, color:'#1A2332', fontWeight:700, minWidth:24 }}>{Math.round(hunger)}</span>
+          </div>
+          {/* Barra de Energía */}
+          <div style={{ display:'flex', alignItems:'center', gap:5 }}>
+            <Zap size={12} color='#FCD34D' />
+            <div style={{ width:70, height:5, borderRadius:3, background:'rgba(0,0,0,0.1)', overflow:'hidden' }}>
+              <motion.div animate={{ width:`${energy}%` }} transition={{ duration:0.5 }} style={{ height:'100%', borderRadius:3, background:'#FCD34D' }} />
+            </div>
+            <span style={{ fontSize:10, color:'#1A2332', fontWeight:700, minWidth:24 }}>{Math.round(energy)}</span>
+          </div>
+          {/* Barra de Felicidad */}
+          <div style={{ display:'flex', alignItems:'center', gap:5 }}>
+            <Star size={12} color='#2EC4B6' />
+            <div style={{ width:70, height:5, borderRadius:3, background:'rgba(0,0,0,0.1)', overflow:'hidden' }}>
+              <motion.div animate={{ width:`${happiness}%` }} transition={{ duration:0.5 }} style={{ height:'100%', borderRadius:3, background:'#2EC4B6' }} />
+            </div>
+            <span style={{ fontSize:10, color:'#1A2332', fontWeight:700, minWidth:24 }}>{Math.round(happiness)}</span>
+          </div>
         </div>
       </div>
 

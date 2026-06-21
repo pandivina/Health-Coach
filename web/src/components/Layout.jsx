@@ -1,10 +1,14 @@
 import { Outlet, useLocation } from 'react-router-dom'
 import BottomNav from './BottomNav'
 import CoachFAB from './CoachFAB'
+import CoachMicroBubble from './CoachMicroBubble'
 import { useTheme } from '../contexts/ThemeProvider'
 
 // Rutas donde el FAB no aparece (el coach ya tiene su propia UI ahí)
 const FAB_EXCLUDED = ['/coach', '/onboarding', '/auth', '/']
+
+// Rutas donde el MicroBubble no aparece
+const BUBBLE_EXCLUDED = ['/coach', '/onboarding', '/auth', '/']
 
 // Rutas a pantalla completa: sin BottomNav ni chrome del layout
 const NAV_EXCLUDED = ['/onboarding', '/auth']
@@ -12,8 +16,10 @@ const NAV_EXCLUDED = ['/onboarding', '/auth']
 export default function Layout() {
   const { theme }    = useTheme()
   const { pathname } = useLocation()
-  const showFAB = !FAB_EXCLUDED.includes(pathname)
-  const showNav = !NAV_EXCLUDED.includes(pathname)
+
+  const showFAB    = !FAB_EXCLUDED.includes(pathname)
+  const showNav    = !NAV_EXCLUDED.includes(pathname)
+  const showBubble = !BUBBLE_EXCLUDED.includes(pathname)
 
   return (
     <div className="min-h-screen flex flex-col max-w-lg mx-auto relative"
@@ -21,8 +27,9 @@ export default function Layout() {
       <main className="flex-1 overflow-y-auto">
         <Outlet />
       </main>
-      {showNav && <BottomNav />}
-      {showFAB && <CoachFAB />}
+      {showNav    && <BottomNav />}
+      {showFAB    && <CoachFAB />}
+      {showBubble && <CoachMicroBubble />}
     </div>
   )
 }

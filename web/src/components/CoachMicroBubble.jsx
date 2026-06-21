@@ -70,7 +70,7 @@ export default function CoachMicroBubble() {
       setTip(`Solo ${today.water || 0} vasos de agua hasta ahora 💧`)
       setLevel(1)
     }
-  }, [today, recoveryLight, currentModule, h])
+  }, [today, recoveryLight, currentModule, hidden, level])
 
   async function quickChat() {
     if (!chatInput.trim() || chatLoading) return

@@ -38,7 +38,7 @@ const STATE_CONFIG = {
     glow:          'rgba(245,158,11,0.4)',
     dot:           '#F59E0B',
     msg:           'Ritmo moderado. Ajustando tu plan.',
-    frames:        ['/panda/panda_base.png','/panda/thinking_1.png','/panda/panda_base.png','/panda/thinking_1.png'],
+    frames:        ['/panda/panda_base.png','/panda/panda_happy.png','/panda/panda_happy.png','/panda/panda_base.png','/panda/panda_happy.png','/panda/panda_base.png'],
     frameDuration: 3000,
   },
   RED: {
@@ -47,7 +47,7 @@ const STATE_CONFIG = {
     glow:          'rgba(255,143,163,0.4)',
     dot:           '#FF8FA3',
     msg:           'Hoy el descanso ES el entrenamiento.',
-    frames:        ['/panda/panda_base.png','/panda/thinking_1.png','/panda/panda_base.png','/panda/thinking_1.png'],
+    frames:        ['/panda/panda_base.png','/panda/panda_happy.png','/panda/panda_happy.png','/panda/panda_base.png','/panda/panda_happy.png','/panda/panda_base.png'],
     frameDuration: 3500,
   },
 }
@@ -139,7 +139,7 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name, userId }) {
   // Parpadeo del Zzz — solo de noche
   useEffect(() => {
     if (!isNight) return
-    const t = setInterval(() => setZzzOn(z => !z), 1400)
+    const t = setInterval(() => setZzzOn(z => !z), 2400)
     return () => clearInterval(t)
   }, [isNight])
 
@@ -173,7 +173,7 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name, userId }) {
 
   return (
     <div style={{
-      position: 'relative',
+      position: 'relative', bottom:'15%',
       width: '100%',
       height: isMobile ? '95vw' : '50vw',
       maxHeight: isMobile ? 550 : 500,

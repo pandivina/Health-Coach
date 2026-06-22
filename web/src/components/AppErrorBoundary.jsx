@@ -16,19 +16,17 @@ class AppErrorBoundary extends Component {
 
   componentDidUpdate() {
     if (!this.state.hasError) return
-
-    // Contar intentos para evitar bucle infinito
     const key = 'pandi_error_count'
     const count = parseInt(sessionStorage.getItem(key) || '0')
 
+    // Tras el primer crash para — muestra el botón sin redirigir más
     if (count >= 1) {
-      // Demasiados crashes — limpiar y esperar sin redirigir
       sessionStorage.removeItem(key)
       return
     }
 
+    // Primer crash — redirige UNA vez con delay largo
     sessionStorage.setItem(key, String(count + 1))
-
     this.timeoutId = setTimeout(() => {
       window.location.href = '/home'
     }, 10000)
@@ -46,8 +44,9 @@ class AppErrorBoundary extends Component {
 
   render() {
     if (this.state.hasError) {
+      // Si count ya se limpió (>= 1) → mostramos botón Reintentar directamente
       const count = parseInt(sessionStorage.getItem('pandi_error_count') || '0')
-      const looping = count >= 3
+      const showButton = count === 0 // count se limpió → mostrar botón
 
       return (
         <div style={{
@@ -60,18 +59,18 @@ class AppErrorBoundary extends Component {
             background:'linear-gradient(135deg,#2EC4B6,#FF8FA3)',
             display:'flex', alignItems:'center', justifyContent:'center',
             fontSize:28,
-            animation: looping ? 'none' : 'pulseScale 1.4s ease-in-out infinite',
+            animation: showButton ? 'none' : 'pulseScale 1.4s ease-in-out infinite',
           }}>
             🐼
           </div>
 
-          {looping ? (
+          {showButton ? (
             <>
               <p style={{ fontSize:15, fontWeight:800, color:'#1A2332', margin:0, textAlign:'center' }}>
                 Algo no va bien
               </p>
               <p style={{ fontSize:12, color:'#9CA3AF', margin:0, textAlign:'center', maxWidth:260 }}>
-                Pandi ha encontrado un problema. Toca para intentarlo de nuevo.
+                Pandi ha encontrado un problema.
               </p>
               <button onClick={() => this.handleReset()}
                 style={{ padding:'12px 28px', borderRadius:16, border:'none', cursor:'pointer',

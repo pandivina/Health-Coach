@@ -7,6 +7,7 @@ import QuickBreathModal, { QuickBreathButton } from '../components/QuickBreath'
 import { checkAchievements } from '../lib/achievements'
 import AchievementUnlockedModal from '../components/AchievementUnlockedModal'
 import WeeklyChallengesWidget from '../components/WeeklyChallengesWidget'
+import RecoveryBadge from '../components/RecoveryBadge'
 import { useTheme } from '../contexts/ThemeProvider'
 import { usePandiState } from '../contexts/PandiStateContext'
 import { supabase } from '../lib/supabase'
@@ -38,7 +39,7 @@ const STATE_CONFIG = {
     glow:          'rgba(245,158,11,0.4)',
     dot:           '#F59E0B',
     msg:           'Ritmo moderado. Ajustando tu plan.',
-    frames:        ['/panda/panda_base.png','/panda/panda_happy.png','/panda/panda_happy.png','/panda/panda_base.png','/panda/panda_happy.png','/panda/panda_base.png'],
+    frames:        ['/panda/panda_base.png','/panda/thinking_1.png','/panda/panda_base.png','/panda/thinking_1.png'],
     frameDuration: 3000,
   },
   RED: {
@@ -47,7 +48,7 @@ const STATE_CONFIG = {
     glow:          'rgba(255,143,163,0.4)',
     dot:           '#FF8FA3',
     msg:           'Hoy el descanso ES el entrenamiento.',
-    frames:        ['/panda/panda_base.png','/panda/panda_happy.png','/panda/panda_happy.png','/panda/panda_base.png','/panda/panda_happy.png','/panda/panda_base.png'],
+    frames:        ['/panda/panda_base.png','/panda/thinking_1.png','/panda/panda_base.png','/panda/thinking_1.png'],
     frameDuration: 3500,
   },
 }
@@ -139,7 +140,7 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name, userId }) {
   // Parpadeo del Zzz — solo de noche
   useEffect(() => {
     if (!isNight) return
-    const t = setInterval(() => setZzzOn(z => !z), 2400)
+    const t = setInterval(() => setZzzOn(z => !z), 1400)
     return () => clearInterval(t)
   }, [isNight])
 
@@ -173,7 +174,7 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name, userId }) {
 
   return (
     <div style={{
-      position: 'relative', bottom:'15%',
+      position: 'relative',
       width: '100%',
       height: isMobile ? '95vw' : '50vw',
       maxHeight: isMobile ? 550 : 500,
@@ -263,8 +264,8 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name, userId }) {
       )}
 
       {/* PANDI — de día navega directo, de noche hay que despertarla */}
-<div style={{ position:'absolute', bottom: isNight ? '7%' : '15%', left:'50%', transform:'translateX(-50%)',
-  zIndex:5, width:isMobile ? '48%' : '22%', maxWidth:200 }}>
+      <div style={{ position:'absolute', bottom:'6%', left:'50%', transform:'translateX(-50%)',
+        zIndex:5, width:isMobile ? '48%' : '22%', maxWidth:200 }}>
         <motion.div
           onClick={handlePandiTap}
           whileTap={{ scale:0.95 }}
@@ -965,6 +966,11 @@ export default function Home() {
 
         {/* MINI WIDGET SEMANAL */}
         <MiniWeekWidget userId={user?.id} theme={theme} />
+
+        {/* RECOVERY BADGE — Espejo Metabólico */}
+        <div style={{ marginBottom:12 }}>
+          <RecoveryBadge theme={theme} />
+        </div>
 
         {/* RESPIRACIÓN RÁPIDA */}
         <div style={{ marginBottom:12 }}>

@@ -1,17 +1,13 @@
 // ─── pages/Sanctuary.jsx ─────────────────────────────────────────────────────
-// Santuario — mundo isométrico con pan libre.
-// Primera visita: overlay semitransparente "Gira tu móvil" + botón Iniciar.
-// Visitas siguientes: acceso directo sin overlay.
+// Santuario — mundo isométrico optimizado sin conflictos de hooks en producción.
 
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, Heart, Zap, Star, Settings, Check, X } from 'lucide-react'
+import { ArrowLeft, Heart, Zap, Star, Settings, Check } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useStore } from '../store/useStore'
-import { useCoachAwareness } from '../contexts/CoachAwarenessContext'
 
-// ─── ASSETS ──────────────────────────────────────────────────────────────────
 const ASSETS = {
   bg_day:   '/sanctuary/bg_day.png',
   bg_night: '/sanctuary/bg_night.png',
@@ -31,14 +27,9 @@ const ASSETS = {
   },
 }
 
-// Tamaño del mundo en px — más grande que la pantalla para poder hacer pan
 const WORLD_W = 1200
 const WORLD_H = 800
 
-// ─── ZONA PROHIBIDA — área del estanque que Pandi no puede pisar ─────────────
-// Coordenadas aproximadas del estanque en el mundo 1200x800
-// Ajusta estos valores con el modo edición cuando tengas el fondo real
-// ─── LÍMITES ISOMÉTRICOS — coordenadas fijas en el mundo 1200×800 ─────────────
 const PLAY_DIAMOND = {
   top:   { wx:623,  wy:201 },
   right: { wx:1118, wy:510 },
@@ -53,7 +44,6 @@ const WATER_DIAMOND = {
   left:  { wx:324,  wy:419 },
 }
 
-// Centro y semiejes del rombo
 function getDiamondCenter(d) {
   return {
     cx: (d.left.wx + d.right.wx) / 2,
@@ -68,11 +58,9 @@ function isInDiamond(wx, wy, diamond = PLAY_DIAMOND) {
   return (Math.abs(wx - cx) / hw) + (Math.abs(wy - cy) / hh) <= 1
 }
 
-// Empujar un punto hacia el interior del rombo si está fuera
 function clampToDiamond(wx, wy, diamond = PLAY_DIAMOND) {
   if (isInDiamond(wx, wy, diamond)) return { wx, wy }
   const { cx, cy, hw, hh } = getDiamondCenter(diamond)
-  // Escalar hacia el centro hasta quedar dentro (con margen de 30px)
   const margin = 0.93
   const dx = wx - cx, dy = wy - cy
   const factor = margin / ((Math.abs(dx) / hw) + (Math.abs(dy) / hh))
@@ -83,24 +71,19 @@ function isInWater(wx, wy) {
   return isInDiamond(wx, wy, WATER_DIAMOND)
 }
 
-// Combinar: confinar dentro del suelo Y evitar el agua
 function avoidWater(wx, wy) {
-  // 1. Confinar al rombo jugable
   const safe = clampToDiamond(wx, wy)
-  wx = safe.wx; wy = safe.wy
-
-  // 2. Si cae en el agua, empujar hacia afuera del agua
-  if (!isInWater(wx, wy)) return { wx, wy }
+  let wx2 = safe.wx; let wy2 = safe.wy
+  if (!isInWater(wx2, wy2)) return { wx: wx2, wy: wy2 }
   const { cx, cy, hw, hh } = getDiamondCenter(WATER_DIAMOND)
-  const margin = 1.08 // justo fuera del borde del agua
-  const dx = wx - cx, dy = wy - cy
+  const margin = 1.08 
+  const dx = wx2 - cx, dy = wy2 - cy
   const norm = (Math.abs(dx) / hw) + (Math.abs(dy) / hh)
   const factor = margin / norm
   const pushed = { wx: Math.round(cx + dx * factor), wy: Math.round(cy + dy * factor) }
-  // Asegurar que el punto empujado sigue dentro del rombo jugable
   return clampToDiamond(pushed.wx, pushed.wy)
 }
-// Coordenadas en px dentro del mundo (0-WORLD_W, 0-WORLD_H)
+
 const DEFAULT_ZONES = [
   { id:'bed',      label:'Cama',     emoji:'🛏️', wx:600, wy:340, frame:'sleeping',   action:'sleep',    color:'#818CF8' },
   { id:'food',     label:'Cuenco',   emoji:'🍚', wx:280, wy:520, frame:'eating',     action:'feed',     color:'#F97316' },
@@ -110,175 +93,94 @@ const DEFAULT_ZONES = [
   { id:'look',     label:'Mirar',    emoji:'👀', wx:820, wy:380, frame:'looking',    action:'look',     color:'#60A5FA' },
   { id:'laydown',  label:'Tumbarse', emoji:'😴', wx:200, wy:350, frame:'laydown',    action:'laydown',  color:'#F472B6' },
 ]
-const ZONES_KEY = 'sanctuary_zones_v2'
-function loadZones() {
-  try { const s = localStorage.getItem(ZONES_KEY); return s ? JSON.parse(s) : DEFAULT_ZONES }
-  catch { return DEFAULT_ZONES }
-}
-function saveZones(z) { try { localStorage.setItem(ZONES_KEY, JSON.stringify(z)) } catch {} }
 
-// ─── HOOKS ───────────────────────────────────────────────────────────────────
-function useNightMode() {
-  const [isNight, setIsNight] = useState(() => { const h=new Date().getHours(); return h>=22||h<7 })
-  useEffect(() => {
-    const t = setInterval(() => { const h=new Date().getHours(); setIsNight(h>=22||h<7) }, 60000)
-    return () => clearInterval(t)
-  }, [])
-  return isNight
-}
-
-// ─── PANTALLA DE INTRO — solo la primera vez ──────────────────────────────────
 const INTRO_KEY = 'sanctuary_intro_done'
+const ZONES_KEY = 'sanctuary_zones_v2'
 
-function SanctuaryIntro({ onStart }) {
-  return (
-    <div style={{
-      position:'fixed', inset:0, zIndex:999,
-      background:'rgba(15,20,28,0.75)', backdropFilter:'blur(6px)',
-      display:'flex', flexDirection:'column',
-      alignItems:'center', justifyContent:'center',
-      padding:32, textAlign:'center', gap:20,
-    }}>
-      <motion.div
-        animate={{ rotate:[0, 15, -15, 0] }}
-        transition={{ duration:1.5, repeat:Infinity, ease:'easeInOut' }}
-        style={{ fontSize:56 }}>
-        📱
-      </motion.div>
-
-      <div>
-        <p style={{ color:'white', fontSize:18, fontWeight:800, margin:'0 0 8px' }}>
-          Gira tu móvil
-        </p>
-        <p style={{ color:'rgba(255,255,255,0.6)', fontSize:13, margin:0, lineHeight:1.5 }}>
-          El Santuario se disfruta mejor<br/>en horizontal
-        </p>
-      </div>
-
-      <motion.button whileTap={{ scale:0.95 }} onClick={onStart}
-        style={{ marginTop:8, padding:'14px 36px', borderRadius:20, border:'none',
-          cursor:'pointer', background:'linear-gradient(135deg,#2EC4B6,#86EFAC)',
-          color:'white', fontWeight:800, fontSize:15,
-          boxShadow:'0 8px 24px rgba(46,196,182,0.4)' }}>
-        ✨ Iniciar Santuario
-      </motion.button>
-    </div>
-  )
-}
-
-// ─── BARRA DE CUIDADO ─────────────────────────────────────────────────────────
-function CareBar({ icon: Icon, value, color }) {
-  return (
-    <div style={{ display:'flex', alignItems:'center', gap:5 }}>
-      <Icon size={12} color={color} />
-      <div style={{ width:70, height:5, borderRadius:3, background:'rgba(255,255,255,0.2)', overflow:'hidden' }}>
-        <motion.div animate={{ width:`${value}%` }} transition={{ duration:0.5 }}
-          style={{ height:'100%', borderRadius:3, background:color }} />
-      </div>
-      <span style={{ fontSize:10, color:'rgba(255,255,255,0.7)', fontWeight:700, minWidth:24 }}>
-        {Math.round(value)}
-      </span>
-    </div>
-  )
-}
-
-// ─── POPUP DE OBJETO ──────────────────────────────────────────────────────────
-function ObjectPopup({ zone, onClose, onInteract }) {
-  return (
-    <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
-      style={{ position:'fixed', inset:0, zIndex:100, background:'rgba(0,0,0,0.55)',
-        backdropFilter:'blur(3px)', display:'flex', alignItems:'center', justifyContent:'center' }}
-      onClick={onClose}>
-      <motion.div initial={{ scale:0.7, opacity:0 }} animate={{ scale:1, opacity:1 }}
-        exit={{ scale:0.7, opacity:0 }} transition={{ type:'spring', damping:22, stiffness:280 }}
-        onClick={e => e.stopPropagation()}
-        style={{ background:'white', borderRadius:28, padding:'28px 24px', textAlign:'center',
-          minWidth:220, maxWidth:300, boxShadow:'0 20px 60px rgba(0,0,0,0.4)' }}>
-        <div style={{ fontSize:64, marginBottom:12 }}>{zone.emoji}</div>
-        <p style={{ fontSize:16, fontWeight:800, color:'#1A2332', margin:'0 0 6px' }}>{zone.label}</p>
-        <p style={{ fontSize:12, color:'#9CA3AF', margin:'0 0 20px' }}>
-          {zone.action==='feed'  ? '¿Le damos de comer a Pandi?' :
-           zone.action==='play'  ? '¿Jugamos con Pandi?' :
-           zone.action==='sleep' ? '¿Pandi descansa un momento?' : ''}
-        </p>
-        <div style={{ display:'flex', gap:10 }}>
-          <button onClick={onClose}
-            style={{ flex:1, padding:'11px', borderRadius:14, border:'none', cursor:'pointer',
-              background:'#F3F4F6', color:'#6B7280', fontWeight:700, fontSize:13 }}>
-            Ahora no
-          </button>
-          <button onClick={() => { onInteract(zone); onClose() }}
-            style={{ flex:1, padding:'11px', borderRadius:14, border:'none', cursor:'pointer',
-              background:zone.color, color:'white', fontWeight:700, fontSize:13 }}>
-            ¡Vamos!
-          </button>
-        </div>
-      </motion.div>
-    </motion.div>
-  )
-}
-
-// ─── COMPONENTE PRINCIPAL ────────────────────────────────────────────────────
 export default function Sanctuary() {
-  const { user, addXP }       = useStore()
-  const { snapshot: profile } = useCoachAwareness() // profile en tiempo real via realtime
-  const navigate   = useNavigate()
-  const isNight    = useNightMode()
-  const worldRef   = useRef(null)
-  const pressRef   = useRef(null)
-  const movingRef  = useRef(null)
-
-  // Intro — solo la primera vez
-  const [showIntro, setShowIntro] = useState(() => {
-    try { return !localStorage.getItem(INTRO_KEY) }
-    catch { return true }
-  })
-
-  function handleStart() {
-    try { localStorage.setItem(INTRO_KEY, '1') } catch {}
-    setShowIntro(false)
-  }
+  const { user, profile, addXP } = useStore()
+  const navigate = useNavigate()
+  
+  // Referencias obligatorias para el pan y movimiento
+  const worldRef = useRef(null)
+  const pressRef = useRef(null)
+  const movingRef = useRef(null)
+  const panStart = useRef(null)
+  const isDragging = useRef(null)
+  const offsetRef = useRef({ x: 0, y: 0 })
+  const pandiPosRef = useRef({ wx: 600, wy: 500 })
   const moveDurationRef = useRef(1.2)
+  const draggingZoneId = useRef(null)
 
-  // ── Pan fluido — offset como ref, DOM directo, sin re-renders ────────────
-  const offsetRef   = useRef({ x:0, y:0 })
-  const [offset,    setOffset]    = useState({ x:0, y:0 }) // solo para tap/coords
-  const panStart    = useRef(null)
-  const isDragging  = useRef(false)
-
-  function applyOffset(ox, oy) {
-    const vw = window.innerWidth, vh = window.innerHeight
-    const cx = Math.min(Math.max(ox, Math.min(0, vw-WORLD_W)), Math.max(0, vw-WORLD_W))
-    const cy = Math.min(Math.max(oy, Math.min(0, vh-WORLD_H)), Math.max(0, vh-WORLD_H))
-    offsetRef.current = { x:cx, y:cy }
-    // Aplicar directamente al DOM — sin setState, sin re-render
-    if (worldRef.current) {
-      worldRef.current.style.transform = `translate(${cx}px,${cy}px)`
-    }
-  }
-
-  // Zonas y modos
-  const [zones,      setZones]      = useState(loadZones)
-  const [editMode,   setEditMode]   = useState(false)
-  const [zoomZone,   setZoomZone]   = useState(null)
-  const [draggingZoneId_UNUSED, _] = [null, null] // eliminado — ahora es ref en línea 369
-
-  // Estado de Pandi — posición aleatoria entre las zonas al montar
-  const [pandiPos,   setPandiPos]   = useState(() => {
+  // 1. Estados iniciales ordenados de forma secuencial limpia
+  const [showIntro, setShowIntro] = useState(() => {
+    try { return !localStorage.getItem(INTRO_KEY) } catch { return true }
+  })
+  const [isNight, setIsNight] = useState(() => {
+    const h = new Date().getHours()
+    return h >= 22 || h < 7
+  })
+  const [offset, setOffset] = useState({ x: 0, y: 0 })
+  const [zones, setZones] = useState(() => {
+    try { const s = localStorage.getItem(ZONES_KEY); return s ? JSON.parse(s) : DEFAULT_ZONES } catch { return DEFAULT_ZONES }
+  })
+  const [editMode, setEditMode] = useState(false)
+  const [zoomZone, setZoomZone] = useState(null)
+  const [pandiPos, setPandiPos] = useState(() => {
     const z = DEFAULT_ZONES[Math.floor(Math.random() * DEFAULT_ZONES.length)]
     return { wx: z.wx, wy: z.wy }
   })
-  const pandiPosRef = useRef({ wx: 600, wy: 500 })
   const [pandiFrame, setPandiFrame] = useState('idle')
-  const [pandiFlip,  setPandiFlip]  = useState(false)
-
-  // Cuidado
-  const [hunger,    setHunger]    = useState(profile?.pandi_hunger    ?? 80)
-  const [energy,    setEnergy]    = useState(profile?.pandi_energy    ?? 80)
-  const [happiness, setHappiness] = useState(profile?.pandi_happiness ?? 80)
-  const [toast,     setToast]     = useState(null)
+  const [pandiFlip, setPandiFlip] = useState(false)
+  const [toast, setToast] = useState(null)
   const [meditatingActive, setMeditatingActive] = useState(false)
 
+  // Mapeo directo de valores del perfil de usuario
+  const hunger = profile?.pandi_hunger ?? 80
+  const energy = profile?.pandi_energy ?? 80
+  const happiness = profile?.pandi_happiness ?? 80
+
+  // 2. Efectos síncronos y asíncronos unificados
+  useEffect(() => {
+    const t = setInterval(() => {
+      const h = new Date().getHours()
+      setIsNight(h >= 22 || h < 7)
+    }, 60000)
+    return () => clearInterval(t)
+  }, [])
+
+  useEffect(() => {
+    const vw = window.innerWidth, vh = window.innerHeight
+    const ox = (vw - WORLD_W) / 2
+    const oy = (vh - WORLD_H) / 2
+    offsetRef.current = { x: ox, y: oy }
+    setOffset({ x: ox, y: oy })
+    if (worldRef.current) {
+      worldRef.current.style.transform = `translate(${ox}px,${oy}px)`
+    }
+  }, [])
+
+  useEffect(() => {
+    if (isNight) {
+      const bed = zones.find(z => z.id === 'bed')
+      if (bed) { setPandiPos({ wx: bed.wx, wy: bed.wy }); setPandiFrame('sleeping') }
+      return
+    }
+    if (['eating', 'playing'].includes(pandiFrame)) return
+    setPandiFrame(hunger < 30 ? 'sad' : 'idle')
+  }, [isNight, hunger])
+
+  useEffect(() => {
+    if (isNight || editMode) return
+    const wander = () => {
+      const z = zones[Math.floor(Math.random() * zones.length)]
+      if (z) movePandi(z.wx, z.wy, () => setPandiFrame(z.frame))
+    }
+    movingRef.current = setInterval(wander, 8000 + Math.random() * 6000)
+    return () => clearInterval(movingRef.current)
+  }, [isNight, editMode, zones])
+
+  // Lógica de movimiento de Pandi
   function movePandi(targetWx, targetWy, onArrive) {
     const safe = avoidWater(targetWx, targetWy)
     const cur = pandiPosRef.current
@@ -296,86 +198,12 @@ export default function Sanctuary() {
       setPandiFrame('idle')
       onArrive?.()
     }, duration * 1000)
-
-    return duration
   }
-  // Intentar bloquear orientación landscape al entrar (Android/PWA)
-  // En iOS no está soportado — el overlay de intro actúa de fallback
-  useEffect(() => {
-    let locked = false
-    async function lockLandscape() {
-      try {
-        await screen.orientation.lock('landscape')
-        locked = true
-      } catch {
-        // iOS Safari o navegador no compatible — sin bloqueo, el overlay guía al usuario
-      }
-    }
-    lockLandscape()
-    return () => {
-      if (locked) {
-        try { screen.orientation.unlock() } catch {}
-      }
-    }
-  }, [])
 
-  // ── Sincronización con perfil real de Supabase ───────────────────────────
-  // Se dispara cuando el CoachAwarenessContext actualiza el perfil via realtime.
-  // Impacta los estados locales inmediatamente sin nueva query a BD.
-  useEffect(() => {
-    if (!profile) return
-
-    const newHunger    = profile.pandi_hunger    ?? hunger
-    const newEnergy    = profile.pandi_energy    ?? energy
-    const newHappiness = profile.pandi_happiness ?? happiness
-
-    setHunger(newHunger)
-    setEnergy(newEnergy)
-    setHappiness(newHappiness)
-
-    // Frame reactivo: sad si hambre < 35 (umbral más temprano que el anterior de 30)
-    if (!isNight && !['eating','playing','meditating'].includes(pandiFrame)) {
-      if (newHunger < 35) {
-        setPandiFrame('sad')
-      } else if (newHappiness > 80 && pandiFrame === 'sad') {
-        // Recuperación: si mejora la felicidad, volver a idle
-        setPandiFrame('idle')
-      }
-    }
-  }, [profile?.pandi_hunger, profile?.pandi_energy, profile?.pandi_happiness])
-
-  // Frame según estado
-  useEffect(() => {
-    if (isNight) {
-      const bed = zones.find(z=>z.id==='bed')
-      if (bed) { setPandiPos({ wx:bed.wx, wy:bed.wy }); setPandiFrame('sleeping') }
-      return
-    }
-    if (['eating','playing'].includes(pandiFrame)) return
-    setPandiFrame(hunger < 30 ? 'sad' : 'idle')
-  }, [isNight, hunger])
-
-  useEffect(() => {
-    const vw = window.innerWidth, vh = window.innerHeight
-    applyOffset((vw-WORLD_W)/2, (vh-WORLD_H)/2)
-    setOffset(offsetRef.current)
-  }, [])
-  useEffect(() => {
-    if (isNight || editMode) return
-    const wander = () => {
-      const z = zones[Math.floor(Math.random() * zones.length)]
-      movePandi(z.wx, z.wy, () => setPandiFrame(z.frame))
-    }
-    movingRef.current = setInterval(wander, 8000 + Math.random() * 6000)
-    return () => clearInterval(movingRef.current)
-  }, [isNight, editMode, zones])
-
-  // ── Pan handlers ────────────────────────────────────────────────────────
-
-
+  // Interacciones táctiles del escenario
   function onPointerDown(e) {
     if (draggingZoneId.current) return
-    panStart.current = { x:e.clientX, y:e.clientY, ox:offsetRef.current.x, oy:offsetRef.current.y }
+    panStart.current = { x: e.clientX, y: e.clientY, ox: offsetRef.current.x, oy: offsetRef.current.y }
     isDragging.current = false
   }
 
@@ -383,53 +211,48 @@ export default function Sanctuary() {
     if (!panStart.current || draggingZoneId.current) return
     const dx = e.clientX - panStart.current.x
     const dy = e.clientY - panStart.current.y
-    if (Math.abs(dx)+Math.abs(dy) > 4) isDragging.current = true
+    if (Math.abs(dx) + Math.abs(dy) > 4) isDragging.current = true
     if (isDragging.current) {
-      applyOffset(panStart.current.ox + dx, panStart.current.oy + dy)
+      const ox = panStart.current.ox + dx
+      const oy = panStart.current.oy + dy
+      const vw = window.innerWidth, vh = window.innerHeight
+      const cx = Math.min(Math.max(ox, Math.min(0, vw - WORLD_W)), Math.max(0, vw - WORLD_W))
+      const cy = Math.min(Math.max(oy, Math.min(0, vh - WORLD_H)), Math.max(0, vh - WORLD_H))
+      offsetRef.current = { x: cx, y: cy }
+      if (worldRef.current) worldRef.current.style.transform = `translate(${cx}px,${cy}px)`
     }
   }
 
   function onPointerUp(e) {
     if (!panStart.current) return
     if (!isDragging.current) {
-      // sincronizar offset ref → state para calcular coordenadas del tap
       setOffset({ ...offsetRef.current })
-      handleTap(e)
+      const wx = e.clientX - offsetRef.current.x
+      const wy = e.clientY - offsetRef.current.y
+
+      if (!editMode && !isNight && !zoomZone) {
+        let nearest = null, minDist = 80
+        zones.forEach(z => {
+          const d = Math.sqrt(Math.pow(wx - z.wx, 2) + Math.pow(wy - z.wy, 2))
+          if (d < minDist) { minDist = d; nearest = z }
+        })
+        if (nearest) { setZoomZone(nearest) } else {
+          clearInterval(movingRef.current)
+          setMeditatingActive(false)
+          movePandi(wx, wy, () => setPandiFrame('idle'))
+        }
+      }
     }
     panStart.current = null
     isDragging.current = false
   }
 
-  // ── Tap en el mundo ─────────────────────────────────────────────────────
-  function handleTap(e) {
-    if (editMode || isNight || zoomZone) return
-    const o = offsetRef.current
-    const wx = e.clientX - o.x
-    const wy = e.clientY - o.y
-
-    // ¿Cerca de una zona?
-    let nearest = null, minDist = 80
-    zones.forEach(z => {
-      const d = Math.sqrt(Math.pow(wx-z.wx,2)+Math.pow(wy-z.wy,2))
-      if (d < minDist) { minDist=d; nearest=z }
-    })
-    if (nearest) { setZoomZone(nearest); return }
-
-    // Mover Pandi libremente — evita agua y anima dirección correcta
-    clearInterval(movingRef.current)
-    setMeditatingActive(false)
-    movePandi(wx, wy, () => setPandiFrame('idle'))
-  }
-
-  // ── Arrastrar zona en modo edición ──────────────────────────────────────
-  const draggingZoneId = useRef(null) // ref en vez de state — sin delay asíncrono
-
+  // Gestión del modo edición
   function onZoneDragStart(e, zoneId) {
     e.stopPropagation()
     e.preventDefault()
     draggingZoneId.current = zoneId
     panStart.current = null
-    // setPointerCapture garantiza que movimiento y fin van a este elemento en móvil
     try { e.currentTarget.setPointerCapture(e.pointerId) } catch {}
   }
 
@@ -440,7 +263,7 @@ export default function Sanctuary() {
     const wy = e.clientY - offset.y
     const id = draggingZoneId.current
     setZones(zs => zs.map(z => z.id === id
-      ? { ...z, wx:Math.max(40,Math.min(wx,WORLD_W-40)), wy:Math.max(40,Math.min(wy,WORLD_H-40)) }
+      ? { ...z, wx: Math.max(40, Math.min(wx, WORLD_W - 40)), wy: Math.max(40, Math.min(wy, WORLD_H - 40)) }
       : z
     ))
   }
@@ -451,49 +274,42 @@ export default function Sanctuary() {
     draggingZoneId.current = null
   }
 
-  // ── Interacción con zona ────────────────────────────────────────────────
   async function triggerZoneAction(zone) {
     setMeditatingActive(false)
     clearInterval(movingRef.current)
     movePandi(zone.wx, zone.wy, async () => {
       setPandiFrame(zone.frame)
-      if (zone.action==='feed') {
-        const h=Math.min(hunger+25,100), hap=Math.min(happiness+10,100)
-        setHunger(h); setHappiness(hap); showToast('¡Pandi come feliz! 😋'); addXP?.(5)
-        await saveCare(h, energy, hap)
+      if (zone.action === 'feed') {
+        const h = Math.min(hunger + 25, 100), hap = Math.min(happiness + 10, 100)
+        showToast('¡Pandi come feliz! 😋'); addXP?.(5); await saveCare(h, energy, hap)
         setTimeout(() => setPandiFrame('idle'), 2500)
       }
-      if (zone.action==='play') {
-        const e2=Math.max(energy-15,0), hap=Math.min(happiness+20,100)
-        setEnergy(e2); setHappiness(hap); showToast('¡Pandi juega contigo! 🎉'); addXP?.(10)
-        await saveCare(hunger, e2, hap)
+      if (zone.action === 'play') {
+        const e2 = Math.max(energy - 15, 0), hap = Math.min(happiness + 20, 100)
+        showToast('¡Pandi juega contigo! 🎉'); addXP?.(10); await saveCare(hunger, e2, hap)
         setTimeout(() => setPandiFrame('idle'), 2500)
       }
-      if (zone.action==='sleep') {
-        const e2=Math.min(energy+20,100)
-        setEnergy(e2); showToast('Pandi descansa 💤'); addXP?.(5)
-        await saveCare(hunger, e2, happiness)
+      if (zone.action === 'sleep') {
+        const e2 = Math.min(energy + 20, 100)
+        showToast('Pandi descansa 💤'); addXP?.(5); await saveCare(hunger, e2, happiness)
         setTimeout(() => setPandiFrame('idle'), 3000)
       }
-      if (zone.action==='meditate') {
-        const hap=Math.min(happiness+15,100), e2=Math.min(energy+10,100)
-        setHappiness(hap); setEnergy(e2)
-        showToast('Pandi medita... Tócala para unirte 🧘')
-        addXP?.(8); await saveCare(hunger, e2, hap)
+      if (zone.action === 'meditate') {
+        const hap = Math.min(happiness + 15, 100), e2 = Math.min(energy + 10, 100)
+        showToast('Pandi medita... Tócala para unirte 🧘'); addXP?.(8); await saveCare(hunger, e2, hap)
         setMeditatingActive(true)
       }
-      if (zone.action==='sit') {
+      if (zone.action === 'sit') {
         showToast('Pandi se sienta tranquila 🪑')
         setTimeout(() => setPandiFrame('idle'), 3000)
       }
-      if (zone.action==='look') {
+      if (zone.action === 'look') {
         showToast('Pandi observa el santuario 👀')
-        setTimeout(() => { setPandiFrame('happy'); setTimeout(()=>setPandiFrame('idle'),1500) }, 2000)
+        setTimeout(() => { setPandiFrame('happy'); setTimeout(() => setPandiFrame('idle'), 1500) }, 2000)
       }
-      if (zone.action==='laydown') {
-        const e2=Math.min(energy+10,100)
-        setEnergy(e2); showToast('Pandi se tumba a descansar 😴'); addXP?.(3)
-        await saveCare(hunger, e2, happiness)
+      if (zone.action === 'laydown') {
+        const e2 = Math.min(energy + 10, 100)
+        showToast('Pandi se tumba a descansar 😴'); addXP?.(3); await saveCare(hunger, e2, happiness)
         setTimeout(() => setPandiFrame('idle'), 4000)
       }
     })
@@ -502,259 +318,162 @@ export default function Sanctuary() {
   async function saveCare(h, e, hap) {
     if (!user?.id) return
     await supabase.from('user_profiles').update({
-      pandi_hunger:Math.round(h), pandi_energy:Math.round(e),
-      pandi_happiness:Math.round(hap), pandi_care_updated_at:new Date().toISOString()
+      pandi_hunger: Math.round(h), pandi_energy: Math.round(e),
+      pandi_happiness: Math.round(hap), pandi_care_updated_at: new Date().toISOString()
     }).eq('id', user.id)
   }
 
-  function showToast(t) { setToast(t); setTimeout(()=>setToast(null),2500) }
-  function startEditPress() { pressRef.current = setTimeout(()=>setEditMode(true),1500) }
-  function endEditPress()   { clearTimeout(pressRef.current) }
-  function saveEdit() { saveZones(zones); setEditMode(false); showToast('Zonas guardadas ✓') }
+  function showToast(t) { setToast(t); setTimeout(() => setToast(null), 2500) }
+  function saveEdit() { try { localStorage.setItem(ZONES_KEY, JSON.stringify(zones)) } catch {} setEditMode(false); showToast('Zonas guardadas ✓') }
 
-  const careLevel = (hunger+energy+happiness)/3
+  const careLevel = (hunger + energy + happiness) / 3
   const bgImage = isNight ? ASSETS.bg_night : ASSETS.bg_day
 
-  // Portrait → aviso
-  // Sin bloqueo por orientación — el overlay de intro guía al usuario
-
   return (
-    <div style={{ position:'fixed', inset:0, background:'#0f1612', overflow:'hidden',
-      paddingBottom:'calc(env(safe-area-inset-bottom, 0px) + 56px)' }}
+    <div style={{ position: 'fixed', inset: 0, background: '#0f1612', overflow: 'hidden', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 56px)' }}
       onPointerDown={showIntro ? undefined : onPointerDown}
       onPointerMove={showIntro ? undefined : e => { onPointerMove(e); onZoneDragMove(e) }}
       onPointerUp={showIntro ? undefined : e => { onPointerUp(e); onZoneDragEnd() }}
       onPointerLeave={showIntro ? undefined : onZoneDragEnd}>
 
-      {/* Overlay de intro — solo la primera vez */}
       <AnimatePresence>
         {showIntro && (
-          <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
-            style={{ position:'fixed', inset:0, zIndex:999 }}>
-            <SanctuaryIntro onStart={handleStart} />
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={{ position: 'fixed', inset: 0, zIndex: 999, background: 'rgba(15,20,28,0.75)', backdropFilter: 'blur(6px)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 32, textAlign: 'center', gap: 20 }}>
+            <motion.div animate={{ rotate: [0, 15, -15, 0] }} transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }} style={{ fontSize: 56 }}>📱</motion.div>
+            <div>
+              <p style={{ color: 'white', fontSize: 18, fontWeight: 800, margin: '0 0 8px' }}>Gira tu móvil</p>
+              <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: 13, margin: 0, lineHeight: 1.5 }}>El Santuario se disfruta mejor<br />en horizontal</p>
+            </div>
+            <button onClick={() => { try { localStorage.setItem(INTRO_KEY, '1') } catch {} ; setShowIntro(false) }} style={{ marginTop: 8, padding: '14px 36px', borderRadius: 20, border: 'none', cursor: 'pointer', background: 'linear-gradient(135deg,#2EC4B6,#86EFAC)', color: 'white', fontWeight: 800, fontSize: 15, boxShadow: '0 8px 24px rgba(46,196,182,0.4)' }}>✨ Iniciar Santuario</button>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* MUNDO — se desplaza todo junto via transform (DOM directo, sin re-renders) */}
-      <div ref={worldRef} style={{
-        position:'absolute',
-        left:0, top:0,
-        transform:`translate(${offset.x}px,${offset.y}px)`,
-        width:WORLD_W, height:WORLD_H,
-        userSelect:'none', willChange:'transform',
-      }}>
-        {/* Fondo */}
-        <img src={bgImage} alt="Santuario"
-          style={{ position:'absolute', inset:0, width:'100%', height:'100%',
-            objectFit:'cover', objectPosition:'center', zIndex:0, pointerEvents:'none' }}
-          onError={e => e.target.style.background='#1a2438'} />
+      <div ref={worldRef} style={{ position: 'absolute', left: 0, top: 0, transform: `translate(${offset.x}px,${offset.y}px)`, width: WORLD_W, height: WORLD_H, userSelect: 'none', willChange: 'transform' }}>
+        <img src={bgImage} alt="Santuario" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center', zIndex: 0, pointerEvents: 'none' }} onError={e => e.target.style.background = '#1a2438'} />
 
-        {/* Puntos de zona (siempre visibles) */}
         {!editMode && zones.map(z => (
-          <div key={z.id} style={{ position:'absolute', left:z.wx, top:z.wy,
-            transform:'translate(-50%,-50%)', zIndex:3, pointerEvents:'none' }}>
-            <div style={{ width:10, height:10, borderRadius:'50%',
-              background:z.color, opacity:0.6, boxShadow:`0 0 10px ${z.color}` }} />
+          <div key={z.id} style={{ position: 'absolute', left: z.wx, top: z.wy, transform: 'translate(-50%,-50%)', zIndex: 3, pointerEvents: 'none' }}>
+            <div style={{ width: 10, height: 10, borderRadius: '50%', background: z.color, opacity: 0.6, boxShadow: `0 0 10px ${z.color}` }} />
           </div>
         ))}
 
-        {/* Marcadores arrastrables en modo edición */}
         {editMode && zones.map(z => (
-          <div key={z.id}
-            onPointerDown={e => onZoneDragStart(e, z.id)}
-            onPointerMove={onZoneDragMove}
-            onPointerUp={onZoneDragEnd}
-            onPointerCancel={onZoneDragEnd}
-            style={{ position:'absolute', left:z.wx, top:z.wy,
-              transform:'translate(-50%,-50%)', zIndex:20, cursor:'grab',
-              touchAction:'none', userSelect:'none' }}>
-            <div style={{ position:'absolute', width:100, height:100, borderRadius:'50%',
-              border:`2px dashed ${z.color}`, background:`${z.color}15`,
-              transform:'translate(-50%,-50%)', top:'50%', left:'50%', pointerEvents:'none' }} />
-            <div style={{ width:44, height:44, borderRadius:14, background:z.color,
-              display:'flex', alignItems:'center', justifyContent:'center', fontSize:22,
-              boxShadow:`0 4px 16px ${z.color}70`,
-              position:'absolute', top:'50%', left:'50%', transform:'translate(-50%,-50%)' }}>
-              {z.emoji}
-            </div>
-            <div style={{ position:'absolute', top:'calc(50% + 30px)', left:'50%',
-              transform:'translateX(-50%)', background:'rgba(0,0,0,0.7)', borderRadius:8,
-              padding:'2px 10px', fontSize:11, fontWeight:700, color:'white', whiteSpace:'nowrap' }}>
-              {z.label}
-            </div>
+          <div key={z.id} onPointerDown={e => onZoneDragStart(e, z.id)} onPointerMove={onZoneDragMove} onPointerUp={onZoneDragEnd} onPointerCancel={onZoneDragEnd} style={{ position: 'absolute', left: z.wx, top: z.wy, transform: 'translate(-50%,-50%)', zIndex: 20, cursor: 'grab', touchAction: 'none', userSelect: 'none' }}>
+            <div style={{ position: 'absolute', width: 100, height: 100, borderRadius: '50%', border: `2px dashed ${z.color}`, background: `${z.color}15`, transform: 'translate(-50%,-50%)', top: '50%', left: '50%', pointerEvents: 'none' }} />
+            <div style={{ width: 44, height: 44, borderRadius: 14, background: z.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, boxShadow: `0 4px 16px ${z.color}70`, position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)' }}>{z.emoji}</div>
+            <div style={{ position: 'absolute', top: 'calc(50% + 30px)', left: '50%', transform: 'translateX(-50%)', background: 'rgba(0,0,0,0.7)', borderRadius: 8, padding: '2px 10px', fontSize: 11, fontWeight: 700, color: 'white', whiteSpace: 'nowrap' }}>{z.label}</div>
           </div>
         ))}
 
-        {/* Pandi */}
-        <motion.div
-          animate={{ left:pandiPos.wx, top:pandiPos.wy }}
-          transition={{ duration: moveDurationRef.current, ease:'linear' }}
-          onClick={() => {
-            if (meditatingActive) navigate('/mood')
-          }}
-          style={{ position:'absolute', transform:'translate(-50%,-100%)',
-            zIndex:5, width:100,
-            cursor: meditatingActive ? 'pointer' : 'default' }}>
-          <motion.div
-            animate={pandiFrame==='idle' ? {y:[0,-5,0]} : {}}
-            transition={{ duration:2.5, repeat:Infinity, ease:'easeInOut' }}>
+        <motion.div animate={{ left: pandiPos.wx, top: pandiPos.wy }} transition={{ duration: moveDurationRef.current, ease: 'linear' }} onClick={() => { if (meditatingActive) navigate('/mood') }} style={{ position: 'absolute', transform: 'translate(-50%,-100%)', zIndex: 5, width: 100, cursor: meditatingActive ? 'pointer' : 'default' }}>
+          <motion.div animate={pandiFrame === 'idle' ? { y: [0, -5, 0] } : {}} transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}>
             {meditatingActive && (
-              <motion.div animate={{ opacity:[0,1,0] }} transition={{ duration:1.5, repeat:Infinity }}
-                style={{ position:'absolute', top:-28, left:'50%', transform:'translateX(-50%)',
-                  background:'#A78BFA', borderRadius:10, padding:'3px 8px',
-                  fontSize:9, fontWeight:800, color:'white', whiteSpace:'nowrap', zIndex:10 }}>
-                Tócame para meditar juntos
-              </motion.div>
+              <motion.div animate={{ opacity: [0, 1, 0] }} transition={{ duration: 1.5, repeat: Infinity }} style={{ position: 'absolute', top: -28, left: '50%', transform: 'translateX(-50%)', background: '#A78BFA', borderRadius: 10, padding: '3px 8px', fontSize: 9, fontWeight: 800, color: 'white', whiteSpace: 'nowrap', zIndex: 10 }}>Tócame para meditar juntos</motion.div>
             )}
-            <img
-              src={ASSETS.pandi[pandiFrame] || ASSETS.pandi.idle}
-              alt="Pandi"
-              style={{ width:'100%', height:'auto', objectFit:'contain',
-                transform: pandiFlip ? 'scaleX(-1)' : 'scaleX(1)',
-                filter:'drop-shadow(0 10px 20px rgba(0,0,0,0.35))' }}
-              onError={e => { e.target.src = ASSETS.pandi.idle }} />
+            <img src={ASSETS.pandi[pandiFrame] || ASSETS.pandi.idle} alt="Pandi" style={{ width: '100%', height: 'auto', objectFit: 'contain', transform: pandiFlip ? 'scaleX(-1)' : 'scaleX(1)', filter: 'drop-shadow(0 10px 20px rgba(0,0,0,0.35))' }} onError={e => { e.target.src = ASSETS.pandi.idle }} />
           </motion.div>
         </motion.div>
 
-        {/* Toast dentro del mundo */}
         <AnimatePresence>
           {toast && (
-            <motion.div initial={{ opacity:0, y:10 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0 }}
-              style={{ position:'absolute', left:pandiPos.wx, top:pandiPos.wy - 120,
-                transform:'translateX(-50%)', zIndex:15,
-                background:'rgba(255,255,255,0.95)', borderRadius:14, padding:'8px 16px',
-                boxShadow:'0 8px 20px rgba(0,0,0,0.2)', fontSize:13, fontWeight:700,
-                color:'#1A2332', whiteSpace:'nowrap' }}>
-              {toast}
-            </motion.div>
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} style={{ position: 'absolute', left: pandiPos.wx, top: pandiPos.wy - 120, transform: 'translateX(-50%)', zIndex: 15, background: 'rgba(255,255,255,0.95)', borderRadius: 14, padding: '8px 16px', boxShadow: '0 8px 20px rgba(0,0,0,0.2)', fontSize: 13, fontWeight: 700, color: '#1A2332', whiteSpace: 'nowrap' }}>{toast}</motion.div>
           )}
         </AnimatePresence>
       </div>
 
-      {/* ── HUD FLOTANTE — esquinas, estilo referencia ── */}
-
-      {/* Arriba izquierda — botón volver + título */}
-      <div style={{ position:'fixed', top:12, left:12, zIndex:50, display:'flex', gap:8, alignItems:'center' }}>
-        <button onClick={() => navigate(-1)}
-          style={{ width:36, height:36, borderRadius:12, border:'none', cursor:'pointer',
-            background:'rgba(255,255,255,0.85)', backdropFilter:'blur(8px)',
-            display:'flex', alignItems:'center', justifyContent:'center' }}>
+      {/* HUD FLOTANTE - INTEGRADO INLINE SIN RENDERIZADO CONDICIONAL DE HOOKS */}
+      <div style={{ position: 'fixed', top: 12, left: 12, zIndex: 50, display: 'flex', gap: 8, alignItems: 'center' }}>
+        <button onClick={() => navigate(-1)} style={{ width: 36, height: 36, borderRadius: 12, border: 'none', cursor: 'pointer', background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <ArrowLeft size={16} color='#1A2332' />
         </button>
         {editMode && (
-          <div style={{ background:'rgba(255,255,255,0.85)', backdropFilter:'blur(8px)',
-            borderRadius:12, padding:'6px 12px' }}>
-            <p style={{ fontSize:11, fontWeight:800, color:'#1A2332', margin:0 }}>✏️ Arrastra las zonas</p>
+          <div style={{ background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(8px)', borderRadius: 12, padding: '6px 12px' }}>
+            <p style={{ fontSize: 11, fontWeight: 800, color: '#1A2332', margin: 0 }}>✏️ Arrastra las zonas</p>
           </div>
         )}
       </div>
 
-      {/* Arriba derecha — panel PET CARE */}
-      <div style={{ position:'fixed', top:12, right:12, zIndex:50,
-        background:'rgba(255,255,255,0.88)', backdropFilter:'blur(12px)',
-        borderRadius:16, padding:'10px 14px', minWidth:160,
-        boxShadow:'0 4px 16px rgba(0,0,0,0.12)' }}>
-        <p style={{ fontSize:9, fontWeight:900, color:'#9CA3AF', textTransform:'uppercase',
-          letterSpacing:'.08em', margin:'0 0 8px' }}>Pet Care</p>
-        <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
-          <CareBar icon={Heart} value={hunger}    color='#FF8FA3' />
-          <CareBar icon={Zap}   value={energy}    color='#FCD34D' />
-          <CareBar icon={Star}  value={happiness} color='#2EC4B6' />
+      <div style={{ position: 'fixed', top: 12, right: 12, zIndex: 50, background: 'rgba(255,255,255,0.88)', backdropFilter: 'blur(12px)', borderRadius: 16, padding: '10px 14px', minWidth: 160, boxShadow: '0 4px 16px rgba(0,0,0,0.12)' }}>
+        <p style={{ fontSize: 9, fontWeight: 900, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '.08em', margin: '0 0 8px' }}>Pet Care</p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {/* Barra Hambre */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+            <Heart size={12} color='#FF8FA3' />
+            <div style={{ width: 70, height: 5, borderRadius: 3, background: 'rgba(255,255,255,0.2)', overflow: 'hidden' }}>
+              <motion.div animate={{ width: `${hunger}%` }} transition={{ duration: 0.5 }} style={{ height: '100%', borderRadius: 3, background: '#FF8FA3' }} />
+            </div>
+            <span style={{ fontSize: 10, color: 'rgba(0,0,0,0.6)', fontWeight: 700, minWidth: 24 }}>{Math.round(hunger)}</span>
+          </div>
+          {/* Barra Energía */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+            <Zap size={12} color='#FCD34D' />
+            <div style={{ width: 70, height: 5, borderRadius: 3, background: 'rgba(255,255,255,0.2)', overflow: 'hidden' }}>
+              <motion.div animate={{ width: `${energy}%` }} transition={{ duration: 0.5 }} style={{ height: '100%', borderRadius: 3, background: '#FCD34D' }} />
+            </div>
+            <span style={{ fontSize: 10, color: 'rgba(0,0,0,0.6)', fontWeight: 700, minWidth: 24 }}>{Math.round(energy)}</span>
+          </div>
+          {/* Barra Felicidad */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+            <Star size={12} color='#2EC4B6' />
+            <div style={{ width: 70, height: 5, borderRadius: 3, background: 'rgba(255,255,255,0.2)', overflow: 'hidden' }}>
+              <motion.div animate={{ width: `${happiness}%` }} transition={{ duration: 0.5 }} style={{ height: '100%', borderRadius: 3, background: '#2EC4B6' }} />
+            </div>
+            <span style={{ fontSize: 10, color: 'rgba(0,0,0,0.6)', fontWeight: 700, minWidth: 24 }}>{Math.round(happiness)}</span>
+          </div>
         </div>
       </div>
 
-      {/* Abajo izquierda — inventario/acciones */}
-      <div style={{ position:'fixed', bottom:'calc(env(safe-area-inset-bottom, 0px) + 68px)',
-        left:12, zIndex:50 }}>
+      <div style={{ position: 'fixed', bottom: 'calc(env(safe-area-inset-bottom, 0px) + 68px)', left: 12, zIndex: 50 }}>
         {editMode ? (
-          <motion.button whileTap={{ scale:0.95 }} onClick={saveEdit}
-            style={{ display:'flex', alignItems:'center', gap:8, padding:'11px 20px',
-              borderRadius:16, border:'none', cursor:'pointer',
-              background:'linear-gradient(135deg,#2EC4B6,#86EFAC)', color:'white',
-              fontWeight:800, fontSize:13, boxShadow:'0 4px 16px rgba(46,196,182,0.4)' }}>
+          <button onClick={saveEdit} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '11px 20px', borderRadius: 16, border: 'none', cursor: 'pointer', background: 'linear-gradient(135deg,#2EC4B6,#86EFAC)', color: 'white', fontWeight: 800, fontSize: 13, boxShadow: '0 4px 16px rgba(46,196,182,0.4)' }}>
             <Check size={15} /> Guardar zonas
-          </motion.button>
+          </button>
         ) : (
-          <div style={{ background:'rgba(255,255,255,0.88)', backdropFilter:'blur(12px)',
-            borderRadius:16, padding:'8px', display:'flex', gap:6,
-            boxShadow:'0 4px 16px rgba(0,0,0,0.12)' }}>
-            <p style={{ position:'absolute', top:-18, left:4, fontSize:9, fontWeight:900,
-              color:'rgba(255,255,255,0.8)', textTransform:'uppercase', letterSpacing:'.08em', margin:0 }}>
-              Inventario
-            </p>
-            {zones.filter(z=>z.action).map(z => (
-              <motion.button key={z.id} whileTap={{ scale:0.9 }}
-                onClick={() => setZoomZone(z)}
-                style={{ width:52, height:52, borderRadius:12, border:'none', cursor:'pointer',
-                  background:`${z.color}18`, display:'flex', flexDirection:'column',
-                  alignItems:'center', justifyContent:'center', gap:2 }}>
-                <span style={{ fontSize:22 }}>{z.emoji}</span>
-                <span style={{ fontSize:8, fontWeight:700, color:'#1A2332' }}>{z.label}</span>
-              </motion.button>
+          <div style={{ background: 'rgba(255,255,255,0.88)', backdropFilter: 'blur(12px)', borderRadius: 16, padding: '8px', display: 'flex', gap: 6, boxShadow: '0 4px 16px rgba(0,0,0,0.12)' }}>
+            <p style={{ position: 'absolute', top: -18, left: 4, fontSize: 9, fontWeight: 900, color: 'rgba(255,255,255,0.8)', textTransform: 'uppercase', letterSpacing: '.08em', margin: 0 }}>Inventario</p>
+            {zones.filter(z => z.action).map(z => (
+              <button key={z.id} onClick={() => setZoomZone(z)} style={{ width: 52, height: 52, borderRadius: 12, border: 'none', cursor: 'pointer', background: `${z.color}18`, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
+                <span style={{ fontSize: 22 }}>{z.emoji}</span>
+                <span style={{ fontSize: 8, fontWeight: 700, color: '#1A2332' }}>{z.label}</span>
+              </button>
             ))}
           </div>
         )}
       </div>
 
-      {/* Abajo derecha — ajustes + reset */}
-      <div style={{ position:'fixed', bottom:'calc(env(safe-area-inset-bottom, 0px) + 68px)',
-        right:12, zIndex:50, display:'flex', flexDirection:'column', gap:8 }}>
-        <motion.button whileTap={{ scale:0.92 }}
-          onDoubleClick={e => { e.stopPropagation(); setEditMode(true) }}
-          onPointerDown={e => { e.stopPropagation(); startEditPress() }}
-          onPointerUp={e => { e.stopPropagation(); endEditPress() }}
-          onPointerLeave={endEditPress}
-          title="Doble clic para editar zonas"
-          style={{ width:42, height:42, borderRadius:12, border:'none', cursor:'pointer',
-            background:'rgba(255,255,255,0.85)', backdropFilter:'blur(8px)',
-            display:'flex', alignItems:'center', justifyContent:'center',
-            boxShadow:'0 2px 8px rgba(0,0,0,0.1)' }}>
+      <div style={{ position: 'fixed', bottom: 'calc(env(safe-area-inset-bottom, 0px) + 68px)', right: 12, zIndex: 50, display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <div onDoubleClick={e => { e.stopPropagation(); setEditMode(true) }} onPointerDown={e => { e.stopPropagation(); pressRef.current = setTimeout(() => setEditMode(true), 1500) }} onPointerUp={() => clearTimeout(pressRef.current)} onPointerLeave={() => clearTimeout(pressRef.current)} title="Mantén pulsado o doble clic para editar" style={{ width: 42, height: 42, borderRadius: 12, background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.1)', cursor: 'pointer' }}>
           <Settings size={16} color='#6B7280' />
-        </motion.button>
-        <motion.button whileTap={{ scale:0.92 }}
-          onClick={() => {
-            localStorage.removeItem('sanctuary_zones_v2')
-            setZones(DEFAULT_ZONES)
-            showToast('Zonas reseteadas ✓')
-          }}
-          title="Resetear zonas"
-          style={{ width:42, height:42, borderRadius:12, border:'none', cursor:'pointer',
-            background:'rgba(255,255,255,0.85)', backdropFilter:'blur(8px)',
-            display:'flex', alignItems:'center', justifyContent:'center',
-            boxShadow:'0 2px 8px rgba(0,0,0,0.1)', fontSize:18 }}>
-          🔄
-        </motion.button>
+        </div>
+        <button onClick={() => { try { localStorage.removeItem(ZONES_KEY) } catch {} ; setZones(DEFAULT_ZONES); showToast('Zonas reseteadas ✓') }} title="Resetear zonas" style={{ width: 42, height: 42, borderRadius: 12, border: 'none', cursor: 'pointer', background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.1)', fontSize: 18 }}>🔄</button>
       </div>
 
-      {/* Alertas — centro superior */}
       {careLevel < 40 && !isNight && !editMode && (
-        <motion.div animate={{ opacity:[0.8,1,0.8] }} transition={{ duration:2, repeat:Infinity }}
-          style={{ position:'fixed', top:16, left:'50%', transform:'translateX(-50%)',
-            zIndex:51, background:'rgba(254,243,199,0.95)', backdropFilter:'blur(8px)',
-            borderRadius:14, padding:'7px 14px', display:'flex', alignItems:'center', gap:6,
-            boxShadow:'0 4px 12px rgba(0,0,0,0.1)' }}>
+        <div style={{ position: 'fixed', top: 16, left: '50%', transform: 'translateX(-50%)', zIndex: 51, background: 'rgba(254,243,199,0.95)', backdropFilter: 'blur(8px)', borderRadius: 14, padding: '7px 14px', display: 'flex', alignItems: 'center', gap: 6, boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
           <span>💛</span>
-          <p style={{ fontSize:11, fontWeight:700, color:'#92400E', margin:0 }}>Pandi te necesita</p>
-        </motion.div>
-      )}
-
-      {isNight && (
-        <div style={{ position:'fixed', top:60, left:'50%', transform:'translateX(-50%)',
-          zIndex:51, background:'rgba(15,20,45,0.7)', backdropFilter:'blur(8px)',
-          borderRadius:14, padding:'7px 14px' }}>
-          <p style={{ color:'rgba(255,255,255,0.7)', fontSize:11, fontWeight:700, margin:0 }}>
-            Pandi descansa 🌙
-          </p>
+          <p style={{ fontSize: 11, fontWeight: 700, color: '#92400E', margin: 0 }}>Pandi te necesita</p>
         </div>
       )}
 
-      {/* Popup de objeto */}
+      {isNight && (
+        <div style={{ position: 'fixed', top: 60, left: '50%', transform: 'translateX(-50%)', zIndex: 51, background: 'rgba(15,20,45,0.7)', backdropFilter: 'blur(8px)', borderRadius: 14, padding: '7px 14px' }}>
+          <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: 11, fontWeight: 700, margin: 0 }}>Pandi descansa 🌙</p>
+        </div>
+      )}
+
       <AnimatePresence>
         {zoomZone && (
-          <ObjectPopup zone={zoomZone}
-            onClose={() => setZoomZone(null)}
-            onInteract={z => { setZoomZone(null); triggerZoneAction(z) }} />
+          <div style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(3px)', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => setZoomZone(null)}>
+            <div style={{ background: 'white', borderRadius: 28, padding: '28px 24px', textAlign: 'center', minWidth: 220, maxWidth: 300, boxShadow: '0 20px 60px rgba(0,0,0,0.4)' }} onClick={e => e.stopPropagation()}>
+              <div style={{ fontSize: 64, marginBottom: 12 }}>{zoomZone.emoji}</div>
+              <p style={{ fontSize: 16, fontWeight: 800, color: '#1A2332', margin: '0 0 6px' }}>{zoomZone.label}</p>
+              <div style={{ display: 'flex', gap: 10, marginTop: 20 }}>
+                <button onClick={() => setZoomZone(null)} style={{ flex: 1, padding: '11px', borderRadius: 14, border: 'none', cursor: 'pointer', background: '#F3F4F6', color: '#6B7280', fontWeight: 700, fontSize: 13 }}>Ahora no</button>
+                <button onClick={() => { const z = zoomZone; setZoomZone(null); triggerZoneAction(z) }} style={{ flex: 1, padding: '11px', borderRadius: 14, border: 'none', cursor: 'pointer', background: zoomZone.color, color: 'white', fontWeight: 700, fontSize: 13 }}>¡Vamos!</button>
+              </div>
+            </div>
+          </div>
         )}
       </AnimatePresence>
     </div>

@@ -1,7 +1,8 @@
-const express  = require('express')
-const router   = express.Router()
+const express   = require('express')
+const router    = express.Router()
 const Anthropic = require('@anthropic-ai/sdk')
 const { requireAuth, requirePremium } = require('../middleware/auth')
+const { syncPandiState } = require('../lib/pandiSync')
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
@@ -12,7 +13,7 @@ router.post('/analyze-photo', requireAuth, async (req, res) => {
     if (!imageBase64) return res.status(400).json({ error: 'No image provided' })
 
     const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-6',   // ← corregido
+      model: 'claude-sonnet-4-6',
       max_tokens: 600,
       messages: [{
         role: 'user',
@@ -33,20 +34,25 @@ Si no puedes identificar comida, devuelve: {"food_name":"No identificado","calor
     })
 
     const raw   = response.content[0].text.trim()
-    // Extrae el JSON aunque venga envuelto en markdown o texto
     const match = raw.match(/\{[\s\S]*\}/)
     if (!match) throw new Error('Respuesta no contiene JSON válido')
     const data  = JSON.parse(match[0])
+
+    // Respuesta inmediata al cliente
     res.json(data)
 
+    // Sync Pandi en background tras análisis de foto
+    syncPandiState(req.user.id).catch(err =>
+      console.error('[pandiSync:analyze-photo]', err.message)
+    )
   } catch (err) {
     console.error('analyze-photo error:', err.message)
     res.status(500).json({ error: 'No se pudo analizar la imagen: ' + err.message })
   }
 })
 
-// POST /api/nutrition/barcode  (mantenido por compatibilidad)
-router.post('/analyze-photo', requireAuth, requirePremium, async (req, res) => {
+// POST /api/nutrition/barcode  ← CORREGIDO (era /analyze-photo duplicado)
+router.post('/barcode', requireAuth, requirePremium, async (req, res) => {
   try {
     const { barcode } = req.body
     if (!barcode) return res.status(400).json({ error: 'No barcode provided' })
@@ -59,14 +65,20 @@ router.post('/analyze-photo', requireAuth, requirePremium, async (req, res) => {
 
     const p = ofData.product
     const n = p.nutriments || {}
+
     res.json({
       food_name:    p.product_name || 'Producto desconocido',
       calories:     Math.round(n['energy-kcal_100g'] || n['energy-kcal'] || 0),
-      protein_g:    Math.round((n.proteins_100g       || 0) * 10) / 10,
-      carbs_g:      Math.round((n.carbohydrates_100g  || 0) * 10) / 10,
-      fat_g:        Math.round((n.fat_100g            || 0) * 10) / 10,
+      protein_g:    Math.round((n.proteins_100g      || 0) * 10) / 10,
+      carbs_g:      Math.round((n.carbohydrates_100g || 0) * 10) / 10,
+      fat_g:        Math.round((n.fat_100g           || 0) * 10) / 10,
       serving_size: p.serving_size || '100g',
     })
+
+    // Sync Pandi en background tras escaneo de código de barras
+    syncPandiState(req.user.id).catch(err =>
+      console.error('[pandiSync:barcode]', err.message)
+    )
   } catch (err) {
     res.status(500).json({ error: err.message })
   }

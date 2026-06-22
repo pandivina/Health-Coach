@@ -265,7 +265,7 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name, userId }) {
       )}
 
       {/* PANDI — de día navega directo, de noche hay que despertarla */}
-      <div style={{ position:'absolute', bottom:'6%', left:'50%', transform:'translateX(-50%)',
+      <div style={{ position:'absolute', bottom:'15%', left:'50%', transform:'translateX(-50%)',
         zIndex:5, width:isMobile ? '48%' : '22%', maxWidth:200 }}>
         <motion.div
           onClick={handlePandiTap}
@@ -313,7 +313,7 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name, userId }) {
         {showPrompt && (
           <motion.div
             initial={{ opacity:0, y:10 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0, y:10 }}
-            style={{ position:'absolute', bottom:'4%', left:16, right:16, zIndex:15,
+            style={{ position:'absolute', bottom:'8%', left:16, right:16, zIndex:15,
               display:'flex', gap:8, justifyContent:'center' }}>
             <button onClick={letSleep}
               style={{ padding:'10px 16px', borderRadius:14, border:'none', cursor:'pointer',

@@ -19,7 +19,7 @@ import { registerMeditationSession } from '../lib/meditationStreak'
 import JournalEntry from '../components/mood/JournalEntry'
 import PandiPulse from '../components/mood/PandiPulse'
 import SunJourney from '../components/mood/SunJourney'
-import CalmScreen, { CalmButton } from '../components/mood/CalmButton'
+import CalmScreen from '../components/mood/CalmButton'
 
 // ─── AUDIO ───────────────────────────────────────────────────────────────────
 const A = {
@@ -405,9 +405,6 @@ function CheckinTab({ theme, userId, addXP, onTabChange, onMoodSaved, profile })
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* Diario emocional */}
-      <JournalEntry theme={theme} userId={userId} currentMood={mood} />
     </div>
   )
 }

@@ -6,8 +6,9 @@ import { NotificationBell, default as NotificationPanel } from '../components/No
 import QuickBreathModal, { QuickBreathButton } from '../components/QuickBreath'
 import { checkAchievements } from '../lib/achievements'
 import AchievementUnlockedModal from '../components/AchievementUnlockedModal'
-import WeeklyChallengesWidget from '../components/WeeklyChallengesWidget'
-import RecoveryBadge from '../components/RecoveryBadge'
+// RecoveryBadge y WeeklyChallengesWidget desactivados temporalmente
+// import RecoveryBadge from '../components/RecoveryBadge'
+// import WeeklyChallengesWidget from '../components/WeeklyChallengesWidget'
 import { useTheme } from '../contexts/ThemeProvider'
 import { usePandiState } from '../contexts/PandiStateContext'
 import { supabase } from '../lib/supabase'
@@ -853,12 +854,13 @@ export default function Home() {
   const [showQuickBreath, setShowQuickBreath] = useState(false)
   const [newAchievement, setNewAchievement] = useState(null)
 
-  useEffect(() => {
-    if (!user) return
-    checkAchievements(user.id).then(unlocked => {
-      if (unlocked.length > 0) setNewAchievement(unlocked[0])
-    })
-  }, [user])
+  // checkAchievements desactivado temporalmente
+  // useEffect(() => {
+  //   if (!user) return
+  //   checkAchievements(user.id).then(unlocked => {
+  //     if (unlocked.length > 0) setNewAchievement(unlocked[0])
+  //   })
+  // }, [user])
 
   useTour('home')
 
@@ -967,18 +969,14 @@ export default function Home() {
         {/* MINI WIDGET SEMANAL */}
         <MiniWeekWidget userId={user?.id} theme={theme} />
 
-        {/* RECOVERY BADGE — Espejo Metabólico */}
-        <div style={{ marginBottom:12 }}>
-          <RecoveryBadge theme={theme} />
-        </div>
+        {/* RecoveryBadge desactivado temporalmente */}
 
         {/* RESPIRACIÓN RÁPIDA */}
         <div style={{ marginBottom:12 }}>
           <QuickBreathButton onActivate={() => setShowQuickBreath(true)} />
         </div>
 
-        {/* RETOS SEMANALES */}
-        <WeeklyChallengesWidget theme={theme} />
+        {/* WeeklyChallengesWidget desactivado temporalmente */}
 
         {/* TIP DE PANDI */}
         <PandiTipCard theme={theme} userId={user?.id} />

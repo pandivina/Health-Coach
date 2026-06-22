@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Link } from 'react-router-dom'
-import { X, Send, Loader2 } from 'lucide-react'
+import { X, Send } from 'lucide-react'
 import { useTheme } from '../contexts/ThemeProvider'
 import { useStore } from '../store/useStore'
 import { supabase } from '../lib/supabase'
@@ -121,7 +121,7 @@ function CoachChatModal({ onClose, section }) {
         backdropFilter:'blur(4px)', display:'flex', alignItems:'flex-end' }}
       onClick={onClose}>
 
-      <motion.div initial={{ y:'100%' }} animate={{ y:0 }} exit={{ y:'100%' }}
+      <motion.div initial={{ y:'100%' }} animate={{ y:'0%' }} exit={{ y:'100%' }}
         transition={{ type:'spring', damping:28, stiffness:300 }}
         onClick={e => e.stopPropagation()}
         style={{ width:'100%', height:'75vh', background: theme.background || 'white',
@@ -194,9 +194,15 @@ function CoachChatModal({ onClose, section }) {
                 🐾
               </div>
               <div style={{ padding:'10px 14px', borderRadius:16, borderBottomLeftRadius:4,
-                background: theme.surface || '#F9FAFB' }}>
-                <Loader2 size={14} style={{ animation:'spin 1s linear infinite' }}
-                  color={theme.textMuted || '#9CA3AF'} />
+                background: theme.surface || '#F9FAFB',
+                display:'flex', alignItems:'center', gap:6 }}>
+                <div style={{ width:6, height:6, borderRadius:'50%', background:'#2EC4B6',
+                  animation:'pandiPulse 1s ease-in-out infinite' }} />
+                <div style={{ width:6, height:6, borderRadius:'50%', background:'#2EC4B6',
+                  animation:'pandiPulse 1s ease-in-out 0.2s infinite' }} />
+                <div style={{ width:6, height:6, borderRadius:'50%', background:'#2EC4B6',
+                  animation:'pandiPulse 1s ease-in-out 0.4s infinite' }} />
+                <style>{`@keyframes pandiPulse { 0%,100%{opacity:0.3;transform:scale(0.8)} 50%{opacity:1;transform:scale(1.2)} }`}</style>
               </div>
             </div>
           )}

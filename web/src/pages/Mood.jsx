@@ -182,7 +182,6 @@ function PandaImg({ name, size = 48, fallback = '🐼', style = {} }) {
 function SanctuaryBg({ recoveryLight, mood, activeTab }) {
   const tabCfg = TAB_CONFIG[activeTab]
 
-  // Si el tab tiene su propio fondo, úsalo; si no, usa el del mood
   const bgSrc = tabCfg?.bg || (() => {
     const state = mood
       ? (mood >= 4 ? 'GREEN' : mood === 3 ? 'YELLOW' : 'RED')
@@ -193,21 +192,24 @@ function SanctuaryBg({ recoveryLight, mood, activeTab }) {
   const bgColor = tabCfg?.bgFallback || '#e8f5ee'
 
   return (
-    <AnimatePresence mode="wait">
-      <motion.div
-        key={bgSrc}
-        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-        transition={{ duration: 1.2 }}
-        style={{
-          position: 'absolute', inset: 0,
-          backgroundImage: `url(${bgSrc})`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center bottom',
-          backgroundRepeat: 'no-repeat',
-          backgroundColor: bgColor,
-        }}
-      />
-    </AnimatePresence>
+    <>
+      {/* Color base siempre visible — fallback mientras no hay PNG */}
+      <div style={{ position:'absolute', inset:0, backgroundColor: bgColor, zIndex:0 }} />
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={bgSrc}
+          initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
+          transition={{ duration:1.2 }}
+          style={{
+            position:'absolute', inset:0, zIndex:1,
+            backgroundImage:`url(${bgSrc})`,
+            backgroundSize:'cover',
+            backgroundPosition:'center bottom',
+            backgroundRepeat:'no-repeat',
+          }}
+        />
+      </AnimatePresence>
+    </>
   )
 }
 
@@ -1247,7 +1249,7 @@ export default function Mood() {
 
 
       {/* ── TAB BAR FLOTANTE — encima del nav, no pegado ── */}
-      <div style={{ position:'fixed', bottom:'calc(env(safe-area-inset-bottom,0px) + 72px)',
+      <div style={{ position:'fixed', bottom:'calc(env(safe-area-inset-bottom,0px) + 80px)',
         left:0, right:0, zIndex:30, display:'flex', justifyContent:'center',
         pointerEvents:'none' }}>
         <motion.div initial={{ y:20, opacity:0 }} animate={{ y:0, opacity:1 }}

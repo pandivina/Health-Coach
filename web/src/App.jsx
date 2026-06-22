@@ -39,6 +39,7 @@ import Workout from './pages/Workout'
 import Sleep from './pages/Sleep'
 import Mood from './pages/Mood'
 import Sanctuary from './pages/Sanctuary'
+import EspejoMetabolico from './pages/EspejoMetabolico'
 import Hydration from './pages/Hydration'
 import Smoking from './pages/Smoking'
 
@@ -149,6 +150,7 @@ export default function App() {
               <Route path="/sleep"     element={<Sleep />} />
               <Route path="/mood"      element={<Mood />} />
             <Route path="/sanctuary" element={<Sanctuary />} />
+            <Route path="/espejo"    element={<EspejoMetabolico />} />
               <Route path="/hydration" element={<Hydration />} />
               <Route path="/smoking"   element={<Smoking />} />
               <Route path="/health"    element={<HealthTracking />} />

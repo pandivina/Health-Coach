@@ -1142,38 +1142,54 @@ export default function Mood() {
       <div style={{ position:'absolute', inset:0, background:'rgba(0,0,0,0.08)',
         pointerEvents:'none', zIndex:1 }} />
 
-      {/* ── HEADER ── */}
-      <div style={{ position:'relative', zIndex:10, display:'flex', alignItems:'center',
-        justifyContent:'space-between', padding:'14px 16px', paddingTop:'calc(env(safe-area-inset-top) + 14px)' }}>
+      {/* ── HEADER estilo imagen — fondo claro, tipografía dorada ── */}
+      <div style={{ position:'relative', zIndex:10,
+        display:'flex', alignItems:'center', justifyContent:'space-between',
+        padding:'14px 16px', paddingTop:'calc(env(safe-area-inset-top) + 14px)',
+        background:'rgba(255,255,255,0.82)', backdropFilter:'blur(16px)',
+        borderBottom:'1px solid rgba(201,169,110,0.15)' }}>
+
         <motion.button whileTap={{ scale:0.94 }} onClick={() => { stopSpeech(); navigate(-1) }}
-          style={{ width:38, height:38, borderRadius:12, border:'none', cursor:'pointer',
-            background:'rgba(255,255,255,0.85)', backdropFilter:'blur(12px)',
-            display:'flex', alignItems:'center', justifyContent:'center', fontSize:18 }}>
+          style={{ width:38, height:38, borderRadius:12, border:'1.5px solid rgba(201,169,110,0.3)',
+            cursor:'pointer', background:'rgba(255,255,255,0.9)',
+            display:'flex', alignItems:'center', justifyContent:'center', fontSize:16,
+            color:'#C9A96E' }}>
           ←
         </motion.button>
+
         <div style={{ textAlign:'center' }}>
-          <p style={{ fontSize:12, color:'rgba(255,255,255,0.8)', margin:0, fontWeight:600 }}>
+          <p style={{ fontSize:11, color:'#C9A96E', margin:0, fontWeight:700,
+            letterSpacing:'.06em', textTransform:'uppercase' }}>
             Tu Santuario
           </p>
-          <p style={{ fontSize:16, fontWeight:900, color:'white', margin:0,
-            textShadow:'0 2px 8px rgba(0,0,0,0.3)' }}>
+          <p style={{ fontSize:15, fontWeight:900, color:'#C9A96E', margin:0 }}>
             Bienestar con Pandi
           </p>
         </div>
+
         <div style={{ display:'flex', gap:6 }}>
+          {/* Respira rápida */}
           <motion.button whileTap={{ scale:0.94 }} onClick={() => setShowPulse(true)}
-            style={{ width:38, height:38, borderRadius:12, border:'none', cursor:'pointer',
-              background:'rgba(255,255,255,0.85)', backdropFilter:'blur(12px)',
-              display:'flex', alignItems:'center', justifyContent:'center', fontSize:17 }}>
-            🫁
+            style={{ width:38, height:38, borderRadius:12, border:'1.5px solid rgba(201,169,110,0.3)',
+              cursor:'pointer', background:'rgba(255,255,255,0.9)',
+              display:'flex', alignItems:'center', justifyContent:'center', fontSize:16 }}>
+            🌬️
           </motion.button>
+          {/* Viaje del Sol */}
           <motion.button whileTap={{ scale:0.94 }} onClick={() => setShowSunJourney(true)}
-            style={{ width:38, height:38, borderRadius:12, border:'none', cursor:'pointer',
-              background:'rgba(255,255,255,0.85)', backdropFilter:'blur(12px)',
-              display:'flex', alignItems:'center', justifyContent:'center', fontSize:17 }}>
+            style={{ width:38, height:38, borderRadius:12, border:'1.5px solid rgba(201,169,110,0.3)',
+              cursor:'pointer', background:'rgba(255,255,255,0.9)',
+              display:'flex', alignItems:'center', justifyContent:'center', fontSize:16 }}>
             ☀️
           </motion.button>
-          <CalmButton onActivate={() => setShowCalm(true)} />
+          {/* SOS */}
+          <motion.button whileTap={{ scale:0.94 }} onClick={() => setShowCalm(true)}
+            style={{ width:38, height:38, borderRadius:12, border:'1.5px solid rgba(239,68,68,0.3)',
+              cursor:'pointer', background:'rgba(255,255,255,0.9)',
+              display:'flex', alignItems:'center', justifyContent:'center',
+              fontSize:11, fontWeight:900, color:'#EF4444' }}>
+            SOS
+          </motion.button>
         </div>
       </div>
 
@@ -1206,20 +1222,44 @@ export default function Mood() {
           </div>
         </div>
 
-        {/* Tabs */}
-        <div style={{ display:'flex', gap:6, overflowX:'auto', padding:'0 16px 10px',
-          scrollbarWidth:'none', flexShrink:0 }}>
-          {tabs.map(t => (
-            <button key={t.id} onClick={() => setActiveTab(t.id)}
-              style={{ display:'flex', alignItems:'center', gap:5, padding:'8px 14px',
-                borderRadius:20, fontSize:12, fontWeight:700, border:'none', cursor:'pointer',
-                flexShrink:0, transition:'all 0.2s',
-                background: activeTab === t.id ? theme.primary : 'rgba(0,0,0,0.06)',
-                color: activeTab === t.id ? 'white' : '#6B7280',
-                boxShadow: activeTab === t.id ? `0 4px 12px ${theme.primary}30` : 'none' }}>
-              <span>{t.emoji}</span><span>{t.label}</span>
-            </button>
-          ))}
+        {/* ── TAB BAR — pill flotante estilo imagen ── */}
+        <div style={{ display:'flex', justifyContent:'center', padding:'0 16px 10px', flexShrink:0 }}>
+          <div style={{ display:'flex', gap:0, background:'rgba(255,255,255,0.92)',
+            backdropFilter:'blur(16px)', borderRadius:22,
+            border:'1px solid rgba(201,169,110,0.2)',
+            boxShadow:'0 4px 20px rgba(201,169,110,0.15)', overflow:'hidden' }}>
+            {[
+              { id:'breathing',  label:'Respirar',  icon:'🌬️' },
+              { id:'meditation', label:'Meditar',   icon:'🧘' },
+              { id:'checkin',    label:'Mood',      icon:'🙂' },
+              { id:'habits',     label:'Check-In',  icon:'✓'  },
+              { id:'journal',    label:'El Diario', icon:'📖' },
+            ].map((t, i, arr) => {
+              const active = activeTab === t.id
+              return (
+                <button key={t.id} onClick={() => setActiveTab(t.id)}
+                  style={{ display:'flex', flexDirection:'column', alignItems:'center',
+                    gap:3, padding:'10px 14px', border:'none', cursor:'pointer',
+                    borderRight: i < arr.length-1 ? '1px solid rgba(201,169,110,0.12)' : 'none',
+                    background: active ? 'rgba(201,169,110,0.12)' : 'transparent',
+                    transition:'background 0.2s', minWidth:60 }}>
+                  <span style={{ fontSize:20,
+                    filter: active ? 'none' : 'grayscale(0.3) opacity(0.7)' }}>
+                    {t.icon}
+                  </span>
+                  <span style={{ fontSize:9, fontWeight:700,
+                    color: active ? '#C9A96E' : '#9CA3AF',
+                    letterSpacing:'.02em' }}>
+                    {t.label}
+                  </span>
+                  {active && (
+                    <div style={{ width:16, height:2, borderRadius:1, background:'#C9A96E',
+                      marginTop:1 }} />
+                  )}
+                </button>
+              )
+            })}
+          </div>
         </div>
 
         {/* Contenido scrollable */}
@@ -1230,15 +1270,15 @@ export default function Mood() {
               <CheckinTab theme={theme} userId={user?.id} addXP={addXP} profile={profile}
                 onTabChange={setActiveTab} onMoodSaved={setCurrentMood} />
             )}
-            {activeTab === 'santuario' && (
-              <SantuarioTab theme={theme} userLevel={profile?.level || 1}
-                currentMood={currentMood} habitsChecked={habitsChecked} />
-            )}
             {activeTab === 'breathing'  && <BreathingTab  theme={theme} />}
             {activeTab === 'meditation' && <MeditationTab theme={theme} profile={profile} userId={user?.id} />}
-            {activeTab === 'habits' && null}
-            {activeTab === 'calendar' && null}
-            {activeTab === 'cycles'   && null}
+            {activeTab === 'journal'    && <JournalEntry  theme={theme} userId={user?.id} currentMood={currentMood} />}
+            {activeTab === 'habits'     && (
+              <div style={{ padding:'24px 0', textAlign:'center' }}>
+                <p style={{ fontSize:28, margin:'0 0 8px' }}>✓</p>
+                <p style={{ fontSize:13, color:'#9CA3AF', margin:0 }}>Check-In próximamente</p>
+              </div>
+            )}
           </motion.div>
         </div>
       </motion.div>

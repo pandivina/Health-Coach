@@ -66,6 +66,7 @@ app.use('/api/notifications', notificationsRoutes);
 app.use('/api/insights', insightsRoutes)
 app.use('/api/tip', tipRoutes);
 app.use('/api/pandi', require('./routes/pandi'))
+app.use('/api/recovery', require('./routes/recovery'))
 
 // Error handler
 app.use((err, req, res, next) => {

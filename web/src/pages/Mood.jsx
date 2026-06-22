@@ -81,6 +81,41 @@ const SANCTUARY_CONFIG = {
   RED:    { bg: '/panda/sanctuary_red.png',    glow: 'rgba(255,143,163,0.4)', dot: '#FF8FA3' },
 }
 
+// ─── CONFIGURACIÓN POR TAB — fondo + pose de Pandi ───────────────────────────
+// Pon tus PNGs en /public/sanctuary/ y /public/panda/
+const TAB_CONFIG = {
+  breathing:  {
+    bg:    '/sanctuary/bg_breathing.png',   // cielo, nubes, aire
+    bgFallback: '#d4eaf7',
+    frames: ['/panda/panda_breathing.png'],
+    pandiMode: 'breathing',
+  },
+  meditation: {
+    bg:    '/sanctuary/bg_forest.png',      // bosque, naturaleza
+    bgFallback: '#d4ead4',
+    frames: ['/panda/panda_meditating.png'],
+    pandiMode: 'meditate',
+  },
+  checkin: {
+    bg:    '/sanctuary/bg_checkin.png',     // interior cálido, luz suave
+    bgFallback: '#f5efe6',
+    frames: ['/panda/panda_base.png', '/panda/panda_happy.png'],
+    pandiMode: 'idle',
+  },
+  habits: {
+    bg:    '/sanctuary/bg_checkin.png',
+    bgFallback: '#f0edf8',
+    frames: ['/panda/panda_happy.png'],
+    pandiMode: 'celebrate',
+  },
+  journal: {
+    bg:    '/sanctuary/bg_journal.png',     // interior acogedor, velas
+    bgFallback: '#f7f0e6',
+    frames: ['/panda/panda_sitting.png'],
+    pandiMode: 'sitting',
+  },
+}
+
 // Frames de Pandi según mood
 const PANDI_FRAMES = {
   idle:      ['/panda/panda_base.png', '/panda/panda_happy.png'],
@@ -88,6 +123,8 @@ const PANDI_FRAMES = {
   thinking:  ['/panda/thinking_1.png'],
   meditate:  ['/panda/meditate_1.png', '/panda/meditate_2.png'],
   celebrate: ['/panda/avatar_celebrate.png'],
+  breathing: ['/panda/panda_breathing.png'],
+  sitting:   ['/panda/panda_sitting.png'],
   blink:     '/panda/panda_blink.png',
 }
 
@@ -142,26 +179,32 @@ function PandaImg({ name, size = 48, fallback = '🐼', style = {} }) {
 }
 
 // ─── SANTUARIO FONDO — reutiliza la misma lógica que Home ────────────────────
-function SanctuaryBg({ recoveryLight, mood }) {
-  // Determinar estado del santuario
-  const state = mood
-    ? (mood >= 4 ? 'GREEN' : mood === 3 ? 'YELLOW' : 'RED')
-    : (recoveryLight || 'GREEN')
-  const cfg = SANCTUARY_CONFIG[state] || SANCTUARY_CONFIG.GREEN
+function SanctuaryBg({ recoveryLight, mood, activeTab }) {
+  const tabCfg = TAB_CONFIG[activeTab]
+
+  // Si el tab tiene su propio fondo, úsalo; si no, usa el del mood
+  const bgSrc = tabCfg?.bg || (() => {
+    const state = mood
+      ? (mood >= 4 ? 'GREEN' : mood === 3 ? 'YELLOW' : 'RED')
+      : (recoveryLight || 'GREEN')
+    return (SANCTUARY_CONFIG[state] || SANCTUARY_CONFIG.GREEN).bg
+  })()
+
+  const bgColor = tabCfg?.bgFallback || '#e8f5ee'
 
   return (
     <AnimatePresence mode="wait">
       <motion.div
-        key={state}
+        key={bgSrc}
         initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
         transition={{ duration: 1.2 }}
         style={{
           position: 'absolute', inset: 0,
-          backgroundImage: `url(${cfg.bg})`,
+          backgroundImage: `url(${bgSrc})`,
           backgroundSize: 'cover',
           backgroundPosition: 'center bottom',
           backgroundRepeat: 'no-repeat',
-          backgroundColor: state === 'GREEN' ? '#e8f5ee' : state === 'YELLOW' ? '#fef3c7' : '#ffe4ec',
+          backgroundColor: bgColor,
         }}
       />
     </AnimatePresence>
@@ -169,16 +212,22 @@ function SanctuaryBg({ recoveryLight, mood }) {
 }
 
 // ─── PANDI ANIMADA ───────────────────────────────────────────────────────────
-function SanctuaryPandi({ mood, pandiMode, cfg }) {
+function SanctuaryPandi({ mood, pandiMode, cfg, activeTab }) {
   const [frameIdx, setFrameIdx] = useState(0)
   const [blinking, setBlinking] = useState(false)
   const [imgErr,   setImgErr]   = useState(false)
 
-  const frames = pandiMode === 'meditate'  ? PANDI_FRAMES.meditate
-               : pandiMode === 'celebrate' ? PANDI_FRAMES.celebrate
-               : mood >= 4                 ? PANDI_FRAMES.happy
-               : mood && mood <= 2         ? PANDI_FRAMES.thinking
-               : PANDI_FRAMES.idle
+  // Tab tiene prioridad sobre pandiMode/mood
+  const tabFrames = TAB_CONFIG[activeTab]?.frames
+
+  const frames = tabFrames
+    || (pandiMode === 'meditate'  ? PANDI_FRAMES.meditate
+      : pandiMode === 'celebrate' ? PANDI_FRAMES.celebrate
+      : pandiMode === 'breathing' ? PANDI_FRAMES.breathing
+      : pandiMode === 'sitting'   ? PANDI_FRAMES.sitting
+      : mood >= 4                 ? PANDI_FRAMES.happy
+      : mood && mood <= 2         ? PANDI_FRAMES.thinking
+      : PANDI_FRAMES.idle)
 
   useEffect(() => {
     if (frames.length <= 1) return
@@ -1132,8 +1181,8 @@ export default function Mood() {
     <div style={{ position:'fixed', inset:0, zIndex:50, display:'flex', flexDirection:'column',
       background:'#f8fafa', overflow:'hidden' }}>
 
-      {/* ── SANTUARIO FONDO (fullscreen) ── */}
-      <SanctuaryBg recoveryLight={recoveryLight} mood={currentMood} />
+      {/* ── SANTUARIO FONDO — cambia según tab activo ── */}
+      <SanctuaryBg recoveryLight={recoveryLight} mood={currentMood} activeTab={activeTab} />
 
       {/* Overlay oscuro suave para legibilidad */}
       <div style={{ position:'absolute', inset:0, background:'rgba(0,0,0,0.08)',
@@ -1193,9 +1242,57 @@ export default function Mood() {
       {/* ── PANDI EN EL SANTUARIO ── */}
       <div style={{ position:'relative', zIndex:5, flex:1, display:'flex',
         alignItems:'flex-end', justifyContent:'center', paddingBottom:0 }}>
-        <SanctuaryPandi mood={currentMood} pandiMode={pandiMode} cfg={sanctuaryCfg} />
+        <SanctuaryPandi mood={currentMood} pandiMode={pandiMode} cfg={sanctuaryCfg} activeTab={activeTab} />
       </div>
 
+
+      {/* ── TAB BAR FLOTANTE — encima del nav, no pegado ── */}
+      <div style={{ position:'fixed', bottom:'calc(env(safe-area-inset-bottom,0px) + 72px)',
+        left:0, right:0, zIndex:30, display:'flex', justifyContent:'center',
+        pointerEvents:'none' }}>
+        <motion.div initial={{ y:20, opacity:0 }} animate={{ y:0, opacity:1 }}
+          transition={{ delay:0.2, type:'spring', damping:22 }}
+          style={{ display:'flex', gap:0, background:'rgba(255,255,255,0.88)',
+            backdropFilter:'blur(20px)', borderRadius:26,
+            border:'1px solid rgba(201,169,110,0.2)',
+            boxShadow:'0 8px 32px rgba(0,0,0,0.12)', overflow:'hidden',
+            pointerEvents:'all' }}>
+          {[
+            { id:'breathing',  label:'Respirar',  icon:'tab_respirar'  },
+            { id:'meditation', label:'Meditar',   icon:'tab_meditar'   },
+            { id:'checkin',    label:'Mood',       icon:'tab_mood'      },
+            { id:'habits',     label:'Check-In',  icon:'tab_checkin'   },
+            { id:'journal',    label:'El Diario', icon:'tab_diario'    },
+          ].map((t, i, arr) => {
+            const active = activeTab === t.id
+            return (
+              <motion.button key={t.id} whileTap={{ scale:0.9 }}
+                onClick={() => setActiveTab(t.id)}
+                style={{ display:'flex', flexDirection:'column', alignItems:'center',
+                  gap:4, padding:'10px 14px', border:'none', cursor:'pointer',
+                  borderRight: i < arr.length-1 ? '1px solid rgba(201,169,110,0.1)' : 'none',
+                  background: active ? 'rgba(201,169,110,0.12)' : 'transparent',
+                  transition:'background 0.2s', minWidth:58, position:'relative' }}>
+                <img src={`/panda/${t.icon}.png`} alt={t.label}
+                  style={{ width:32, height:32, objectFit:'contain',
+                    opacity: active ? 1 : 0.55,
+                    filter: active ? 'none' : 'grayscale(0.3)',
+                    transition:'all 0.2s' }}
+                  onError={e => { e.target.style.display='none' }} />
+                <span style={{ fontSize:9, fontWeight:700, letterSpacing:'.03em',
+                  color: active ? '#B8924A' : '#C0A870' }}>
+                  {t.label}
+                </span>
+                {active && (
+                  <div style={{ position:'absolute', bottom:4, left:'50%',
+                    transform:'translateX(-50%)', width:20, height:2.5,
+                    borderRadius:2, background:'#B8924A' }} />
+                )}
+              </motion.button>
+            )
+          })}
+        </motion.div>
+      </div>
 
       {/* ── BOTTOM SHEET ── */}
       <motion.div
@@ -1219,48 +1316,9 @@ export default function Mood() {
           </div>
         </div>
 
-        {/* ── TAB BAR — pill flotante estilo imagen ── */}
-        <div style={{ display:'flex', justifyContent:'center', padding:'0 16px 10px', flexShrink:0 }}>
-          <div style={{ display:'flex', gap:0, background:'rgba(255,255,255,0.92)',
-            backdropFilter:'blur(16px)', borderRadius:22,
-            border:'1px solid rgba(201,169,110,0.2)',
-            boxShadow:'0 4px 20px rgba(201,169,110,0.15)', overflow:'hidden' }}>
-            {[
-              { id:'breathing',  label:'Respirar',  icon:'🌬️' },
-              { id:'meditation', label:'Meditar',   icon:'🧘' },
-              { id:'checkin',    label:'Mood',      icon:'🙂' },
-              { id:'habits',     label:'Check-In',  icon:'✓'  },
-              { id:'journal',    label:'El Diario', icon:'📖' },
-            ].map((t, i, arr) => {
-              const active = activeTab === t.id
-              return (
-                <button key={t.id} onClick={() => setActiveTab(t.id)}
-                  style={{ display:'flex', flexDirection:'column', alignItems:'center',
-                    gap:3, padding:'10px 14px', border:'none', cursor:'pointer',
-                    borderRight: i < arr.length-1 ? '1px solid rgba(201,169,110,0.12)' : 'none',
-                    background: active ? 'rgba(201,169,110,0.12)' : 'transparent',
-                    transition:'background 0.2s', minWidth:60 }}>
-                  <span style={{ fontSize:20,
-                    filter: active ? 'none' : 'grayscale(0.3) opacity(0.7)' }}>
-                    {t.icon}
-                  </span>
-                  <span style={{ fontSize:9, fontWeight:700,
-                    color: active ? '#C9A96E' : '#9CA3AF',
-                    letterSpacing:'.02em' }}>
-                    {t.label}
-                  </span>
-                  {active && (
-                    <div style={{ width:16, height:2, borderRadius:1, background:'#C9A96E',
-                      marginTop:1 }} />
-                  )}
-                </button>
-              )
-            })}
-          </div>
-        </div>
-
         {/* Contenido scrollable */}
-        <div style={{ flex:1, overflowY:'auto', padding:'0 16px' }}>
+        <div style={{ flex:1, overflowY:'auto', padding:'0 16px',
+          paddingBottom:'calc(env(safe-area-inset-bottom,0px) + 140px)' }}>
           <motion.div key={activeTab} initial={{ opacity:0, y:8 }} animate={{ opacity:1, y:0 }}
             transition={{ duration:0.2 }}>
             {activeTab === 'checkin' && (

@@ -1197,11 +1197,11 @@ export default function Mood() {
           onPointerLeave={() => clearTimeout(window._pandiPressTimer)}
           style={{
             position:'absolute',
-            bottom: pandiConfig.bottom + '15%',
+            bottom: pandiConfig.bottom + '%',
             left:'50%',
             transform:'translateX(-50%)',
             width: pandiConfig.size + '%',
-            maxWidth: 600,
+            maxWidth: 280,
             pointerEvents:'all',
             cursor: pandiEditMode ? 'move' : 'pointer',
           }}>

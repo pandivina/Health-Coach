@@ -10,6 +10,7 @@ import { useTheme } from '../../contexts/ThemeProvider'
 import { searchLocal, FOOD_CATEGORIES, getFoodsByCategory, SPANISH_FOODS } from '../../lib/spanishFoods'
 import CalorieTrendWidget from './CalorieTrendWidget'
 import FrequentMeals from './FrequentMeals'
+import { computeMealQuality, REACTION_CONFIG } from '../../lib/foodQuality'
 
 const MEAL_TYPES  = ['breakfast', 'lunch', 'dinner', 'snack']
 const MEAL_LABELS = { breakfast: '🌅 Desayuno', lunch: '☀️ Comida', dinner: '🌙 Cena', snack: '🍎 Snack' }
@@ -657,6 +658,7 @@ export default function DiarioTab({ onAnalyze, onScan, onRecipes, onSummaryChang
   const [meals, setMeals] = useState([])
   const [goals, setGoals] = useState({ calories: 2000, protein_g: 150, carbs_g: 200, fat_g: 65 })
   const [modal, setModal] = useState(null)
+  const [lastReaction, setLastReaction] = useState(null)
   const today = new Date().toISOString().split('T')[0]
 
   async function load() {
@@ -686,6 +688,26 @@ export default function DiarioTab({ onAnalyze, onScan, onRecipes, onSummaryChang
   useEffect(() => { load() }, [user])
 
   async function addMeal(mealType, entry) {
+    const quality = computeMealQuality(entry, meals, goals)
+
+    // Optimistic update — añadir a la lista local inmediatamente
+    const optimisticMeal = {
+      id: `temp-${Date.now()}`,
+      user_id: user.id, date: today, meal_type: mealType,
+      food_name: entry.food_name,
+      calories:  entry.calories  || 0,
+      protein_g: entry.protein_g || 0,
+      carbs_g:   entry.carbs_g   || 0,
+      fat_g:     entry.fat_g     || 0,
+      quality_score: quality.score,
+      reaction: quality.reaction,
+    }
+    setMeals(prev => [...prev, optimisticMeal])
+    setModal(null)
+    setLastReaction(quality)
+    setTimeout(() => setLastReaction(null), 4000)
+
+    // Guardar en BD en segundo plano
     await supabase.from('meal_logs').insert({
       user_id:   user.id, date: today, meal_type: mealType,
       food_name: entry.food_name,
@@ -693,13 +715,24 @@ export default function DiarioTab({ onAnalyze, onScan, onRecipes, onSummaryChang
       protein_g: entry.protein_g || 0,
       carbs_g:   entry.carbs_g   || 0,
       fat_g:     entry.fat_g     || 0,
+      quality_score: quality.score,
+      reaction: quality.reaction,
     })
+
+    // Actualizar tummy_state
+    const allTodayQuality = [...meals.map(m => m.quality_score ?? 0.6), quality.score]
+    const avg = allTodayQuality.reduce((s, q) => s + q, 0) / allTodayQuality.length
+    const tummyState = avg >= 0.75 ? 'great' : avg >= 0.5 ? 'good' : avg >= 0.3 ? 'neutral' : avg >= 0.15 ? 'bad' : 'terrible'
+    await supabase.from('user_profiles').update({ tummy_state: tummyState }).eq('id', user.id)
+
     await addXP(10)
-    setModal(null)
+
+    // Recargar para reemplazar el id temporal con el real de la BD
     load()
   }
 
   async function deleteMeal(id) {
+    setMeals(prev => prev.filter(m => m.id !== id))
     await supabase.from('meal_logs').delete().eq('id', id)
     load()
   }
@@ -839,6 +872,22 @@ export default function DiarioTab({ onAnalyze, onScan, onRecipes, onSummaryChang
             onAdd={(entry) => addMeal(modal.type, entry)}
             onClose={() => setModal(null)}
           />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {lastReaction && (
+          <motion.div initial={{ opacity:0, y:20, x:'-50%' }} animate={{ opacity:1, y:0, x:'-50%' }}
+            exit={{ opacity:0, y:20 }}
+            style={{ position:'fixed', bottom:100, left:'50%', zIndex:60,
+              background:'white', borderRadius:18, padding:'12px 18px',
+              boxShadow:'0 8px 24px rgba(0,0,0,0.15)', display:'flex', alignItems:'center', gap:10,
+              border:`1.5px solid ${REACTION_CONFIG[lastReaction.reaction].color}40` }}>
+            <span style={{ fontSize:24 }}>{REACTION_CONFIG[lastReaction.reaction].emoji}</span>
+            <p style={{ fontSize:13, fontWeight:700, color:'#1A2332', margin:0 }}>
+              {REACTION_CONFIG[lastReaction.reaction].message}
+            </p>
+          </motion.div>
         )}
       </AnimatePresence>
     </>

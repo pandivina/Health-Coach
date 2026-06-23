@@ -1132,7 +1132,7 @@ export default function Mood() {
   const [pandiEditMode, setPandiEditMode] = useState(false)
   const [pandiConfig,   setPandiConfig]   = useState(() => {
     try { return JSON.parse(localStorage.getItem('pandi_mood_cfg') || 'null') || { bottom:22, size:42 } }
-    catch { return { bottom:22, size:42 } }
+    catch { return { bottom:22, size:250 } }
   })
   const [showPulse,     setShowPulse]     = useState(false)
   const [showSunJourney, setShowSunJourney] = useState(false)

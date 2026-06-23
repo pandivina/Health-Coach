@@ -98,17 +98,17 @@ const PANDI_FRAMES = {
 
 // ─── CONFIGURACIÓN POR TAB — fondo + pose de Pandi ───────────────────────────
 const TAB_CONFIG = {
-  breathing:  {
-    bg:          '/sanctuary/bg_breathing.png',
-    bgFallback:  '#d4eaf7',
-    frames:      ['/panda/panda_sitting.png'],
-    pandiMode:   'breathing',
-  },
   meditation: {
     bg:          '/sanctuary/bg_forest.png',
     bgFallback:  '#d4ead4',
-    frames:      ['/panda/panda_sitting.png'],
+    frames:      ['/panda/meditate_1.png'],
     pandiMode:   'meditate',
+  },
+  breathing:  {
+    bg:          '/sanctuary/bg_breathing.png',
+    bgFallback:  '#d4eaf7',
+    frames:      ['/panda/panda_lateral_izq.png'],
+    pandiMode:   'breathing',
   },
   checkin: {
     bg:          '/sanctuary/bg_checkin.png',
@@ -235,45 +235,66 @@ function SanctuaryPandi({ mood, pandiMode, cfg, activeTab, recoveryLight }) {
     <div style={{ position:'relative', width:'100%', display:'flex',
       alignItems:'center', justifyContent:'center' }}>
 
-      {/* Aura de meditación — solo visible cuando medita */}
+      {/* Aura de meditación — llama verde suave */}
       <AnimatePresence>
         {isMeditating && (
           <>
-            {/* Anillo exterior */}
+            {/* Base glow verde */}
             <motion.div
-              key="aura-outer"
-              initial={{ opacity:0, scale:0.6 }}
-              animate={{ opacity:[0.15,0.35,0.15], scale:[1,1.18,1] }}
-              exit={{ opacity:0, scale:0.6 }}
-              transition={{ duration:4, repeat:Infinity, ease:'easeInOut' }}
-              style={{ position:'absolute', width:'160%', height:'160%',
-                borderRadius:'50%',
-                background:'radial-gradient(circle, rgba(168,139,250,0.5) 0%, transparent 65%)',
-                filter:'blur(18px)', zIndex:0 }} />
-            {/* Anillo medio */}
-            <motion.div
-              key="aura-mid"
-              initial={{ opacity:0, scale:0.5 }}
-              animate={{ opacity:[0.2,0.5,0.2], scale:[0.9,1.08,0.9] }}
+              key="aura-base"
+              initial={{ opacity:0, scaleY:0.5 }}
+              animate={{ opacity:[0.2,0.45,0.2], scaleY:[1,1.1,1] }}
               exit={{ opacity:0 }}
-              transition={{ duration:3, repeat:Infinity, ease:'easeInOut', delay:0.5 }}
-              style={{ position:'absolute', width:'110%', height:'110%',
-                borderRadius:'50%',
-                background:'radial-gradient(circle, rgba(196,169,110,0.6) 0%, transparent 60%)',
-                filter:'blur(10px)', zIndex:0 }} />
-            {/* Partículas flotantes */}
-            {[...Array(6)].map((_, i) => (
-              <motion.div key={`p${i}`}
-                animate={{ y:[-10, -40, -10], opacity:[0,0.8,0], x: (i%2===0?1:-1)*10 }}
-                transition={{ duration:2.5+i*0.4, repeat:Infinity, delay:i*0.5, ease:'easeInOut' }}
-                style={{ position:'absolute', bottom:'40%',
-                  left:`${30 + i*8}%`,
-                  width:6, height:6, borderRadius:'50%', zIndex:6,
-                  background: i%3===0 ? 'rgba(168,139,250,0.8)'
-                    : i%3===1 ? 'rgba(196,169,110,0.8)'
-                    : 'rgba(255,200,200,0.8)',
-                  boxShadow:`0 0 6px 2px ${i%2===0 ? 'rgba(168,139,250,0.5)' : 'rgba(196,169,110,0.5)'}` }}
-              />
+              transition={{ duration:3.5, repeat:Infinity, ease:'easeInOut' }}
+              style={{ position:'absolute', bottom:'10%', left:'50%',
+                transform:'translateX(-50%)',
+                width:'90%', height:'80%', borderRadius:'50% 50% 40% 40%',
+                background:'radial-gradient(ellipse at 50% 80%, rgba(52,211,153,0.5) 0%, rgba(16,185,129,0.2) 40%, transparent 70%)',
+                filter:'blur(14px)', zIndex:0, transformOrigin:'bottom center' }} />
+
+            {/* Llama central */}
+            <motion.div
+              key="flame-main"
+              initial={{ opacity:0, scaleY:0 }}
+              animate={{ opacity:[0.5,0.9,0.5], scaleY:[1,1.25,0.95,1.1,1],
+                scaleX:[1,0.92,1.04,0.96,1] }}
+              exit={{ opacity:0, scaleY:0 }}
+              transition={{ duration:2.5, repeat:Infinity, ease:'easeInOut' }}
+              style={{ position:'absolute', bottom:'30%', left:'50%',
+                transform:'translateX(-50%)',
+                width:'28%', height:'55%',
+                background:'linear-gradient(to top, rgba(16,185,129,0.8) 0%, rgba(52,211,153,0.5) 40%, rgba(167,243,208,0.2) 70%, transparent 100%)',
+                borderRadius:'50% 50% 30% 30%',
+                filter:'blur(6px)', zIndex:1, transformOrigin:'bottom center' }} />
+
+            {/* Llama interior más brillante */}
+            <motion.div
+              key="flame-inner"
+              animate={{ opacity:[0.6,1,0.6], scaleY:[0.8,1.1,0.8],
+                scaleX:[1,0.88,1] }}
+              transition={{ duration:1.8, repeat:Infinity, ease:'easeInOut', delay:0.3 }}
+              style={{ position:'absolute', bottom:'30%', left:'50%',
+                transform:'translateX(-50%)',
+                width:'14%', height:'38%',
+                background:'linear-gradient(to top, rgba(167,243,208,0.9) 0%, rgba(52,211,153,0.6) 50%, transparent 100%)',
+                borderRadius:'50% 50% 30% 30%',
+                filter:'blur(3px)', zIndex:2, transformOrigin:'bottom center' }} />
+
+            {/* Partículas de humo/chispas */}
+            {[...Array(7)].map((_, i) => (
+              <motion.div key={`spark-${i}`}
+                animate={{ y:[0, -(40+i*15)], opacity:[0, 0.7, 0],
+                  x: Math.sin(i*1.2) * 15 }}
+                transition={{ duration:2+i*0.3, repeat:Infinity,
+                  delay:i*0.35, ease:'easeOut' }}
+                style={{ position:'absolute', bottom:`${30+i*2}%`,
+                  left:`calc(50% + ${(i%2===0?1:-1) * (4+i*3)}%)`,
+                  width: 4+i%3*2, height: 4+i%3*2,
+                  borderRadius:'50%', zIndex:3,
+                  background: i%2===0
+                    ? 'rgba(52,211,153,0.8)'
+                    : 'rgba(167,243,208,0.9)',
+                  filter:'blur(1px)' }} />
             ))}
           </>
         )}

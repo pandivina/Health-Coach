@@ -1214,7 +1214,22 @@ export default function Mood() {
       </div>
 
 
-      {/* ── PANEL EDICIÓN DE PANDI — largo press en Pandi ── */}
+      {/* ── RESPIRAR — overlay directo sobre Pandi, sin sheet ── */}
+      <AnimatePresence>
+        {activeTab === 'breathing' && (
+          <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
+            style={{ position:'fixed', inset:0, zIndex:25, pointerEvents:'none',
+              display:'flex', flexDirection:'column', alignItems:'center',
+              justifyContent:'flex-start',
+              paddingTop:'calc(env(safe-area-inset-top,0px) + 70px)' }}>
+            <div style={{ pointerEvents:'all' }}>
+              <BreathingTab theme={theme} />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── PANEL EDICIÓN DE PANDI ── */}
       <AnimatePresence>
         {pandiEditMode && (
           <motion.div initial={{ opacity:0, y:20 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0 }}
@@ -1283,7 +1298,7 @@ export default function Mood() {
             const active = activeTab === t.id
             return (
               <motion.button key={t.id} whileTap={{ scale:0.9 }}
-                onClick={() => { setActiveTab(t.id); setSheetOpen(true) }}
+                onClick={() => { setActiveTab(t.id); if (t.id !== 'breathing') setSheetOpen(true) }}
                 style={{ display:'flex', flexDirection:'column', alignItems:'center',
                   gap:5, padding:TAB_BAR_PADDING, border:'none', cursor:'pointer',
                   borderRight: i < arr.length-1 ? '1px solid rgba(201,169,110,0.1)' : 'none',
@@ -1344,7 +1359,6 @@ export default function Mood() {
               <CheckinTab theme={theme} userId={user?.id} addXP={addXP} profile={profile}
                 onTabChange={setActiveTab} onMoodSaved={setCurrentMood} />
             )}
-            {activeTab === 'breathing'  && <BreathingTab  theme={theme} />}
             {activeTab === 'meditation' && <MeditationTab theme={theme} profile={profile} userId={user?.id} />}
             {activeTab === 'journal'    && <JournalEntry  theme={theme} userId={user?.id} currentMood={currentMood} />}
             {activeTab === 'habits'     && (

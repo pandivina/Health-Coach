@@ -1134,7 +1134,7 @@ export default function Mood() {
   const [activeTab,     setActiveTab]     = useState('checkin')
   const [currentMood,   setCurrentMood]   = useState(null)
   const [habitsChecked, setHabitsChecked] = useState({})
-  const [sheetOpen,     setSheetOpen]     = useState(true)
+  const [sheetOpen,     setSheetOpen]     = useState(false)
   const [pandiEditMode, setPandiEditMode] = useState(false)
   const [pandiConfig,   setPandiConfig]   = useState(() => {
     try { return JSON.parse(localStorage.getItem('pandi_mood_cfg') || 'null') || { bottom:22, size:42 } }
@@ -1342,7 +1342,7 @@ export default function Mood() {
             const active = activeTab === t.id
             return (
               <motion.button key={t.id} whileTap={{ scale:0.9 }}
-                onClick={() => setActiveTab(t.id)}
+                onClick={() => { setActiveTab(t.id); setSheetOpen(true) }}
                 style={{ display:'flex', flexDirection:'column', alignItems:'center',
                   gap:5, padding:'13px 16px', border:'none', cursor:'pointer',
                   borderRight: i < arr.length-1 ? '1px solid rgba(201,169,110,0.1)' : 'none',

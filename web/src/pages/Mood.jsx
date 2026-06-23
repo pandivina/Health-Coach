@@ -1049,7 +1049,7 @@ export default function Mood() {
   const [currentMood,   setCurrentMood]   = useState(null)
   const [habitsChecked, setHabitsChecked] = useState({})
   // ─── AJUSTES DEL TAB BAR — edita estos valores ───────────────────────────
-  const TAB_BAR_BOTTOM    = 96   // px sobre el nav — sube el número para alejarlo más
+  const TAB_BAR_BOTTOM    = 300   // px sobre el nav — sube el número para alejarlo más
   const TAB_BAR_ICON_SIZE = 36   // px tamaño del icono
   const TAB_BAR_PADDING   = '13px 16px' // padding interno de cada tab
   const TAB_BAR_MIN_WIDTH = 64   // px ancho mínimo de cada tab

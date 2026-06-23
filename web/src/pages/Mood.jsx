@@ -216,72 +216,30 @@ function SanctuaryBg({ recoveryLight, mood, activeTab }) {
 }
 
 // ─── PANDI ANIMADA ───────────────────────────────────────────────────────────
-function SanctuaryPandi({ mood, pandiMode, cfg, activeTab }) {
-  const [frameIdx, setFrameIdx] = useState(0)
-  const [blinking, setBlinking] = useState(false)
-  const [imgErr,   setImgErr]   = useState(false)
+function SanctuaryPandi({ mood, pandiMode, cfg, activeTab, recoveryLight }) {
+  const [imgErr, setImgErr] = useState(false)
 
-  // Tab tiene prioridad sobre pandiMode/mood
-  const tabFrames = TAB_CONFIG[activeTab]?.frames
-
-  const frames = tabFrames
-    || (pandiMode === 'meditate'  ? PANDI_FRAMES.meditate
-      : pandiMode === 'celebrate' ? PANDI_FRAMES.celebrate
-      : pandiMode === 'breathing' ? PANDI_FRAMES.breathing
-      : pandiMode === 'sitting'   ? PANDI_FRAMES.sitting
-      : mood >= 4                 ? PANDI_FRAMES.happy
-      : mood && mood <= 2         ? PANDI_FRAMES.thinking
-      : PANDI_FRAMES.idle)
-
-  useEffect(() => {
-    if (frames.length <= 1) return
-    const t = setInterval(() => setFrameIdx(i => (i + 1) % frames.length), 4500)
-    return () => clearInterval(t)
-  }, [pandiMode, mood])
-
-  useEffect(() => {
-    const schedule = () => setTimeout(() => {
-      setBlinking(true)
-      setTimeout(() => { setBlinking(false); schedule() }, 120)
-    }, 3000 + Math.random() * 4000)
-    const t = schedule()
-    return () => clearTimeout(t)
-  }, [])
-
-  const src = blinking ? PANDI_FRAMES.blink : (Array.isArray(frames) ? frames[frameIdx] : frames)
-  const glow = cfg?.glow || 'rgba(46,196,182,0.4)'
+  // Frame según semáforo (prioridad) → tab activo → mood
+  const frame = (() => {
+    if (activeTab && TAB_CONFIG[activeTab]?.frames?.[0]) {
+      return TAB_CONFIG[activeTab].frames[0]
+    }
+    const light = recoveryLight || 'GREEN'
+    if (light === 'GREEN')  return '/panda/panda_stay.png'
+    if (light === 'YELLOW') return '/panda/panda_base.png'
+    if (light === 'RED')    return '/panda/panda_sad.png'
+    return '/panda/panda_base.png'
+  })()
 
   return (
-    <motion.div
-      animate={{ y: [0, -8, 0] }}
-      transition={{ duration: 3.2, repeat: Infinity, ease: 'easeInOut' }}
-      style={{ position: 'relative', width: '48%', maxWidth: 200 }}>
-      {/* Glow */}
-      <motion.div
-        animate={{ opacity: [0.3, 0.55, 0.3] }}
-        transition={{ duration: 3, repeat: Infinity }}
-        style={{ position: 'absolute', top: '50%', left: '50%',
-          transform: 'translate(-50%,-50%)', width: '80%', height: '80%',
-          borderRadius: '50%', background: `radial-gradient(circle, ${glow} 0%, transparent 65%)`,
-          filter: 'blur(24px)', zIndex: -1, pointerEvents: 'none' }}
-      />
-      {/* Sombra suelo */}
-      <motion.div
-        animate={{ scaleX: [1, 1.04, 1], opacity: [0.2, 0.3, 0.2] }}
-        transition={{ duration: 3, repeat: Infinity }}
-        style={{ position: 'absolute', bottom: -4, left: '50%',
-          transform: 'translateX(-50%)', width: '50%', height: 8,
-          borderRadius: '50%', background: 'rgba(0,0,0,0.15)',
-          filter: 'blur(4px)', zIndex: -1 }}
-      />
+    <div style={{ position:'relative', width:'100%' }}>
       {imgErr
-        ? <span style={{ fontSize: 80, display: 'block', textAlign: 'center' }}>🐾</span>
-        : <img src={src} alt="Pandi"
-            style={{ width: '100%', height: 'auto', objectFit: 'contain', display: 'block',
-              filter: `drop-shadow(0 12px 20px ${glow})` }}
+        ? <span style={{ fontSize:80, display:'block', textAlign:'center' }}>🐾</span>
+        : <img src={frame} alt="Pandi"
+            style={{ width:'100%', height:'auto', objectFit:'contain', display:'block' }}
             onError={() => setImgErr(true)} />
       }
-    </motion.div>
+    </div>
   )
 }
 
@@ -1134,6 +1092,14 @@ export default function Mood() {
   const [activeTab,     setActiveTab]     = useState('checkin')
   const [currentMood,   setCurrentMood]   = useState(null)
   const [habitsChecked, setHabitsChecked] = useState({})
+  // ─── AJUSTES DEL TAB BAR — edita estos valores ───────────────────────────
+  const TAB_BAR_BOTTOM    = 96   // px sobre el nav — sube el número para alejarlo más
+  const TAB_BAR_ICON_SIZE = 36   // px tamaño del icono
+  const TAB_BAR_PADDING   = '13px 16px' // padding interno de cada tab
+  const TAB_BAR_MIN_WIDTH = 64   // px ancho mínimo de cada tab
+  const TAB_BAR_FONT_SIZE = 10   // px tamaño del label
+  // ─────────────────────────────────────────────────────────────────────────
+
   const [sheetOpen,     setSheetOpen]     = useState(false)
   const [pandiEditMode, setPandiEditMode] = useState(false)
   const [pandiConfig,   setPandiConfig]   = useState(() => {
@@ -1264,7 +1230,7 @@ export default function Mood() {
             pointerEvents:'all',
             cursor: pandiEditMode ? 'move' : 'pointer',
           }}>
-          <SanctuaryPandi mood={currentMood} pandiMode={pandiMode} cfg={sanctuaryCfg} activeTab={activeTab} />
+          <SanctuaryPandi mood={currentMood} pandiMode={pandiMode} cfg={sanctuaryCfg} activeTab={activeTab} recoveryLight={recoveryLight} />
           {pandiEditMode && (
             <div style={{ position:'absolute', inset:-4, borderRadius:16,
               border:'2px dashed #B8924A', pointerEvents:'none' }} />
@@ -1321,8 +1287,8 @@ export default function Mood() {
         )}
       </AnimatePresence>
 
-      {/* ── TAB BAR FLOTANTE — más grande, más arriba del nav ── */}
-      <div style={{ position:'fixed', bottom:'calc(env(safe-area-inset-bottom,0px) + 90px)',
+      {/* ── TAB BAR FLOTANTE ── */}
+      <div style={{ position:'fixed', bottom:`calc(env(safe-area-inset-bottom,0px) + ${TAB_BAR_BOTTOM}px)`,
         left:0, right:0, zIndex:30, display:'flex', justifyContent:'center',
         pointerEvents:'none' }}>
         <motion.div initial={{ y:20, opacity:0 }} animate={{ y:0, opacity:1 }}
@@ -1344,17 +1310,17 @@ export default function Mood() {
               <motion.button key={t.id} whileTap={{ scale:0.9 }}
                 onClick={() => { setActiveTab(t.id); setSheetOpen(true) }}
                 style={{ display:'flex', flexDirection:'column', alignItems:'center',
-                  gap:5, padding:'13px 16px', border:'none', cursor:'pointer',
+                  gap:5, padding:TAB_BAR_PADDING, border:'none', cursor:'pointer',
                   borderRight: i < arr.length-1 ? '1px solid rgba(201,169,110,0.1)' : 'none',
                   background: active ? 'rgba(201,169,110,0.12)' : 'transparent',
-                  transition:'background 0.2s', minWidth:64, position:'relative' }}>
+                  transition:'background 0.2s', minWidth:TAB_BAR_MIN_WIDTH, position:'relative' }}>
                 <img src={`/panda/${t.icon}.png`} alt={t.label}
-                  style={{ width:36, height:36, objectFit:'contain',
+                  style={{ width:TAB_BAR_ICON_SIZE, height:TAB_BAR_ICON_SIZE, objectFit:'contain',
                     opacity: active ? 1 : 0.55,
                     filter: active ? 'none' : 'grayscale(0.3)',
                     transition:'all 0.2s' }}
                   onError={e => { e.target.style.display='none' }} />
-                <span style={{ fontSize:10, fontWeight:700, letterSpacing:'.03em',
+                <span style={{ fontSize:TAB_BAR_FONT_SIZE, fontWeight:700, letterSpacing:'.03em',
                   color: active ? '#B8924A' : '#C0A870' }}>
                   {t.label}
                 </span>

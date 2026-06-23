@@ -81,51 +81,53 @@ const SANCTUARY_CONFIG = {
   RED:    { bg: '/panda/sanctuary_red.png',    glow: 'rgba(255,143,163,0.4)', dot: '#FF8FA3' },
 }
 
-// ─── CONFIGURACIÓN POR TAB — fondo + pose de Pandi ───────────────────────────
-// Pon tus PNGs en /public/sanctuary/ y /public/panda/
-const TAB_CONFIG = {
-  breathing:  {
-    bg:    '/sanctuary/bg_breathing.png',   // cielo, nubes, aire
-    bgFallback: '#d4eaf7',
-    frames: ['/panda/panda_breathing.png'],
-    pandiMode: 'breathing',
-  },
-  meditation: {
-    bg:    '/sanctuary/bg_forest.png',      // bosque, naturaleza
-    bgFallback: '#d4ead4',
-    frames: ['/panda/panda_meditating.png'],
-    pandiMode: 'meditate',
-  },
-  checkin: {
-    bg:    '/sanctuary/bg_checkin.png',     // interior cálido, luz suave
-    bgFallback: '#f5efe6',
-    frames: ['/panda/panda_base.png', '/panda/panda_happy.png'],
-    pandiMode: 'idle',
-  },
-  habits: {
-    bg:    '/sanctuary/bg_checkin.png',
-    bgFallback: '#f0edf8',
-    frames: ['/panda/panda_happy.png'],
-    pandiMode: 'celebrate',
-  },
-  journal: {
-    bg:    '/sanctuary/bg_journal.png',     // interior acogedor, velas
-    bgFallback: '#f7f0e6',
-    frames: ['/panda/panda_sitting.png'],
-    pandiMode: 'sitting',
-  },
+// Frames de Pandi según mood/acción
+const PANDI_FRAMES = {
+  idle:      ['/panda/panda_base.png'],
+  happy:     ['/panda/panda_base.png'],
+  thinking:  ['/panda/panda_sitting.png'],
+  meditate:  ['/panda/panda_sitting.png'],
+  celebrate: ['/panda/panda_base.png'],
+  breathing: ['/panda/panda_sitting.png'],
+  sitting:   ['/panda/panda_sitting.png'],
+  walkR:     ['/panda/panda_walk_r.png'],
+  walkL:     ['/panda/panda_lateral_izq.png'],
+  back:      ['/panda/panda_back.png'],
+  blink:     '/panda/panda_base.png',
 }
 
-// Frames de Pandi según mood
-const PANDI_FRAMES = {
-  idle:      ['/panda/panda_base.png', '/panda/panda_happy.png'],
-  happy:     ['/panda/panda_happy.png', '/panda/avatar_happy.png'],
-  thinking:  ['/panda/thinking_1.png'],
-  meditate:  ['/panda/meditate_1.png', '/panda/meditate_2.png'],
-  celebrate: ['/panda/avatar_celebrate.png'],
-  breathing: ['/panda/panda_breathing.png'],
-  sitting:   ['/panda/panda_sitting.png'],
-  blink:     '/panda/panda_blink.png',
+// ─── CONFIGURACIÓN POR TAB — fondo + pose de Pandi ───────────────────────────
+const TAB_CONFIG = {
+  breathing:  {
+    bg:          '/sanctuary/bg_breathing.png',
+    bgFallback:  '#d4eaf7',
+    frames:      ['/panda/panda_sitting.png'],
+    pandiMode:   'breathing',
+  },
+  meditation: {
+    bg:          '/sanctuary/bg_forest.png',
+    bgFallback:  '#d4ead4',
+    frames:      ['/panda/panda_sitting.png'],
+    pandiMode:   'meditate',
+  },
+  checkin: {
+    bg:          '/sanctuary/bg_checkin.png',
+    bgFallback:  '#f5efe6',
+    frames:      ['/panda/panda_base.png'],
+    pandiMode:   'idle',
+  },
+  habits: {
+    bg:          '/sanctuary/bg_checkin.png',
+    bgFallback:  '#f0edf8',
+    frames:      ['/panda/panda_base.png'],
+    pandiMode:   'celebrate',
+  },
+  journal: {
+    bg:          '/sanctuary/bg_journal.png',
+    bgFallback:  '#f7f0e6',
+    frames:      ['/panda/panda_sitting.png'],
+    pandiMode:   'sitting',
+  },
 }
 
 const MED_SESSIONS = { 2: [1,2,3], 5: [4,5,6,7], 10: [8,9,10] }
@@ -1133,6 +1135,11 @@ export default function Mood() {
   const [currentMood,   setCurrentMood]   = useState(null)
   const [habitsChecked, setHabitsChecked] = useState({})
   const [sheetOpen,     setSheetOpen]     = useState(true)
+  const [pandiEditMode, setPandiEditMode] = useState(false)
+  const [pandiConfig,   setPandiConfig]   = useState(() => {
+    try { return JSON.parse(localStorage.getItem('pandi_mood_cfg') || 'null') || { bottom:22, size:42 } }
+    catch { return { bottom:22, size:42 } }
+  })
   const [showPulse,     setShowPulse]     = useState(false)
   const [showSunJourney, setShowSunJourney] = useState(false)
   const [showCalm,       setShowCalm]       = useState(false)
@@ -1241,28 +1248,94 @@ export default function Mood() {
         </div>
       </div>
 
-      {/* ── PANDI EN EL SANTUARIO ── */}
-      <div style={{ position:'relative', zIndex:5, flex:1, display:'flex',
-        alignItems:'flex-end', justifyContent:'center', paddingBottom:0 }}>
-        <SanctuaryPandi mood={currentMood} pandiMode={pandiMode} cfg={sanctuaryCfg} activeTab={activeTab} />
+      {/* ── PANDI EN EL SANTUARIO — anclada a la plataforma ── */}
+      <div style={{ position:'absolute', inset:0, zIndex:5, pointerEvents:'none' }}>
+        <div
+          onPointerDown={() => { window._pandiPressTimer = setTimeout(() => setPandiEditMode(true), 1500) }}
+          onPointerUp={() => clearTimeout(window._pandiPressTimer)}
+          onPointerLeave={() => clearTimeout(window._pandiPressTimer)}
+          style={{
+            position:'absolute',
+            bottom: pandiConfig.bottom + '%',
+            left:'50%',
+            transform:'translateX(-50%)',
+            width: pandiConfig.size + '%',
+            maxWidth: 280,
+            pointerEvents:'all',
+            cursor: pandiEditMode ? 'move' : 'pointer',
+          }}>
+          <SanctuaryPandi mood={currentMood} pandiMode={pandiMode} cfg={sanctuaryCfg} activeTab={activeTab} />
+          {pandiEditMode && (
+            <div style={{ position:'absolute', inset:-4, borderRadius:16,
+              border:'2px dashed #B8924A', pointerEvents:'none' }} />
+          )}
+        </div>
       </div>
 
 
-      {/* ── TAB BAR FLOTANTE — encima del nav, no pegado ── */}
-      <div style={{ position:'fixed', bottom:'calc(env(safe-area-inset-bottom,0px) + 80px)',
+      {/* ── PANEL EDICIÓN DE PANDI — largo press en Pandi ── */}
+      <AnimatePresence>
+        {pandiEditMode && (
+          <motion.div initial={{ opacity:0, y:20 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0 }}
+            style={{ position:'fixed', bottom:'calc(env(safe-area-inset-bottom,0px) + 170px)',
+              left:'50%', transform:'translateX(-50%)', zIndex:60,
+              background:'rgba(255,255,255,0.95)', backdropFilter:'blur(16px)',
+              borderRadius:20, padding:'16px 20px', boxShadow:'0 8px 32px rgba(0,0,0,0.15)',
+              minWidth:280 }}>
+            <p style={{ fontSize:12, fontWeight:800, color:'#B8924A', margin:'0 0 12px',
+              textAlign:'center' }}>✏️ Ajustar Pandi</p>
+            <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+              <div>
+                <p style={{ fontSize:11, color:'#6B7280', margin:'0 0 4px', fontWeight:600 }}>
+                  Altura: {pandiConfig.bottom}%
+                </p>
+                <input type="range" min={5} max={55} value={pandiConfig.bottom}
+                  onChange={e => setPandiConfig(c => ({ ...c, bottom: +e.target.value }))}
+                  style={{ width:'100%', accentColor:'#B8924A' }} />
+              </div>
+              <div>
+                <p style={{ fontSize:11, color:'#6B7280', margin:'0 0 4px', fontWeight:600 }}>
+                  Tamaño: {pandiConfig.size}%
+                </p>
+                <input type="range" min={20} max={80} value={pandiConfig.size}
+                  onChange={e => setPandiConfig(c => ({ ...c, size: +e.target.value }))}
+                  style={{ width:'100%', accentColor:'#B8924A' }} />
+              </div>
+            </div>
+            <div style={{ display:'flex', gap:8, marginTop:12 }}>
+              <button onClick={() => setPandiEditMode(false)}
+                style={{ flex:1, padding:'9px', borderRadius:12, border:'none', cursor:'pointer',
+                  background:'#F3F4F6', color:'#6B7280', fontWeight:700, fontSize:12 }}>
+                Cancelar
+              </button>
+              <button onClick={() => {
+                localStorage.setItem('pandi_mood_cfg', JSON.stringify(pandiConfig))
+                setPandiEditMode(false)
+              }}
+                style={{ flex:1, padding:'9px', borderRadius:12, border:'none', cursor:'pointer',
+                  background:'#B8924A', color:'white', fontWeight:700, fontSize:12 }}>
+                Guardar
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── TAB BAR FLOTANTE — más grande, más arriba del nav ── */}
+      <div style={{ position:'fixed', bottom:'calc(env(safe-area-inset-bottom,0px) + 90px)',
         left:0, right:0, zIndex:30, display:'flex', justifyContent:'center',
         pointerEvents:'none' }}>
         <motion.div initial={{ y:20, opacity:0 }} animate={{ y:0, opacity:1 }}
           transition={{ delay:0.2, type:'spring', damping:22 }}
-          style={{ display:'flex', gap:0, background:'rgba(255,255,255,0.88)',
-            backdropFilter:'blur(20px)', borderRadius:26,
+          style={{ display:'flex', gap:0, background:'rgba(255,255,255,0.92)',
+            backdropFilter:'blur(20px)', borderRadius:28,
             border:'1px solid rgba(201,169,110,0.2)',
-            boxShadow:'0 8px 32px rgba(0,0,0,0.12)', overflow:'hidden',
+            boxShadow:'0 8px 32px rgba(0,0,0,0.15)', overflow:'hidden',
             pointerEvents:'all' }}>
           {[
             { id:'breathing',  label:'Respirar',  icon:'tab_respirar'  },
             { id:'meditation', label:'Meditar',   icon:'tab_meditar'   },
-            { id:'checkin',    label:'Mood',       icon:'tab_mood'      },
+            { id:'checkin',    label:'Mood',      icon:'tab_mood'      },
             { id:'habits',     label:'Check-In',  icon:'tab_checkin'   },
             { id:'journal',    label:'El Diario', icon:'tab_diario'    },
           ].map((t, i, arr) => {
@@ -1271,23 +1344,23 @@ export default function Mood() {
               <motion.button key={t.id} whileTap={{ scale:0.9 }}
                 onClick={() => setActiveTab(t.id)}
                 style={{ display:'flex', flexDirection:'column', alignItems:'center',
-                  gap:4, padding:'10px 14px', border:'none', cursor:'pointer',
+                  gap:5, padding:'13px 16px', border:'none', cursor:'pointer',
                   borderRight: i < arr.length-1 ? '1px solid rgba(201,169,110,0.1)' : 'none',
                   background: active ? 'rgba(201,169,110,0.12)' : 'transparent',
-                  transition:'background 0.2s', minWidth:58, position:'relative' }}>
+                  transition:'background 0.2s', minWidth:64, position:'relative' }}>
                 <img src={`/panda/${t.icon}.png`} alt={t.label}
-                  style={{ width:32, height:32, objectFit:'contain',
+                  style={{ width:36, height:36, objectFit:'contain',
                     opacity: active ? 1 : 0.55,
                     filter: active ? 'none' : 'grayscale(0.3)',
                     transition:'all 0.2s' }}
                   onError={e => { e.target.style.display='none' }} />
-                <span style={{ fontSize:9, fontWeight:700, letterSpacing:'.03em',
+                <span style={{ fontSize:10, fontWeight:700, letterSpacing:'.03em',
                   color: active ? '#B8924A' : '#C0A870' }}>
                   {t.label}
                 </span>
                 {active && (
-                  <div style={{ position:'absolute', bottom:4, left:'50%',
-                    transform:'translateX(-50%)', width:20, height:2.5,
+                  <div style={{ position:'absolute', bottom:5, left:'50%',
+                    transform:'translateX(-50%)', width:22, height:3,
                     borderRadius:2, background:'#B8924A' }} />
                 )}
               </motion.button>

@@ -281,7 +281,7 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name, userId }) {
           <motion.div
             animate={{ scaleX:[1,1.04,1], opacity:[0.2,0.3,0.2] }}
             transition={{ duration:3, repeat:Infinity, ease:'easeInOut' }}
-            style={{ position:'absolute', bottom:-4, left:'50%',
+            style={{ position:'absolute', bottom:6, left:'50%',
               transform:'translateX(-50%)', width:'50%', height:8,
               borderRadius:'50%', background:'rgba(0,0,0,0.15)',
               filter:'blur(4px)', zIndex:-1 }} />

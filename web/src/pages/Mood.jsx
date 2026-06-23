@@ -319,7 +319,7 @@ function CheckinTab({ theme, userId, addXP, onTabChange, onMoodSaved, profile })
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       {/* Selector mood */}
-      <div style={{ background: 'rgba(255,255,255,0.88)', backdropFilter: 'blur(16px)',
+      <div style={{ background: 'rgba(255,255,255,0.65)', backdropFilter: 'blur(16px)',
         borderRadius: 24, padding: '20px 16px' }}>
         <p style={{ fontWeight: 800, textAlign: 'center', marginBottom: 20, fontSize: 15, color: '#1A2332' }}>
           ¿Cómo llegamos hoy?
@@ -366,7 +366,7 @@ function CheckinTab({ theme, userId, addXP, onTabChange, onMoodSaved, profile })
         {mood && (finalMessage || loadingCoach) && (
           <motion.div key={mood} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
-            style={{ background: 'rgba(255,255,255,0.88)', backdropFilter: 'blur(16px)',
+            style={{ background: 'rgba(255,255,255,0.65)', backdropFilter: 'blur(16px)',
               borderRadius: 24, padding: '16px', borderLeft: `4px solid ${moodData?.color}` }}>
             <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start', marginBottom: 12 }}>
               <PandaImg name={mood >= 4 ? 'avatar_happy' : 'avatar_neutro'} size={44}
@@ -635,7 +635,7 @@ function MeditationTab({ theme, profile, userId }) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <div style={{ background: 'rgba(255,255,255,0.88)', backdropFilter: 'blur(16px)',
+      <div style={{ background: 'rgba(255,255,255,0.65)', backdropFilter: 'blur(16px)',
         borderRadius: 24, padding: '16px' }}>
         <p style={{ fontSize: 13, fontWeight: 700, marginBottom: 12, color: '#1A2332' }}>Duración</p>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8 }}>
@@ -651,7 +651,7 @@ function MeditationTab({ theme, profile, userId }) {
         </div>
       </div>
 
-      <div style={{ background: 'rgba(255,255,255,0.88)', backdropFilter: 'blur(16px)',
+      <div style={{ background: 'rgba(255,255,255,0.65)', backdropFilter: 'blur(16px)',
         borderRadius: 24, padding: '16px' }}>
         <p style={{ fontSize: 13, fontWeight: 700, marginBottom: 12, color: '#1A2332' }}>Sonido ambiental</p>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5,1fr)', gap: 8 }}>
@@ -671,7 +671,7 @@ function MeditationTab({ theme, profile, userId }) {
       </div>
 
       {/* Temporizador + Pandi meditando */}
-      <div style={{ background: 'rgba(255,255,255,0.88)', backdropFilter: 'blur(16px)',
+      <div style={{ background: 'rgba(255,255,255,0.65)', backdropFilter: 'blur(16px)',
         borderRadius: 24, padding: '24px 16px', display: 'flex', flexDirection: 'column',
         alignItems: 'center', gap: 16 }}>
         <div style={{ width: '100%', display: 'flex', alignItems: 'center',
@@ -832,7 +832,7 @@ function HabitsTab({ theme, userId, onHabitsUpdate, profile }) {
 
   return (
     <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
-      <div style={{ background:'rgba(255,255,255,0.88)', backdropFilter:'blur(16px)',
+      <div style={{ background:'rgba(255,255,255,0.65)', backdropFilter:'blur(16px)',
         borderRadius:24, padding:'16px', display:'flex', alignItems:'center', gap:12,
         border:`1px solid ${theme.primary}20` }}>
         <AnimatePresence mode="wait">
@@ -864,7 +864,7 @@ function HabitsTab({ theme, userId, onHabitsUpdate, profile }) {
         {celebrated && (
           <motion.div initial={{ opacity:0, scale:0.9 }} animate={{ opacity:1, scale:1 }}
             exit={{ opacity:0 }}
-            style={{ background:'rgba(255,255,255,0.92)', backdropFilter:'blur(16px)',
+            style={{ background:'rgba(255,255,255,0.65)', backdropFilter:'blur(16px)',
               borderRadius:24, padding:'20px', textAlign:'center' }}>
             <p style={{ fontSize:32, margin:'0 0 8px' }}>🎊</p>
             <p style={{ fontWeight:700, color:'#1A2332', margin:'0 0 4px' }}>
@@ -875,7 +875,7 @@ function HabitsTab({ theme, userId, onHabitsUpdate, profile }) {
         )}
       </AnimatePresence>
 
-      <div style={{ background:'rgba(255,255,255,0.88)', backdropFilter:'blur(16px)',
+      <div style={{ background:'rgba(255,255,255,0.65)', backdropFilter:'blur(16px)',
         borderRadius:24, padding:'16px' }}>
         <p style={{ fontSize:14, fontWeight:700, color:'#1A2332', margin:'0 0 12px' }}>Hoy</p>
         <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
@@ -948,7 +948,7 @@ function SantuarioTab({ theme, userLevel, currentMood, habitsChecked }) {
   return (
     <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
       {/* Mascota activa */}
-      <div style={{ background:'rgba(255,255,255,0.88)', backdropFilter:'blur(16px)',
+      <div style={{ background:'rgba(255,255,255,0.65)', backdropFilter:'blur(16px)',
         borderRadius:24, padding:'24px 16px', display:'flex', flexDirection:'column', alignItems:'center' }}>
         <div style={{ textAlign:'center', marginBottom:16 }}>
           {editingName ? (
@@ -1006,7 +1006,7 @@ function SantuarioTab({ theme, userLevel, currentMood, habitsChecked }) {
       </div>
 
       {/* Coleccionables */}
-      <div style={{ background:'rgba(255,255,255,0.88)', backdropFilter:'blur(16px)',
+      <div style={{ background:'rgba(255,255,255,0.65)', backdropFilter:'blur(16px)',
         borderRadius:24, padding:'16px' }}>
         <p style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'.08em',
           color:'#9CA3AF', margin:'0 0 12px' }}>Tus Coleccionables</p>
@@ -1147,7 +1147,7 @@ export default function Mood() {
 
         <motion.button whileTap={{ scale:0.94 }} onClick={() => { stopSpeech(); navigate(-1) }}
           style={{ width:38, height:38, borderRadius:12, border:'1.5px solid rgba(201,169,110,0.3)',
-            cursor:'pointer', background:'rgba(255,255,255,0.9)',
+            cursor:'pointer', background:'rgba(255,255,255,0.65)',
             display:'flex', alignItems:'center', justifyContent:'center', fontSize:16,
             color:'#C9A96E' }}>
           ←
@@ -1167,21 +1167,21 @@ export default function Mood() {
           {/* Respira rápida */}
           <motion.button whileTap={{ scale:0.94 }} onClick={() => setShowPulse(true)}
             style={{ width:38, height:38, borderRadius:12, border:'1.5px solid rgba(201,169,110,0.3)',
-              cursor:'pointer', background:'rgba(255,255,255,0.9)',
+              cursor:'pointer', background:'rgba(255,255,255,0.65)',
               display:'flex', alignItems:'center', justifyContent:'center', fontSize:16 }}>
             🌬️
           </motion.button>
           {/* Viaje del Sol */}
           <motion.button whileTap={{ scale:0.94 }} onClick={() => setShowSunJourney(true)}
             style={{ width:38, height:38, borderRadius:12, border:'1.5px solid rgba(201,169,110,0.3)',
-              cursor:'pointer', background:'rgba(255,255,255,0.9)',
+              cursor:'pointer', background:'rgba(255,255,255,0.65)',
               display:'flex', alignItems:'center', justifyContent:'center', fontSize:16 }}>
             ☀️
           </motion.button>
           {/* SOS */}
           <motion.button whileTap={{ scale:0.94 }} onClick={() => setShowCalm(true)}
             style={{ width:38, height:38, borderRadius:12, border:'1.5px solid rgba(239,68,68,0.3)',
-              cursor:'pointer', background:'rgba(255,255,255,0.9)',
+              cursor:'pointer', background:'rgba(255,255,255,0.65)',
               display:'flex', alignItems:'center', justifyContent:'center',
               fontSize:11, fontWeight:900, color:'#EF4444' }}>
             SOS
@@ -1235,7 +1235,7 @@ export default function Mood() {
           <motion.div initial={{ opacity:0, y:20 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0 }}
             style={{ position:'fixed', bottom:'calc(env(safe-area-inset-bottom,0px) + 170px)',
               left:'50%', transform:'translateX(-50%)', zIndex:60,
-              background:'rgba(255,255,255,0.95)', backdropFilter:'blur(16px)',
+              background:'rgba(255,255,255,0.7)', backdropFilter:'blur(16px)',
               borderRadius:20, padding:'16px 20px', boxShadow:'0 8px 32px rgba(0,0,0,0.15)',
               minWidth:280 }}>
             <p style={{ fontSize:12, fontWeight:800, color:'#B8924A', margin:'0 0 12px',
@@ -1283,7 +1283,7 @@ export default function Mood() {
         pointerEvents:'none' }}>
         <motion.div initial={{ y:20, opacity:0 }} animate={{ y:0, opacity:1 }}
           transition={{ delay:0.2, type:'spring', damping:22 }}
-          style={{ display:'flex', gap:0, background:'rgba(255,255,255,0.92)',
+          style={{ display:'flex', gap:0, background:'rgba(255,255,255,0.65)',
             backdropFilter:'blur(20px)', borderRadius:28,
             border:'1px solid rgba(201,169,110,0.2)',
             boxShadow:'0 8px 32px rgba(0,0,0,0.15)', overflow:'hidden',
@@ -1298,7 +1298,7 @@ export default function Mood() {
             const active = activeTab === t.id
             return (
               <motion.button key={t.id} whileTap={{ scale:0.9 }}
-                onClick={() => { setActiveTab(t.id); if (t.id !== 'breathing') setSheetOpen(true) }}
+                onClick={() => setActiveTab(t.id)}
                 style={{ display:'flex', flexDirection:'column', alignItems:'center',
                   gap:5, padding:TAB_BAR_PADDING, border:'none', cursor:'pointer',
                   borderRight: i < arr.length-1 ? '1px solid rgba(201,169,110,0.1)' : 'none',
@@ -1325,52 +1325,52 @@ export default function Mood() {
         </motion.div>
       </div>
 
-      {/* ── BOTTOM SHEET — solo visible cuando hay tab activo ── */}
-      <AnimatePresence>
-      {sheetOpen && activeTab && (
-      <motion.div
-        initial={{ y: '100%' }}
-        animate={{ y: 0 }}
-        exit={{ y: '100%' }}
-        transition={{ type:'spring', damping:28, stiffness:260 }}
-        style={{ position:'relative', zIndex:20, maxHeight:'68vh',
-          background:'rgba(248,250,250,0.97)', backdropFilter:'blur(20px)',
-          borderRadius:'28px 28px 0 0',
-          boxShadow:'0 -4px 32px rgba(0,0,0,0.12)',
-          display:'flex', flexDirection:'column',
-          paddingBottom:'calc(env(safe-area-inset-bottom) + 80px)' }}>
+      {/* ── OVERLAY TABS — todas flotan sobre Pandi sin sheet ── */}
+      <AnimatePresence mode="wait">
+        {activeTab && activeTab !== 'breathing' && (
+          <motion.div key={activeTab}
+            initial={{ opacity:0, y:30 }} animate={{ opacity:1, y:0 }}
+            exit={{ opacity:0, y:20 }}
+            transition={{ type:'spring', damping:28, stiffness:260 }}
+            style={{ position:'fixed', inset:0, zIndex:20, pointerEvents:'none',
+              display:'flex', flexDirection:'column', justifyContent:'flex-end' }}>
 
-        {/* Handle — cerrar al tocar */}
-        <div onClick={() => { setSheetOpen(false); setActiveTab(null) }}
-          style={{ display:'flex', flexDirection:'column', alignItems:'center',
-            padding:'12px 0 8px', cursor:'pointer', flexShrink:0 }}>
-          <div style={{ width:40, height:4, borderRadius:2, background:'rgba(0,0,0,0.15)' }} />
-          <div style={{ marginTop:6, color:'#9CA3AF' }}>
-            <ChevronDown size={16} />
-          </div>
-        </div>
+            {/* Tap fuera para cerrar */}
+            <div onClick={() => setActiveTab(null)}
+              style={{ flex:1, pointerEvents:'all' }} />
 
-        {/* Contenido scrollable */}
-        <div style={{ flex:1, overflowY:'auto', padding:'0 16px',
-          paddingBottom:'calc(env(safe-area-inset-bottom,0px) + 140px)' }}>
-          <motion.div key={activeTab} initial={{ opacity:0, y:8 }} animate={{ opacity:1, y:0 }}
-            transition={{ duration:0.2 }}>
-            {activeTab === 'checkin' && (
-              <CheckinTab theme={theme} userId={user?.id} addXP={addXP} profile={profile}
-                onTabChange={setActiveTab} onMoodSaved={setCurrentMood} />
-            )}
-            {activeTab === 'meditation' && <MeditationTab theme={theme} profile={profile} userId={user?.id} />}
-            {activeTab === 'journal'    && <JournalEntry  theme={theme} userId={user?.id} currentMood={currentMood} />}
-            {activeTab === 'habits'     && (
-              <div style={{ padding:'24px 0', textAlign:'center' }}>
-                <p style={{ fontSize:28, margin:'0 0 8px' }}>✓</p>
-                <p style={{ fontSize:13, color:'#9CA3AF', margin:0 }}>Check-In próximamente</p>
+            {/* Contenido */}
+            <div style={{ pointerEvents:'all', padding:'0 16px',
+              paddingBottom:'calc(env(safe-area-inset-bottom,0px) + 160px)',
+              maxHeight:'60vh', overflowY:'auto' }}>
+
+              {/* Handle */}
+              <div onClick={() => setActiveTab(null)}
+                style={{ display:'flex', justifyContent:'center', marginBottom:10, cursor:'pointer' }}>
+                <div style={{ width:36, height:4, borderRadius:2, background:'rgba(255,255,255,0.45)' }} />
               </div>
-            )}
+
+              {activeTab === 'checkin' && (
+                <CheckinTab theme={theme} userId={user?.id} addXP={addXP} profile={profile}
+                  onTabChange={setActiveTab} onMoodSaved={setCurrentMood} />
+              )}
+              {activeTab === 'meditation' && (
+                <MeditationTab theme={theme} profile={profile} userId={user?.id} />
+              )}
+              {activeTab === 'journal' && (
+                <JournalEntry theme={theme} userId={user?.id} currentMood={currentMood} />
+              )}
+              {activeTab === 'habits' && (
+                <div style={{ textAlign:'center', padding:'24px 0' }}>
+                  <p style={{ fontSize:28, margin:'0 0 8px' }}>✓</p>
+                  <p style={{ fontSize:13, color:'rgba(255,255,255,0.7)', margin:0 }}>
+                    Check-In próximamente
+                  </p>
+                </div>
+              )}
+            </div>
           </motion.div>
-        </div>
-      </motion.div>
-      )}
+        )}
       </AnimatePresence>
 
       {/* El Pulso de Pandi */}

@@ -1201,8 +1201,9 @@ export default function Mood() {
           <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
             style={{ position:'fixed', inset:0, zIndex:25, pointerEvents:'none',
               display:'flex', flexDirection:'column', alignItems:'center',
-              justifyContent:'flex-start',
-              paddingTop:'calc(env(safe-area-inset-top,0px) + 70px)' }}>
+              justifyContent:'center',
+              paddingBottom:`calc(env(safe-area-inset-bottom,0px) + ${TAB_BAR_BOTTOM + 80}px)`,
+              paddingTop:'calc(env(safe-area-inset-top,0px) + 80px)' }}>
             <div style={{ pointerEvents:'all' }}>
               <BreathingTab theme={theme} />
             </div>
@@ -1314,10 +1315,8 @@ export default function Mood() {
             exit={{ opacity:0, y:20 }}
             transition={{ type:'spring', damping:28, stiffness:260 }}
             style={{ position:'fixed', bottom:0, left:0, right:0, zIndex:20,
-              paddingBottom:'calc(env(safe-area-inset-bottom,0px) + 160px)',
               maxHeight:'55vh', overflowY:'auto',
-              padding:'0 16px',
-              paddingBottom:'calc(env(safe-area-inset-bottom,0px) + 160px)' }}>
+              padding:`0 16px calc(env(safe-area-inset-bottom,0px) + ${TAB_BAR_BOTTOM + 90}px)` }}>
 
             {/* Handle para cerrar */}
             <div onClick={() => setActiveTab(null)}

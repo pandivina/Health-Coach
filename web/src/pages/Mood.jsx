@@ -355,7 +355,6 @@ function CheckinTab({ theme, userId, addXP, onTabChange, onMoodSaved, profile })
           fontSize:14, fontWeight:700, opacity: !mood || loadingCoach ? 0.5 : 1 }}>
         {loadingCoach ? '🧠 Pandi analizando...' : saved ? '✅ Guardado hoy' : '💾 Guardar (+10 XP)'}
       </motion.button>
-    </div>
 
       {/* Respuesta Pandi */}
       <AnimatePresence>

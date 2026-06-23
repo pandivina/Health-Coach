@@ -218,8 +218,8 @@ function SanctuaryBg({ recoveryLight, mood, activeTab }) {
 // ─── PANDI ANIMADA ───────────────────────────────────────────────────────────
 function SanctuaryPandi({ mood, pandiMode, cfg, activeTab, recoveryLight }) {
   const [imgErr, setImgErr] = useState(false)
+  const isMeditating = activeTab === 'meditation'
 
-  // Frame según semáforo (prioridad) → tab activo → mood
   const frame = (() => {
     if (activeTab && TAB_CONFIG[activeTab]?.frames?.[0]) {
       return TAB_CONFIG[activeTab].frames[0]
@@ -232,13 +232,64 @@ function SanctuaryPandi({ mood, pandiMode, cfg, activeTab, recoveryLight }) {
   })()
 
   return (
-    <div style={{ position:'relative', width:'100%' }}>
-      {imgErr
-        ? <span style={{ fontSize:80, display:'block', textAlign:'center' }}>🐾</span>
-        : <img src={frame} alt="Pandi"
-            style={{ width:'100%', height:'auto', objectFit:'contain', display:'block' }}
-            onError={() => setImgErr(true)} />
-      }
+    <div style={{ position:'relative', width:'100%', display:'flex',
+      alignItems:'center', justifyContent:'center' }}>
+
+      {/* Aura de meditación — solo visible cuando medita */}
+      <AnimatePresence>
+        {isMeditating && (
+          <>
+            {/* Anillo exterior */}
+            <motion.div
+              key="aura-outer"
+              initial={{ opacity:0, scale:0.6 }}
+              animate={{ opacity:[0.15,0.35,0.15], scale:[1,1.18,1] }}
+              exit={{ opacity:0, scale:0.6 }}
+              transition={{ duration:4, repeat:Infinity, ease:'easeInOut' }}
+              style={{ position:'absolute', width:'160%', height:'160%',
+                borderRadius:'50%',
+                background:'radial-gradient(circle, rgba(168,139,250,0.5) 0%, transparent 65%)',
+                filter:'blur(18px)', zIndex:0 }} />
+            {/* Anillo medio */}
+            <motion.div
+              key="aura-mid"
+              initial={{ opacity:0, scale:0.5 }}
+              animate={{ opacity:[0.2,0.5,0.2], scale:[0.9,1.08,0.9] }}
+              exit={{ opacity:0 }}
+              transition={{ duration:3, repeat:Infinity, ease:'easeInOut', delay:0.5 }}
+              style={{ position:'absolute', width:'110%', height:'110%',
+                borderRadius:'50%',
+                background:'radial-gradient(circle, rgba(196,169,110,0.6) 0%, transparent 60%)',
+                filter:'blur(10px)', zIndex:0 }} />
+            {/* Partículas flotantes */}
+            {[...Array(6)].map((_, i) => (
+              <motion.div key={`p${i}`}
+                animate={{ y:[-10, -40, -10], opacity:[0,0.8,0], x: (i%2===0?1:-1)*10 }}
+                transition={{ duration:2.5+i*0.4, repeat:Infinity, delay:i*0.5, ease:'easeInOut' }}
+                style={{ position:'absolute', bottom:'40%',
+                  left:`${30 + i*8}%`,
+                  width:6, height:6, borderRadius:'50%', zIndex:6,
+                  background: i%3===0 ? 'rgba(168,139,250,0.8)'
+                    : i%3===1 ? 'rgba(196,169,110,0.8)'
+                    : 'rgba(255,200,200,0.8)',
+                  boxShadow:`0 0 6px 2px ${i%2===0 ? 'rgba(168,139,250,0.5)' : 'rgba(196,169,110,0.5)'}` }}
+              />
+            ))}
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* Pandi */}
+      <div style={{ position:'relative', zIndex:2, width:'100%' }}>
+        {imgErr
+          ? <span style={{ fontSize:80, display:'block', textAlign:'center' }}>🐾</span>
+          : <motion.img src={frame} alt="Pandi"
+              animate={isMeditating ? { scale:[1,1.03,1] } : {}}
+              transition={{ duration:4, repeat:Infinity, ease:'easeInOut' }}
+              style={{ width:'100%', height:'auto', objectFit:'contain', display:'block' }}
+              onError={() => setImgErr(true)} />
+        }
+      </div>
     </div>
   )
 }

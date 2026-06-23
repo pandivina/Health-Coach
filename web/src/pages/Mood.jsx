@@ -1049,7 +1049,7 @@ export default function Mood() {
   const [currentMood,   setCurrentMood]   = useState(null)
   const [habitsChecked, setHabitsChecked] = useState({})
   // ─── AJUSTES DEL TAB BAR — edita estos valores ───────────────────────────
-  const TAB_BAR_BOTTOM    = 105   // px sobre el nav — sube el número para alejarlo más
+  const TAB_BAR_BOTTOM    = 96   // px sobre el nav — sube el número para alejarlo más
   const TAB_BAR_ICON_SIZE = 36   // px tamaño del icono
   const TAB_BAR_PADDING   = '13px 16px' // padding interno de cada tab
   const TAB_BAR_MIN_WIDTH = 64   // px ancho mínimo de cada tab
@@ -1178,7 +1178,7 @@ export default function Mood() {
           onPointerLeave={() => clearTimeout(window._pandiPressTimer)}
           style={{
             position:'absolute',
-            bottom: pandiConfig.bottom  '6%',
+            bottom: pandiConfig.bottom + '%',
             left:'50%',
             transform:'translateX(-50%)',
             width: pandiConfig.size + '%',
@@ -1186,7 +1186,16 @@ export default function Mood() {
             pointerEvents:'all',
             cursor: pandiEditMode ? 'move' : 'pointer',
           }}>
-          <SanctuaryPandi mood={currentMood} pandiMode={pandiMode} cfg={sanctuaryCfg} activeTab={activeTab} recoveryLight={recoveryLight} />
+          <AnimatePresence>
+            {activeTab !== 'checkin' && activeTab !== 'journal' && (
+              <motion.div
+                initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
+                transition={{ duration:0.4 }}
+                style={{ width:'100%' }}>
+                <SanctuaryPandi mood={currentMood} pandiMode={pandiMode} cfg={sanctuaryCfg} activeTab={activeTab} recoveryLight={recoveryLight} />
+              </motion.div>
+            )}
+          </AnimatePresence>
           {pandiEditMode && (
             <div style={{ position:'absolute', inset:-4, borderRadius:16,
               border:'2px dashed #B8924A', pointerEvents:'none' }} />
@@ -1195,21 +1204,73 @@ export default function Mood() {
       </div>
 
 
-      {/* ── RESPIRAR — overlay directo sobre Pandi, sin sheet ── */}
+      {/* ── RESPIRAR / MEDITAR — opciones arriba, Pandi visible abajo ── */}
       <AnimatePresence>
-        {activeTab === 'breathing' && (
+        {(activeTab === 'breathing' || activeTab === 'meditation') && (
           <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
+            transition={{ duration:0.3 }}
             style={{ position:'fixed', inset:0, zIndex:25, pointerEvents:'none',
               display:'flex', flexDirection:'column', alignItems:'center',
-              justifyContent:'center',
-              paddingBottom:`calc(env(safe-area-inset-bottom,0px) + ${TAB_BAR_BOTTOM + 80}px)`,
-              paddingTop:'calc(env(safe-area-inset-top,0px) + 80px)' }}>
-            <div style={{ pointerEvents:'all' }}>
-              <BreathingTab theme={theme} />
+              justifyContent:'flex-start',
+              paddingTop:'calc(env(safe-area-inset-top,0px) + 72px)',
+              paddingLeft:16, paddingRight:16 }}>
+            <div style={{ pointerEvents:'all', width:'100%', maxWidth:420 }}>
+              {activeTab === 'breathing'  && <BreathingTab  theme={theme} />}
+              {activeTab === 'meditation' && <MeditationTab theme={theme} profile={profile} userId={user?.id} />}
             </div>
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* ── MOOD — emojis justo encima del tab bar ── */}
+      <AnimatePresence>
+        {activeTab === 'checkin' && (
+          <motion.div initial={{ opacity:0, y:20 }} animate={{ opacity:1, y:0 }}
+            exit={{ opacity:0, y:20 }} transition={{ duration:0.3 }}
+            style={{ position:'fixed', bottom:`calc(env(safe-area-inset-bottom,0px) + ${TAB_BAR_BOTTOM + 70}px)`,
+              left:0, right:0, zIndex:25, padding:'0 16px', pointerEvents:'all' }}>
+            <CheckinTab theme={theme} userId={user?.id} addXP={addXP} profile={profile}
+              onTabChange={setActiveTab} onMoodSaved={setCurrentMood} />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── CHECK-IN / DIARIO — página fullscreen, Pandi desaparece ── */}
+      <AnimatePresence>
+        {activeTab === 'journal' && (
+          <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }}
+            exit={{ opacity:0 }} transition={{ duration:0.4 }}
+            style={{ position:'fixed', inset:0, zIndex:25,
+              background: theme.background || '#f8fafa',
+              paddingTop:'calc(env(safe-area-inset-top,0px) + 72px)',
+              paddingBottom:`calc(env(safe-area-inset-bottom,0px) + ${TAB_BAR_BOTTOM + 70}px)`,
+              overflow:'hidden' }}>
+            {/* Header de la página */}
+            <div style={{ padding:'0 16px 12px', borderBottom:`1px solid ${theme.border || 'rgba(0,0,0,0.06)'}`,
+              display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+              <p style={{ fontSize:16, fontWeight:900, color: theme.text || '#1A2332', margin:0 }}>
+                📖 El Diario
+              </p>
+              <button onClick={() => setActiveTab(null)}
+                style={{ background:'none', border:'none', cursor:'pointer',
+                  fontSize:13, color: theme.textMuted || '#9CA3AF', fontWeight:700 }}>
+                Cerrar
+              </button>
+            </div>
+            <div style={{ overflowY:'auto', height:'100%', padding:'16px' }}>
+              <JournalEntry theme={theme} userId={user?.id} currentMood={currentMood} />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {activeTab === 'habits' && (
+        <div style={{ position:'fixed', bottom:`calc(env(safe-area-inset-bottom,0px) + ${TAB_BAR_BOTTOM + 70}px)`,
+          left:0, right:0, zIndex:25, padding:'0 16px', textAlign:'center' }}>
+          <p style={{ fontSize:28, margin:'0 0 8px' }}>✓</p>
+          <p style={{ fontSize:13, color:'rgba(255,255,255,0.7)', margin:0 }}>Check-In próximamente</p>
+        </div>
+      )}
 
       {/* ── PANEL EDICIÓN DE PANDI ── */}
       <AnimatePresence>
@@ -1306,45 +1367,6 @@ export default function Mood() {
           })}
         </motion.div>
       </div>
-
-      {/* ── OVERLAY TABS — flotan en la parte inferior, Pandi siempre visible ── */}
-      <AnimatePresence mode="wait">
-        {activeTab && activeTab !== 'breathing' && (
-          <motion.div key={activeTab}
-            initial={{ opacity:0, y:30 }} animate={{ opacity:1, y:0 }}
-            exit={{ opacity:0, y:20 }}
-            transition={{ type:'spring', damping:28, stiffness:260 }}
-            style={{ position:'fixed', bottom:0, left:0, right:0, zIndex:20,
-              maxHeight:'55vh', overflowY:'auto',
-              padding:`0 16px calc(env(safe-area-inset-bottom,0px) + ${TAB_BAR_BOTTOM + 90}px)` }}>
-
-            {/* Handle para cerrar */}
-            <div onClick={() => setActiveTab(null)}
-              style={{ display:'flex', justifyContent:'center', marginBottom:10, cursor:'pointer' }}>
-              <div style={{ width:36, height:4, borderRadius:2, background:'rgba(255,255,255,0.45)' }} />
-            </div>
-
-            {activeTab === 'checkin' && (
-              <CheckinTab theme={theme} userId={user?.id} addXP={addXP} profile={profile}
-                onTabChange={setActiveTab} onMoodSaved={setCurrentMood} />
-            )}
-            {activeTab === 'meditation' && (
-              <MeditationTab theme={theme} profile={profile} userId={user?.id} />
-            )}
-            {activeTab === 'journal' && (
-              <JournalEntry theme={theme} userId={user?.id} currentMood={currentMood} />
-            )}
-            {activeTab === 'habits' && (
-              <div style={{ textAlign:'center', padding:'24px 0' }}>
-                <p style={{ fontSize:28, margin:'0 0 8px' }}>✓</p>
-                <p style={{ fontSize:13, color:'rgba(255,255,255,0.7)', margin:0 }}>
-                  Check-In próximamente
-                </p>
-              </div>
-            )}
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       {/* El Pulso de Pandi */}
       <AnimatePresence>

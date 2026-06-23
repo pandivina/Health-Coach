@@ -317,57 +317,54 @@ function CheckinTab({ theme, userId, addXP, onTabChange, onMoodSaved, profile })
   const moodData     = MOODS.find(m => m.v === mood)
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      {/* Selector mood */}
-      <div style={{ background: 'rgba(255,255,255,0.65)', backdropFilter: 'blur(16px)',
-        borderRadius: 24, padding: '20px 16px' }}>
-        <p style={{ fontWeight: 800, textAlign: 'center', marginBottom: 20, fontSize: 15, color: '#1A2332' }}>
-          ¿Cómo llegamos hoy?
-        </p>
-        <div style={{ display: 'flex', justifyContent: 'space-around', marginBottom: 16 }}>
-          {MOODS.map(m => (
-            <motion.button key={m.v} whileTap={{ scale: 0.85 }}
-              onClick={() => { setMood(m.v); setSaved(false); setPandiMessage('') }}
-              style={{
-                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
-                padding: '10px 8px', borderRadius: 16, border: 'none', cursor: 'pointer',
-                background: mood === m.v ? `${m.color}22` : 'transparent',
-                outline: mood === m.v ? `2px solid ${m.color}70` : '2px solid transparent',
-                opacity: mood && mood !== m.v ? 0.35 : 1,
-                transition: 'all 0.2s',
-              }}>
-              <span style={{ fontSize: 32 }}>{m.emoji}</span>
-              <span style={{ fontSize: 10, fontWeight: 700,
-                color: mood === m.v ? m.color : '#9CA3AF' }}>{m.label}</span>
-            </motion.button>
-          ))}
-        </div>
-        <input
-          style={{ width: '100%', padding: '12px 16px', borderRadius: 14, border: '1.5px solid rgba(0,0,0,0.08)',
-            background: 'rgba(255,255,255,0.7)', fontSize: 14, outline: 'none', boxSizing: 'border-box',
-            marginBottom: 12, color: '#1A2332' }}
-          placeholder="¿Qué ha influido? (opcional)…"
-          value={notes} onChange={e => setNotes(e.target.value)} disabled={loadingCoach}
-        />
-        <motion.button whileTap={{ scale: 0.97 }} onClick={save}
-          disabled={!mood || saved || loadingCoach}
-          style={{
-            width: '100%', padding: '14px', borderRadius: 16, border: 'none', cursor: 'pointer',
-            background: mood && !saved ? `linear-gradient(135deg, ${moodData?.color || '#2EC4B6'}, #FF8FA3)` : 'rgba(0,0,0,0.08)',
-            color: mood && !saved ? 'white' : '#9CA3AF',
-            fontSize: 15, fontWeight: 700, opacity: !mood || loadingCoach ? 0.5 : 1,
-          }}>
-          {loadingCoach ? '🧠 Pandi analizando...' : saved ? '✅ Guardado hoy' : '💾 Guardar (+10 XP)'}
-        </motion.button>
+    <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
+
+      {/* Selector mood — botones flotantes */}
+      <div style={{ display:'flex', justifyContent:'space-around' }}>
+        {MOODS.map(m => (
+          <motion.button key={m.v} whileTap={{ scale:0.85 }}
+            onClick={() => { setMood(m.v); setSaved(false); setPandiMessage('') }}
+            style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:4,
+              padding:'10px 8px', borderRadius:16, border:'none', cursor:'pointer',
+              background: mood === m.v ? `${m.color}33` : 'rgba(255,255,255,0.45)',
+              backdropFilter:'blur(12px)',
+              outline: mood === m.v ? `2px solid ${m.color}80` : '2px solid transparent',
+              opacity: mood && mood !== m.v ? 0.5 : 1, transition:'all 0.2s' }}>
+            <span style={{ fontSize:32 }}>{m.emoji}</span>
+            <span style={{ fontSize:10, fontWeight:700,
+              color: mood === m.v ? m.color : 'rgba(255,255,255,0.8)' }}>{m.label}</span>
+          </motion.button>
+        ))}
       </div>
+
+      <input
+        style={{ width:'100%', padding:'12px 16px', borderRadius:14,
+          border:'1.5px solid rgba(255,255,255,0.3)',
+          background:'rgba(255,255,255,0.45)', backdropFilter:'blur(12px)',
+          fontSize:13, outline:'none', boxSizing:'border-box', color:'#1A2332' }}
+        placeholder="¿Qué ha influido? (opcional)…"
+        value={notes} onChange={e => setNotes(e.target.value)} disabled={loadingCoach}
+      />
+
+      <motion.button whileTap={{ scale:0.97 }} onClick={save}
+        disabled={!mood || saved || loadingCoach}
+        style={{ width:'100%', padding:'13px', borderRadius:16, border:'none', cursor:'pointer',
+          background: mood && !saved ? 'rgba(201,169,110,0.85)' : 'rgba(255,255,255,0.35)',
+          backdropFilter:'blur(12px)',
+          color: mood && !saved ? 'white' : 'rgba(255,255,255,0.6)',
+          fontSize:14, fontWeight:700, opacity: !mood || loadingCoach ? 0.5 : 1 }}>
+        {loadingCoach ? '🧠 Pandi analizando...' : saved ? '✅ Guardado hoy' : '💾 Guardar (+10 XP)'}
+      </motion.button>
+    </div>
 
       {/* Respuesta Pandi */}
       <AnimatePresence>
         {mood && (finalMessage || loadingCoach) && (
-          <motion.div key={mood} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0 }}
-            style={{ background: 'rgba(255,255,255,0.65)', backdropFilter: 'blur(16px)',
-              borderRadius: 24, padding: '16px', borderLeft: `4px solid ${moodData?.color}` }}>
+          <motion.div key={mood} initial={{ opacity:0, y:10 }} animate={{ opacity:1, y:0 }}
+            exit={{ opacity:0 }}
+            style={{ background:'rgba(255,255,255,0.45)', backdropFilter:'blur(16px)',
+              borderRadius:20, padding:'14px',
+              borderLeft:`3px solid ${moodData?.color}` }}>
             <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start', marginBottom: 12 }}>
               <PandaImg name={mood >= 4 ? 'avatar_happy' : 'avatar_neutro'} size={44}
                 style={{ borderRadius: 12, flexShrink: 0 }} />
@@ -634,118 +631,103 @@ function MeditationTab({ theme, profile, userId }) {
   useEffect(() => () => stopAll(), [])
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <div style={{ background: 'rgba(255,255,255,0.65)', backdropFilter: 'blur(16px)',
-        borderRadius: 24, padding: '16px' }}>
-        <p style={{ fontSize: 13, fontWeight: 700, marginBottom: 12, color: '#1A2332' }}>Duración</p>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8 }}>
-          {[2, 5, 10].map(d => (
-            <button key={d} onClick={() => !running && setDuration(d)} disabled={running}
-              style={{ padding: '12px', borderRadius: 16, fontWeight: 700, fontSize: 14, border: 'none',
-                cursor: running ? 'default' : 'pointer', transition: 'all 0.2s',
-                background: duration === d ? 'linear-gradient(135deg,#2EC4B6,#FF8FA3)' : 'rgba(0,0,0,0.05)',
-                color: duration === d ? '#fff' : '#6B7280' }}>
-              {d} min
-            </button>
-          ))}
-        </div>
+    <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
+
+      {/* Duración */}
+      <div style={{ display:'flex', gap:8, justifyContent:'center' }}>
+        {[2, 5, 10].map(d => (
+          <button key={d} onClick={() => !running && setDuration(d)} disabled={running}
+            style={{ padding:'10px 20px', borderRadius:20, fontWeight:700, fontSize:13, border:'none',
+              cursor: running ? 'default' : 'pointer', transition:'all 0.2s',
+              background: duration === d ? 'rgba(201,169,110,0.85)' : 'rgba(255,255,255,0.55)',
+              backdropFilter:'blur(12px)',
+              color: duration === d ? 'white' : '#B8924A',
+              boxShadow: duration === d ? '0 4px 16px rgba(201,169,110,0.4)' : 'none' }}>
+            {d} min
+          </button>
+        ))}
       </div>
 
-      <div style={{ background: 'rgba(255,255,255,0.65)', backdropFilter: 'blur(16px)',
-        borderRadius: 24, padding: '16px' }}>
-        <p style={{ fontSize: 13, fontWeight: 700, marginBottom: 12, color: '#1A2332' }}>Sonido ambiental</p>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5,1fr)', gap: 8 }}>
-          {AMBIENT.map(a => (
-            <button key={a.id} onClick={() => !running && setSound(s => s === a.id ? null : a.id)}
-              disabled={running}
-              style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
-                padding: '10px 4px', borderRadius: 16, border: 'none', cursor: 'pointer',
-                background: sound === a.id ? '#2EC4B618' : 'rgba(0,0,0,0.05)',
-                outline: `2px solid ${sound === a.id ? '#2EC4B6' : 'transparent'}` }}>
-              <span style={{ fontSize: 20 }}>{a.emoji}</span>
-              <span style={{ fontSize: 9, fontWeight: 700,
-                color: sound === a.id ? '#2EC4B6' : '#9CA3AF' }}>{a.label}</span>
-            </button>
-          ))}
-        </div>
+      {/* Sonido ambiental */}
+      <div style={{ display:'flex', gap:8, justifyContent:'center', flexWrap:'wrap' }}>
+        {AMBIENT.map(a => (
+          <button key={a.id} onClick={() => !running && setSound(s => s === a.id ? null : a.id)}
+            disabled={running}
+            style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:3,
+              padding:'8px 12px', borderRadius:16, border:'none', cursor:'pointer',
+              background: sound === a.id ? 'rgba(201,169,110,0.85)' : 'rgba(255,255,255,0.55)',
+              backdropFilter:'blur(12px)',
+              outline: `2px solid ${sound === a.id ? '#B8924A' : 'transparent'}` }}>
+            <span style={{ fontSize:18 }}>{a.emoji}</span>
+            <span style={{ fontSize:9, fontWeight:700,
+              color: sound === a.id ? 'white' : '#B8924A' }}>{a.label}</span>
+          </button>
+        ))}
       </div>
 
-      {/* Temporizador + Pandi meditando */}
-      <div style={{ background: 'rgba(255,255,255,0.65)', backdropFilter: 'blur(16px)',
-        borderRadius: 24, padding: '24px 16px', display: 'flex', flexDirection: 'column',
-        alignItems: 'center', gap: 16 }}>
-        <div style={{ width: '100%', display: 'flex', alignItems: 'center',
-          justifyContent: 'center', minHeight: 260 }}>
-          {done
-            ? <motion.span initial={{ scale: 1 }} animate={{ scale: [1,1.3,1] }}
-                transition={{ duration: 0.6 }} style={{ fontSize: 100 }}>🎉</motion.span>
-            : <MeditationPandi running={running} />
-          }
+      {/* Temporizador flotante — sin caja */}
+      {(running || done) && (
+        <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:8 }}>
+          {/* Barra progreso */}
+          <div style={{ width:'80%', height:4, borderRadius:2,
+            background:'rgba(255,255,255,0.3)', overflow:'hidden' }}>
+            <motion.div style={{ height:'100%', borderRadius:2,
+              background:'rgba(201,169,110,0.9)' }}
+              animate={{ width:`${progress * 100}%` }}
+              transition={{ duration:1, ease:'linear' }} />
+          </div>
+
+          <p style={{ fontSize:40, fontWeight:900, color:'white', margin:0,
+            textShadow:'0 2px 12px rgba(0,0,0,0.3)' }}>
+            {done ? '¡Completado!' : `${mm}:${ss}`}
+          </p>
+
+          {done && streakInfo && (
+            <motion.div initial={{ opacity:0, y:6 }} animate={{ opacity:1, y:0 }}
+              style={{ textAlign:'center' }}>
+              <p style={{ fontSize:13, color:'#FCD34D', fontWeight:700, margin:0 }}>
+                🔥 {streakInfo.streak} día{streakInfo.streak > 1 ? 's' : ''} seguidos meditando
+              </p>
+            </motion.div>
+          )}
         </div>
+      )}
 
-        {/* Barra progreso */}
-        <div style={{ width: '100%', height: 8, borderRadius: 4,
-          background: 'rgba(0,0,0,0.08)', overflow: 'hidden' }}>
-          <motion.div style={{ height: '100%', borderRadius: 4,
-            background: 'linear-gradient(90deg,#2EC4B6,#FF8FA3)' }}
-            animate={{ width: `${progress * 100}%` }}
-            transition={{ duration: 1, ease: 'linear' }} />
-        </div>
-
-        <p style={{ fontSize: 44, fontWeight: 900, color: '#1A2332', margin: 0 }}>
-          {done ? '¡Completado!' : `${mm}:${ss}`}
-        </p>
-
-        {done && streakInfo && (
-          <motion.div initial={{ opacity:0, y:6 }} animate={{ opacity:1, y:0 }}
-            style={{ textAlign:'center' }}>
-            <p style={{ fontSize:13, color:'#F97316', fontWeight:700, margin:0 }}>
-              🔥 {streakInfo.streak} día{streakInfo.streak > 1 ? 's' : ''} seguidos meditando
-            </p>
-            {streakInfo.newAccessory && (
-              <motion.p initial={{ scale:0.8 }} animate={{ scale:1 }}
-                style={{ fontSize:13, color:'#92400E', fontWeight:800, margin:'4px 0 0' }}>
-                {streakInfo.newAccessory.emoji} ¡Desbloqueaste {streakInfo.newAccessory.name}!
-              </motion.p>
-            )}
-          </motion.div>
+      {/* Botones de control */}
+      <div style={{ display:'flex', gap:10, justifyContent:'center' }}>
+        {!running && !done && (
+          <motion.button whileTap={{ scale:0.94 }} onClick={start}
+            style={{ padding:'12px 36px', borderRadius:24, border:'none', cursor:'pointer',
+              fontWeight:800, fontSize:14, color:'white',
+              background:'rgba(201,169,110,0.85)', backdropFilter:'blur(12px)',
+              boxShadow:'0 6px 20px rgba(201,169,110,0.4)' }}>
+            Iniciar
+          </motion.button>
         )}
-
-        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-          {!running && !done && (
-            <motion.button whileTap={{ scale: 0.94 }} onClick={start}
-              style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 32px',
-                borderRadius: 20, border: 'none', cursor: 'pointer', fontWeight: 700,
-                background: 'linear-gradient(135deg,#2EC4B6,#FF8FA3)', color: 'white' }}>
-              <Play size={16} /> Iniciar
+        {running && (
+          <>
+            <motion.button whileTap={{ scale:0.94 }} onClick={reset}
+              style={{ padding:'10px 24px', borderRadius:20, border:'none', cursor:'pointer',
+                fontWeight:700, background:'rgba(255,255,255,0.5)', backdropFilter:'blur(12px)',
+                color:'#B8924A' }}>
+              Parar
             </motion.button>
-          )}
-          {running && (
-            <>
-              <motion.button whileTap={{ scale: 0.94 }} onClick={reset}
-                style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 24px',
-                  borderRadius: 20, border: 'none', cursor: 'pointer', fontWeight: 700,
-                  background: 'rgba(0,0,0,0.07)', color: '#1A2332' }}>
-                <RotateCcw size={15} /> Reiniciar
-              </motion.button>
-              <button onClick={toggleMute}
-                style={{ width: 44, height: 44, borderRadius: 16, border: 'none',
-                  cursor: 'pointer', background: 'rgba(0,0,0,0.07)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                {muted ? <VolumeX size={18} color="#9CA3AF" /> : <Volume2 size={18} color="#2EC4B6" />}
-              </button>
-            </>
-          )}
-          {done && (
-            <motion.button initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
-              whileTap={{ scale: 0.94 }} onClick={reset}
-              style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 24px',
-                borderRadius: 20, border: 'none', cursor: 'pointer', fontWeight: 700,
-                background: 'linear-gradient(135deg,#2EC4B6,#FF8FA3)', color: 'white' }}>
-              <RotateCcw size={15} /> Nueva sesión
-            </motion.button>
-          )}
-        </div>
+            <button onClick={toggleMute}
+              style={{ width:42, height:42, borderRadius:14, border:'none', cursor:'pointer',
+                background:'rgba(255,255,255,0.5)', backdropFilter:'blur(12px)',
+                display:'flex', alignItems:'center', justifyContent:'center' }}>
+              {muted ? <VolumeX size={16} color="#B8924A" /> : <Volume2 size={16} color="#B8924A" />}
+            </button>
+          </>
+        )}
+        {done && (
+          <motion.button whileTap={{ scale:0.94 }} onClick={reset}
+            style={{ padding:'12px 28px', borderRadius:20, border:'none', cursor:'pointer',
+              fontWeight:700, background:'rgba(201,169,110,0.85)', backdropFilter:'blur(12px)',
+              color:'white' }}>
+            Nueva sesión
+          </motion.button>
+        )}
       </div>
     </div>
   )
@@ -1325,50 +1307,43 @@ export default function Mood() {
         </motion.div>
       </div>
 
-      {/* ── OVERLAY TABS — todas flotan sobre Pandi sin sheet ── */}
+      {/* ── OVERLAY TABS — flotan en la parte inferior, Pandi siempre visible ── */}
       <AnimatePresence mode="wait">
         {activeTab && activeTab !== 'breathing' && (
           <motion.div key={activeTab}
             initial={{ opacity:0, y:30 }} animate={{ opacity:1, y:0 }}
             exit={{ opacity:0, y:20 }}
             transition={{ type:'spring', damping:28, stiffness:260 }}
-            style={{ position:'fixed', inset:0, zIndex:20, pointerEvents:'none',
-              display:'flex', flexDirection:'column', justifyContent:'flex-end' }}>
-
-            {/* Tap fuera para cerrar */}
-            <div onClick={() => setActiveTab(null)}
-              style={{ flex:1, pointerEvents:'all' }} />
-
-            {/* Contenido */}
-            <div style={{ pointerEvents:'all', padding:'0 16px',
+            style={{ position:'fixed', bottom:0, left:0, right:0, zIndex:20,
               paddingBottom:'calc(env(safe-area-inset-bottom,0px) + 160px)',
-              maxHeight:'60vh', overflowY:'auto' }}>
+              maxHeight:'55vh', overflowY:'auto',
+              padding:'0 16px',
+              paddingBottom:'calc(env(safe-area-inset-bottom,0px) + 160px)' }}>
 
-              {/* Handle */}
-              <div onClick={() => setActiveTab(null)}
-                style={{ display:'flex', justifyContent:'center', marginBottom:10, cursor:'pointer' }}>
-                <div style={{ width:36, height:4, borderRadius:2, background:'rgba(255,255,255,0.45)' }} />
-              </div>
-
-              {activeTab === 'checkin' && (
-                <CheckinTab theme={theme} userId={user?.id} addXP={addXP} profile={profile}
-                  onTabChange={setActiveTab} onMoodSaved={setCurrentMood} />
-              )}
-              {activeTab === 'meditation' && (
-                <MeditationTab theme={theme} profile={profile} userId={user?.id} />
-              )}
-              {activeTab === 'journal' && (
-                <JournalEntry theme={theme} userId={user?.id} currentMood={currentMood} />
-              )}
-              {activeTab === 'habits' && (
-                <div style={{ textAlign:'center', padding:'24px 0' }}>
-                  <p style={{ fontSize:28, margin:'0 0 8px' }}>✓</p>
-                  <p style={{ fontSize:13, color:'rgba(255,255,255,0.7)', margin:0 }}>
-                    Check-In próximamente
-                  </p>
-                </div>
-              )}
+            {/* Handle para cerrar */}
+            <div onClick={() => setActiveTab(null)}
+              style={{ display:'flex', justifyContent:'center', marginBottom:10, cursor:'pointer' }}>
+              <div style={{ width:36, height:4, borderRadius:2, background:'rgba(255,255,255,0.45)' }} />
             </div>
+
+            {activeTab === 'checkin' && (
+              <CheckinTab theme={theme} userId={user?.id} addXP={addXP} profile={profile}
+                onTabChange={setActiveTab} onMoodSaved={setCurrentMood} />
+            )}
+            {activeTab === 'meditation' && (
+              <MeditationTab theme={theme} profile={profile} userId={user?.id} />
+            )}
+            {activeTab === 'journal' && (
+              <JournalEntry theme={theme} userId={user?.id} currentMood={currentMood} />
+            )}
+            {activeTab === 'habits' && (
+              <div style={{ textAlign:'center', padding:'24px 0' }}>
+                <p style={{ fontSize:28, margin:'0 0 8px' }}>✓</p>
+                <p style={{ fontSize:13, color:'rgba(255,255,255,0.7)', margin:0 }}>
+                  Check-In próximamente
+                </p>
+              </div>
+            )}
           </motion.div>
         )}
       </AnimatePresence>

@@ -421,7 +421,7 @@ function CheckinTab({ theme, userId, addXP, onTabChange, onMoodSaved, profile })
 }
 
 function BreathingTab({ theme }) {
-  const [tech,    setTech]    = useState('478')
+  const [tech,    setTech]    = useState(null)   // null = sin selección
   const [running, setRunning] = useState(false)
   const [phase,   setPhase]   = useState('inhale')
   const [count,   setCount]   = useState(0)
@@ -435,8 +435,7 @@ function BreathingTab({ theme }) {
   })
 
   function playCue(k) {
-    const key = k === 'holdOut' ? 'hold' : k
-    const a   = breathAudio.current[key]
+    const a = breathAudio.current[k === 'holdOut' ? 'hold' : k]
     if (!a) return
     a.currentTime = 0; a.volume = 0.8; a.play().catch(() => {})
   }
@@ -444,10 +443,10 @@ function BreathingTab({ theme }) {
   function buildSeq(tk) {
     const t = TECHNIQUES[tk]
     return [
-      { key: 'inhale',  dur: t.inhale },
-      ...(t.hold    > 0 ? [{ key: 'hold',    dur: t.hold    }] : []),
-      { key: 'exhale',  dur: t.exhale },
-      ...(t.holdOut > 0 ? [{ key: 'holdOut', dur: t.holdOut }] : []),
+      { key:'inhale',  dur:t.inhale },
+      ...(t.hold    > 0 ? [{ key:'hold',    dur:t.hold    }] : []),
+      { key:'exhale',  dur:t.exhale },
+      ...(t.holdOut > 0 ? [{ key:'holdOut', dur:t.holdOut }] : []),
     ]
   }
 
@@ -460,8 +459,7 @@ function BreathingTab({ theme }) {
   function runPhase(seq, idx, rc) {
     const p = seq[idx]
     setPhase(p.key); setCount(p.dur); playCue(p.key)
-    // TTS fase
-    sayAsync(PANDI_VOICE.breathPhase[p.key] || p.key, { rate: 0.8, volume: 0.7 })
+    sayAsync(PANDI_VOICE.breathPhase[p.key] || p.key, { rate:0.8, volume:0.7 })
     let c = p.dur
     intervalRef.current = setInterval(() => {
       c--; setCount(c)
@@ -476,115 +474,92 @@ function BreathingTab({ theme }) {
   }
 
   function start() {
-    stop()
-    const seq = buildSeq(tech)
+    stop(); const seq = buildSeq(tech)
     setRunning(true); setRounds(0); runPhase(seq, 0, 0)
   }
 
   useEffect(() => () => stop(), [])
 
-  const t         = TECHNIQUES[tech]
   const phaseInfo = PHASES[phase]
-  const animDur   = phase === 'inhale' ? t.inhale : phase === 'exhale' ? t.exhale
-                  : phase === 'hold'   ? t.hold   : t.holdOut
+  const t = tech ? TECHNIQUES[tech] : null
+  const animDur = t ? (phase === 'inhale' ? t.inhale : phase === 'exhale' ? t.exhale
+    : phase === 'hold' ? t.hold : t.holdOut) : 4
+
+  // Escala de Pandi según fase
+  const pandiScale = running
+    ? (phase === 'inhale' || phase === 'hold' ? 1.08 : 0.94)
+    : 1
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      {/* Selector técnica */}
-      <div style={{ background: 'rgba(255,255,255,0.88)', backdropFilter: 'blur(16px)',
-        borderRadius: 24, padding: '16px' }}>
-        <p style={{ fontSize: 13, fontWeight: 700, marginBottom: 12, color: '#1A2332' }}>Técnica</p>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8 }}>
+    <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:16, padding:'8px 16px 0' }}>
+
+      {/* Fase actual sobre Pandi — solo durante el ejercicio */}
+      {running && (
+        <AnimatePresence mode="wait">
+          <motion.div key={phase}
+            initial={{ opacity:0, y:-6 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0 }}
+            style={{ textAlign:'center' }}>
+            <p style={{ fontSize:20, fontWeight:900, color: phaseInfo.color, margin:0 }}>
+              {phaseInfo.label}
+            </p>
+            <motion.p key={count} initial={{ scale:1.4, opacity:0.6 }} animate={{ scale:1, opacity:1 }}
+              style={{ fontSize:44, fontWeight:900, color:'#1A2332', margin:'2px 0 0' }}>
+              {count}
+            </motion.p>
+            {rounds > 0 && (
+              <p style={{ fontSize:11, color:'rgba(255,255,255,0.7)', margin:'4px 0 0' }}>
+                {rounds} ronda{rounds > 1 ? 's' : ''} ✓
+              </p>
+            )}
+          </motion.div>
+        </AnimatePresence>
+      )}
+
+      {/* Selector de técnica — botones semitransparentes sobre el fondo */}
+      {!running && (
+        <div style={{ display:'flex', gap:8, justifyContent:'center', flexWrap:'wrap' }}>
           {Object.entries(TECHNIQUES).map(([k, v]) => (
-            <button key={k} onClick={() => { if (running) stop(); setTech(k) }}
-              style={{
-                borderRadius: 16, padding: '12px 8px', textAlign: 'center', border: 'none',
-                cursor: 'pointer', transition: 'all 0.2s',
-                background: tech === k ? 'linear-gradient(135deg,#2EC4B6,#FF8FA3)' : 'rgba(0,0,0,0.05)',
-                color: tech === k ? '#fff' : '#6B7280',
-              }}>
-              <p style={{ fontWeight: 700, fontSize: 13, margin: '0 0 2px' }}>{v.name}</p>
-              <p style={{ fontSize: 10, margin: 0 }}>{v.desc}</p>
-            </button>
+            <motion.button key={k} whileTap={{ scale:0.94 }}
+              onClick={() => setTech(k)}
+              style={{ padding:'10px 18px', borderRadius:20, border:'none', cursor:'pointer',
+                fontWeight:700, fontSize:12, transition:'all 0.2s',
+                background: tech === k
+                  ? 'rgba(201,169,110,0.85)'
+                  : 'rgba(255,255,255,0.55)',
+                backdropFilter:'blur(12px)',
+                color: tech === k ? 'white' : '#B8924A',
+                boxShadow: tech === k ? '0 4px 16px rgba(201,169,110,0.4)' : 'none' }}>
+              {v.name}
+            </motion.button>
           ))}
         </div>
-      </div>
+      )}
 
-      {/* Círculo respiración */}
-      <div style={{ background: 'rgba(255,255,255,0.88)', backdropFilter: 'blur(16px)',
-        borderRadius: 24, padding: '24px 16px', display: 'flex', flexDirection: 'column',
-        alignItems: 'center', gap: 20 }}>
-        <div style={{ position: 'relative', display: 'flex', alignItems: 'center',
-          justifyContent: 'center', width: 170, height: 170 }}>
-          <motion.div
-            animate={{ scale: running ? phaseInfo.scale : 1, opacity: running ? 0.2 : 0.1 }}
-            transition={{ duration: animDur, ease: 'easeInOut' }}
-            style={{ position: 'absolute', width: 170, height: 170, borderRadius: '50%',
-              background: phaseInfo.color }} />
-          <motion.div
-            animate={{ scale: running ? phaseInfo.scale * 0.72 : 0.72, opacity: running ? 0.38 : 0.12 }}
-            transition={{ duration: animDur, ease: 'easeInOut' }}
-            style={{ position: 'absolute', width: 170, height: 170, borderRadius: '50%',
-              background: phaseInfo.color }} />
-          <motion.div
-            animate={{ scale: running ? (phase === 'inhale' || phase === 'hold' ? 1.13 : 0.9) : 1 }}
-            transition={{ duration: animDur, ease: 'easeInOut' }}
-            style={{ position: 'relative', zIndex: 2, width: 78, height: 78, borderRadius: '50%',
-              background: '#fff', boxShadow: `0 4px 24px ${phaseInfo.color}40`,
-              display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <AnimatePresence mode="wait">
-              <motion.div key={phaseInfo.breathFrame}
-                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                transition={{ duration: 0.4 }}>
-                <PandaImg name={`breath_${phaseInfo.breathFrame}`} size={62}
-                  style={{ borderRadius: '50%' }} />
-              </motion.div>
-            </AnimatePresence>
-          </motion.div>
-        </div>
-
-        <div style={{ textAlign: 'center', minHeight: 64, display: 'flex',
-          flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-          <AnimatePresence mode="wait">
-            <motion.p key={phase}
-              initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 8 }}
-              style={{ fontSize: 22, fontWeight: 800, color: phaseInfo.color, margin: 0 }}>
-              {running ? phaseInfo.label : 'Listo para empezar'}
-            </motion.p>
-          </AnimatePresence>
-          {running && (
-            <motion.p key={count} initial={{ scale: 1.4, opacity: 0.6 }} animate={{ scale: 1, opacity: 1 }}
-              style={{ fontSize: 52, fontWeight: 900, margin: '4px 0 0', color: '#1A2332' }}>{count}</motion.p>
-          )}
-          {rounds > 0 && (
-            <p style={{ fontSize: 11, color: '#9CA3AF', margin: '4px 0 0' }}>
-              {rounds} {rounds === 1 ? 'ronda' : 'rondas'} completadas 🔄
-            </p>
-          )}
-        </div>
-
-        {!running ? (
-          <motion.button whileTap={{ scale: 0.94 }} onClick={start}
-            style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 32px',
-              borderRadius: 20, border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 15,
-              background: 'linear-gradient(135deg,#2EC4B6,#FF8FA3)', color: 'white' }}>
-            <Play size={16} /> Iniciar
-          </motion.button>
-        ) : (
-          <motion.button whileTap={{ scale: 0.94 }} onClick={stop}
-            style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 32px',
-              borderRadius: 20, border: 'none', cursor: 'pointer', fontWeight: 700,
-              background: 'rgba(0,0,0,0.07)', color: '#1A2332' }}>
-            <Pause size={16} /> Pausar
+      {/* Botón Iniciar / Parar */}
+      <AnimatePresence>
+        {tech && !running && (
+          <motion.button whileTap={{ scale:0.95 }}
+            initial={{ opacity:0, y:8 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0 }}
+            onClick={start}
+            style={{ padding:'12px 36px', borderRadius:24, border:'none', cursor:'pointer',
+              fontWeight:800, fontSize:14, color:'white',
+              background:'rgba(201,169,110,0.85)', backdropFilter:'blur(12px)',
+              boxShadow:'0 6px 20px rgba(201,169,110,0.4)' }}>
+            Iniciar
           </motion.button>
         )}
-        <p style={{ fontSize: 11, color: '#9CA3AF', textAlign: 'center' }}>
-          {t.inhale}s inhala
-          {t.hold    > 0 ? ` · ${t.hold}s mantén`  : ''}
-          {` · ${t.exhale}s exhala`}
-          {t.holdOut > 0 ? ` · ${t.holdOut}s pausa` : ''}
-        </p>
-      </div>
+        {running && (
+          <motion.button whileTap={{ scale:0.95 }}
+            initial={{ opacity:0 }} animate={{ opacity:1 }}
+            onClick={stop}
+            style={{ padding:'10px 28px', borderRadius:20, border:'none', cursor:'pointer',
+              fontWeight:700, fontSize:12,
+              background:'rgba(255,255,255,0.5)', backdropFilter:'blur(12px)',
+              color:'#B8924A' }}>
+            Parar
+          </motion.button>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
@@ -1089,7 +1064,7 @@ export default function Mood() {
   const { recoveryLight } = usePandiState()
   const navigate = useNavigate()
 
-  const [activeTab,     setActiveTab]     = useState('checkin')
+  const [activeTab,     setActiveTab]     = useState(null)
   const [currentMood,   setCurrentMood]   = useState(null)
   const [habitsChecked, setHabitsChecked] = useState({})
   // ─── AJUSTES DEL TAB BAR — edita estos valores ───────────────────────────
@@ -1335,10 +1310,13 @@ export default function Mood() {
         </motion.div>
       </div>
 
-      {/* ── BOTTOM SHEET ── */}
+      {/* ── BOTTOM SHEET — solo visible cuando hay tab activo ── */}
+      <AnimatePresence>
+      {sheetOpen && activeTab && (
       <motion.div
-        initial={{ y: 0 }}
-        animate={{ y: sheetOpen ? 0 : 'calc(100% - 60px)' }}
+        initial={{ y: '100%' }}
+        animate={{ y: 0 }}
+        exit={{ y: '100%' }}
         transition={{ type:'spring', damping:28, stiffness:260 }}
         style={{ position:'relative', zIndex:20, maxHeight:'68vh',
           background:'rgba(248,250,250,0.97)', backdropFilter:'blur(20px)',
@@ -1347,13 +1325,13 @@ export default function Mood() {
           display:'flex', flexDirection:'column',
           paddingBottom:'calc(env(safe-area-inset-bottom) + 80px)' }}>
 
-        {/* Handle + toggle */}
-        <div onClick={() => setSheetOpen(o => !o)}
+        {/* Handle — cerrar al tocar */}
+        <div onClick={() => { setSheetOpen(false); setActiveTab(null) }}
           style={{ display:'flex', flexDirection:'column', alignItems:'center',
             padding:'12px 0 8px', cursor:'pointer', flexShrink:0 }}>
           <div style={{ width:40, height:4, borderRadius:2, background:'rgba(0,0,0,0.15)' }} />
           <div style={{ marginTop:6, color:'#9CA3AF' }}>
-            {sheetOpen ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
+            <ChevronDown size={16} />
           </div>
         </div>
 
@@ -1378,8 +1356,10 @@ export default function Mood() {
           </motion.div>
         </div>
       </motion.div>
+      )}
+      </AnimatePresence>
 
-      {/* El Pulso de Pandi — modo libre, accesible siempre desde el header */}
+      {/* El Pulso de Pandi */}
       <AnimatePresence>
         {showPulse && (
           <PandiPulse

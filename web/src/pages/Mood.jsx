@@ -165,7 +165,7 @@ function stopAmbient(ref) {
 }
 
 // ─── PANDA IMG ───────────────────────────────────────────────────────────────
-function PandaImg({ name, size = 48, fallback = '🐼', style = {} }) {
+function PandaImg({ name, size = 280, fallback = '🐼', style = {} }) {
   const [err, setErr] = useState(false)
   if (err) return (
     <span style={{ fontSize: size * 0.65, lineHeight: 1, display: 'flex',

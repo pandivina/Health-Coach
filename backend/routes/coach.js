@@ -57,18 +57,21 @@ async function loadMemory(userId) {
 async function updateMemory(userId, messages, lastReply) {
   try {
     const { data: existing } = await supabaseAdmin
-      .from('coach_memory').select('summary, message_count')
+      .from('coach_memory')
+      .select('summary, preferences, important_events, message_count')
       .eq('user_id', userId).maybeSingle();
 
     const messageCount = (existing?.message_count || 0) + 1;
-    if (messageCount % 5 !== 0) {
-      await supabaseAdmin.from('coach_memory').upsert({
-        user_id: userId,
-        message_count: messageCount,
-        last_updated: new Date().toISOString(),
-      }, { onConflict: 'user_id' });
-      return;
-    }
+
+    // Actualizar contador en cada mensaje
+    await supabaseAdmin.from('coach_memory').upsert({
+      user_id:       userId,
+      message_count: messageCount,
+      last_updated:  new Date().toISOString(),
+    }, { onConflict: 'user_id' });
+
+    // Regenerar resumen completo cada 5 mensajes
+    if (messageCount % 5 !== 0) return;
 
     const lastMessages = messages.slice(-10).map(m =>
       `${m.role === 'user' ? 'Usuario' : 'Coach'}: ${m.content}`
@@ -76,36 +79,51 @@ async function updateMemory(userId, messages, lastReply) {
 
     const summaryRes = await anthropic.messages.create({
       model: process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-5',
-      max_tokens: 400,
+      max_tokens: 600,
       messages: [{
         role: 'user',
-        content: `Eres un asistente que resume conversaciones de salud. 
+        content: `Eres un asistente que analiza conversaciones de salud y extrae información estructurada.
+
 Resumen anterior: ${existing?.summary || 'Sin resumen previo'}
+Preferencias anteriores: ${JSON.stringify(existing?.preferences || {})}
+Eventos anteriores: ${JSON.stringify(existing?.important_events || [])}
 
 Últimos mensajes:
 ${lastMessages}
 
-Genera un resumen actualizado MUY CONCISO (máx 200 palabras) que incluya:
-- Objetivos y preocupaciones del usuario
-- Preferencias detectadas (alimentos, rutinas, horarios)
-- Eventos importantes mencionados
-- Contexto relevante para futuras conversaciones
-
-Solo el texto del resumen, sin introducción.`
+Devuelve ÚNICAMENTE un JSON válido con esta estructura exacta (sin markdown, sin texto extra):
+{
+  "summary": "Resumen actualizado en máx 200 palabras sobre objetivos, hábitos y contexto del usuario",
+  "preferences": {
+    "alimentos_preferidos": [],
+    "alimentos_evita": [],
+    "horario_entreno": "",
+    "objetivo_principal": "",
+    "estilo_comunicacion": ""
+  },
+  "important_events": ["Evento o hito importante mencionado (máx 5 items)"]
+}`
       }]
     });
 
-    const newSummary = summaryRes.content[0].text.trim();
+    let parsed;
+    try {
+      parsed = JSON.parse(summaryRes.content[0].text.trim());
+    } catch {
+      parsed = { summary: summaryRes.content[0].text.trim() };
+    }
 
     await supabaseAdmin.from('coach_memory').upsert({
-      user_id: userId,
-      summary: newSummary,
-      message_count: messageCount,
-      last_updated: new Date().toISOString(),
+      user_id:          userId,
+      summary:          parsed.summary          || existing?.summary || '',
+      preferences:      parsed.preferences      || existing?.preferences || {},
+      important_events: parsed.important_events || existing?.important_events || [],
+      message_count:    messageCount,
+      last_updated:     new Date().toISOString(),
     }, { onConflict: 'user_id' });
 
   } catch (err) {
-    console.error('Memory update error:', err.message);
+    console.error('[Memory] update error:', err.message);
   }
 }
 
@@ -600,5 +618,26 @@ router.get('/daily-review', requireAuth, async (req, res) => {
     res.status(500).json({ error: err.message })
   }
 })
+
+
+// ─── GET /api/coach/memory ─────────────────────────────────────────────────────
+router.get('/memory', requireAuth, async (req, res) => {
+  try {
+    const memory = await loadMemory(req.user.id);
+    res.json(memory || { summary: null, preferences: {}, important_events: [], message_count: 0 });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ─── DELETE /api/coach/memory ──────────────────────────────────────────────────
+router.delete('/memory', requireAuth, async (req, res) => {
+  try {
+    await supabaseAdmin.from('coach_memory').delete().eq('user_id', req.user.id);
+    res.json({ success: true, message: 'Memoria de Pandi reseteada.' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 module.exports = router;

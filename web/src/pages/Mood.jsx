@@ -165,7 +165,7 @@ function stopAmbient(ref) {
 }
 
 // ─── PANDA IMG ───────────────────────────────────────────────────────────────
-function PandaImg({ name, size = 280, fallback = '🐼', style = {} }) {
+function PandaImg({ name, size = 48, fallback = '🐼', style = {} }) {
   const [err, setErr] = useState(false)
   if (err) return (
     <span style={{ fontSize: size * 0.65, lineHeight: 1, display: 'flex',
@@ -236,69 +236,55 @@ function SanctuaryPandi({ mood, pandiMode, cfg, activeTab, recoveryLight }) {
       alignItems:'center', justifyContent:'center' }}>
 
       {/* Aura de meditación — llama verde suave */}
-      <AnimatePresence>
-        {isMeditating && (
-          <>
-            {/* Base glow verde */}
-            <motion.div
-              key="aura-base"
-              initial={{ opacity:0, scaleY:0.5 }}
-              animate={{ opacity:[0.2,0.45,0.2], scaleY:[1,1.1,1] }}
-              exit={{ opacity:0 }}
-              transition={{ duration:3.5, repeat:Infinity, ease:'easeInOut' }}
-              style={{ position:'absolute', bottom:'10%', left:'50%',
-                transform:'translateX(-50%)',
-                width:'90%', height:'80%', borderRadius:'50% 50% 40% 40%',
-                background:'radial-gradient(ellipse at 50% 80%, rgba(52,211,153,0.5) 0%, rgba(16,185,129,0.2) 40%, transparent 70%)',
-                filter:'blur(14px)', zIndex:0, transformOrigin:'bottom center' }} />
-
-            {/* Llama central */}
-            <motion.div
-              key="flame-main"
-              initial={{ opacity:0, scaleY:0 }}
-              animate={{ opacity:[0.5,0.9,0.5], scaleY:[1,1.25,0.95,1.1,1],
-                scaleX:[1,0.92,1.04,0.96,1] }}
-              exit={{ opacity:0, scaleY:0 }}
-              transition={{ duration:2.5, repeat:Infinity, ease:'easeInOut' }}
-              style={{ position:'absolute', bottom:'30%', left:'50%',
-                transform:'translateX(-50%)',
-                width:'28%', height:'55%',
-                background:'linear-gradient(to top, rgba(16,185,129,0.8) 0%, rgba(52,211,153,0.5) 40%, rgba(167,243,208,0.2) 70%, transparent 100%)',
-                borderRadius:'50% 50% 30% 30%',
-                filter:'blur(6px)', zIndex:1, transformOrigin:'bottom center' }} />
-
-            {/* Llama interior más brillante */}
-            <motion.div
-              key="flame-inner"
-              animate={{ opacity:[0.6,1,0.6], scaleY:[0.8,1.1,0.8],
-                scaleX:[1,0.88,1] }}
-              transition={{ duration:1.8, repeat:Infinity, ease:'easeInOut', delay:0.3 }}
-              style={{ position:'absolute', bottom:'30%', left:'50%',
-                transform:'translateX(-50%)',
-                width:'14%', height:'38%',
-                background:'linear-gradient(to top, rgba(167,243,208,0.9) 0%, rgba(52,211,153,0.6) 50%, transparent 100%)',
-                borderRadius:'50% 50% 30% 30%',
-                filter:'blur(3px)', zIndex:2, transformOrigin:'bottom center' }} />
-
-            {/* Partículas de humo/chispas */}
-            {[...Array(7)].map((_, i) => (
-              <motion.div key={`spark-${i}`}
-                animate={{ y:[0, -(40+i*15)], opacity:[0, 0.7, 0],
-                  x: Math.sin(i*1.2) * 15 }}
-                transition={{ duration:2+i*0.3, repeat:Infinity,
-                  delay:i*0.35, ease:'easeOut' }}
-                style={{ position:'absolute', bottom:`${30+i*2}%`,
-                  left:`calc(50% + ${(i%2===0?1:-1) * (4+i*3)}%)`,
-                  width: 4+i%3*2, height: 4+i%3*2,
-                  borderRadius:'50%', zIndex:3,
-                  background: i%2===0
-                    ? 'rgba(52,211,153,0.8)'
-                    : 'rgba(167,243,208,0.9)',
-                  filter:'blur(1px)' }} />
-            ))}
-          </>
-        )}
-      </AnimatePresence>
+      {isMeditating && (
+        <div style={{ position:'absolute', inset:0, zIndex:0, pointerEvents:'none' }}>
+          {/* Base glow */}
+          <motion.div
+            animate={{ opacity:[0.2,0.45,0.2], scaleY:[1,1.1,1] }}
+            transition={{ duration:3.5, repeat:Infinity, ease:'easeInOut' }}
+            style={{ position:'absolute', bottom:'10%', left:'50%',
+              transform:'translateX(-50%)',
+              width:'90%', height:'80%',
+              borderRadius:'50% 50% 40% 40%',
+              background:'radial-gradient(ellipse at 50% 80%, rgba(52,211,153,0.5) 0%, rgba(16,185,129,0.2) 40%, transparent 70%)',
+              filter:'blur(14px)',
+              transformOrigin:'bottom center' }} />
+          {/* Llama principal */}
+          <motion.div
+            animate={{ opacity:[0.5,0.9,0.5], scaleY:[1,1.2,1] }}
+            transition={{ duration:2.5, repeat:Infinity, ease:'easeInOut' }}
+            style={{ position:'absolute', bottom:'30%', left:'50%',
+              transform:'translateX(-50%)',
+              width:'28%', height:'55%',
+              background:'linear-gradient(to top, rgba(16,185,129,0.8) 0%, rgba(52,211,153,0.5) 40%, rgba(167,243,208,0.2) 70%, transparent 100%)',
+              borderRadius:'50% 50% 30% 30%',
+              filter:'blur(6px)',
+              transformOrigin:'bottom center' }} />
+          {/* Llama interior */}
+          <motion.div
+            animate={{ opacity:[0.6,1,0.6], scaleY:[0.85,1.1,0.85] }}
+            transition={{ duration:1.8, repeat:Infinity, ease:'easeInOut', delay:0.3 }}
+            style={{ position:'absolute', bottom:'30%', left:'50%',
+              transform:'translateX(-50%)',
+              width:'14%', height:'38%',
+              background:'linear-gradient(to top, rgba(167,243,208,0.9) 0%, rgba(52,211,153,0.6) 50%, transparent 100%)',
+              borderRadius:'50% 50% 30% 30%',
+              filter:'blur(3px)',
+              transformOrigin:'bottom center' }} />
+          {/* Partículas — cada una con su propia animación simple */}
+          {[0,1,2,3,4,5,6].map(i => (
+            <motion.div key={i}
+              animate={{ y:[0, -(50+i*12)], opacity:[0,0.7,0] }}
+              transition={{ duration:2+i*0.3, repeat:Infinity, delay:i*0.35, ease:'easeOut' }}
+              style={{ position:'absolute',
+                bottom:'32%',
+                left: i%2===0 ? `${46+i*2}%` : `${54-i*2}%`,
+                width:5, height:5, borderRadius:'50%',
+                background: i%2===0 ? 'rgba(52,211,153,0.8)' : 'rgba(167,243,208,0.9)',
+                filter:'blur(1px)' }} />
+          ))}
+        </div>
+      )}
 
       {/* Pandi */}
       <div style={{ position:'relative', zIndex:2, width:'100%' }}>
@@ -1132,7 +1118,7 @@ export default function Mood() {
   const [pandiEditMode, setPandiEditMode] = useState(false)
   const [pandiConfig,   setPandiConfig]   = useState(() => {
     try { return JSON.parse(localStorage.getItem('pandi_mood_cfg') || 'null') || { bottom:22, size:42 } }
-    catch { return { bottom:22, size:250 } }
+    catch { return { bottom:22, size:42 } }
   })
   const [showPulse,     setShowPulse]     = useState(false)
   const [showSunJourney, setShowSunJourney] = useState(false)

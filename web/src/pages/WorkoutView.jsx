@@ -395,7 +395,6 @@ export default function WorkoutView() {
   const { startWorkout, activeWorkout, endWorkout } = useWorkoutStore()
   const [activePath,   setActivePath]   = useState('titan')
   const [stats,        setStats]        = useState(null)
-  const [loading,      setLoading]      = useState(false)
   const [supportModal, setSupportModal] = useState(null)
 
   const path      = PATHS[activePath]
@@ -405,55 +404,55 @@ export default function WorkoutView() {
     api.workouts.stats().then(setStats).catch(() => {})
   }, [user])
 
-  async function startFreeWorkout() {
-    setLoading(true)
-    try {
-      const defaultPrograms = { titan: 'hyper', warrior: 'circuit', zen: 'hatha' }
-      const guided   = getGuidedSession(defaultPrograms[activePath])
-      const exercises = guided?.exerciseList || []
-      const result   = await api.workouts.start({
-        name: guided?.name || `Entreno ${path.name}`,
-        exercises: exercises.map(ex => ({ exercise_name: ex.name })),
-      })
-      startWorkout({
-        name:      guided?.name || `Entreno ${path.name}`,
-        senda:     activePath,
-        exercises: exercises.map((ex, i) => ({
-          ...ex,
-          backendId: result.exercises?.[i]?.id,
-        })),
-        sessionId: result.session?.id,
-      })
-    } catch (err) { alert('Error: ' + err.message) }
-    finally { setLoading(false) }
+async function startFreeWorkout() {
+  const defaultPrograms = { titan: 'hyper', warrior: 'circuit', zen: 'hatha' }
+  const guided   = getGuidedSession(defaultPrograms[activePath])
+  const exercises = guided?.exerciseList || []
+
+  // UI inmediata — sin esperar al backend
+  startWorkout({
+    name:      guided?.name || `Entreno ${path.name}`,
+    senda:     activePath,
+    exercises: exercises.map(ex => ({ ...ex, backendId: null })),
+    sessionId: null,
+  })
+
+  // Sincronizar con backend en background
+  api.workouts.start({
+    name: guided?.name || `Entreno ${path.name}`,
+    exercises: exercises.map(ex => ({ exercise_name: ex.name })),
+  }).then(result => {
+    useWorkoutStore.getState().updateSessionIds?.({
+      sessionId:   result.session?.id,
+      exerciseIds: result.exercises?.map(e => e.id) || [],
+    })
+  }).catch(err => console.warn('[Workout] sync error:', err.message))
+}
   }
 
   async function startProgram(program) {
-    setLoading(true)
-    try {
-      const guided   = getGuidedSession(program.id)
-      const exercises = guided?.exerciseList || []
-      const result   = await api.workouts.start({
-        name: program.name,
-        exercises: exercises.map(ex => ({ exercise_name: ex.name })),
-      })
-      startWorkout({
-        name:      program.name,
-        senda:     activePath,
-        exercises: exercises.map((ex, i) => ({
-          ...ex,
-          backendId: result.exercises?.[i]?.id,
-        })),
-        sessionId: result.session?.id,
-      })
-    } catch (err) { alert('Error: ' + err.message) }
-    finally { setLoading(false) }
-  }
+  const guided   = getGuidedSession(program.id)
+  const exercises = guided?.exerciseList || []
 
-  // Si hay sesión activa → modo entrenador
-  if (activeWorkout) {
-    return <ActiveWorkoutView onFinish={() => endWorkout()} />
-  }
+  // UI inmediata
+  startWorkout({
+    name:      program.name,
+    senda:     activePath,
+    exercises: exercises.map(ex => ({ ...ex, backendId: null })),
+    sessionId: null,
+  })
+
+  // Backend en background
+  api.workouts.start({
+    name: program.name,
+    exercises: exercises.map(ex => ({ exercise_name: ex.name })),
+  }).then(result => {
+    useWorkoutStore.getState().updateSessionIds?.({
+      sessionId:   result.session?.id,
+      exerciseIds: result.exercises?.map(e => e.id) || [],
+    })
+  }).catch(err => console.warn('[Workout] sync error:', err.message))
+}
 
   return (
     <div className="page pb-32" style={{ background: theme.bg }}>

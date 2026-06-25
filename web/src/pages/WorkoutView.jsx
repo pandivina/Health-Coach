@@ -615,4 +615,3 @@ async function startFreeWorkout() {
       <PandiTips section="workout" />
     </div>
   )
-}

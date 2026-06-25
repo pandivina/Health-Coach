@@ -23,6 +23,7 @@ const tipRoutes           = require('./routes/tip');
 const challengesRoutes    = require('./routes/challenges');
 const pandiRoutes         = require('./routes/pandi');
 const recoveryRoutes      = require('./routes/recovery');
+const habitsRoutes        = require('./routes/habits');
 
 const app  = express();
 const PORT = process.env.PORT || 3001;
@@ -114,6 +115,7 @@ app.use('/api/insights',      insightsRoutes);
 app.use('/api/tip',           tipRoutes);
 app.use('/api/pandi',         pandiRoutes);
 app.use('/api/recovery',      recoveryRoutes);
+app.use('/api/habits',        habitsRoutes);
 
 // ─── ERROR HANDLER — no expone internos en producción ────────────────────────
 app.use((err, req, res, next) => {

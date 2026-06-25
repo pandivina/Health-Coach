@@ -13,7 +13,7 @@ import WorkoutView from './pages/WorkoutView'
 import { ToastProvider } from './components/ToastProvider'
 import { CoachAwarenessProvider } from './contexts/CoachAwarenessContext'
 import AppErrorBoundary from './components/AppErrorBoundary'
-
+import { GlobalMenuProvider } from './contexts/GlobalMenuContext'
 
 // Public
 import Landing from './pages/Landing'
@@ -38,7 +38,7 @@ import Workout from './pages/Workout'
 // Wellness
 import Sleep from './pages/Sleep'
 import Mood from './pages/Mood'
-import Sanctuary from './pages/Sanctuary'
+// FIX Limpieza: Sanctuary eliminado — redirige a /mood
 import EspejoMetabolico from './pages/EspejoMetabolico'
 import Hydration from './pages/Hydration'
 import Smoking from './pages/Smoking'
@@ -52,7 +52,7 @@ function LoadingScreen() {
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       height: '100vh', background: '#fff', flexDirection: 'column', gap: 16,
     }}>
-      <div style={{ fontSize: 40 }} className="animate-bounce">🐼</div>
+      <div style={{ fontSize: 40 }} className="animate-bounce">🐾</div>
       <div style={{
         width: 32, height: 32, borderRadius: '50%',
         border: '3px solid #2EC4B620', borderTopColor: '#2EC4B6',
@@ -78,26 +78,22 @@ function ProtectedRoute({ children }) {
 }
 
 export default function App() {
-  // ── setHealthProfile añadido ──────────────────────────────────────────────
   const { setSession, setUser, fetchProfile, setLoading, setProfile, setHealthProfile } = useStore()
 
   useEffect(() => {
+    // FIX: fetchProfile se llamaba DOS VECES — ahora solo una vez con initCoach encadenado
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session)
       setUser(session?.user ?? null)
       if (session?.user) {
-        // fetchProfile ahora carga ambas tablas en paralelo
-        fetchProfile(session.user.id).finally(() => setLoading(false))
+        fetchProfile(session.user.id)
+          .then(() => useStore.getState().initCoach())
+          .finally(() => setLoading(false))
       } else {
         setProfile(null)
-        setHealthProfile(null)   // ← limpiar health profile en logout
+        setHealthProfile(null)
         setLoading(false)
       }
-      if (session?.user) {
-  fetchProfile(session.user.id)
-    .then(() => useStore.getState().initCoach())
-    .finally(() => setLoading(false))
-}
     })
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -107,7 +103,7 @@ export default function App() {
         fetchProfile(session.user.id)
       } else {
         setProfile(null)
-        setHealthProfile(null)   // ← limpiar health profile en logout
+        setHealthProfile(null)
       }
     })
 
@@ -116,54 +112,52 @@ export default function App() {
 
   return (
     <AppErrorBoundary>
+      <GlobalMenuProvider>
       <ToastProvider>
-    <AchievementToastProvider>
-      <CoachAwarenessProvider>
-        <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-          <Routes>
-            <Route path="/" element={<SmartRoot />} />
+        <AchievementToastProvider>
+          <CoachAwarenessProvider>
+            <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+              <Routes>
+                <Route path="/" element={<SmartRoot />} />
+                <Route path="/auth"        element={<Auth />} />
+                <Route path="/onboarding"  element={<Onboarding />} />
+                <Route path="/privacy"     element={<PrivacyPolicy />} />
+                <Route path="/terms"       element={<TermsOfUse />} />
+                <Route path="/disclaimer"  element={<MedicalDisclaimerPage />} />
+                <Route path="/achievements" element={<Achievements />} />
 
-            <Route path="/auth"        element={<Auth />} />
-            <Route path="/onboarding" element={<Onboarding />} />
-          
-            
-            <Route path="/privacy"     element={<PrivacyPolicy />} />
-            <Route path="/terms"       element={<TermsOfUse />} />
-            <Route path="/disclaimer"  element={<MedicalDisclaimerPage />} />
-            <Route path="/achievements" element={<Achievements />} />
-            
-            
+                <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+                  <Route path="/calendar"   element={<Calendar />} />
+                  <Route path="/home"       element={<Home />} />
+                  <Route path="/coach"      element={<Coach />} />
+                  <Route path="/report"     element={<DailyReport />} />
+                  <Route path="/profile"    element={<Profile />} />
+                  <Route path="/premium"    element={<Premium />} />
+                  <Route path="/appearance" element={<Appearance />} />
+                  <Route path="/pet"        element={<Pet />} />
+                  <Route path="/nutrition"  element={<Nutrition />} />
+                  <Route path="/pantry"     element={<Navigate to="/nutrition" replace />} />
+                  <Route path="/recipes"    element={<Navigate to="/nutrition" replace />} />
+                  <Route path="/workout"    element={<WorkoutView />} />
+                  <Route path="/sleep"      element={<Sleep />} />
+                  <Route path="/mood"       element={<Mood />} />
+                  {/* FIX Limpieza: /sanctuary redirige a /mood */}
+                  <Route path="/sanctuary"  element={<Navigate to="/mood" replace />} />
+                  <Route path="/espejo"     element={<EspejoMetabolico />} />
+                  <Route path="/hydration"  element={<Hydration />} />
+                  <Route path="/smoking"    element={<Smoking />} />
+                  <Route path="/health"     element={<HealthTracking />} />
+                </Route>
 
-            <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
-              <Route path="/calendar"  element={<Calendar />} />
-              <Route path="/home"      element={<Home />} />
-              <Route path="/coach"     element={<Coach />} />
-              <Route path="/report"    element={<DailyReport />} />
-              <Route path="/profile"   element={<Profile />} />
-              <Route path="/premium"   element={<Premium />} />
-              <Route path="/appearance" element={<Appearance />} />
-              <Route path="/pet"       element={<Pet />} />
-              <Route path="/nutrition" element={<Nutrition />} />
-              <Route path="/pantry"    element={<Navigate to="/nutrition" replace />} />
-              <Route path="/recipes"   element={<Navigate to="/nutrition" replace />} />
-              <Route path="/workout"   element={<WorkoutView />} />
-              <Route path="/sleep"     element={<Sleep />} />
-              <Route path="/mood"      element={<Mood />} />
-            <Route path="/sanctuary" element={<Sanctuary />} />
-            <Route path="/espejo"    element={<EspejoMetabolico />} />
-              <Route path="/hydration" element={<Hydration />} />
-              <Route path="/smoking"   element={<Smoking />} />
-              <Route path="/health"    element={<HealthTracking />} />
-            </Route>
-
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-          <CookieBanner />
-          <UpdateBanner />
-        </BrowserRouter>
-        </CoachAwarenessProvider>
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Routes>
+              <CookieBanner />
+              <UpdateBanner />
+            </BrowserRouter>
+          </CoachAwarenessProvider>
         </AchievementToastProvider>
       </ToastProvider>
+      </GlobalMenuProvider>
     </AppErrorBoundary>
   )
 }

@@ -1,6 +1,7 @@
 import { Outlet, useLocation } from 'react-router-dom'
 import BottomNav from './BottomNav'
 import CoachFAB from './CoachFAB'
+import GlobalMenu from './GlobalMenu'
 import { useTheme } from '../contexts/ThemeProvider'
 
 const FAB_EXCLUDED = ['/coach', '/onboarding', '/auth', '/']
@@ -9,7 +10,6 @@ const NAV_EXCLUDED = ['/onboarding', '/auth']
 export default function Layout() {
   const { theme }    = useTheme()
   const { pathname } = useLocation()
-
   const showFAB = !FAB_EXCLUDED.includes(pathname)
   const showNav = !NAV_EXCLUDED.includes(pathname)
 
@@ -21,7 +21,8 @@ export default function Layout() {
       </main>
       {showNav && <BottomNav />}
       {showFAB && <CoachFAB />}
-      {/* CoachMicroBubble desactivado temporalmente — causa React #300 */}
+      {/* GlobalMenu disponible en todas las pantallas */}
+      <GlobalMenu />
     </div>
   )
 }

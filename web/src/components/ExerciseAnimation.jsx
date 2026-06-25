@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import { useTheme } from '../contexts/ThemeProvider'
 import { getAnimation, getAnimationByName } from '../data/exerciseAnimations'
 
@@ -8,9 +8,9 @@ import { getAnimation, getAnimationByName } from '../data/exerciseAnimations'
 // O:   <ExerciseAnimation exerciseName="Jumping Jacks" size={160} />
 
 export default function ExerciseAnimation({ exerciseId, exerciseName, size = 160, accent }) {
-  const { theme }     = useTheme()
-  const [frameIdx,    setFrameIdx]    = useState(0)
-  const [transition,  setTransition]  = useState(true)
+  const { theme }    = useTheme()
+  const [frameIdx,   setFrameIdx]   = useState(0)
+  const [transition, setTransition] = useState(true)
 
   const anim = exerciseId
     ? getAnimation(exerciseId)
@@ -30,7 +30,7 @@ export default function ExerciseAnimation({ exerciseId, exerciseName, size = 160
     return () => clearInterval(t)
   }, [anim])
 
-  // Sin animación — mostrar emoji de fallback grande
+  // Sin animación — emoji de fallback
   if (!anim) {
     return (
       <div className="flex items-center justify-center"
@@ -71,7 +71,9 @@ export default function ExerciseAnimation({ exerciseId, exerciseName, size = 160
               style={{
                 width:      i === frameIdx ? 8 : 4,
                 height:     4,
-                background: i === frameIdx ? (accent || theme.primary) : `${accent || theme.primary}30`,
+                background: i === frameIdx
+                  ? (accent || theme.primary)
+                  : `${accent || theme.primary}30`,
               }} />
           ))}
         </div>

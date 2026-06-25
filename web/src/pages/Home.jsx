@@ -265,7 +265,7 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name, userId }) {
 
       {/* PANDI — de día navega directo, de noche hay que despertarla */}
       <div style={{ position:'absolute', bottom:'13%', left:'50%', transform:'translateX(-50%)',
-        zIndex:5, width:isMobile ? '48%' : '15%', maxWidth:200 }}>
+        zIndex:5, width:isMobile ? '48%' : '15%', maxWidth:500 }}>
         <motion.div
           onClick={handlePandiTap}
           whileTap={{ scale:0.95 }}

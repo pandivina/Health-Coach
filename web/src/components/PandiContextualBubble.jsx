@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Link } from 'react-router-dom'
-import { X, Send } from 'lucide-react'
+import { X, Send, Bookmark, BookmarkCheck } from 'lucide-react'
 import { useTheme } from '../contexts/ThemeProvider'
 import { useStore } from '../store/useStore'
 import { supabase } from '../lib/supabase'
@@ -63,17 +63,18 @@ const MESSAGES = {
 
 // ─── CHAT MODAL ───────────────────────────────────────────────────────────────
 function CoachChatModal({ onClose, section }) {
-  const { theme }   = useTheme()
+  const { theme }         = useTheme()
   const { user, profile } = useStore()
   const [messages,  setMessages]  = useState([])
   const [input,     setInput]     = useState('')
   const [loading,   setLoading]   = useState(false)
   const [imgErr,    setImgErr]    = useState(false)
+  // ── INBOX: estado de mensajes guardados ──────────────────────────────────────
+  const [saved,     setSaved]     = useState(new Set())
   const bottomRef   = useRef(null)
   const petName     = profile?.pet_name || 'Pandi'
 
   useEffect(() => {
-    // Mensaje de bienvenida contextual
     const greet = section
       ? `Hola, estoy aquí para ayudarte con ${section}. ¿Qué necesitas?`
       : '¡Hola! Soy tu coach de salud. ¿En qué puedo ayudarte hoy?'
@@ -84,13 +85,30 @@ function CoachChatModal({ onClose, section }) {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
+  // ── Guardar recomendación en el inbox ────────────────────────────────────────
+  async function saveRecommendation(content, index) {
+    setSaved(s => new Set([...s, index])) // optimistic
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      await fetch(`${import.meta.env.VITE_API_URL}/api/coach/recommendations`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session?.access_token}`,
+        },
+        body: JSON.stringify({ content, section }),
+      })
+    } catch {
+      // fallo silencioso — el icono ya cambió, no deshacer
+    }
+  }
+
   async function send() {
     if (!input.trim() || loading) return
     const userMsg = input.trim()
     setInput('')
     setMessages(m => [...m, { role: 'user', content: userMsg }])
     setLoading(true)
-
     try {
       const { data: { session } } = await supabase.auth.getSession()
       const res = await fetch(`${import.meta.env.VITE_API_URL}/api/coach/message`, {
@@ -136,8 +154,7 @@ function CoachChatModal({ onClose, section }) {
             display:'flex', alignItems:'center', justifyContent:'center' }}>
             {imgErr
               ? <span style={{ fontSize:20 }}>🐼</span>
-              : <img src="/panda/talk_1.png" alt={petName}
-                  onError={() => setImgErr(true)}
+              : <img src="/panda/talk_1.png" alt={petName} onError={() => setImgErr(true)}
                   style={{ width:32, height:32, objectFit:'contain' }} />
             }
           </div>
@@ -183,9 +200,32 @@ function CoachChatModal({ onClose, section }) {
                   color: m.role === 'user' ? 'white' : (theme.text || '#1A2332') }}>
                   {m.content}
                 </p>
+
+                {/* ── BOTÓN GUARDAR — solo en mensajes del coach, no el primero ── */}
+                {m.role === 'assistant' && i > 0 && (
+                  <button onClick={() => saveRecommendation(m.content, i)}
+                    disabled={saved.has(i)}
+                    style={{ marginTop:6, display:'flex', alignItems:'center', gap:4,
+                      background:'none', border:'none', cursor: saved.has(i) ? 'default' : 'pointer',
+                      padding:0, transition:'opacity 0.2s',
+                      opacity: saved.has(i) ? 1 : 0.55 }}>
+                    {saved.has(i) ? (
+                      <>
+                        <BookmarkCheck size={11} color="#2EC4B6" />
+                        <span style={{ fontSize:10, color:'#2EC4B6', fontWeight:700 }}>Guardado</span>
+                      </>
+                    ) : (
+                      <>
+                        <Bookmark size={11} color={theme.textMuted || '#9CA3AF'} />
+                        <span style={{ fontSize:10, color: theme.textMuted || '#9CA3AF' }}>Guardar</span>
+                      </>
+                    )}
+                  </button>
+                )}
               </div>
             </div>
           ))}
+
           {loading && (
             <div style={{ display:'flex', gap:8, alignItems:'center' }}>
               <div style={{ width:28, height:28, borderRadius:8,
@@ -275,14 +315,10 @@ export default function PandiContextualBubble({ section, data = {}, dismissKey }
             transition={{ type:'spring', damping:20, stiffness:300 }}
             style={{ display:'flex', alignItems:'flex-end', gap:12, marginBottom:16 }}>
 
-            {/* Avatar Pandi — tap abre el chat */}
-            <motion.button
-              whileTap={{ scale:0.92 }}
-              onClick={() => setChatOpen(true)}
+            <motion.button whileTap={{ scale:0.92 }} onClick={() => setChatOpen(true)}
               style={{ flexShrink:0, background:'none', border:'none', cursor:'pointer',
                 padding:0, position:'relative' }}>
-              <motion.div
-                animate={{ y:[0,-3,0] }}
+              <motion.div animate={{ y:[0,-3,0] }}
                 transition={{ duration:2.5, repeat:Infinity, ease:'easeInOut' }}>
                 {imgErr ? (
                   <div style={{ width:48, height:48, borderRadius:16,
@@ -291,17 +327,14 @@ export default function PandiContextualBubble({ section, data = {}, dismissKey }
                     🐼
                   </div>
                 ) : (
-                  <img src="/panda/talk_1.png" alt={petName}
-                    onError={() => setImgErr(true)}
+                  <img src="/panda/talk_1.png" alt={petName} onError={() => setImgErr(true)}
                     style={{ width:48, height:48, objectFit:'contain' }} />
                 )}
               </motion.div>
-              {/* Indicador de chat */}
               <div style={{ position:'absolute', top:-2, right:-2, width:12, height:12,
                 borderRadius:'50%', background:'#2EC4B6', border:'2px solid white' }} />
             </motion.button>
 
-            {/* Bocadillo */}
             <div style={{ flex:1, position:'relative' }}>
               <div style={{ position:'absolute', left:-7, bottom:10, width:0, height:0,
                 borderTop:'7px solid transparent', borderBottom:'7px solid transparent',

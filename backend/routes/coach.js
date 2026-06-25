@@ -620,6 +620,72 @@ router.get('/daily-review', requireAuth, async (req, res) => {
 })
 
 
+
+// ─── POST /api/coach/recommendations ──────────────────────────────────────────
+router.post('/recommendations', requireAuth, async (req, res) => {
+  try {
+    const { content, section } = req.body
+    if (!content?.trim()) return res.status(400).json({ error: 'content requerido' })
+
+    const { data, error } = await supabaseAdmin
+      .from('coach_recommendations')
+      .insert({ user_id: req.user.id, content: content.trim(), section: section || null })
+      .select().single()
+
+    if (error) throw error
+    res.json({ success: true, recommendation: data })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// ─── GET /api/coach/recommendations ───────────────────────────────────────────
+router.get('/recommendations', requireAuth, async (req, res) => {
+  try {
+    const { data, error } = await supabaseAdmin
+      .from('coach_recommendations')
+      .select('*')
+      .eq('user_id', req.user.id)
+      .order('saved_at', { ascending: false })
+      .limit(50)
+
+    if (error) throw error
+    res.json(data || [])
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// ─── DELETE /api/coach/recommendations/:id ─────────────────────────────────────
+router.delete('/recommendations/:id', requireAuth, async (req, res) => {
+  try {
+    const { error } = await supabaseAdmin
+      .from('coach_recommendations')
+      .delete()
+      .eq('id', req.params.id)
+      .eq('user_id', req.user.id)
+
+    if (error) throw error
+    res.json({ success: true })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// ─── PATCH /api/coach/recommendations/:id/read ────────────────────────────────
+router.patch('/recommendations/:id/read', requireAuth, async (req, res) => {
+  try {
+    await supabaseAdmin
+      .from('coach_recommendations')
+      .update({ is_read: true })
+      .eq('id', req.params.id)
+      .eq('user_id', req.user.id)
+    res.json({ success: true })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
 // ─── GET /api/coach/memory ─────────────────────────────────────────────────────
 router.get('/memory', requireAuth, async (req, res) => {
   try {

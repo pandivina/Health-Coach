@@ -24,7 +24,8 @@ const challengesRoutes    = require('./routes/challenges');
 const pandiRoutes         = require('./routes/pandi');
 const recoveryRoutes      = require('./routes/recovery');
 const habitsRoutes        = require('./routes/habits');
-const fatSecretRoutes = require('./routes/nutrition_fatsecret')
+const fatSecretRoutes       = require('./routes/nutrition_fatsecret')
+const recipesWeeklyRoutes   = require('./routes/recipes_weekly')
 
 const app  = express();
 const PORT = process.env.PORT || 3001;
@@ -101,9 +102,11 @@ app.get('/health', (req, res) => {
 app.use('/api/stripe',        stripeRoutes);
 app.use('/api/auth',          authLimiter, authRoutes);      // rate limit estricto
 app.use('/api/coach',         coachLimiter, coachRoutes);    // rate limit por usuario
+app.use('/api/fs',            fatSecretRoutes);   // FatSecret — búsqueda y escáner
 app.use('/api/nutrition',     nutritionRoutes);
 app.use('/api/pantry',        pantryRoutes);
 app.use('/api/recipes',       recipesRoutes);
+app.use('/api/recipes',       recipesWeeklyRoutes); // planes semanales IA
 app.use('/api/report',        reportsRoutes);
 app.use('/api/workouts',      workoutsRoutes);
 app.use('/api/challenges',    challengesRoutes);
@@ -117,7 +120,6 @@ app.use('/api/tip',           tipRoutes);
 app.use('/api/pandi',         pandiRoutes);
 app.use('/api/recovery',      recoveryRoutes);
 app.use('/api/habits',        habitsRoutes);
-app.use('/api/nutrition', fatSecretRoutes)
 
 // ─── ERROR HANDLER — no expone internos en producción ────────────────────────
 app.use((err, req, res, next) => {

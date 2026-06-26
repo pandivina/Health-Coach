@@ -8,6 +8,7 @@ import { Loader2, RefreshCw, ChevronDown, ChevronUp } from 'lucide-react'
 import { useTheme } from '../../contexts/ThemeProvider'
 import { useStore } from '../../store/useStore'
 import { supabase } from '../../lib/supabase'
+import { supabase } from '../../lib/supabase'
 
 // ─── HELPERS ─────────────────────────────────────────────────────────────────
 
@@ -233,20 +234,20 @@ Responde ÚNICAMENTE con este JSON (sin markdown, sin explicaciones):
   "viernes":   { ... mismo formato ... }
 }`
 
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model:      'claude-sonnet-4-6',
-          max_tokens: 2000,
-          messages:   [{ role: 'user', content: prompt }],
-        }),
-      })
-
-      const data    = await res.json()
-      const raw     = data.content?.[0]?.text || ''
-      const cleaned = raw.replace(/```json|```/g, '').trim()
-      const parsed  = JSON.parse(cleaned)
+      // Llamar al backend — Railway tiene la API key de Anthropic
+      const { data: { session } } = await supabase.auth.getSession()
+      const res = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/recipes/weekly`,
+        {
+          method:  'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization:  `Bearer ${session?.access_token}`,
+          },
+        }
+      )
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const parsed = await res.json()
 
       // Guardar en cache semanal
       try { localStorage.setItem(weekKey, JSON.stringify(parsed)) } catch {}

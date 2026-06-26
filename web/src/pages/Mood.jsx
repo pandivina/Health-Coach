@@ -1330,53 +1330,60 @@ export default function Mood() {
         </div>
       )}
 
-      {/* ── PANEL EDICIÓN DE PANDI ── */}
-      <AnimatePresence>
-        {pandiEditMode && (
-          <motion.div initial={{ opacity:0, y:20 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0 }}
-            style={{ position:'fixed', bottom:'calc(env(safe-area-inset-bottom,0px) + 170px)',
-              left:'50%', transform:'translateX(-50%)', zIndex:60,
-              background:'rgba(255,255,255,0.7)', backdropFilter:'blur(16px)',
-              borderRadius:20, padding:'16px 20px', boxShadow:'0 8px 32px rgba(0,0,0,0.15)',
-              minWidth:280 }}>
-            <p style={{ fontSize:12, fontWeight:800, color:'#B8924A', margin:'0 0 12px',
-              textAlign:'center' }}>✏️ Ajustar Pandi</p>
-            <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
-              <div>
-                <p style={{ fontSize:11, color:'#6B7280', margin:'0 0 4px', fontWeight:600 }}>
-                  Altura: {pandiConfig.bottom}%
-                </p>
-                <input type="range" min={5} max={55} value={pandiConfig.bottom}
-                  onChange={e => setPandiConfig(c => ({ ...c, bottom: +e.target.value }))}
-                  style={{ width:'100%', accentColor:'#B8924A' }} />
-              </div>
-              <div>
-                <p style={{ fontSize:11, color:'#6B7280', margin:'0 0 4px', fontWeight:600 }}>
-                  Tamaño: {pandiConfig.size}%
-                </p>
-                <input type="range" min={20} max={80} value={pandiConfig.size}
-                  onChange={e => setPandiConfig(c => ({ ...c, size: +e.target.value }))}
-                  style={{ width:'100%', accentColor:'#B8924A' }} />
-              </div>
-            </div>
-            <div style={{ display:'flex', gap:8, marginTop:12 }}>
-              <button onClick={() => setPandiEditMode(false)}
-                style={{ flex:1, padding:'9px', borderRadius:12, border:'none', cursor:'pointer',
-                  background:'#F3F4F6', color:'#6B7280', fontWeight:700, fontSize:12 }}>
-                Cancelar
-              </button>
-              <button onClick={() => {
-                localStorage.setItem('pandi_mood_cfg', JSON.stringify(pandiConfig))
-                setPandiEditMode(false)
-              }}
-                style={{ flex:1, padding:'9px', borderRadius:12, border:'none', cursor:'pointer',
-                  background:'#B8924A', color:'white', fontWeight:700, fontSize:12 }}>
-                Guardar
-              </button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            {/* ── PANDI EN EL SANTUARIO ── */}
+      <div style={{ position:'absolute', inset:0, zIndex:5, pointerEvents:'none' }}>
+        <div
+          onPointerDown={() => { 
+            window._pandiPressTimer = setTimeout(() => setPandiEditMode(true), 1500) 
+          }}
+          onPointerUp={() => clearTimeout(window._pandiPressTimer)}
+          onPointerLeave={() => clearTimeout(window._pandiPressTimer)}
+          style={{
+            position:'absolute',
+            // Usa config del tab activo, o fallback al global
+            bottom: activeTab && TAB_CONFIG[activeTab]?.pandiBottom !== undefined
+              ? `${TAB_CONFIG[activeTab].pandiBottom}%`
+              : `${pandiConfig.bottom}%`,
+            left:'50%',
+            transform:'translateX(-50%)',
+            width: activeTab && TAB_CONFIG[activeTab]?.pandiSize !== undefined
+              ? `${TAB_CONFIG[activeTab].pandiSize}%`
+              : `${pandiConfig.size}%`,
+            maxWidth: activeTab && TAB_CONFIG[activeTab]?.pandiMaxW !== undefined
+              ? TAB_CONFIG[activeTab].pandiMaxW
+              : 840,
+            pointerEvents:'all',
+            cursor: pandiEditMode ? 'move' : 'pointer',
+          }}>
+          <AnimatePresence>
+            {activeTab !== 'checkin' && activeTab !== 'journal' && (
+              <motion.div
+                initial={{ opacity:0 }} 
+                animate={{ opacity:1 }} 
+                exit={{ opacity:0 }}
+                transition={{ duration:0.4 }}
+                style={{ width:'100%' }}>
+                <SanctuaryPandi 
+                  mood={currentMood} 
+                  pandiMode={pandiMode} 
+                  cfg={sanctuaryCfg} 
+                  activeTab={activeTab} 
+                  recoveryLight={recoveryLight} 
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
+          {pandiEditMode && (
+            <div style={{ 
+              position:'absolute', 
+              inset:-4, 
+              borderRadius:16,
+              border:'2px dashed #B8924A', 
+              pointerEvents:'none' 
+            }} />
+          )}
+        </div>
+      </div>
 
       {/* ── TAB BAR FLOTANTE ── */}
       <div style={{ position:'fixed', bottom:`calc(env(safe-area-inset-bottom,0px) + ${TAB_BAR_BOTTOM}px)`,

@@ -45,14 +45,14 @@ async function fsApi(params) {
 // ─── GET /api/nutrition/search?q=pollo&page=0 ─────────────────────────────────
 router.get('/search', async (req, res) => {
   try {
-    const { q, page = 0 } = req.query
+    const { q, page = 0, max = 20 } = req.query
     if (!q?.trim()) return res.status(400).json({ error: 'q requerido' })
 
     const data = await fsApi({
       method:              'foods.search',
       search_expression:   q.trim(),
       page_number:         page,
-      max_results:         20,
+      max_results:         Math.min(parseInt(max) || 20, 50),
     })
 
     const foods = data.foods?.food || []

@@ -1120,7 +1120,7 @@ export default function Mood() {
   // PANDI_BOTTOM: % desde el fondo. Rango recomendado: 10-35
   //               22 = posición normal · 30 = más arriba · 12 = más abajo
   // PANDI_MAXW:   límite en px — evita que sea gigante en tablets
-  const PANDI_SIZE   = 100   // ← CAMBIA ESTE NÚMERO para hacer Pandi más grande/pequeña
+  const PANDI_SIZE   = 150   // ← CAMBIA ESTE NÚMERO para hacer Pandi más grande/pequeña
   const PANDI_BOTTOM = 10   // ← CAMBIA ESTE NÚMERO para subir/bajar a Pandi
   const PANDI_MAXW   = 840  // px — límite absoluto de ancho
   // ─────────────────────────────────────────────────────────────────────────

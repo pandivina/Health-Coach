@@ -1,15 +1,14 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import CalorieTrendWidget from './CalorieTrendWidget'
 import {
-  Camera, Hash, Plus, Trash2, ChefHat, Flame,
+  Trash2, Flame,
   Search, X, Clock, ChevronRight, Loader2, Barcode
 } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { useStore } from '../../store/useStore'
 import { useTheme } from '../../contexts/ThemeProvider'
 import { searchLocal, FOOD_CATEGORIES, getFoodsByCategory, SPANISH_FOODS } from '../../lib/spanishFoods'
-import CalorieTrendWidget from './CalorieTrendWidget'
-import FrequentMeals from './FrequentMeals'
 import { computeMealQuality, REACTION_CONFIG } from '../../lib/foodQuality'
 
 const MEAL_TYPES  = ['breakfast', 'lunch', 'dinner', 'snack']
@@ -704,7 +703,7 @@ function FoodModal({ mealType, userId, theme, onAdd, onClose }) {
 
 // ─── DIARIO TAB ───────────────────────────────────────────────────────────────
 
-export default function DiarioTab({ onAnalyze, onScan, onRecipes, onSummaryChange }) {
+export default function DiarioTab({ showAddModal, onCloseAddModal, onAnalyze, onScan, onSummaryChange }) {
   const { user, addXP } = useStore()
   const { theme }       = useTheme()
   const [meals, setMeals] = useState([])
@@ -742,6 +741,14 @@ export default function DiarioTab({ onAnalyze, onScan, onRecipes, onSummaryChang
   }
 
   useEffect(() => { load() }, [user])
+
+  // Abrir modal Añadir desde Nutrition.jsx
+  useEffect(() => {
+    if (showAddModal) {
+      setModal({ type: 'snack' })
+      onCloseAddModal?.()
+    }
+  }, [showAddModal])
 
   async function addMeal(mealType, entry) {
     const quality = computeMealQuality(entry, meals, goals)
@@ -819,7 +826,6 @@ export default function DiarioTab({ onAnalyze, onScan, onRecipes, onSummaryChang
       <div className="space-y-4">
 
         <CalorieTrendWidget userId={user?.id} theme={theme} calorieGoal={goals.calories} />
-        <FrequentMeals userId={user?.id} theme={theme} onQuickAdd={quickAddFrequent} />
 
         {/* Hero calorías */}
         <motion.div initial={{ opacity:0, y:-10 }} animate={{ opacity:1, y:0 }}
@@ -866,25 +872,7 @@ export default function DiarioTab({ onAnalyze, onScan, onRecipes, onSummaryChang
           </div>
         </motion.div>
 
-        {/* Quick actions */}
-        <div className="grid grid-cols-4 gap-2" data-tour="nutrition-add">
-          {[
-            { icon:Camera,  label:'Foto',    action:onAnalyze },
-            { icon:Barcode, label:'Código',  action:() => setModal({ type:'snack', scanner:true }) },
-            { icon:Plus,    label:'Añadir',  action:() => setModal({ type:'snack' }) },
-            { icon:ChefHat, label:'Recetas', action:onRecipes },
-          ].map(({ icon: Icon, label, action }) => (
-            <button key={label} onClick={action}
-              className="flex flex-col items-center gap-1.5 p-3 rounded-2xl
-                active:scale-95 transition-all"
-              style={{ background: theme.surface, border:`1px solid ${theme.border}` }}>
-              <Icon size={18} style={{ color: theme.primary }} />
-              <span className="text-[10px] font-medium" style={{ color: theme.textMuted }}>
-                {label}
-              </span>
-            </button>
-          ))}
-        </div>
+
 
         {/* Comidas por tipo */}
         {MEAL_TYPES.map(type => {

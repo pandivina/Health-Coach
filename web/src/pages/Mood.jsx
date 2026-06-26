@@ -241,10 +241,10 @@ function SanctuaryPandi({ mood, pandiMode, cfg, activeTab, recoveryLight }) {
           {/* Base glow */}
           <motion.div
             animate={{ opacity:[0.2,0.45,0.2], scaleY:[1,1.1,1] }}
-            transition={{ duration:3.5, repeat:Infinity, ease:'easeInOut' }}
+            transition={{ duration:5, repeat:Infinity, ease:'easeInOut' }}
             style={{ position:'absolute', bottom:'10%', left:'50%',
               transform:'translateX(-50%)',
-              width:'90%', height:'80%',
+              width:'100%', height:'100%',
               borderRadius:'50% 50% 40% 40%',
               background:'radial-gradient(ellipse at 50% 80%, rgba(52,211,153,0.5) 0%, rgba(16,185,129,0.2) 40%, transparent 70%)',
               filter:'blur(14px)',
@@ -255,10 +255,10 @@ function SanctuaryPandi({ mood, pandiMode, cfg, activeTab, recoveryLight }) {
             transition={{ duration:2.5, repeat:Infinity, ease:'easeInOut' }}
             style={{ position:'absolute', bottom:'30%', left:'50%',
               transform:'translateX(-50%)',
-              width:'28%', height:'55%',
+              width:'100%', height:'100%',
               background:'linear-gradient(to top, rgba(16,185,129,0.8) 0%, rgba(52,211,153,0.5) 40%, rgba(167,243,208,0.2) 70%, transparent 100%)',
               borderRadius:'50% 50% 30% 30%',
-              filter:'blur(6px)',
+              filter:'blur(4px)',
               transformOrigin:'bottom center' }} />
           {/* Llama interior */}
           <motion.div
@@ -266,7 +266,7 @@ function SanctuaryPandi({ mood, pandiMode, cfg, activeTab, recoveryLight }) {
             transition={{ duration:1.8, repeat:Infinity, ease:'easeInOut', delay:0.3 }}
             style={{ position:'absolute', bottom:'30%', left:'50%',
               transform:'translateX(-50%)',
-              width:'14%', height:'38%',
+              width:'100%', height:'100%',
               background:'linear-gradient(to top, rgba(167,243,208,0.9) 0%, rgba(52,211,153,0.6) 50%, transparent 100%)',
               borderRadius:'50% 50% 30% 30%',
               filter:'blur(3px)',
@@ -279,7 +279,7 @@ function SanctuaryPandi({ mood, pandiMode, cfg, activeTab, recoveryLight }) {
               style={{ position:'absolute',
                 bottom:'32%',
                 left: i%2===0 ? `${46+i*2}%` : `${54-i*2}%`,
-                width:5, height:5, borderRadius:'50%',
+                width:10, height:15, borderRadius:'50%',
                 background: i%2===0 ? 'rgba(52,211,153,0.8)' : 'rgba(167,243,208,0.9)',
                 filter:'blur(1px)' }} />
           ))}

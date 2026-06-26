@@ -28,7 +28,7 @@ async function searchOFF(query) {
   try {
     const headers = await authHeaders()
     const res = await fetch(
-      `${import.meta.env.VITE_API_URL}/api/nutrition/search?q=${encodeURIComponent(query)}&page=0`,
+      `${import.meta.env.VITE_API_URL}/api/nutrition/search?q=${encodeURIComponent(query)}&page=0&max=50`,
       { headers, signal: AbortSignal.timeout(6000) }
     )
     if (!res.ok) return []
@@ -551,7 +551,7 @@ function FoodModal({ mealType, userId, theme, onAdd, onClose }) {
       </div>
 
       {/* Contenido */}
-      <div className="flex-1 overflow-y-auto px-4 py-4">
+      <div className="flex-1 overflow-y-auto px-4 py-4 pb-24">
         {selected ? (
           <PortionPicker food={selected} onConfirm={handleConfirm}
             onBack={() => setSelected(null)} theme={theme} />

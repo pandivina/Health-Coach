@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import CalorieTrendWidget from './CalorieTrendWidget'
 import {
-  Trash2, Flame,
+  Plus, Trash2, Flame,
   Search, X, Clock, ChevronRight, Loader2, Barcode
 } from 'lucide-react'
 import { supabase } from '../../lib/supabase'

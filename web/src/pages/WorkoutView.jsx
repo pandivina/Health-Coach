@@ -428,7 +428,6 @@ async function startFreeWorkout() {
     })
   }).catch(err => console.warn('[Workout] sync error:', err.message))
 }
-  }
 
   async function startProgram(program) {
   const guided   = getGuidedSession(program.id)

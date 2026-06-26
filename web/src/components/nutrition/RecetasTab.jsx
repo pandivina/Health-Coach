@@ -8,7 +8,6 @@ import { Loader2, RefreshCw, ChevronDown, ChevronUp } from 'lucide-react'
 import { useTheme } from '../../contexts/ThemeProvider'
 import { useStore } from '../../store/useStore'
 import { supabase } from '../../lib/supabase'
-import { supabase } from '../../lib/supabase'
 
 // ─── HELPERS ─────────────────────────────────────────────────────────────────
 

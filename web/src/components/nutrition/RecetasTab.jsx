@@ -2,11 +2,12 @@
 // Planes semanales personalizados por IA según objetivo del usuario
 // Lunes / Miércoles / Viernes — desayuno, comida, merienda, cena
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Loader2, RefreshCw, ChevronDown, ChevronUp } from 'lucide-react'
 import { useTheme } from '../../contexts/ThemeProvider'
 import { useStore } from '../../store/useStore'
+import { supabase } from '../../lib/supabase'
 import { supabase } from '../../lib/supabase'
 
 // ─── HELPERS ─────────────────────────────────────────────────────────────────
@@ -39,10 +40,46 @@ const MEALS_ORDER = [
   { key: 'cena',     label: '🌙 Cena'     },
 ]
 
+
+// Mapeo plan semanal → meal_type del diario
+const MEAL_TYPE_MAP = {
+  desayuno: 'breakfast',
+  comida:   'lunch',
+  merienda: 'snack',
+  cena:     'dinner',
+}
+
 // ─── COMPONENTE TARJETA DÍA ───────────────────────────────────────────────────
 
-function DayCard({ day, plan, theme }) {
-  const [open, setOpen] = useState(false)
+function DayCard({ day, plan, theme, user, onAddSuccess }) {
+  const [open, setOpen]       = useState(false)
+  const [adding, setAdding]   = useState(null) // key del meal que se está añadiendo
+  const [added,  setAdded]    = useState({})   // meals ya añadidos hoy
+
+  async function addToDiary(mealKey, meal) {
+    if (!user) return
+    setAdding(mealKey)
+    try {
+      const today    = new Date().toISOString().split('T')[0]
+      const mealType = MEAL_TYPE_MAP[mealKey] || 'snack'
+      await supabase.from('meal_logs').insert({
+        user_id:   user.id,
+        date:      today,
+        meal_type: mealType,
+        food_name: meal.nombre,
+        calories:  meal.kcal || 0,
+        protein_g: 0,
+        carbs_g:   0,
+        fat_g:     0,
+      })
+      setAdded(prev => ({ ...prev, [mealKey]: true }))
+      onAddSuccess?.(meal.nombre)
+    } catch (err) {
+      console.error('[RecetasTab] addToDiary', err.message)
+    } finally {
+      setAdding(null)
+    }
+  }
 
   return (
     <motion.div layout
@@ -121,6 +158,17 @@ function DayCard({ day, plan, theme }) {
                           ~{m.kcal} kcal
                         </p>
                       )}
+                      {/* Botón añadir al diario */}
+                      <motion.button whileTap={{ scale:0.92 }}
+                        onClick={() => addToDiary(meal.key, m)}
+                        disabled={adding === meal.key || added[meal.key]}
+                        style={{ marginTop:8, display:'flex', alignItems:'center', gap:5,
+                          padding:'6px 12px', borderRadius:10, border:'none', cursor:'pointer',
+                          background: added[meal.key] ? '#22C55E18' : theme.primary + '18',
+                          color: added[meal.key] ? '#22C55E' : theme.primary,
+                          fontSize:11, fontWeight:700, opacity: adding === meal.key ? 0.6 : 1 }}>
+                        {added[meal.key] ? '✓ Añadido' : adding === meal.key ? '...' : `+ ${meal.label}`}
+                      </motion.button>
                     </div>
                   )
                 })}
@@ -151,10 +199,16 @@ export default function RecetasTab() {
   const { theme }         = useTheme()
   const { user, profile } = useStore()
   const [plans,    setPlans]    = useState(null)
+  const [toast,    setToast]    = useState(null)
   const [loading,  setLoading]  = useState(false)
   const [error,    setError]    = useState(null)
   const [goal,     setGoal]     = useState('default')
   const weekKey = getWeekKey()
+
+  function showToast(name) {
+    setToast(name)
+    setTimeout(() => setToast(null), 3000)
+  }
 
   useEffect(() => {
     if (!user) return
@@ -329,7 +383,7 @@ Responde ÚNICAMENTE con este JSON (sin markdown, sin explicaciones):
       {plans && (
         <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
           {DAYS.map(day => (
-            <DayCard key={day.key} day={day} plan={plans[day.key]} theme={theme} />
+            <DayCard key={day.key} day={day} plan={plans[day.key]} theme={theme} user={user} onAddSuccess={showToast} />
           ))}
         </div>
       )}
@@ -352,6 +406,25 @@ Responde ÚNICAMENTE con este JSON (sin markdown, sin explicaciones):
           </motion.button>
         </div>
       )}
+      {/* Toast confirmación */}
+      <AnimatePresence>
+        {toast && (
+          <motion.div
+            initial={{ opacity:0, y:20, x:'-50%' }}
+            animate={{ opacity:1, y:0,  x:'-50%' }}
+            exit={{   opacity:0, y:20 }}
+            style={{ position:'fixed', bottom:100, left:'50%', zIndex:60,
+              background:'white', borderRadius:18, padding:'12px 18px',
+              boxShadow:'0 8px 24px rgba(0,0,0,0.15)',
+              display:'flex', alignItems:'center', gap:10,
+              border:'1.5px solid #22C55E40' }}>
+            <span style={{ fontSize:22 }}>✅</span>
+            <p style={{ fontSize:13, fontWeight:700, color:'#1A2332', margin:0 }}>
+              {toast} añadido al diario
+            </p>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

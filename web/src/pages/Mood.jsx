@@ -1240,7 +1240,7 @@ export default function Mood() {
             left:'50%',
             transform:'translateX(-50%)',
             width: pandiConfig.size + '%',
-            maxWidth: 280,
+            maxWidth: 840,
             pointerEvents:'all',
             cursor: pandiEditMode ? 'move' : 'pointer',
           }}>

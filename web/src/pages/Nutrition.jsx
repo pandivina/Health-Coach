@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { BookOpen, ShoppingBag, ChefHat } from 'lucide-react'
+import { BookOpen, ShoppingBag, ChefHat, Camera, Barcode, Plus } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useTheme } from '../contexts/ThemeProvider'
 import { useTour } from '../hooks/useTour'
@@ -15,30 +15,23 @@ import PandiContextualBubble from '../components/PandiContextualBubble'
 import PandiTips from '../components/PandiTips'
 
 const TABS = [
-  { id: 'diario',   icon: BookOpen,    label: 'Diario',   tour: 'nutrition-diary'   },
-  { id: 'despensa', icon: ShoppingBag, label: 'Despensa', tour: 'nutrition-pantry'  },
-  { id: 'recetas',  icon: ChefHat,     label: 'Recetas',  tour: 'nutrition-recipes' },
+  { id: 'diario',   icon: BookOpen,    label: 'Diario'   },
+  { id: 'despensa', icon: ShoppingBag, label: 'Despensa' },
+  { id: 'recetas',  icon: ChefHat,     label: 'Recetas'  },
 ]
 
 export default function Nutrition() {
   const { theme } = useTheme()
-  const [tab, setTab]                       = useState('diario')
-  const [showTendencias, setShowTendencias] = useState(false)
-
-  // Estado elevado desde DiarioTab para que el coach lo vea
+  const [tab,             setTab]             = useState('diario')
+  const [showAddModal,    setShowAddModal]    = useState(false)
+  const [showTendencias,  setShowTendencias]  = useState(false)
   const [nutritionSummary, setNutritionSummary] = useState({
-    caloriesConsumed: 0,
-    caloriesTarget:   2000,
-    proteinConsumed:  0,
-    proteinTarget:    150,
-    carbsConsumed:    0,
-    fatConsumed:      0,
-    lastMeal:         null,
+    caloriesConsumed: 0, caloriesTarget: 2000,
+    proteinConsumed: 0,  proteinTarget: 150,
+    carbsConsumed: 0,    fatConsumed: 0, lastMeal: null,
   })
 
   useTour('nutrition')
-
-  // ── Coach ve: sección actual + macros en tiempo real ─────────────────────
   useSectionContext('nutrition', {
     activeTab:        tab,
     caloriesConsumed: nutritionSummary.caloriesConsumed,
@@ -50,12 +43,19 @@ export default function Nutrition() {
     lastMeal:         nutritionSummary.lastMeal,
   })
 
+  // Acciones rápidas — solo visibles en tab Diario
+  const ACTIONS = [
+    { icon: Camera,  label: 'Foto',    action: () => setTab('analizar'), color: '#6366F1' },
+    { icon: Barcode, label: 'Código',  action: () => setTab('escanear'), color: '#F97316' },
+    { icon: Plus,    label: 'Añadir',  action: () => setShowAddModal(true), color: theme.primary },
+  ]
+
   return (
     <div className="min-h-screen pb-24" style={{ background: theme.bg }}>
       <div className="px-4 pt-6 pb-3">
         <h1 className="text-2xl font-extrabold" style={{ color: theme.text }}>Nutrición 🍎</h1>
         <p className="text-sm" style={{ color: theme.textMuted }}>
-          {new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}
+          {new Date().toLocaleDateString('es-ES', { weekday:'long', day:'numeric', month:'long' })}
         </p>
         <PandiContextualBubble section="nutrition" data={{
           cals:        nutritionSummary.caloriesConsumed,
@@ -66,11 +66,10 @@ export default function Nutrition() {
       </div>
 
       {/* Tab bar */}
-      <div className="px-4 mb-4" data-tour="nutrition-tabs">
+      <div className="px-4 mb-3" data-tour="nutrition-tabs">
         <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
           {TABS.map(t => (
             <button key={t.id} onClick={() => setTab(t.id)}
-              data-tour={t.tour || undefined}
               className="flex-shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-all"
               style={{
                 background: tab === t.id ? theme.primary : theme.surface,
@@ -84,17 +83,46 @@ export default function Nutrition() {
         </div>
       </div>
 
+      {/* Acciones rápidas — solo en Diario */}
+      <AnimatePresence>
+        {tab === 'diario' && (
+          <motion.div
+            initial={{ opacity:0, y:-8 }} animate={{ opacity:1, y:0 }}
+            exit={{ opacity:0, y:-8 }} transition={{ duration:0.15 }}
+            className="px-4 mb-4">
+            <div className="grid grid-cols-3 gap-2" data-tour="nutrition-add">
+              {ACTIONS.map(({ icon: Icon, label, action, color }) => (
+                <motion.button key={label} whileTap={{ scale:0.95 }} onClick={action}
+                  className="flex flex-col items-center gap-1.5 py-3 rounded-2xl transition-all"
+                  style={{ background: theme.surface, border:`1px solid ${theme.border}` }}>
+                  <div style={{ width:36, height:36, borderRadius:12,
+                    background: color + '18',
+                    display:'flex', alignItems:'center', justifyContent:'center' }}>
+                    <Icon size={18} style={{ color }} />
+                  </div>
+                  <span className="text-[11px] font-semibold" style={{ color: theme.textMuted }}>
+                    {label}
+                  </span>
+                </motion.button>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Contenido */}
       <div className="px-4">
         <AnimatePresence mode="wait">
           <motion.div key={tab}
-            initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
+            initial={{ opacity:0, y:8 }} animate={{ opacity:1, y:0 }}
+            exit={{ opacity:0, y:-8 }} transition={{ duration:0.2 }}>
             {tab === 'diario'   && (
               <DiarioTab
+                showAddModal={showAddModal}
+                onCloseAddModal={() => setShowAddModal(false)}
                 onAnalyze={() => setTab('analizar')}
                 onScan={() => setTab('escanear')}
-                onRecipes={() => setTab('recetas')}
-                onSummaryChange={setNutritionSummary}  // ← nuevo prop
+                onSummaryChange={setNutritionSummary}
               />
             )}
             {tab === 'analizar' && <AnalizarTab onSaved={() => setTab('diario')} />}
@@ -105,8 +133,9 @@ export default function Nutrition() {
         </AnimatePresence>
       </div>
 
+      {/* Tendencias */}
       {tab === 'diario' && (
-        <div className="mt-4">
+        <div className="px-4 mt-4">
           <button onClick={() => setShowTendencias(s => !s)}
             className="w-full flex items-center justify-between px-4 py-3 rounded-2xl text-sm font-semibold"
             style={{ background: theme.surface2, color: theme.textMuted }}>
@@ -114,7 +143,7 @@ export default function Nutrition() {
             <span>{showTendencias ? '▲' : '▼'}</span>
           </button>
           {showTendencias && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-3">
+            <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }} className="mt-3">
               <TendenciasTab />
             </motion.div>
           )}

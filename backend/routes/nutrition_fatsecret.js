@@ -46,6 +46,7 @@ async function fsApi(params) {
 router.get('/search', async (req, res) => {
   try {
     const { q, page = 0, max = 20 } = req.query
+    console.log('[FatSecret] search:', q)
     if (!q?.trim()) return res.status(400).json({ error: 'q requerido' })
 
     const data = await fsApi({
@@ -66,6 +67,7 @@ router.get('/search', async (req, res) => {
       ...parseMacros(f.food_description),
     }))
 
+    console.log('[FatSecret] resultados:', list.length)
     res.json({
       foods:       list,
       total:       parseInt(data.foods?.total_results || 0),
@@ -73,7 +75,7 @@ router.get('/search', async (req, res) => {
       hasMore:     (parseInt(page) + 1) * 20 < parseInt(data.foods?.total_results || 0),
     })
   } catch (err) {
-    console.error('[FatSecret search]', err.message)
+    console.error('[FatSecret search] ERROR:', err.message, err.stack?.split('\n')[1])
     res.status(500).json({ error: err.message })
   }
 })

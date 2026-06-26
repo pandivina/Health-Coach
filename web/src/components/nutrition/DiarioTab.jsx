@@ -11,6 +11,7 @@ import { searchLocal, FOOD_CATEGORIES, getFoodsByCategory, SPANISH_FOODS } from 
 import CalorieTrendWidget from './CalorieTrendWidget'
 import FrequentMeals from './FrequentMeals'
 import { computeMealQuality, REACTION_CONFIG } from '../../lib/foodQuality'
+import FoodSearch from '../nutrition/FoodSearch'
 
 const MEAL_TYPES  = ['breakfast', 'lunch', 'dinner', 'snack']
 const MEAL_LABELS = { breakfast: '🌅 Desayuno', lunch: '☀️ Comida', dinner: '🌙 Cena', snack: '🍎 Snack' }
@@ -890,6 +891,10 @@ export default function DiarioTab({ onAnalyze, onScan, onRecipes, onSummaryChang
           </motion.div>
         )}
       </AnimatePresence>
+      <FoodSearch
+  onSelect={(food) => addMeal('lunch', food)}
+  onClose={() => setShowSearch(false)}
+/>
     </>
   )
 }

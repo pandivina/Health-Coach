@@ -84,16 +84,16 @@ const SANCTUARY_CONFIG = {
 // Frames de Pandi según mood/acción
 const PANDI_FRAMES = {
   idle:      ['/panda/panda_base.png'],
-  happy:     ['/panda/panda_base.png'],
-  thinking:  ['/panda/panda_sitting.png'],
-  meditate:  ['/panda/panda_sitting.png'],
+  happy:     ['/panda/panda_happy.png'],
+  thinking:  ['/panda/panda_thinking.png'],
+  meditate:  ['/panda/panda_meditating.png'],
   celebrate: ['/panda/panda_base.png'],
   breathing: ['/panda/panda_sitting.png'],
   sitting:   ['/panda/panda_sitting.png'],
   walkR:     ['/panda/panda_walk_r.png'],
   walkL:     ['/panda/panda_lateral_izq.png'],
   back:      ['/panda/panda_back.png'],
-  blink:     '/panda/panda_base.png',
+  blink:     '/panda/panda_blink.png',
 }
 
 // ─── CONFIGURACIÓN POR TAB — fondo + pose de Pandi ───────────────────────────

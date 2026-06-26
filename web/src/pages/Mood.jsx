@@ -1114,11 +1114,22 @@ export default function Mood() {
   const TAB_BAR_FONT_SIZE = 10   // px tamaño del label
   // ─────────────────────────────────────────────────────────────────────────
 
+  // ─── AJUSTES DE PANDI — edita estos valores ───────────────────────────────
+  // PANDI_SIZE:   % del ancho de pantalla. Rango recomendado: 30-70
+  //               42 = tamaño normal · 55 = grande · 30 = pequeña
+  // PANDI_BOTTOM: % desde el fondo. Rango recomendado: 10-35
+  //               22 = posición normal · 30 = más arriba · 12 = más abajo
+  // PANDI_MAXW:   límite en px — evita que sea gigante en tablets
+  const PANDI_SIZE   = 42   // ← CAMBIA ESTE NÚMERO para hacer Pandi más grande/pequeña
+  const PANDI_BOTTOM = 22   // ← CAMBIA ESTE NÚMERO para subir/bajar a Pandi
+  const PANDI_MAXW   = 840  // px — límite absoluto de ancho
+  // ─────────────────────────────────────────────────────────────────────────
+
   const [sheetOpen,     setSheetOpen]     = useState(false)
   const [pandiEditMode, setPandiEditMode] = useState(false)
   const [pandiConfig,   setPandiConfig]   = useState(() => {
-    try { return JSON.parse(localStorage.getItem('pandi_mood_cfg') || 'null') || { bottom:22, size:42 } }
-    catch { return { bottom:22, size:42 } }
+    try { return JSON.parse(localStorage.getItem('pandi_mood_cfg') || 'null') || { bottom: PANDI_BOTTOM, size: PANDI_SIZE } }
+    catch { return { bottom: PANDI_BOTTOM, size: PANDI_SIZE } }
   })
   const [showPulse,     setShowPulse]     = useState(false)
   const [showSunJourney, setShowSunJourney] = useState(false)
@@ -1228,38 +1239,7 @@ export default function Mood() {
         </div>
       </div>
 
-      {/* ── PANDI EN EL SANTUARIO — anclada a la plataforma ── */}
-      <div style={{ position:'absolute', inset:0, zIndex:5, pointerEvents:'none' }}>
-        <div
-          onPointerDown={() => { window._pandiPressTimer = setTimeout(() => setPandiEditMode(true), 1500) }}
-          onPointerUp={() => clearTimeout(window._pandiPressTimer)}
-          onPointerLeave={() => clearTimeout(window._pandiPressTimer)}
-          style={{
-            position:'absolute',
-            bottom: pandiConfig.bottom + '%',
-            left:'50%',
-            transform:'translateX(-50%)',
-            width: pandiConfig.size + '%',
-            maxWidth: 840,
-            pointerEvents:'all',
-            cursor: pandiEditMode ? 'move' : 'pointer',
-          }}>
-          <AnimatePresence>
-            {activeTab !== 'checkin' && activeTab !== 'journal' && (
-              <motion.div
-                initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
-                transition={{ duration:0.4 }}
-                style={{ width:'100%' }}>
-                <SanctuaryPandi mood={currentMood} pandiMode={pandiMode} cfg={sanctuaryCfg} activeTab={activeTab} recoveryLight={recoveryLight} />
-              </motion.div>
-            )}
-          </AnimatePresence>
-          {pandiEditMode && (
-            <div style={{ position:'absolute', inset:-4, borderRadius:16,
-              border:'2px dashed #B8924A', pointerEvents:'none' }} />
-          )}
-        </div>
-      </div>
+
 
 
       {/* ── RESPIRAR / MEDITAR — opciones arriba, Pandi visible abajo ── */}

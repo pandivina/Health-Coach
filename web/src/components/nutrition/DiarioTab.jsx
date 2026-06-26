@@ -27,7 +27,7 @@ async function searchOFF(query) {
   try {
     const headers = await authHeaders()
     const res = await fetch(
-      `${import.meta.env.VITE_API_URL}/api/nutrition/search?q=${encodeURIComponent(query)}&page=0&max=50`,
+      `${import.meta.env.VITE_API_URL}/api/fs/search?q=${encodeURIComponent(query)}&page=0&max=50`,
       { headers, signal: AbortSignal.timeout(6000) }
     )
     if (!res.ok) return []
@@ -53,7 +53,7 @@ async function searchOFFByBarcode(barcode) {
   try {
     const headers = await authHeaders()
     const res = await fetch(
-      `${import.meta.env.VITE_API_URL}/api/nutrition/barcode/${barcode}`,
+      `${import.meta.env.VITE_API_URL}/api/fs/barcode/${barcode}`,
       { headers }
     )
     if (!res.ok) return null

@@ -828,7 +828,7 @@ export default function DiarioTab({ showAddModal, onCloseAddModal, onAnalyze, on
         <CalorieTrendWidget userId={user?.id} theme={theme} calorieGoal={goals.calories} />
 
         {/* Hero calorías */}
-        <motion.div initial={{ opacity:0, y:-10 }} animate={{ opacity:1, y:0 }}
+        <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }}
           className="rounded-3xl p-5"
           style={{ background: theme.surface, border:`1px solid ${theme.border}` }}>
           <div className="flex items-start justify-between mb-4">
@@ -939,9 +939,9 @@ export default function DiarioTab({ showAddModal, onCloseAddModal, onAnalyze, on
       <AnimatePresence>
         {lastReaction && (
           <motion.div
-            initial={{ opacity:0, y:20, x:'-50%' }}
-            animate={{ opacity:1, y:0,  x:'-50%' }}
-            exit={{   opacity:0, y:20 }}
+            initial={{ opacity:0 }}
+            animate={{ opacity:1 }}
+            exit={{   opacity:0 }}
             style={{ position:'fixed', bottom:100, left:'50%', zIndex:60,
               background:'white', borderRadius:18, padding:'12px 18px',
               boxShadow:'0 8px 24px rgba(0,0,0,0.15)',

@@ -190,7 +190,7 @@ export default function FoodSearch({ onSelect, onClose, placeholder }) {
         <AnimatePresence>
           {results.map((food, i) => (
             <motion.div key={food.id || i}
-              initial={{ opacity:0, y:4 }} animate={{ opacity:1, y:0 }}
+              initial={{ opacity:0 }} animate={{ opacity:1 }}
               transition={{ delay: i * 0.03 }}>
               <FoodResult food={food} onSelect={handleSelect} theme={theme} />
             </motion.div>

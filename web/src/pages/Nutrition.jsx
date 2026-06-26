@@ -87,8 +87,8 @@ export default function Nutrition() {
       <AnimatePresence>
         {tab === 'diario' && (
           <motion.div
-            initial={{ opacity:0, y:-8 }} animate={{ opacity:1, y:0 }}
-            exit={{ opacity:0, y:-8 }} transition={{ duration:0.15 }}
+            initial={{ opacity:0 }} animate={{ opacity:1 }}
+            exit={{ opacity:0 }} transition={{ duration:0.15 }}
             className="px-4 mb-4">
             <div className="grid grid-cols-3 gap-2" data-tour="nutrition-add">
               {ACTIONS.map(({ icon: Icon, label, action, color }) => (
@@ -114,8 +114,8 @@ export default function Nutrition() {
       <div className="px-4">
         <AnimatePresence mode="wait">
           <motion.div key={tab}
-            initial={{ opacity:0, y:8 }} animate={{ opacity:1, y:0 }}
-            exit={{ opacity:0, y:-8 }} transition={{ duration:0.2 }}>
+            initial={{ opacity:0 }} animate={{ opacity:1 }}
+            exit={{ opacity:0 }} transition={{ duration:0.2 }}>
             {tab === 'diario'   && (
               <DiarioTab
                 showAddModal={showAddModal}

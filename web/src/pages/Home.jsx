@@ -200,7 +200,7 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name, userId }) {
       maxHeight: isMobile ? 550 : 500,
       overflow:'hidden',
       backgroundImage:`url(${bgImage})`,
-      backgroundSize:'cover', backgroundPosition:'center bottom', backgroundRepeat:'no-repeat',
+      backgroundSize:'cover', backgroundPosition:'center top', backgroundRepeat:'no-repeat',
       backgroundColor: isNight ? '#1a2138'
                       : recoveryLight==='GREEN' ? '#e8f5ee'
                       : recoveryLight==='YELLOW' ? '#fef3c7'

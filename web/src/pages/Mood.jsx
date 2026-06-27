@@ -84,16 +84,16 @@ const SANCTUARY_CONFIG = {
 // Frames de Pandi según mood/acción
 const PANDI_FRAMES = {
   idle:      ['/panda/panda_base.png'],
-  happy:     ['/panda/panda_base.png'],
-  thinking:  ['/panda/panda_sitting.png'],
-  meditate:  ['/panda/panda_sitting.png'],
+  happy:     ['/panda/panda_happy.png'],
+  thinking:  ['/panda/panda_thinking.png'],
+  meditate:  ['/panda/panda_meditate.png'],
   celebrate: ['/panda/panda_base.png'],
   breathing: ['/panda/panda_breathing.png'],
   sitting:   ['/panda/panda_sitting.png'],
   walkR:     ['/panda/panda_walk_r.png'],
-  walkL:     ['/panda/panda_lateral_izq.png'],
+  walkL:     ['/panda/panda_walk_1.png'],
   back:      ['/panda/panda_back.png'],
-  blink:     '/panda/panda_base.png',
+  blink:     '/panda/panda_blink.png',
 }
 
 // ─── CONFIGURACIÓN POR TAB — fondo + pose de Pandi ───────────────────────────
@@ -101,13 +101,13 @@ const TAB_CONFIG = {
   meditation: {
     bg:          '/sanctuary/bg_forest.png',
     bgFallback:  '#d4ead4',
-    frames:      ['/panda/meditate_1.png'],
+    frames:      ['/panda/panda_meditate.png'],
     pandiMode:   'meditate',
   },
   breathing:  {
     bg:          '/sanctuary/bg_breathing.png',
     bgFallback:  '#d4eaf7',
-    frames:      ['/panda/panda_lateral_izq.png'],
+    frames:      ['/panda/panda_breathing.png'],
     pandiMode:   'breathing',
   },
   checkin: {
@@ -1120,7 +1120,7 @@ export default function Mood() {
   // PANDI_BOTTOM: % desde el fondo. Rango recomendado: 10-35
   //               22 = posición normal · 30 = más arriba · 12 = más abajo
   // PANDI_MAXW:   límite en px — evita que sea gigante en tablets
-  const PANDI_SIZE   = 42   // ← CAMBIA ESTE NÚMERO para hacer Pandi más grande/pequeña
+  const PANDI_SIZE   = 55   // ← CAMBIA ESTE NÚMERO para hacer Pandi más grande/pequeña
   const PANDI_BOTTOM = 22   // ← CAMBIA ESTE NÚMERO para subir/bajar a Pandi
   const PANDI_MAXW   = 840  // px — límite absoluto de ancho
   // ─────────────────────────────────────────────────────────────────────────

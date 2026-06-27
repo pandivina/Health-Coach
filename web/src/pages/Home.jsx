@@ -30,7 +30,7 @@ const STATE_CONFIG = {
     glow:          'rgba(46,196,182,0.4)',
     dot:           '#2EC4B6',
     msg:           'Hoy tienes energía para todo.',
-    frames:        ['/panda/panda_base.png','/panda/panda_happy.png','/panda/panda_happy.png','/panda/panda_base.png','/panda/panda_happy.png','/panda/panda_base.png'],
+    frames:        ['/panda/panda_sitting.png','/panda/panda_happy.png','/panda/panda_happy.png','/panda/panda_sitting.png','/panda/panda_happy.png','/panda/panda_stay.png'],
     frameDuration: 4500,
   },
   YELLOW: {
@@ -48,7 +48,7 @@ const STATE_CONFIG = {
     glow:          'rgba(255,143,163,0.4)',
     dot:           '#FF8FA3',
     msg:           'Hoy el descanso ES el entrenamiento.',
-    frames:        ['/panda/panda_base.png','/panda/thinking_1.png','/panda/panda_base.png','/panda/thinking_1.png'],
+    frames:        ['/panda/panda_base.png','/panda/panda_sad.png','/panda/panda_sad.png','/panda/thinking_1.png'],
     frameDuration: 3500,
   },
 }

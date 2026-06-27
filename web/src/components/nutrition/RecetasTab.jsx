@@ -224,16 +224,38 @@ export default function RecetasTab() {
       if (data?.goal) setGoal(data.goal)
     } catch {}
 
-    // Intentar cargar desde cache semanal
+    // 1. Intentar desde localStorage (más rápido)
     try {
       const cached = localStorage.getItem(weekKey)
       if (cached) {
-        setPlans(JSON.parse(cached))
-        return
+        const parsed = JSON.parse(cached)
+        if (parsed && parsed.lunes) {
+          setPlans(parsed)
+          return
+        }
       }
     } catch {}
 
-    // Generar nuevos planes
+    // 2. Intentar desde Supabase (persiste entre dispositivos y limpiezas)
+    try {
+      const { data: pref } = await supabase
+        .from('user_preferences')
+        .select('value')
+        .eq('user_id', user.id)
+        .eq('key', weekKey)
+        .maybeSingle()
+      if (pref?.value) {
+        const parsed = JSON.parse(pref.value)
+        if (parsed && parsed.lunes) {
+          setPlans(parsed)
+          // Restaurar en localStorage
+          try { localStorage.setItem(weekKey, pref.value) } catch {}
+          return
+        }
+      }
+    } catch {}
+
+    // 3. Generar nuevos planes
     await generatePlans()
   }
 
@@ -301,8 +323,23 @@ Responde ÚNICAMENTE con este JSON (sin markdown, sin explicaciones):
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const parsed = await res.json()
 
-      // Guardar en cache semanal
-      try { localStorage.setItem(weekKey, JSON.stringify(parsed)) } catch {}
+      const planJson = JSON.stringify(parsed)
+
+      // Guardar en localStorage
+      try { localStorage.setItem(weekKey, planJson) } catch {}
+
+      // Guardar en Supabase (upsert por user_id + key)
+      try {
+        await supabase.from('user_preferences').upsert({
+          user_id:    user.id,
+          key:        weekKey,
+          value:      planJson,
+          updated_at: new Date().toISOString(),
+        }, { onConflict: 'user_id,key' })
+      } catch (e) {
+        console.warn('[RecetasTab] No se pudo guardar en Supabase:', e.message)
+      }
+
       setPlans(parsed)
     } catch (err) {
       console.error('[RecetasTab]', err)

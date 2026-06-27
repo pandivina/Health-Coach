@@ -101,7 +101,7 @@ const TAB_CONFIG = {
   meditation: {
     bg:          '/sanctuary/bg_forest.png',
     bgFallback:  '#d4ead4',
-    frames:      ['/panda/panda_meditate.png'],
+    frames:      ['/panda/panda_meditating.png'],
     pandiMode:   'meditate',
   },
   breathing:  {
@@ -113,7 +113,7 @@ const TAB_CONFIG = {
   checkin: {
     bg:          '/sanctuary/bg_checkin.png',
     bgFallback:  '#f5efe6',
-    frames:      ['/panda/panda_base.png'],
+    frames:      ['/panda/panda_stay.png'],
     pandiMode:   'idle',
   },
   habits: {

@@ -282,7 +282,7 @@ async function handleFile(file) {
           )}
           <AnimatePresence>
             {result && (
-              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-3">
                 <div className="card" style={{ background: `${theme.success}10`, border: `1px solid ${theme.success}20` }}>
                   <div className="flex items-center gap-2 mb-3">
                     <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ background: `${theme.success}20` }}>

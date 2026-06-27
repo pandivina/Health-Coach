@@ -28,6 +28,7 @@ const fatSecretRoutes       = require('./routes/nutrition_fatsecret')
 const recipesWeeklyRoutes   = require('./routes/recipes_weekly')
 
 const app  = express();
+app.set('trust proxy', 1); // Railway usa reverse proxy — necesario para rate-limit
 const PORT = process.env.PORT || 3001;
 
 // ─── SEGURIDAD: HELMET — headers HTTP seguros ─────────────────────────────────

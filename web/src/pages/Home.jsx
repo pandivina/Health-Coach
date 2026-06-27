@@ -26,7 +26,7 @@ const TUMMY_EMOJI = { great:'😋', good:'🙂', neutral:'😐', bad:'😕', ter
 const STATE_CONFIG = {
   GREEN: {
     bg:            '/panda/sanctuary_green.png',
-    bgNight:       '/panda/sanctuary_green_night.png',
+    bgNight:       '/panda/bg_night.png',
     glow:          'rgba(46,196,182,0.4)',
     dot:           '#2EC4B6',
     msg:           'Hoy tienes energía para todo.',
@@ -35,7 +35,7 @@ const STATE_CONFIG = {
   },
   YELLOW: {
     bg:            '/panda/sanctuary_yellow.png',
-    bgNight:       '/panda/sanctuary_yellow_night.png',
+    bgNight:       '/panda/bg_night.png',
     glow:          'rgba(245,158,11,0.4)',
     dot:           '#F59E0B',
     msg:           'Ritmo moderado. Ajustando tu plan.',
@@ -44,7 +44,7 @@ const STATE_CONFIG = {
   },
   RED: {
     bg:            '/panda/sanctuary_red.png',
-    bgNight:       '/panda/sanctuary_red_night.png',
+    bgNight:       '/panda/bg_night.png',
     glow:          'rgba(255,143,163,0.4)',
     dot:           '#FF8FA3',
     msg:           'Hoy el descanso ES el entrenamiento.',

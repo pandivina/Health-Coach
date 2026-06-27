@@ -84,12 +84,8 @@ export default function Nutrition() {
       </div>
 
       {/* Acciones rápidas — solo en Diario */}
-      <AnimatePresence>
         {tab === 'diario' && (
-          <motion.div
-            initial={{ opacity:0 }} animate={{ opacity:1 }}
-            exit={{ opacity:0 }} transition={{ duration:0.15 }}
-            className="px-4 mb-4">
+          <div className="px-4 mb-4">
             <div className="grid grid-cols-3 gap-2" data-tour="nutrition-add">
               {ACTIONS.map(({ icon: Icon, label, action, color }) => (
                 <motion.button key={label} whileTap={{ scale:0.95 }} onClick={action}
@@ -113,7 +109,7 @@ export default function Nutrition() {
       {/* Contenido */}
       <div className="px-4">
         <AnimatePresence mode="wait">
-          <motion.div key={tab}
+          <motion.div key={`tab-${tab}`}
             initial={{ opacity:0 }} animate={{ opacity:1 }}
             exit={{ opacity:0 }} transition={{ duration:0.2 }}>
             {tab === 'diario'   && (

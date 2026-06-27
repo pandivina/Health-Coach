@@ -86,7 +86,7 @@ const PANDI_FRAMES = {
   idle:      ['/panda/panda_base.png'],
   happy:     ['/panda/panda_happy.png'],
   thinking:  ['/panda/panda_thinking.png'],
-  meditate:  ['/panda/panda_meditate.png'],
+  meditate:  ['/panda/panda_meditatibg.png'],
   celebrate: ['/panda/panda_base.png'],
   breathing: ['/panda/panda_breathing.png'],
   sitting:   ['/panda/panda_sitting.png'],

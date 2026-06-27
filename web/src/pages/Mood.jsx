@@ -84,16 +84,16 @@ const SANCTUARY_CONFIG = {
 // Frames de Pandi según mood/acción
 const PANDI_FRAMES = {
   idle:      ['/panda/panda_base.png'],
-  happy:     ['/panda/panda_happy.png'],
-  thinking:  ['/panda/panda_thinking.png'],
-  meditate:  ['/panda/panda_meditating.png'],
+  happy:     ['/panda/panda_base.png'],
+  thinking:  ['/panda/panda_sitting.png'],
+  meditate:  ['/panda/panda_sitting.png'],
   celebrate: ['/panda/panda_base.png'],
   breathing: ['/panda/panda_sitting.png'],
   sitting:   ['/panda/panda_sitting.png'],
   walkR:     ['/panda/panda_walk_r.png'],
   walkL:     ['/panda/panda_lateral_izq.png'],
   back:      ['/panda/panda_back.png'],
-  blink:     '/panda/panda_blink.png',
+  blink:     '/panda/panda_base.png',
 }
 
 // ─── CONFIGURACIÓN POR TAB — fondo + pose de Pandi ───────────────────────────
@@ -417,7 +417,7 @@ function CheckinTab({ theme, userId, addXP, onTabChange, onMoodSaved, profile })
       {/* Respuesta Pandi */}
       <AnimatePresence>
         {mood && (finalMessage || loadingCoach) && (
-          <motion.div key={mood} initial={{ opacity:0, y:10 }} animate={{ opacity:1, y:0 }}
+          <motion.div key={mood} initial={{ opacity:0 }} animate={{ opacity:1 }}
             exit={{ opacity:0 }}
             style={{ background:'rgba(255,255,255,0.45)', backdropFilter:'blur(16px)',
               borderRadius:20, padding:'14px',
@@ -551,7 +551,7 @@ function BreathingTab({ theme }) {
       {running && (
         <AnimatePresence mode="wait">
           <motion.div key={phase}
-            initial={{ opacity:0, y:-6 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0 }}
+            initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
             style={{ textAlign:'center' }}>
             <p style={{ fontSize:20, fontWeight:900, color: phaseInfo.color, margin:0 }}>
               {phaseInfo.label}
@@ -593,7 +593,7 @@ function BreathingTab({ theme }) {
       <AnimatePresence>
         {tech && !running && (
           <motion.button whileTap={{ scale:0.95 }}
-            initial={{ opacity:0, y:8 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0 }}
+            initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
             onClick={start}
             style={{ padding:'12px 36px', borderRadius:24, border:'none', cursor:'pointer',
               fontWeight:800, fontSize:14, color:'white',
@@ -740,7 +740,7 @@ function MeditationTab({ theme, profile, userId }) {
           </p>
 
           {done && streakInfo && (
-            <motion.div initial={{ opacity:0, y:6 }} animate={{ opacity:1, y:0 }}
+            <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }}
               style={{ textAlign:'center' }}>
               <p style={{ fontSize:13, color:'#FCD34D', fontWeight:700, margin:0 }}>
                 🔥 {streakInfo.streak} día{streakInfo.streak > 1 ? 's' : ''} seguidos meditando
@@ -1120,8 +1120,8 @@ export default function Mood() {
   // PANDI_BOTTOM: % desde el fondo. Rango recomendado: 10-35
   //               22 = posición normal · 30 = más arriba · 12 = más abajo
   // PANDI_MAXW:   límite en px — evita que sea gigante en tablets
-  const PANDI_SIZE   = 110   // ← CAMBIA ESTE NÚMERO para hacer Pandi más grande/pequeña
-  const PANDI_BOTTOM = 10   // ← CAMBIA ESTE NÚMERO para subir/bajar a Pandi
+  const PANDI_SIZE   = 42   // ← CAMBIA ESTE NÚMERO para hacer Pandi más grande/pequeña
+  const PANDI_BOTTOM = 22   // ← CAMBIA ESTE NÚMERO para subir/bajar a Pandi
   const PANDI_MAXW   = 840  // px — límite absoluto de ancho
   // ─────────────────────────────────────────────────────────────────────────
 
@@ -1263,8 +1263,8 @@ export default function Mood() {
       {/* ── MOOD — emojis justo encima del tab bar ── */}
       <AnimatePresence>
         {activeTab === 'checkin' && (
-          <motion.div initial={{ opacity:0, y:20 }} animate={{ opacity:1, y:0 }}
-            exit={{ opacity:0, y:20 }} transition={{ duration:0.3 }}
+          <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }}
+            exit={{ opacity:0 }} transition={{ duration:0.3 }}
             style={{ position:'fixed', bottom:`calc(env(safe-area-inset-bottom,0px) + ${TAB_BAR_BOTTOM + 70}px)`,
               left:0, right:0, zIndex:25, padding:'0 16px', pointerEvents:'all' }}>
             <CheckinTab theme={theme} userId={user?.id} addXP={addXP} profile={profile}
@@ -1369,7 +1369,7 @@ export default function Mood() {
       <div style={{ position:'fixed', bottom:`calc(env(safe-area-inset-bottom,0px) + ${TAB_BAR_BOTTOM}px)`,
         left:0, right:0, zIndex:30, display:'flex', justifyContent:'center',
         pointerEvents:'none' }}>
-        <motion.div initial={{ y:20, opacity:0 }} animate={{ y:0, opacity:1 }}
+        <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }}
           transition={{ delay:0.2, type:'spring', damping:22 }}
           style={{ display:'flex', gap:0, background:'rgba(255,255,255,0.65)',
             backdropFilter:'blur(20px)', borderRadius:28,

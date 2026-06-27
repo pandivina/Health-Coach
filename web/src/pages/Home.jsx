@@ -25,7 +25,7 @@ const TUMMY_EMOJI = { great:'😋', good:'🙂', neutral:'😐', bad:'😕', ter
 
 const STATE_CONFIG = {
   GREEN: {
-    bg:            '/panda/sanctuary_green.png',
+    bg:            '/panda/bg_day.png',
     bgNight:       '/panda/bg_night.png',
     glow:          'rgba(46,196,182,0.4)',
     dot:           '#2EC4B6',
@@ -34,7 +34,7 @@ const STATE_CONFIG = {
     frameDuration: 4500,
   },
   YELLOW: {
-    bg:            '/panda/sanctuary_yellow.png',
+    bg:            '/panda/bg_day.png',
     bgNight:       '/panda/bg_night.png',
     glow:          'rgba(245,158,11,0.4)',
     dot:           '#F59E0B',
@@ -43,7 +43,7 @@ const STATE_CONFIG = {
     frameDuration: 3000,
   },
   RED: {
-    bg:            '/panda/sanctuary_red.png',
+    bg:            '/panda/bg_day.png',
     bgNight:       '/panda/bg_night.png',
     glow:          'rgba(255,143,163,0.4)',
     dot:           '#FF8FA3',

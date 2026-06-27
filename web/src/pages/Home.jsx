@@ -114,21 +114,6 @@ function PandiRedAlert({ name, onClose, onAction }) {
             ¿empezamos con algo sencillo?
           </p>
         </div>
-
-        <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
-          <motion.button whileTap={{ scale:0.97 }} onClick={onAction}
-            style={{ padding:'14px', borderRadius:16, border:'none', cursor:'pointer',
-              background:'linear-gradient(135deg,#2EC4B6,#FF8FA3)',
-              color:'white', fontSize:15, fontWeight:800 }}>
-            🌿 Ir a Bienestar
-          </motion.button>
-          <button onClick={onClose}
-            style={{ padding:'12px', borderRadius:16, border:'none', cursor:'pointer',
-              background:'rgba(0,0,0,0.06)', color:'#6B7280',
-              fontSize:14, fontWeight:600 }}>
-            Ahora no
-          </button>
-        </div>
       </motion.div>
     </motion.div>
   )

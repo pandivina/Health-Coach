@@ -1,176 +1,135 @@
 const express = require('express')
 const router  = express.Router()
+const crypto  = require('crypto')
 
-// ─── TOKEN CACHE ──────────────────────────────────────────────────────────────
-let _token    = null
-let _tokenExp = 0
-
-async function getToken() {
-  if (_token && Date.now() < _tokenExp) return _token
-
-  const creds  = Buffer.from(
-    `${process.env.FATSECRET_CLIENT_ID}:${process.env.FATSECRET_CLIENT_SECRET}`
-  ).toString('base64')
-
-  const res = await fetch('https://oauth.fatsecret.com/connect/token', {
-    method:  'POST',
-    headers: {
-      Authorization:  `Basic ${creds}`,
-      'Content-Type': 'application/x-www-form-urlencoded',
-    },
-    body: 'grant_type=client_credentials&scope=basic',
-  })
-
-  if (!res.ok) throw new Error(`FatSecret token error: ${res.status}`)
-  const data = await res.json()
-
-  _token    = data.access_token
-  _tokenExp = Date.now() + (data.expires_in - 60) * 1000
-  return _token
+// ─── HELPER OAUTH 1.0 ─────────────────────────────────────────────────────────
+// FatSecret OAuth 1.0 no requiere whitelist de IPs — ideal para Railway
+function oauthSign(method, url, params, secret) {
+  const encoded = Object.keys(params).sort().map(k =>
+    `${encodeURIComponent(k)}=${encodeURIComponent(params[k])}`
+  ).join('&')
+  const base    = `${method}&${encodeURIComponent(url)}&${encodeURIComponent(encoded)}`
+  const key     = `${encodeURIComponent(secret)}&`
+  return crypto.createHmac('sha1', key).update(base).digest('base64')
 }
 
-async function fsApi(params) {
-  const token = await getToken()
-  const url   = new URL('https://platform.fatsecret.com/rest/server.api')
-  Object.entries({ ...params, format: 'json' }).forEach(([k, v]) =>
-    url.searchParams.set(k, v)
-  )
-  const res = await fetch(url.toString(), {
-    headers: { Authorization: `Bearer ${token}` },
-  })
-  if (!res.ok) throw new Error(`FatSecret API error: ${res.status}`)
+async function fsCall(method, extraParams = {}) {
+  const clientId     = process.env.FATSECRET_CLIENT_ID
+  const clientSecret = process.env.FATSECRET_CLIENT_SECRET
+
+  if (!clientId || !clientSecret) {
+    throw new Error('FatSecret credentials no configuradas en Railway')
+  }
+
+  const url    = 'https://platform.fatsecret.com/rest/server.api'
+  const nonce  = crypto.randomBytes(8).toString('hex')
+  const ts     = Math.floor(Date.now() / 1000).toString()
+
+  const params = {
+    method,
+    format:                  'json',
+    oauth_consumer_key:      clientId,
+    oauth_nonce:             nonce,
+    oauth_signature_method:  'HMAC-SHA1',
+    oauth_timestamp:         ts,
+    oauth_version:           '1.0',
+    ...extraParams,
+  }
+
+  params.oauth_signature = oauthSign('GET', url, params, clientSecret)
+
+  const qs  = Object.keys(params).sort().map(k =>
+    `${encodeURIComponent(k)}=${encodeURIComponent(params[k])}`
+  ).join('&')
+
+  const res  = await fetch(`${url}?${qs}`)
+  if (!res.ok) {
+    const text = await res.text()
+    throw new Error(`FatSecret error ${res.status}: ${text.slice(0,200)}`)
+  }
   return res.json()
 }
 
-// ─── GET /api/nutrition/search?q=pollo&page=0 ─────────────────────────────────
+// ─── GET /api/fs/search?q=pollo&page=0&max=20 ────────────────────────────────
 router.get('/search', async (req, res) => {
   try {
     const { q, page = 0, max = 20 } = req.query
-    console.log('[FatSecret] search:', q)
     if (!q?.trim()) return res.status(400).json({ error: 'q requerido' })
 
-    const data = await fsApi({
-      method:              'foods.search',
-      search_expression:   q.trim(),
-      page_number:         page,
-      max_results:         Math.min(parseInt(max) || 20, 50),
+    console.log('[FatSecret OAuth1] search:', q)
+
+    const data  = await fsCall('foods.search', {
+      search_expression: q.trim(),
+      page_number:       String(page),
+      max_results:       String(Math.min(parseInt(max) || 20, 50)),
     })
 
     const foods = data.foods?.food || []
     const list  = (Array.isArray(foods) ? foods : [foods]).map(f => ({
-      id:          f.food_id,
-      name:        f.food_name,
-      brand:       f.brand_name || null,
-      type:        f.food_type,
-      description: f.food_description,
-      // Parsear macros de la descripción (formato FatSecret)
+      id:       f.food_id,
+      name:     f.food_name,
+      brand:    f.brand_name || null,
+      type:     f.food_type,
       ...parseMacros(f.food_description),
     }))
 
-    console.log('[FatSecret] resultados:', list.length)
-    res.json({
-      foods:       list,
-      total:       parseInt(data.foods?.total_results || 0),
-      page:        parseInt(page),
-      hasMore:     (parseInt(page) + 1) * 20 < parseInt(data.foods?.total_results || 0),
-    })
+    console.log('[FatSecret OAuth1] resultados:', list.length)
+    res.json({ foods: list, total: parseInt(data.foods?.total_results || 0), page: parseInt(page) })
   } catch (err) {
-    console.error('[FatSecret search] ERROR:', err.message, err.stack?.split('\n')[1])
+    console.error('[FatSecret search] ERROR:', err.message)
     res.status(500).json({ error: err.message })
   }
 })
 
-// ─── GET /api/nutrition/food/:id ──────────────────────────────────────────────
-router.get('/food/:id', async (req, res) => {
-  try {
-    const data = await fsApi({ method: 'food.get.v4', food_id: req.params.id })
-    const food = data.food
-    if (!food) return res.status(404).json({ error: 'Alimento no encontrado' })
-
-    // Extraer serving por defecto (100g o primera)
-    const servings = food.servings?.serving
-    const list     = Array.isArray(servings) ? servings : [servings].filter(Boolean)
-    const serving  = list.find(s => s.serving_description?.includes('100g')) || list[0]
-
-    res.json({
-      id:       food.food_id,
-      name:     food.food_name,
-      brand:    food.brand_name || null,
-      servings: list.map(s => ({
-        id:          s.serving_id,
-        description: s.serving_description,
-        grams:       parseFloat(s.metric_serving_amount || 100),
-        calories:    parseFloat(s.calories || 0),
-        protein:     parseFloat(s.protein || 0),
-        carbs:       parseFloat(s.carbohydrate || 0),
-        fat:         parseFloat(s.fat || 0),
-        fiber:       parseFloat(s.fiber || 0),
-        sugar:       parseFloat(s.sugar || 0),
-        sodium:      parseFloat(s.sodium || 0),
-      })),
-      default: serving ? {
-        calories: parseFloat(serving.calories || 0),
-        protein:  parseFloat(serving.protein || 0),
-        carbs:    parseFloat(serving.carbohydrate || 0),
-        fat:      parseFloat(serving.fat || 0),
-      } : null,
-    })
-  } catch (err) {
-    res.status(500).json({ error: err.message })
-  }
-})
-
-// ─── GET /api/nutrition/barcode/:code ─────────────────────────────────────────
+// ─── GET /api/fs/barcode/:code ───────────────────────────────────────────────
 router.get('/barcode/:code', async (req, res) => {
   try {
-    // FatSecret primero
+    // Intentar FatSecret primero
     try {
-      const data = await fsApi({ method: 'food.find_id_for_barcode', barcode: req.params.code })
+      const data = await fsCall('food.find_id_for_barcode', { barcode: req.params.code })
       if (data.food_id?.value) {
-        const food = await fsApi({ method: 'food.get.v4', food_id: data.food_id.value })
+        const food = await fsCall('food.get.v4', { food_id: data.food_id.value })
         const f    = food.food
-        const s    = food.food?.servings?.serving
-        const srv  = Array.isArray(s) ? s[0] : s
+        const s    = Array.isArray(f?.servings?.serving) ? f.servings.serving[0] : f?.servings?.serving
         return res.json({
           source:   'fatsecret',
           id:       f?.food_id,
           name:     f?.food_name,
           brand:    f?.brand_name || null,
-          calories: parseFloat(srv?.calories || 0),
-          protein:  parseFloat(srv?.protein || 0),
-          carbs:    parseFloat(srv?.carbohydrate || 0),
-          fat:      parseFloat(srv?.fat || 0),
+          calories: parseFloat(s?.calories || 0),
+          protein:  parseFloat(s?.protein  || 0),
+          carbs:    parseFloat(s?.carbohydrate || 0),
+          fat:      parseFloat(s?.fat || 0),
         })
       }
-    } catch {}
+    } catch (e) {
+      console.warn('[FatSecret barcode] fallback a OpenFoodFacts:', e.message)
+    }
 
-    // Fallback: Open Food Facts (sin key, gratis)
+    // Fallback Open Food Facts
     const off = await fetch(
       `https://world.openfoodfacts.org/api/v0/product/${req.params.code}.json`
     ).then(r => r.json())
 
     if (off.status === 1 && off.product) {
-      const p = off.product
-      const n = p.nutriments || {}
+      const p = off.product, n = p.nutriments || {}
       return res.json({
         source:   'openfoodfacts',
         id:       req.params.code,
-        name:     p.product_name || p.product_name_es || 'Desconocido',
+        name:     p.product_name || 'Desconocido',
         brand:    p.brands || null,
-        calories: parseFloat(n['energy-kcal_100g'] || n['energy-kcal'] || 0),
-        protein:  parseFloat(n['proteins_100g'] || 0),
+        calories: parseFloat(n['energy-kcal_100g'] || 0),
+        protein:  parseFloat(n['proteins_100g']    || 0),
         carbs:    parseFloat(n['carbohydrates_100g'] || 0),
         fat:      parseFloat(n['fat_100g'] || 0),
       })
     }
-
     res.status(404).json({ error: 'Producto no encontrado' })
   } catch (err) {
     res.status(500).json({ error: err.message })
   }
 })
 
-// ─── HELPER: parsear macros del string de descripción FatSecret ───────────────
 function parseMacros(desc) {
   if (!desc) return {}
   const cal  = desc.match(/Calories:\s*([\d.]+)/i)

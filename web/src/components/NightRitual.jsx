@@ -116,7 +116,7 @@ export default function NightRitual({ onClose }) {
             <div style={{ display:'flex', justifyContent:'center', gap:10, marginBottom:20 }}>
               {[1,2,3,4,5].map(v => (
                 <button key={v} onClick={() => setMentalState(v)}
-                  style={{ width:52, height:52, borderRadius:16, border:'none', cursor:'pointer',
+                  style={{ width:52, height:52, borderRadius:16, cursor:'pointer',
                     fontSize:22, background: mentalState === v ? `${theme.primary}20` : '#F3F4F6',
                     border: `2px solid ${mentalState === v ? theme.primary : 'transparent'}` }}>
                   {['😞','😕','😐','🙂','😄'][v-1]}

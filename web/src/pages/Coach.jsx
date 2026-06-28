@@ -7,6 +7,7 @@ import { useStore } from '../store/useStore'
 import { useTheme } from '../contexts/ThemeProvider'
 import { supabase } from '../lib/supabase'
 import { MedicalDisclaimerModal } from '../components/legal/MedicalDisclaimer'
+import { buildCoachMemory } from '../lib/coachMemory'
 
 // useCoachAwareness y useModuleAwareness eliminados temporalmente
 // para aislar el crash de React #300
@@ -190,9 +191,11 @@ export default function Coach() {
     setMessages(newMessages)
     setLoading(true)
     try {
+      const sanctuaryContext = await buildCoachMemory(user?.id)
       const { reply } = await api.coach.chat(newMessages.slice(-10), {
-        clientTime: new Date().toISOString(),
-        timezone:   Intl.DateTimeFormat().resolvedOptions().timeZone,
+        clientTime:       new Date().toISOString(),
+        timezone:         Intl.DateTimeFormat().resolvedOptions().timeZone,
+        sanctuaryContext,
       })
       setMessages(m => [...m, { role:'assistant', content:reply }])
       useStore.getState().addBondXP?.(5)

@@ -712,6 +712,7 @@ export default function DiarioTab({ showAddModal, onCloseAddModal, onAnalyze, on
     calories:2000, protein_g:150, carbs_g:200, fat_g:65
   })
   const [modal,        setModal]        = useState(null)
+  const [pandiTip,     setPandiTip]     = useState('')
   const [lastReaction, setLastReaction] = useState(null)
   const today = new Date().toISOString().split('T')[0]
 
@@ -742,6 +743,26 @@ export default function DiarioTab({ showAddModal, onCloseAddModal, onAnalyze, on
   }
 
   useEffect(() => { load() }, [user])
+
+  useEffect(() => {
+    const key = `pandi_tip_${new Date().toISOString().slice(0,13)}`
+    const tips = [
+      'Comer despacio aumenta la saciedad y reduce la ingesta hasta un 20%. 🐢',
+      'Un vaso de agua antes de comer ayuda a controlar el apetito. 💧',
+      'La proteína es el macronutriente más saciante. Priorízala en cada comida. 💪',
+      'Los carbos por la mañana dan energía; por la noche el cuerpo los usa menos. ⚡',
+      'Masticar bien cada bocado mejora la digestión y la absorción de nutrientes. 🌿',
+      'El desayuno proteico reduce el picoteo por la tarde hasta un 30%. 🥚',
+      'Añade verduras a cualquier plato para aumentar el volumen sin calorías extra. 🥗',
+    ]
+    try {
+      const cached = localStorage.getItem(key)
+      if (cached) { setPandiTip(cached); return }
+    } catch {}
+    const tip = tips[Math.floor(Math.random() * tips.length)]
+    setPandiTip(tip)
+    try { localStorage.setItem(key, tip) } catch {}
+  }, [])
 
   // Abrir modal Añadir desde Nutrition.jsx
   useEffect(() => {
@@ -831,7 +852,6 @@ export default function DiarioTab({ showAddModal, onCloseAddModal, onAnalyze, on
           userId={user?.id}
           userXP={profile?.xp || 0}
           userLevel={profile?.level || 1}
-          onAddToDiary={load}
         />
 
         <CalorieTrendWidget userId={user?.id} theme={theme} calorieGoal={goals.calories} />

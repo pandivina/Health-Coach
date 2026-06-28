@@ -831,7 +831,7 @@ export default function DiarioTab({ showAddModal, onCloseAddModal, onAnalyze, on
           userId={user?.id}
           userXP={profile?.xp || 0}
           userLevel={profile?.level || 1}
-          onAddToDiary={loadMeals}
+          onAddToDiary={load}
         />
 
         <CalorieTrendWidget userId={user?.id} theme={theme} calorieGoal={goals.calories} />

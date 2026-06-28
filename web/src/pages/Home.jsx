@@ -83,20 +83,6 @@ function useIsMobile() {
   }, [])
   return isMobile
 }
-function Sanctuary({ recoveryLight, profile, theme, greeting, name, userId }) {
-  const cfg      = STATE_CONFIG[recoveryLight] || STATE_CONFIG.GREEN
-  const isMobile = useIsMobile()
-  const isNight  = useNightMode()
-  const navigate = useNavigate()
-
-  // ─── AJUSTES DE PANDI — edita estos valores ───────────────────────────
-  const PANDI_BOTTOM_DAY   = '15%'  // ← posición de día (más % = más arriba)
-  const PANDI_BOTTOM_NIGHT = '10%'  // ← posición de noche (más % = más arriba)
-  const PANDI_WIDTH_MOBILE = '48%'  // ← tamaño en móvil
-  const PANDI_WIDTH_DESK   = '15%'  // ← tamaño en escritorio
-  const PANDI_MAX_WIDTH    = 500    // ← límite px
-  // ──────────────────────────────────────────────────────────────────────
-  
 // ─── ALERTA PANTALLA COMPLETA — SEMÁFORO ROJO ────────────────────────────────
 
 function PandiRedAlert({ name, onClose, onAction }) {
@@ -113,7 +99,6 @@ function PandiRedAlert({ name, onClose, onAction }) {
           background:'linear-gradient(160deg,#fff 0%,#FFF1F4 100%)',
           borderRadius:'28px 28px 0 0', padding:'28px 24px 48px',
           boxShadow:'0 -8px 40px rgba(255,100,130,0.2)' }}>
-
         <div style={{ textAlign:'center', marginBottom:20 }}>
           <img src="/panda/panda_sad.png" alt="Pandi"
             style={{ width:100, height:'auto', margin:'0 auto 12px' }}
@@ -127,6 +112,20 @@ function PandiRedAlert({ name, onClose, onAction }) {
             ¿empezamos con algo sencillo?
           </p>
         </div>
+        <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+          <motion.button whileTap={{ scale:0.97 }} onClick={onAction}
+            style={{ padding:'14px', borderRadius:16, border:'none', cursor:'pointer',
+              background:'linear-gradient(135deg,#2EC4B6,#FF8FA3)',
+              color:'white', fontSize:15, fontWeight:800 }}>
+            🌿 Ir a Bienestar
+          </motion.button>
+          <button onClick={onClose}
+            style={{ padding:'12px', borderRadius:16, border:'none', cursor:'pointer',
+              background:'rgba(0,0,0,0.06)', color:'#6B7280',
+              fontSize:14, fontWeight:600 }}>
+            Ahora no
+          </button>
+        </div>
       </motion.div>
     </motion.div>
   )
@@ -135,6 +134,13 @@ function PandiRedAlert({ name, onClose, onAction }) {
 // ─── SANCTUARY ────────────────────────────────────────────────────────────────
 
 function Sanctuary({ recoveryLight, profile, theme, greeting, name, userId }) {
+  // ─── AJUSTES DE PANDI — edita estos valores ───────────────────────────
+  const PANDI_BOTTOM_DAY   = '15%'  // ← posición de día (más % = más arriba)
+  const PANDI_BOTTOM_NIGHT = '10%'  // ← posición de noche (más % = más arriba)
+  const PANDI_WIDTH_MOBILE = '48%'  // ← tamaño en móvil
+  const PANDI_WIDTH_DESK   = '15%'  // ← tamaño en escritorio
+  const PANDI_MAX_WIDTH    = 500    // ← límite px
+  // ──────────────────────────────────────────────────────────────────────
   const cfg      = STATE_CONFIG[recoveryLight] || STATE_CONFIG.GREEN
   const isMobile = useIsMobile()
   const isNight  = useNightMode()

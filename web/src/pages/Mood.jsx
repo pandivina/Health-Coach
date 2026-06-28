@@ -78,9 +78,9 @@ const MASCOTAS_COLECCIONABLES = [
 
 // Santuario según estado de recuperación
 const SANCTUARY_CONFIG = {
-  GREEN:  { bg: '/panda/sanctuary_green.png',  glow: 'rgba(46,196,182,0.4)',  dot: '#2EC4B6' },
-  YELLOW: { bg: '/panda/sanctuary_yellow.png', glow: 'rgba(245,158,11,0.4)', dot: '#F59E0B' },
-  RED:    { bg: '/panda/sanctuary_red.png',    glow: 'rgba(255,143,163,0.4)', dot: '#FF8FA3' },
+  GREEN:  { bg: '/sanctuary/bg_day.png',  glow: 'rgba(46,196,182,0.4)',  dot: '#2EC4B6' },
+  YELLOW: { bg: '/sanctuary/bg_day.png', glow: 'rgba(245,158,11,0.4)', dot: '#F59E0B' },
+  RED:    { bg: '/sanctuary/bg_day.png',    glow: 'rgba(255,143,163,0.4)', dot: '#FF8FA3' },
 }
 
 // Frames de Pandi según mood/acción

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import CalorieTrendWidget from './CalorieTrendWidget'
+import RecipeUnlockBanner from './RecipeUnlockBanner'
 import {
   Plus, Trash2, Flame,
   Search, X, Clock, ChevronRight, Loader2, Barcode
@@ -704,7 +705,7 @@ function FoodModal({ mealType, userId, theme, onAdd, onClose }) {
 // ─── DIARIO TAB ───────────────────────────────────────────────────────────────
 
 export default function DiarioTab({ showAddModal, onCloseAddModal, onAnalyze, onScan, onSummaryChange }) {
-  const { user, addXP } = useStore()
+  const { user, addXP, profile } = useStore()
   const { theme }       = useTheme()
   const [meals, setMeals] = useState([])
   const [goals, setGoals] = useState({
@@ -825,6 +826,14 @@ export default function DiarioTab({ showAddModal, onCloseAddModal, onAnalyze, on
     <>
       <div className="space-y-4">
 
+        {/* ── RECETAS DESBLOQUEABLES ── */}
+        <RecipeUnlockBanner
+          userId={user?.id}
+          userXP={profile?.xp || 0}
+          userLevel={profile?.level || 1}
+          onAddToDiary={loadMeals}
+        />
+
         <CalorieTrendWidget userId={user?.id} theme={theme} calorieGoal={goals.calories} />
 
         {/* Hero calorías */}
@@ -872,7 +881,20 @@ export default function DiarioTab({ showAddModal, onCloseAddModal, onAnalyze, on
           </div>
         </motion.div>
 
-
+        {/* ── TIP DE PANDI ── */}
+        {pandiTip && (
+          <div style={{ display:'flex', gap:10, padding:'12px 14px', borderRadius:16,
+            background:'rgba(255,255,255,0.95)', border:`1px solid ${theme.border}`,
+            boxShadow:'0 2px 8px rgba(0,0,0,0.04)' }}>
+            <img src="/panda/panda_tip.png" alt="" style={{ width:32, height:32, objectFit:'contain', flexShrink:0 }}
+              onError={e => { e.target.style.display='none' }} />
+            <div>
+              <p style={{ fontSize:10, fontWeight:800, color:theme.primary, margin:'0 0 2px',
+                textTransform:'uppercase', letterSpacing:'.06em' }}>💡 Tip de Pandi</p>
+              <p style={{ fontSize:12, color:'#374151', lineHeight:1.5, margin:0 }}>{pandiTip}</p>
+            </div>
+          </div>
+        )}
 
         {/* Comidas por tipo */}
         {MEAL_TYPES.map(type => {

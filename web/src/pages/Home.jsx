@@ -83,7 +83,20 @@ function useIsMobile() {
   }, [])
   return isMobile
 }
+function Sanctuary({ recoveryLight, profile, theme, greeting, name, userId }) {
+  const cfg      = STATE_CONFIG[recoveryLight] || STATE_CONFIG.GREEN
+  const isMobile = useIsMobile()
+  const isNight  = useNightMode()
+  const navigate = useNavigate()
 
+  // ─── AJUSTES DE PANDI — edita estos valores ───────────────────────────
+  const PANDI_BOTTOM_DAY   = '15%'  // ← posición de día (más % = más arriba)
+  const PANDI_BOTTOM_NIGHT = '10%'  // ← posición de noche (más % = más arriba)
+  const PANDI_WIDTH_MOBILE = '48%'  // ← tamaño en móvil
+  const PANDI_WIDTH_DESK   = '15%'  // ← tamaño en escritorio
+  const PANDI_MAX_WIDTH    = 500    // ← límite px
+  // ──────────────────────────────────────────────────────────────────────
+  
 // ─── ALERTA PANTALLA COMPLETA — SEMÁFORO ROJO ────────────────────────────────
 
 function PandiRedAlert({ name, onClose, onAction }) {

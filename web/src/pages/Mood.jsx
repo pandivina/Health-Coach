@@ -20,6 +20,8 @@ import JournalEntry from '../components/mood/JournalEntry'
 import PandiPulse from '../components/mood/PandiPulse'
 import SunJourney from '../components/mood/SunJourney'
 import CalmScreen from '../components/mood/CalmButton'
+import BreathingSession from '../components/mood/BreathingSession'
+import MeditationSession from '../components/mood/MeditationSession'
 
 // ─── AUDIO ───────────────────────────────────────────────────────────────────
 const A = {
@@ -1242,23 +1244,27 @@ export default function Mood() {
 
 
 
-      {/* ── RESPIRAR / MEDITAR — opciones arriba, Pandi visible abajo ── */}
-      <AnimatePresence>
-        {(activeTab === 'breathing' || activeTab === 'meditation') && (
-          <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
-            transition={{ duration:0.3 }}
-            style={{ position:'fixed', inset:0, zIndex:25, pointerEvents:'none',
-              display:'flex', flexDirection:'column', alignItems:'center',
-              justifyContent:'flex-start',
-              paddingTop:'calc(env(safe-area-inset-top,0px) + 72px)',
-              paddingLeft:16, paddingRight:16 }}>
-            <div style={{ pointerEvents:'all', width:'100%', maxWidth:420 }}>
-              {activeTab === 'breathing'  && <BreathingTab  theme={theme} />}
-              {activeTab === 'meditation' && <MeditationTab theme={theme} profile={profile} userId={user?.id} />}
-            </div>
-          </motion.div>
+{/* ── RESPIRAR / MEDITAR ── */}
+<AnimatePresence>
+  {(activeTab === 'breathing' || activeTab === 'meditation') && (
+    <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
+      transition={{ duration:0.3 }}
+      style={{ position:'fixed', inset:0, zIndex:25, pointerEvents:'none',
+        display:'flex', flexDirection:'column', alignItems:'center',
+        justifyContent:'flex-start',
+        paddingTop:'calc(env(safe-area-inset-top,0px) + 72px)',
+        paddingLeft:16, paddingRight:16 }}>
+      <div style={{ pointerEvents:'all', width:'100%', maxWidth:420 }}>
+        {activeTab === 'breathing'  && (
+          <BreathingSession onClose={() => setActiveTab('mood')} />
         )}
-      </AnimatePresence>
+        {activeTab === 'meditation' && (
+          <MeditationSession onClose={() => setActiveTab('mood')} />
+        )}
+      </div>
+    </motion.div>
+  )}
+</AnimatePresence>
 
       {/* ── MOOD — emojis justo encima del tab bar ── */}
       <AnimatePresence>

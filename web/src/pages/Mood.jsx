@@ -22,8 +22,6 @@ import SunJourney from '../components/mood/SunJourney'
 import CalmScreen from '../components/mood/CalmButton'
 import BreathingSession from '../components/mood/BreathingSession'
 import MeditationSession from '../components/mood/MeditationSession'
-import { recordSanctuaryVisit, buildCoachMemory } from '../lib/coachMemory'
-
 
 // ─── AUDIO ───────────────────────────────────────────────────────────────────
 const A = {
@@ -78,11 +76,20 @@ const MASCOTAS_COLECCIONABLES = [
   { id: 'lumi',   nombreDefault: 'Lumi',   especie: 'Luciérnaga', desc: 'Brilla en tus momentos oscuros.', nivelRequerido: 8 },
 ]
 
-// Santuario según estado de recuperación
+// Santuario según estado de recuperación (Home)
 const SANCTUARY_CONFIG = {
-  GREEN:  { bg: '/panda/sanctuary_green.png',  glow: 'rgba(46,196,182,0.4)',  dot: '#2EC4B6' },
-  YELLOW: { bg: '/panda/sanctuary_yellow.png', glow: 'rgba(245,158,11,0.4)', dot: '#F59E0B' },
-  RED:    { bg: '/panda/sanctuary_red.png',    glow: 'rgba(255,143,163,0.4)', dot: '#FF8FA3' },
+  GREEN:  { bg: '/panda/sanctuary_green.png',  bgNight: '/panda/sanctuary_green_night.png',  glow: 'rgba(46,196,182,0.4)',  dot: '#2EC4B6' },
+  YELLOW: { bg: '/panda/sanctuary_yellow.png', bgNight: '/panda/sanctuary_yellow_night.png', glow: 'rgba(245,158,11,0.4)', dot: '#F59E0B' },
+  RED:    { bg: '/panda/sanctuary_red.png',    bgNight: '/panda/sanctuary_red_night.png',    glow: 'rgba(255,143,163,0.4)', dot: '#FF8FA3' },
+}
+
+function useIsNight() {
+  const [isNight, setIsNight] = useState(() => { const h = new Date().getHours(); return h >= 22 || h < 7 })
+  useEffect(() => {
+    const t = setInterval(() => { const h = new Date().getHours(); setIsNight(h >= 22 || h < 7) }, 60000)
+    return () => clearInterval(t)
+  }, [])
+  return isNight
 }
 
 // Frames de Pandi según mood/acción
@@ -105,16 +112,16 @@ const TAB_CONFIG = {
   meditation: {
     bg:          '/sanctuary/bg_forest.png',
     bgFallback:  '#d4ead4',
-    frames:      ['/panda/panda_meditating.png'],
+    frames:      ['/panda/panda_meditating.png', '/panda/panda_meditating_2.png'],
     pandiMode:   'meditate',
-    pandiSize:   70,   // % del ancho
-    pandiBottom: 14,   // % desde el fondo
+    pandiSize:   70,
+    pandiBottom: 14,
     pandiMaxW:   420,
   },
-  breathing:  {
+  breathing: {
     bg:          '/sanctuary/bg_breathing.png',
     bgFallback:  '#d4eaf7',
-    frames:      ['/panda/panda_breathing.png'],
+    frames:      ['/panda/breath_1.png', '/panda/breath_2.png', '/panda/breath_3.png', '/panda/breath_4.png'],
     pandiMode:   'breathing',
     pandiSize:   65,
     pandiBottom: 12,
@@ -123,24 +130,24 @@ const TAB_CONFIG = {
   checkin: {
     bg:          '/sanctuary/bg_checkin.png',
     bgFallback:  '#f5efe6',
-    frames:      ['/panda/panda_stay.png'],
+    frames:      ['/panda/curious_1.png', '/panda/panda_looking.png'],
     pandiMode:   'idle',
     pandiSize:   55,
     pandiBottom: 20,
     pandiMaxW:   360,
-    hidePandi:   true, // Pandi oculto — CheckinTab lo gestiona
+    hidePandi:   true,
   },
   santuario: {
-    bg:          '/sanctuary/bg_checkin.png',
+    bg:          '/sanctuary/bg_day.png',
     bgFallback:  '#f0edf8',
     frames:      ['/panda/panda_base.png'],
     pandiMode:   'celebrate',
-    hidePandi:   true, // fullscreen álbum, sin Pandi en el fondo
+    hidePandi:   true,
   },
   journal: {
     bg:          '/sanctuary/bg_journal.png',
     bgFallback:  '#f7f0e6',
-    frames:      ['/panda/panda_sitting.png'],
+    frames:      ['/panda/panda_sitting.png', '/panda/panda_back_sit.png'],
     pandiMode:   'sitting',
     hidePandi:   true,
   },
@@ -196,22 +203,21 @@ function PandaImg({ name, size = 48, fallback = '🐼', style = {} }) {
   )
 }
 
-// ─── SANTUARIO FONDO — reutiliza la misma lógica que Home ────────────────────
+// ─── SANTUARIO FONDO ─────────────────────────────────────────────────────────
 function SanctuaryBg({ recoveryLight, mood, activeTab }) {
-  const tabCfg = TAB_CONFIG[activeTab]
+  const isNight = useIsNight()
+  const tabCfg  = TAB_CONFIG[activeTab]
 
-  const bgSrc = tabCfg?.bg || (() => {
-    const state = mood
-      ? (mood >= 4 ? 'GREEN' : mood === 3 ? 'YELLOW' : 'RED')
-      : (recoveryLight || 'GREEN')
-    return (SANCTUARY_CONFIG[state] || SANCTUARY_CONFIG.GREEN).bg
+  const bgSrc = (() => {
+    if (tabCfg?.bg) return tabCfg.bg
+    if (isNight) return '/sanctuary/bg_night.png'
+    return '/sanctuary/bg_day.png'
   })()
 
-  const bgColor = tabCfg?.bgFallback || '#e8f5ee'
+  const bgColor = tabCfg?.bgFallback || (isNight ? '#1a2138' : '#e8f5ee')
 
   return (
     <>
-      {/* Color base siempre visible — fallback mientras no hay PNG */}
       <div style={{ position:'absolute', inset:0, backgroundColor: bgColor, zIndex:0 }} />
       <AnimatePresence mode="wait">
         <motion.div
@@ -232,86 +238,71 @@ function SanctuaryBg({ recoveryLight, mood, activeTab }) {
 }
 
 // ─── PANDI ANIMADA ───────────────────────────────────────────────────────────
-function SanctuaryPandi({ mood, pandiMode, cfg, activeTab, recoveryLight }) {
-  const [imgErr, setImgErr] = useState(false)
+function SanctuaryPandi({ mood, pandiMode, cfg, activeTab, recoveryLight, consecutiveLowMood }) {
+  const [frameIdx, setFrameIdx] = useState(0)
+  const [imgErr,   setImgErr]   = useState(false)
   const isMeditating = activeTab === 'meditation'
+  const isBreathing  = activeTab === 'breathing'
 
-  const frame = (() => {
-    if (activeTab && TAB_CONFIG[activeTab]?.frames?.[0]) {
-      return TAB_CONFIG[activeTab].frames[0]
-    }
+  const frames = (() => {
+    if (activeTab && TAB_CONFIG[activeTab]?.frames?.length) return TAB_CONFIG[activeTab].frames
+    // Sin tab activo — reaccionar al estado
+    if (consecutiveLowMood) return ['/panda/panda_sad.png', '/panda/panda_thinking.png', '/panda/panda_sad.png']
     const light = recoveryLight || 'GREEN'
-    if (light === 'GREEN')  return '/panda/panda_stay.png'
-    if (light === 'YELLOW') return '/panda/panda_base.png'
-    if (light === 'RED')    return '/panda/panda_sad.png'
-    return '/panda/panda_base.png'
+    if (light === 'GREEN')  return ['/panda/panda_happy.png', '/panda/panda_stay.png', '/panda/panda_happy_2.png', '/panda/panda_sitting.png']
+    if (light === 'YELLOW') return ['/panda/panda_base.png', '/panda/panda_thinking.png', '/panda/panda_base.png']
+    if (light === 'RED')    return ['/panda/panda_sad.png', '/panda/panda_thinking.png', '/panda/panda_sad.png']
+    return ['/panda/panda_base.png']
   })()
+
+  // Ciclar frames
+  useEffect(() => {
+    setFrameIdx(0)
+    if (frames.length <= 1) return
+    const interval = isMeditating ? 4000 : isBreathing ? 800 : 3500
+    const t = setInterval(() => setFrameIdx(i => (i + 1) % frames.length), interval)
+    return () => clearInterval(t)
+  }, [activeTab, recoveryLight, consecutiveLowMood])
 
   return (
     <div style={{ position:'relative', width:'100%', display:'flex',
       alignItems:'center', justifyContent:'center' }}>
 
-      {/* Aura de meditación — llama verde suave */}
+      {/* Aura de meditación */}
       {isMeditating && (
         <div style={{ position:'absolute', inset:0, zIndex:0, pointerEvents:'none' }}>
-          {/* Base glow */}
           <motion.div
             animate={{ opacity:[0.2,0.45,0.2], scaleY:[1,1.1,1] }}
             transition={{ duration:5, repeat:Infinity, ease:'easeInOut' }}
-            style={{ position:'absolute', bottom:'10%', left:'50%',
-              transform:'translateX(-50%)',
-              width:'100%', height:'100%',
-              borderRadius:'50% 50% 40% 40%',
+            style={{ position:'absolute', bottom:'10%', left:'50%', transform:'translateX(-50%)',
+              width:'100%', height:'100%', borderRadius:'50% 50% 40% 40%',
               background:'radial-gradient(ellipse at 50% 80%, rgba(52,211,153,0.5) 0%, rgba(16,185,129,0.2) 40%, transparent 70%)',
-              filter:'blur(14px)',
-              transformOrigin:'bottom center' }} />
-          {/* Llama principal */}
+              filter:'blur(14px)', transformOrigin:'bottom center' }} />
           <motion.div
             animate={{ opacity:[0.5,0.9,0.5], scaleY:[1,1.2,1] }}
             transition={{ duration:2.5, repeat:Infinity, ease:'easeInOut' }}
-            style={{ position:'absolute', bottom:'30%', left:'50%',
-              transform:'translateX(-50%)',
+            style={{ position:'absolute', bottom:'30%', left:'50%', transform:'translateX(-50%)',
               width:'100%', height:'100%',
               background:'linear-gradient(to top, rgba(16,185,129,0.8) 0%, rgba(52,211,153,0.5) 40%, rgba(167,243,208,0.2) 70%, transparent 100%)',
-              borderRadius:'50% 50% 30% 30%',
-              filter:'blur(4px)',
-              transformOrigin:'bottom center' }} />
-          {/* Llama interior */}
-          <motion.div
-            animate={{ opacity:[0.6,1,0.6], scaleY:[0.85,1.1,0.85] }}
-            transition={{ duration:1.8, repeat:Infinity, ease:'easeInOut', delay:0.3 }}
-            style={{ position:'absolute', bottom:'30%', left:'50%',
-              transform:'translateX(-50%)',
-              width:'100%', height:'100%',
-              background:'linear-gradient(to top, rgba(167,243,208,0.9) 0%, rgba(52,211,153,0.6) 50%, transparent 100%)',
-              borderRadius:'50% 50% 30% 30%',
-              filter:'blur(3px)',
-              transformOrigin:'bottom center' }} />
-          {/* Partículas — cada una con su propia animación simple */}
-          {[0,1,2,3,4,5,6].map(i => (
-            <motion.div key={i}
-              animate={{ y:[0, -(50+i*12)], opacity:[0,0.7,0] }}
-              transition={{ duration:2+i*0.3, repeat:Infinity, delay:i*0.35, ease:'easeOut' }}
-              style={{ position:'absolute',
-                bottom:'32%',
-                left: i%2===0 ? `${46+i*2}%` : `${54-i*2}%`,
-                width:10, height:15, borderRadius:'50%',
-                background: i%2===0 ? 'rgba(52,211,153,0.8)' : 'rgba(167,243,208,0.9)',
-                filter:'blur(1px)' }} />
-          ))}
+              borderRadius:'50% 50% 30% 30%', filter:'blur(4px)', transformOrigin:'bottom center' }} />
         </div>
       )}
 
       {/* Pandi */}
       <div style={{ position:'relative', zIndex:2, width:'100%' }}>
-        {imgErr
-          ? <span style={{ fontSize:80, display:'block', textAlign:'center' }}>🐾</span>
-          : <motion.img src={frame} alt="Pandi"
-              animate={isMeditating ? { scale:[1,1.03,1] } : {}}
-              transition={{ duration:4, repeat:Infinity, ease:'easeInOut' }}
-              style={{ width:'100%', height:'auto', objectFit:'contain', display:'block' }}
-              onError={() => setImgErr(true)} />
-        }
+        <AnimatePresence mode="wait">
+          {imgErr
+            ? <span style={{ fontSize:80, display:'block', textAlign:'center' }}>🐾</span>
+            : <motion.img
+                key={frames[frameIdx]}
+                src={frames[frameIdx]}
+                alt="Pandi"
+                initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
+                transition={{ duration: isBreathing ? 0.3 : 0.8 }}
+                style={{ width:'100%', height:'auto', objectFit:'contain', display:'block' }}
+                onError={() => setImgErr(true)} />
+          }
+        </AnimatePresence>
       </div>
     </div>
   )
@@ -362,14 +353,10 @@ function CheckinTab({ theme, userId, addXP, onTabChange, onMoodSaved, profile })
     try {
       const moodLabel = MOODS.find(m => m.v === mood)?.label || 'Desconocido'
       const promptOculto = `[SISTEMA: El usuario acaba de hacer Check-in. Estado: "${moodLabel}" (${mood}/5). Notas: "${notes || 'Sin notas'}". Respuesta corta, máx 3 líneas, empática, sin introducciones.]`
-      const sanctuaryContext = await buildCoachMemory(userId, {
-  currentMood: mood,
-  habitsChecked,
-})
       const res  = await fetch('/api/coach', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: promptOculto, userId, sanctuaryContext }),
+        body: JSON.stringify({ message: promptOculto, userId }),
       })
       const data = await res.json()
       setPandiMessage(data?.response || PANDI_MOOD_MESSAGES.first[mood] || '')
@@ -1323,6 +1310,7 @@ export default function Mood() {
   const [activeTab,     setActiveTab]     = useState(null)
   const [currentMood,   setCurrentMood]   = useState(null)
   const [habitsChecked, setHabitsChecked] = useState({})
+  const [moodHistory,   setMoodHistory]   = useState([]) // últimos 3 días
   // ─── AJUSTES DEL TAB BAR — edita estos valores ───────────────────────────
   const TAB_BAR_BOTTOM    = 96   // px sobre el nav — sube el número para alejarlo más
   const TAB_BAR_ICON_SIZE = 36   // px tamaño del icono
@@ -1361,18 +1349,26 @@ export default function Mood() {
   }, [activeTab])
 
   useEffect(() => {
-  if (!user?.id) return
-  recordSanctuaryVisit()
+    if (!user?.id) return
     const today = new Date().toISOString().split('T')[0]
+    const last3 = Array.from({ length: 3 }, (_, i) => {
+      const d = new Date(); d.setDate(d.getDate() - i)
+      return d.toISOString().split('T')[0]
+    })
     supabase.from('mood_logs').select('mood')
-      .eq('user_id', user.id).eq('date', today).maybeSingle()
-      .then(({ data }) => { if (data?.mood) setCurrentMood(data.mood) })
-    // Limpiar TTS al salir
+      .eq('user_id', user.id).in('date', last3)
+      .then(({ data }) => {
+        const moods = (data || []).map(l => l.mood)
+        setMoodHistory(moods)
+        const todayMood = data?.find ? data.find(l => l.date === today) : null
+        if (todayMood?.mood) setCurrentMood(todayMood.mood)
+      })
     return () => stopSpeech()
   }, [user?.id])
 
   const doneHabits  = Object.values(habitsChecked).filter(Boolean).length
   const totalHabits = Object.keys(habitsChecked).length || 1
+  const consecutiveLowMood = moodHistory.length >= 3 && moodHistory.every(m => m <= 2)
 
   // Estado del santuario según mood actual
   const sanctuaryState = currentMood
@@ -1580,7 +1576,8 @@ export default function Mood() {
                   pandiMode={pandiMode} 
                   cfg={sanctuaryCfg} 
                   activeTab={activeTab} 
-                  recoveryLight={recoveryLight} 
+                  recoveryLight={recoveryLight}
+                  consecutiveLowMood={consecutiveLowMood}
                 />
               </motion.div>
             )}

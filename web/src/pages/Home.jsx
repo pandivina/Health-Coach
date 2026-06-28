@@ -232,22 +232,12 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name, userId }) {
           {[{top:'12%',left:'15%',size:3,delay:0},{top:'18%',left:'75%',size:2,delay:0.6},
             {top:'8%',left:'45%',size:2,delay:1.2},{top:'25%',left:'85%',size:3,delay:0.3}].map((s,i) => (
             <motion.div key={i}
-              animate={{ opacity:[0.2,0.9,0.2] }} transition={{ duration:2.5, repeat:Infinity, delay:s.delay }}
+              animate={{ opacity:[0.2,0.9,0.2] }} transition={{ duration:5, repeat:Infinity, delay:s.delay }}
               style={{ position:'absolute', top:s.top, left:s.left, width:s.size, height:s.size,
                 borderRadius:'50%', background:'white', boxShadow:'0 0 4px white' }} />
           ))}
         </div>
       )}
-
-      {/* Botón Bienestar */}
-      <div style={{ position:'absolute', bottom:'4%', left:'50%', transform:'translateX(-50%)', zIndex:8 }}>
-        <motion.button whileTap={{ scale:0.95 }} onClick={() => navigate('/mood')}
-          style={{ padding:'8px 22px', borderRadius:20, border:'none', cursor:'pointer',
-            background:'rgba(255,255,255,0.45)', backdropFilter:'blur(8px)',
-            fontSize:12, fontWeight:800, color:'rgba(0,0,0,0.6)', letterSpacing:'.04em' }}>
-          🌿 Bienestar
-        </motion.button>
-      </div>
 
       {/* PANDI */}
       <div style={{ position:'absolute', bottom:'12%', left:'50%', transform:'translateX(-50%)',

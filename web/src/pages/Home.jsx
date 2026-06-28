@@ -42,7 +42,7 @@ const STATE_CONFIG = {
     bgNight:       '/panda/sanctuary_red_night.png',
     glow:          'rgba(255,143,163,0.4)',
     dot:           '#FF8FA3',
-    label:         '🔴 Pandi te necesita',
+    label:         '🔴  te necesita',
     msg:           'Hoy el descanso ES el entrenamiento.',
     frames:        ['/panda/panda_base.png','/panda/panda_sad.png','/panda/panda_sad.png','/panda/thinking_1.png'],
     frameDuration: 3500,
@@ -136,7 +136,7 @@ function PandiRedAlert({ name, onClose, onAction }) {
 function Sanctuary({ recoveryLight, profile, theme, greeting, name, userId }) {
   // ─── AJUSTES DE PANDI — edita estos valores ───────────────────────────
   const PANDI_BOTTOM_DAY   = '15%'  // ← posición de día (más % = más arriba)
-  const PANDI_BOTTOM_NIGHT = '10%'  // ← posición de noche (más % = más arriba)
+  const PANDI_BOTTOM_NIGHT = '8%'  // ← posición de noche (más % = más arriba)
   const PANDI_WIDTH_MOBILE = '48%'  // ← tamaño en móvil
   const PANDI_WIDTH_DESK   = '15%'  // ← tamaño en escritorio
   const PANDI_MAX_WIDTH    = 500    // ← límite px

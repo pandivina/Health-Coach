@@ -78,7 +78,7 @@ async function updateMemory(userId, messages, lastReply) {
     ).join('\n');
 
     const summaryRes = await anthropic.messages.create({
-      model: process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-5',
+      model: process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-6',
       max_tokens: 600,
       messages: [{
         role: 'user',
@@ -229,7 +229,7 @@ Genera un plan de mañana con exactamente este formato JSON (solo el JSON, sin t
 
   try {
     const response = await anthropic.messages.create({
-      model: process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-5',
+      model: process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-6',
       max_tokens: 600,
       messages: [{ role: 'user', content: prompt }],
     })
@@ -361,7 +361,7 @@ function buildEvolutivePersonality(fase, profileName) {
 // ─── POST /api/coach ──────────────────────────────────────────────────────────
 router.post('/', requireAuth, checkCoachLimit, async (req, res) => {
   try {
-    const { messages, context } = req.body;
+    const { messages, context, sanctuaryContext } = req.body;
     const userId = req.user.id;
     const today = new Date().toISOString().split('T')[0];
 
@@ -538,7 +538,64 @@ Foco principal: ${tomorrowPlanData.tomorrow_plan.foco_principal || 'sin definir'
 Objetivo calórico ajustado: ${tomorrowPlanData.tomorrow_plan.objetivo_calorico || 'sin definir'} kcal
 Referencia este plan cuando el usuario te pregunte qué hacer hoy o cómo va su progreso.
 ` : ''}
+${(() => {
+  if (!sanctuaryContext) return ''
+  const sc = sanctuaryContext
+  const mood3 = sc.history?.mood_last3 || []
+  const lowStreak = sc.history?.consecutive_low_mood
+  const recovery  = sc.today?.recovery_light || 'GREEN'
+  const tab       = sc.today?.active_tab
+  const suggested = sc.sanctuary?.suggested_tab
+  const medDone   = sc.today?.meditation_done
+  const breathDone= sc.today?.breathing_done
+  const habitsPct = sc.today?.habits_pct
+  const strictness= sc.user?.coach_strictness ?? 0.5
+  const focus     = sc.user?.primary_focus
 
+  const toneHint = lowStreak
+    ? 'El usuario lleva varios días difíciles. PRIORIZA la validación emocional. NO des consejos de productividad. Sé presente, cálido, sin soluciones rápidas.'
+    : recovery === 'RED'
+    ? 'El santuario está en RED. Ofrece herramientas de calma (respiración, meditación) antes que cualquier otro consejo.'
+    : recovery === 'YELLOW'
+    ? 'El santuario está en YELLOW. Tono equilibrado, sugiere una pequeña acción concreta.'
+    : 'El santuario está en GREEN. El usuario va bien. Puedes celebrar y proponer retos ligeros.'
+
+  const proactiveHint = suggested && suggested !== tab
+    ? `Si el usuario no sabe qué hacer, sugiere sutilmente la sección "${suggested}" del Santuario.`
+    : ''
+
+  const focusHint = focus
+    ? `El foco principal del usuario es "${focus}". Relaciona tus consejos con este objetivo cuando sea natural.`
+    : ''
+
+  const strictnessHint = strictness > 0.7
+    ? 'El usuario prefiere un coach directo y exigente. Puedes ser más firme en tus recomendaciones.'
+    : strictness < 0.4
+    ? 'El usuario prefiere un coach suave y de apoyo. Nunca presiones, solo acompaña.'
+    : ''
+
+  return `
+═══════════════════════════════════
+CONTEXTO DEL SANTUARIO (estado actual)
+═══════════════════════════════════
+Estado de recuperación: ${recovery}
+Ánimo hoy: ${sc.today?.mood ? sc.today.mood + '/5' : 'no registrado'}
+Ánimo últimos 3 días: ${mood3.length ? mood3.join(' → ') : 'sin datos'}
+${lowStreak ? '⚠️ RACHA BAJA: 3+ días con ánimo ≤ 2' : sc.history?.mood_improving ? '📈 Ánimo mejorando' : ''}
+Meditación hoy: ${medDone ? 'completada ✅' : 'no realizada'}
+Respiración hoy: ${breathDone ? 'completada ✅' : 'no realizada'}
+Hábitos: ${habitsPct !== null ? habitsPct + '%' : 'sin datos'}
+Tab activo: ${tab || 'ninguno'}
+Última visita al Santuario: ${sc.sanctuary?.last_visit_hours != null ? sc.sanctuary.last_visit_hours + 'h' : 'desconocida'}
+
+INSTRUCCIONES DEL SANTUARIO:
+${toneHint}
+${proactiveHint}
+${focusHint}
+${strictnessHint}
+Cuando el usuario esté en el Santuario, habla como si Pandi compartiera el espacio con él — no como un asistente externo. Usa "estamos", "notamos", "vamos juntos".
+`
+})()}
 ═══════════════════════════════════
 PERSONALIDAD Y REGLAS
 ═══════════════════════════════════
@@ -558,7 +615,7 @@ REGLAS GENERALES:
 
     // ─── LLAMADA A CLAUDE ─────────────────────────────────────────────────────
     const response = await anthropic.messages.create({
-      model: process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-5',
+      model: process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-6',
       max_tokens: 800,
       system: systemPrompt,
       messages: messages.map(m => ({ role: m.role, content: m.content })),

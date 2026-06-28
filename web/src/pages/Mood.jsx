@@ -22,6 +22,8 @@ import SunJourney from '../components/mood/SunJourney'
 import CalmScreen from '../components/mood/CalmButton'
 import BreathingSession from '../components/mood/BreathingSession'
 import MeditationSession from '../components/mood/MeditationSession'
+import { recordSanctuaryVisit, buildCoachMemory } from '../lib/coachMemory'
+
 
 // ─── AUDIO ───────────────────────────────────────────────────────────────────
 const A = {
@@ -360,10 +362,14 @@ function CheckinTab({ theme, userId, addXP, onTabChange, onMoodSaved, profile })
     try {
       const moodLabel = MOODS.find(m => m.v === mood)?.label || 'Desconocido'
       const promptOculto = `[SISTEMA: El usuario acaba de hacer Check-in. Estado: "${moodLabel}" (${mood}/5). Notas: "${notes || 'Sin notas'}". Respuesta corta, máx 3 líneas, empática, sin introducciones.]`
+      const sanctuaryContext = await buildCoachMemory(userId, {
+  currentMood: mood,
+  habitsChecked,
+})
       const res  = await fetch('/api/coach', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: promptOculto, userId }),
+        body: JSON.stringify({ message: promptOculto, userId, sanctuaryContext }),
       })
       const data = await res.json()
       setPandiMessage(data?.response || PANDI_MOOD_MESSAGES.first[mood] || '')
@@ -1355,7 +1361,8 @@ export default function Mood() {
   }, [activeTab])
 
   useEffect(() => {
-    if (!user?.id) return
+  if (!user?.id) return
+  recordSanctuaryVisit()
     const today = new Date().toISOString().split('T')[0]
     supabase.from('mood_logs').select('mood')
       .eq('user_id', user.id).eq('date', today).maybeSingle()

@@ -202,6 +202,90 @@ const QUESTIONS = [
   },
 ]
 
+// ─── COMPONENTES PROTOCOLO ───────────────────────────────────────────────────
+
+function ProtoQuestion({ label, hint, tooltip, children, onTooltip }) {
+  return (
+    <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+      <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+        <p style={{ fontSize:13, fontWeight:700, color:'rgba(255,255,255,0.9)',
+          margin:0, flex:1, lineHeight:1.4 }}>{label}</p>
+        {tooltip && (
+          <button onClick={() => onTooltip?.(tooltip)}
+            style={{ width:22, height:22, borderRadius:'50%', flexShrink:0,
+              background:'rgba(255,255,255,0.15)', border:'1px solid rgba(255,255,255,0.3)',
+              color:'rgba(255,255,255,0.7)', fontSize:11, fontWeight:800,
+              cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>
+            ?
+          </button>
+        )}
+      </div>
+      {hint && (
+        <p style={{ fontSize:11, color:'rgba(255,255,255,0.4)', margin:0, fontStyle:'italic' }}>
+          {hint}
+        </p>
+      )}
+      {children}
+    </div>
+  )
+}
+
+function ChipGroup({ options, value, onChange }) {
+  return (
+    <div style={{ display:'flex', flexWrap:'wrap', gap:8 }}>
+      {options.map(o => {
+        const active = value === o.v
+        return (
+          <motion.button key={o.v} whileTap={{ scale:0.94 }}
+            onClick={() => onChange(o.v)}
+            style={{
+              display:'flex', alignItems:'center', gap:6,
+              padding:'9px 14px', borderRadius:20,
+              border:`1.5px solid ${active ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.15)'}`,
+              background: active ? 'rgba(255,255,255,0.22)' : 'rgba(255,255,255,0.07)',
+              backdropFilter:'blur(12px)', WebkitBackdropFilter:'blur(12px)',
+              color: active ? 'white' : 'rgba(255,255,255,0.55)',
+              fontSize:13, fontWeight: active ? 700 : 500,
+              cursor:'pointer', transition:'all 0.2s',
+              boxShadow: active ? '0 2px 12px rgba(255,255,255,0.1)' : 'none',
+            }}>
+            <span style={{ fontSize:16 }}>{o.emoji}</span>
+            {o.label}
+            {active && <span style={{ fontSize:12 }}>✓</span>}
+          </motion.button>
+        )
+      })}
+    </div>
+  )
+}
+
+function ChipMulti({ options, values = [], onToggle }) {
+  return (
+    <div style={{ display:'flex', flexWrap:'wrap', gap:8 }}>
+      {options.map(o => {
+        const active = values.includes(o.v)
+        return (
+          <motion.button key={o.v} whileTap={{ scale:0.94 }}
+            onClick={() => onToggle(o.v)}
+            style={{
+              display:'flex', alignItems:'center', gap:6,
+              padding:'9px 14px', borderRadius:20,
+              border:`1.5px solid ${active ? '#2EC4B6' : 'rgba(255,255,255,0.15)'}`,
+              background: active ? 'rgba(46,196,182,0.2)' : 'rgba(255,255,255,0.07)',
+              backdropFilter:'blur(12px)', WebkitBackdropFilter:'blur(12px)',
+              color: active ? '#2EC4B6' : 'rgba(255,255,255,0.55)',
+              fontSize:13, fontWeight: active ? 700 : 500,
+              cursor:'pointer', transition:'all 0.2s',
+            }}>
+            <span style={{ fontSize:16 }}>{o.emoji}</span>
+            {o.label}
+          </motion.button>
+        )
+      })}
+    </div>
+  )
+}
+
 // ─── CARRUSEL VERTICAL DE OPCIONES ───────────────────────────────────────────
 function OptionCarousel({ options, value, onChange, energyColor }) {
   return (
@@ -264,8 +348,24 @@ export default function Onboarding() {
   const [form, setForm] = useState({
     name:'', birth_date:'', sex:'other',
     mind:'', water:'', sleep:'', movement:'', food:'', intention:'',
+    // Bloque A — energía y tiempo
+    work_schedule:'', energy_style:'', intermittent_fasting:'', biphasic_sleep:'',
+    // Bloque B — coach
+    primary_focus:'', coach_strictness:'', user_persona:'',
+    // Bloque C — protocolo de seguridad
+    smoker:'', allergies:[], dislikes:[],
   })
-  const set = (k, v) => setForm(f => ({...f, [k]:v}))
+  const set    = (k, v) => setForm(f => ({...f, [k]:v}))
+  const toggle = (k, v) => setForm(f => {
+    const arr = f[k] || []
+    return { ...f, [k]: arr.includes(v) ? arr.filter(x => x !== v) : [...arr, v] }
+  })
+
+  // Fase protocolo post-nacimiento
+  const [protoBlock,  setProtoBlock]  = useState(0) // 0=inactivo, 1=A, 2=B, 3=C
+  const [tooltip,     setTooltip]     = useState(null)
+
+  const showProtocol = phase === 13
 
   const [orbActivated, setOrbActivated] = useState(false)
   const [orbOpened,    setOrbOpened]    = useState(false)
@@ -359,27 +459,53 @@ export default function Onboarding() {
     }, 100)
   }
 
+  function startProtocol() {
+    audio.playTone(528)
+    setPhase(13)
+    setProtoBlock(1)
+  }
+
+  function nextBlock() {
+    audio.playHeartbeat()
+    if (protoBlock < 3) {
+      setProtoBlock(b => b + 1)
+    } else {
+      finish()
+    }
+  }
+
   async function finish() {
     setLoading(true)
     try {
       const userId = user.id
       const sleepHours   = { low:4, irregular:5.5, enough:7, deep:8 }[form.sleep] || 7
       const trainingDays = { never:0, sometimes:1, regular:3, daily:5 }[form.movement] || 2
+      const strictnessMap = { firm: 0.9, soft: 0.4, companion: 0.1 }
 
       await supabase.from('user_profiles').update({
-        name: form.name,
-        onboarding_done: true,
-        motivation_why: form.intention || null,
+        name:             form.name,
+        onboarding_done:  true,
+        motivation_why:   form.intention    || null,
+        primary_focus:    form.primary_focus|| null,
+        coach_strictness: strictnessMap[form.coach_strictness] ?? 0.5,
+        energy_style:     form.energy_style || null,
+        work_schedule:    form.work_schedule|| null,
       }).eq('id', userId)
 
       await supabase.from('health_profiles').upsert({
-        user_id: userId,
-        diet_type: form.food || 'omnivore',
-        sleep_hours: sleepHours,
+        user_id:                userId,
+        diet_type:              form.food     || 'omnivore',
+        sleep_hours:            sleepHours,
         training_days_per_week: trainingDays,
-        onboarding_done: true,
-        onboarding_version: 3,
-        onboarding_date: new Date().toISOString(),
+        smoker:                 form.smoker   === 'yes',
+        ex_smoker:              form.smoker   === 'ex',
+        intermittent_fasting:   form.intermittent_fasting === 'yes',
+        biphasic_sleep:         form.biphasic_sleep       === 'yes',
+        allergies:              form.allergies,
+        dietary_restrictions:   form.dislikes.join(', ') || null,
+        onboarding_done:        true,
+        onboarding_version:     4,
+        onboarding_date:        new Date().toISOString(),
       }, { onConflict:'user_id' })
 
       await fetchProfile(userId)
@@ -960,7 +1086,7 @@ export default function Onboarding() {
               <motion.button
                 initial={{ opacity:0 }} animate={{ opacity:1 }} transition={{ delay:1.6 }}
                 whileTap={{ scale:0.97 }}
-                onClick={finish}
+                onClick={startProtocol}
                 disabled={loading}
                 style={{
                   padding:'16px 44px', borderRadius:22,
@@ -975,7 +1101,290 @@ export default function Onboarding() {
         )}
       </AnimatePresence>
 
-      {/* Debug */}
+      {/* ── FASE 13 — PROTOCOLO DE CUIDADO ── */}
+      <AnimatePresence>
+        {showProtocol && (
+          <motion.div key="protocol"
+            initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
+            transition={{ duration:0.8 }}
+            style={{ position:'fixed', inset:0, zIndex:30,
+              background:'linear-gradient(160deg, #0f1729 0%, #1a2340 50%, #0d1f35 100%)',
+              display:'flex', flexDirection:'column', overflow:'hidden' }}>
+
+            {/* Fondo de nubes reutilizado */}
+            <div style={{ position:'absolute', inset:0, zIndex:0,
+              backgroundImage:"url('/panda/onboarding_clouds.png')",
+              backgroundSize:'cover', backgroundPosition:'top center',
+              opacity:0.25, pointerEvents:'none' }} />
+
+            {/* Partículas ambientales */}
+            {[...Array(8)].map((_, i) => (
+              <motion.div key={`p-${i}`}
+                animate={{ opacity:[0,0.6,0], scale:[0,1,0] }}
+                transition={{ duration:3+i*0.4, repeat:Infinity, delay:i*0.5 }}
+                style={{ position:'absolute',
+                  top:`${10+i*10}%`, left:`${5+i*12}%`,
+                  width:3+i%3*2, height:3+i%3*2, borderRadius:'50%',
+                  background: i%2===0 ? '#FFD97D' : '#A78BFA',
+                  pointerEvents:'none', zIndex:1 }} />
+            ))}
+
+            {/* Contenido */}
+            <div style={{ position:'relative', zIndex:2, flex:1,
+              display:'flex', flexDirection:'column', overflowY:'auto',
+              padding:'calc(env(safe-area-inset-top,0px) + 24px) 20px 32px' }}>
+
+              {/* Header con Pandi frame */}
+              <AnimatePresence mode="wait">
+                <motion.div key={`block-header-${protoBlock}`}
+                  initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
+                  transition={{ duration:0.5 }}
+                  style={{ display:'flex', alignItems:'center', gap:14, marginBottom:24 }}>
+                  <img
+                    src={protoBlock === 1 ? '/panda/coach_explain_1.png'
+                       : protoBlock === 2 ? '/panda/panda_thinking.png'
+                       : '/panda/encourage_1.png'}
+                    alt="Pandi"
+                    style={{ width:72, height:72, objectFit:'contain', flexShrink:0 }}
+                    onError={e => { e.target.style.display='none' }}
+                  />
+                  <div style={{ background:'rgba(255,255,255,0.10)',
+                    backdropFilter:'blur(16px)', WebkitBackdropFilter:'blur(16px)',
+                    border:'1px solid rgba(255,255,255,0.18)',
+                    borderRadius:'0 18px 18px 18px', padding:'12px 16px', flex:1 }}>
+                    <p style={{ fontSize:11, fontWeight:700, color:'rgba(255,255,255,0.5)',
+                      textTransform:'uppercase', letterSpacing:'.08em', margin:'0 0 4px' }}>
+                      {protoBlock === 1 ? 'Tu energía y tiempo'
+                     : protoBlock === 2 ? 'Cómo quieres que sea Pandi'
+                     : 'Protocolo de seguridad'}
+                    </p>
+                    <p style={{ fontSize:13, color:'rgba(255,255,255,0.9)',
+                      lineHeight:1.5, margin:0, fontStyle:'italic' }}>
+                      {protoBlock === 1
+                        ? `Para adaptar tus rutinas a tu vida real, ${form.name.split(' ')[0]}.`
+                        : protoBlock === 2
+                        ? 'Así sabré cómo acompañarte en cada momento.'
+                        : 'Necesito saber esto para cuidarte bien.'}
+                    </p>
+                  </div>
+                </motion.div>
+              </AnimatePresence>
+
+              {/* Progreso de bloques */}
+              <div style={{ display:'flex', gap:8, marginBottom:24 }}>
+                {['A','B','C'].map((l, i) => (
+                  <div key={l} style={{ flex:1, display:'flex', flexDirection:'column', gap:4,
+                    alignItems:'center' }}>
+                    <div style={{ height:3, width:'100%', borderRadius:2,
+                      background: i+1 < protoBlock ? '#2EC4B6'
+                                : i+1 === protoBlock ? 'rgba(255,255,255,0.7)'
+                                : 'rgba(255,255,255,0.15)' }} />
+                    <span style={{ fontSize:9, fontWeight:700, letterSpacing:'.06em',
+                      color: i+1 <= protoBlock ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.25)' }}>
+                      {l}
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              {/* ── BLOQUE A — Energía y tiempo ── */}
+              <AnimatePresence mode="wait">
+              {protoBlock === 1 && (
+                <motion.div key="blockA"
+                  initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
+                  style={{ display:'flex', flexDirection:'column', gap:20 }}>
+
+                  {/* Horario de trabajo */}
+                  <ProtoQuestion label="¿Cuál es tu horario de trabajo?">
+                    <ChipGroup value={form.work_schedule} onChange={v => set('work_schedule', v)}
+                      options={[
+                        { v:'morning',   emoji:'🌅', label:'Mañanas' },
+                        { v:'afternoon', emoji:'☀️', label:'Tardes' },
+                        { v:'night',     emoji:'🌙', label:'Noches' },
+                        { v:'variable',  emoji:'🌀', label:'Variable' },
+                        { v:'remote',    emoji:'🏠', label:'En casa' },
+                      ]} />
+                  </ProtoQuestion>
+
+                  {/* Energía */}
+                  <ProtoQuestion label="¿Cuándo tienes más energía para ti?">
+                    <ChipGroup value={form.energy_style} onChange={v => set('energy_style', v)}
+                      options={[
+                        { v:'morning_person', emoji:'🌅', label:'Por la mañana' },
+                        { v:'midday',         emoji:'☀️', label:'A mediodía' },
+                        { v:'night_owl',      emoji:'🌙', label:'Por la noche' },
+                      ]} />
+                  </ProtoQuestion>
+
+                  {/* Ayuno intermitente */}
+                  <ProtoQuestion
+                    label="¿Haces ayuno intermitente?"
+                    tooltip="Periodos sin comer para que el cuerpo se regenere. Ejemplo: comer solo entre las 12h y las 20h.">
+                    <ChipGroup value={form.intermittent_fasting} onChange={v => set('intermittent_fasting', v)}
+                      options={[
+                        { v:'yes',     emoji:'⏱️', label:'Sí' },
+                        { v:'no',      emoji:'🍽️', label:'No' },
+                        { v:'curious', emoji:'🤔', label:'Me interesa' },
+                      ]} />
+                  </ProtoQuestion>
+
+                  {/* Sueño bifásico */}
+                  <ProtoQuestion
+                    label="¿Tienes sueño bifásico?"
+                    tooltip="Dormir en dos periodos: por ejemplo, siesta corta + noche completa. Es un patrón natural en muchas personas.">
+                    <ChipGroup value={form.biphasic_sleep} onChange={v => set('biphasic_sleep', v)}
+                      options={[
+                        { v:'yes', emoji:'😴', label:'Sí, duermo en dos fases' },
+                        { v:'no',  emoji:'💤', label:'No, solo noche' },
+                      ]} />
+                  </ProtoQuestion>
+                </motion.div>
+              )}
+
+              {/* ── BLOQUE B — Coach ── */}
+              {protoBlock === 2 && (
+                <motion.div key="blockB"
+                  initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
+                  style={{ display:'flex', flexDirection:'column', gap:20 }}>
+
+                  <ProtoQuestion label="¿Qué quieres fortalecer primero?">
+                    <ChipGroup value={form.primary_focus} onChange={v => set('primary_focus', v)}
+                      options={[
+                        { v:'nutrition', emoji:'🥗', label:'Nutrición' },
+                        { v:'exercise',  emoji:'💪', label:'Ejercicio' },
+                        { v:'calm',      emoji:'🧘', label:'Calma mental' },
+                        { v:'sleep',     emoji:'😴', label:'Sueño' },
+                      ]} />
+                  </ProtoQuestion>
+
+                  <ProtoQuestion label="¿Cómo es tu ritmo de vida?">
+                    <ChipGroup value={form.user_persona} onChange={v => set('user_persona', v)}
+                      options={[
+                        { v:'chaotic',      emoji:'🌪️', label:'Muy caótico' },
+                        { v:'structured',   emoji:'📅', label:'Con rutina' },
+                        { v:'spontaneous',  emoji:'🌊', label:'Improvisado' },
+                      ]} />
+                  </ProtoQuestion>
+
+                  <ProtoQuestion label="Cuando las cosas se ponen difíciles, ¿qué necesitas de Pandi?">
+                    <ChipGroup value={form.coach_strictness} onChange={v => set('coach_strictness', v)}
+                      options={[
+                        { v:'firm',      emoji:'🔥', label:'Un empujón firme' },
+                        { v:'soft',      emoji:'🌿', label:'Un recordatorio suave' },
+                        { v:'companion', emoji:'🤍', label:'Que solo esté ahí' },
+                      ]} />
+                  </ProtoQuestion>
+                </motion.div>
+              )}
+
+              {/* ── BLOQUE C — Protocolo de seguridad ── */}
+              {protoBlock === 3 && (
+                <motion.div key="blockC"
+                  initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
+                  style={{ display:'flex', flexDirection:'column', gap:20 }}>
+
+                  <ProtoQuestion
+                    label="¿Fumas actualmente?"
+                    hint="Ajusta mis consejos de respiración y energía">
+                    <ChipGroup value={form.smoker} onChange={v => set('smoker', v)}
+                      options={[
+                        { v:'yes', emoji:'🚬', label:'Sí' },
+                        { v:'ex',  emoji:'🌱', label:'Lo dejé' },
+                        { v:'no',  emoji:'✅', label:'No fumo' },
+                      ]} />
+                  </ProtoQuestion>
+
+                  <ProtoQuestion label="¿Tienes alguna alergia alimentaria?">
+                    <ChipMulti values={form.allergies} onToggle={v => toggle('allergies', v)}
+                      options={[
+                        { v:'gluten',    emoji:'🌾', label:'Gluten' },
+                        { v:'lactose',   emoji:'🥛', label:'Lácteos' },
+                        { v:'nuts',      emoji:'🥜', label:'Frutos secos' },
+                        { v:'shellfish', emoji:'🦐', label:'Marisco' },
+                        { v:'egg',       emoji:'🥚', label:'Huevo' },
+                        { v:'soy',       emoji:'🌱', label:'Soja' },
+                        { v:'none',      emoji:'✅', label:'Ninguna' },
+                      ]} />
+                  </ProtoQuestion>
+
+                  <ProtoQuestion label="¿Hay alimentos que prefieres evitar?">
+                    <ChipMulti values={form.dislikes} onToggle={v => toggle('dislikes', v)}
+                      options={[
+                        { v:'spicy',     emoji:'🌶️', label:'Picante' },
+                        { v:'pork',      emoji:'🐷', label:'Cerdo' },
+                        { v:'fish',      emoji:'🐟', label:'Pescado' },
+                        { v:'cilantro',  emoji:'🌿', label:'Cilantro' },
+                        { v:'broccoli',  emoji:'🥦', label:'Brócoli' },
+                        { v:'none',      emoji:'✅', label:'Como de todo' },
+                      ]} />
+                  </ProtoQuestion>
+                </motion.div>
+              )}
+              </AnimatePresence>
+
+              {/* Botón continuar */}
+              <motion.button
+                whileTap={{ scale:0.97 }}
+                onClick={nextBlock}
+                disabled={loading}
+                style={{
+                  marginTop:28,
+                  width:'100%', padding:'15px 20px', borderRadius:18,
+                  border:'1px solid rgba(255,255,255,0.25)',
+                  background:'rgba(255,255,255,0.15)',
+                  backdropFilter:'blur(20px)', WebkitBackdropFilter:'blur(20px)',
+                  color:'white', fontSize:15, fontWeight:700,
+                  cursor:'pointer',
+                  boxShadow:'0 4px 24px rgba(0,0,0,0.2)',
+                }}>
+                {loading ? 'Configurando a Pandi…'
+                  : protoBlock === 3 ? '🐾 Activar mi Santuario'
+                  : 'Continuar →'}
+              </motion.button>
+
+              {/* Skip */}
+              <button onClick={finish}
+                style={{ marginTop:12, background:'none', border:'none', cursor:'pointer',
+                  color:'rgba(255,255,255,0.3)', fontSize:12, fontWeight:600 }}>
+                Saltar por ahora
+              </button>
+
+            </div>
+
+            {/* Tooltip overlay */}
+            <AnimatePresence>
+              {tooltip && (
+                <motion.div
+                  initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
+                  onClick={() => setTooltip(null)}
+                  style={{ position:'fixed', inset:0, zIndex:50,
+                    background:'rgba(0,0,0,0.6)', backdropFilter:'blur(4px)',
+                    display:'flex', alignItems:'center', justifyContent:'center', padding:32 }}>
+                  <motion.div
+                    initial={{ scale:0.9 }} animate={{ scale:1 }}
+                    style={{ background:'rgba(255,255,255,0.12)',
+                      backdropFilter:'blur(24px)', WebkitBackdropFilter:'blur(24px)',
+                      border:'1px solid rgba(255,255,255,0.2)',
+                      borderRadius:24, padding:'24px 20px', maxWidth:320, textAlign:'center' }}>
+                    <p style={{ fontSize:32, margin:'0 0 12px' }}>💡</p>
+                    <p style={{ fontSize:14, color:'white', lineHeight:1.7, margin:'0 0 20px' }}>
+                      {tooltip}
+                    </p>
+                    <button onClick={() => setTooltip(null)}
+                      style={{ padding:'10px 28px', borderRadius:14,
+                        background:'rgba(255,255,255,0.2)', border:'1px solid rgba(255,255,255,0.3)',
+                        color:'white', fontSize:13, fontWeight:700, cursor:'pointer' }}>
+                      Entendido
+                    </button>
+                  </motion.div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+
       {Object.keys(imgErrs).length > 0 && (
         <div style={{ position:'fixed', top:8, left:8, zIndex:100,
           background:'rgba(0,0,0,0.75)', borderRadius:8, padding:'5px 10px',

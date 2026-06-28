@@ -253,8 +253,12 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name, userId }) {
       )}
 
       {/* PANDI */}
-      <div style={{ position:'absolute', bottom:'12%', left:'50%', transform:'translateX(-50%)',
-        zIndex:5, width:isMobile ? '48%' : '15%', maxWidth:500 }}>
+<div style={{ position:'absolute',
+  bottom: isNight ? PANDI_BOTTOM_NIGHT : PANDI_BOTTOM_DAY,
+  left:'50%', transform:'translateX(-50%)',
+  zIndex:5,
+  width: isMobile ? PANDI_WIDTH_MOBILE : PANDI_WIDTH_DESK,
+  maxWidth: PANDI_MAX_WIDTH }}>
         <motion.div onClick={handlePandiTap} whileTap={{ scale:0.95 }}
           style={{ cursor:'pointer', touchAction:'manipulation' }}>
           <div style={{ position:'relative' }}>

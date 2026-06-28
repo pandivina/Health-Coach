@@ -129,14 +129,14 @@ const TAB_CONFIG = {
     hidePandi:   true, // Pandi oculto — CheckinTab lo gestiona
   },
   santuario: {
-    bg:          '/sanctuary/bg_checkin.png',
+    bg:          '//bg_checkin.png',
     bgFallback:  '#f0edf8',
     frames:      ['/panda/panda_base.png'],
     pandiMode:   'celebrate',
     hidePandi:   true, // fullscreen álbum, sin Pandi en el fondo
   },
   journal: {
-    bg:          '/sanctuary/bg_journal.png',
+    bg:          '//bg_journal.png',
     bgFallback:  '#f7f0e6',
     frames:      ['/panda/panda_sitting.png'],
     pandiMode:   'sitting',
@@ -195,14 +195,14 @@ function PandaImg({ name, size = 48, fallback = '🐼', style = {} }) {
 }
 
 // ─── SANTUARIO FONDO — reutiliza la misma lógica que Home ────────────────────
-function SanctuaryBg({ recoveryLight, mood, activeTab }) {
+function Bg({ recoveryLight, mood, activeTab }) {
   const tabCfg = TAB_CONFIG[activeTab]
 
   const bgSrc = tabCfg?.bg || (() => {
     const state = mood
       ? (mood >= 4 ? 'GREEN' : mood === 3 ? 'YELLOW' : 'RED')
       : (recoveryLight || 'GREEN')
-    return (SANCTUARY_CONFIG[state] || SANCTUARY_CONFIG.GREEN).bg
+    return (_CONFIG[state] || _CONFIG.GREEN).bg
   })()
 
   const bgColor = tabCfg?.bgFallback || '#e8f5ee'
@@ -230,7 +230,7 @@ function SanctuaryBg({ recoveryLight, mood, activeTab }) {
 }
 
 // ─── PANDI ANIMADA ───────────────────────────────────────────────────────────
-function SanctuaryPandi({ mood, pandiMode, cfg, activeTab, recoveryLight }) {
+function Pandi({ mood, pandiMode, cfg, activeTab, recoveryLight }) {
   const [imgErr, setImgErr] = useState(false)
   const isMeditating = activeTab === 'meditation'
 
@@ -1368,10 +1368,10 @@ export default function Mood() {
   const totalHabits = Object.keys(habitsChecked).length || 1
 
   // Estado del santuario según mood actual
-  const sanctuaryState = currentMood
+  const State = currentMood
     ? (currentMood >= 4 ? 'GREEN' : currentMood === 3 ? 'YELLOW' : 'RED')
     : (recoveryLight || 'GREEN')
-  const sanctuaryCfg = SANCTUARY_CONFIG[sanctuaryState] || SANCTUARY_CONFIG.GREEN
+  const Cfg = SANCTUARY_CONFIG[sanctuaryState] || SANCTUARY_CONFIG.GREEN
 
   useSectionContext('mood', {
     todayMood: currentMood, activeTab,

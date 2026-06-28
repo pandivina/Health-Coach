@@ -11,6 +11,7 @@ import { useSectionContext } from '../hooks/useSectionContext'
 import PandiInsights from '../components/PandiInsights'
 import { Plus, Minus as MinusIcon, Droplets } from 'lucide-react'
 import PandiPulse from '../components/mood/PandiPulse'
+import { getSanctuaryWelcomeMessage, buildCoachMemory, recordSanctuaryVisit } from '../lib/coachMemory'
 
 // ─── CONSTANTES ───────────────────────────────────────────────────────────────
 
@@ -154,6 +155,16 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name, userId }) {
   const [waking,     setWaking]     = useState(false)
   const [wakeFrame,  setWakeFrame]  = useState(0)
   const [showPrompt, setShowPrompt] = useState(false)
+  const [welcomeMsg, setWelcomeMsg] = useState(null)
+
+  // Mensaje de bienvenida contextual desde coachMemory
+  useEffect(() => {
+    if (!userId) return
+    buildCoachMemory(userId).then(memory => {
+      const msg = getSanctuaryWelcomeMessage(memory)
+      if (msg) setWelcomeMsg(msg)
+    }).catch(() => {})
+  }, [userId])
 
   useEffect(() => { ALL_FRAMES.forEach(src => { const i = new Image(); i.src = src }) }, [])
   useEffect(() => { setFrameIdx(0); setImgErr(false) }, [recoveryLight])
@@ -319,6 +330,46 @@ function Sanctuary({ recoveryLight, profile, theme, greeting, name, userId }) {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* ── PANEL SANTUARIO — glassmorphism, parte inferior ── */}
+      {!isNight && !showPrompt && (
+        <motion.button
+          initial={{ opacity:0 }} animate={{ opacity:1 }} transition={{ delay:0.6 }}
+          onClick={() => navigate('/mood')}
+          whileTap={{ scale:0.98 }}
+          style={{
+            position:'absolute', bottom:12, left:12, right:12, zIndex:10,
+            background:'rgba(255,255,255,0.28)',
+            backdropFilter:'blur(16px)',
+            WebkitBackdropFilter:'blur(16px)',
+            border:'1px solid rgba(255,255,255,0.45)',
+            borderRadius:20,
+            padding:'10px 14px',
+            display:'flex', alignItems:'center', gap:10,
+            cursor:'pointer', boxShadow:'0 4px 20px rgba(0,0,0,0.10)',
+          }}>
+          {/* Dot semáforo */}
+          <motion.div
+            animate={{ opacity:[0.6,1,0.6] }} transition={{ duration:2, repeat:Infinity }}
+            style={{ width:8, height:8, borderRadius:'50%', background:cfg.dot,
+              boxShadow:`0 0 8px ${cfg.dot}`, flexShrink:0 }} />
+
+          {/* Mensaje */}
+          <p style={{ flex:1, margin:0, fontSize:12, fontWeight:600,
+            color:'rgba(255,255,255,0.95)', textAlign:'left', lineHeight:1.4,
+            textShadow:'0 1px 4px rgba(0,0,0,0.2)' }}>
+            {welcomeMsg || cfg.msg}
+          </p>
+
+          {/* Flecha → Santuario real */}
+          <div style={{ flexShrink:0, display:'flex', alignItems:'center', gap:4 }}>
+            <span style={{ fontSize:10, fontWeight:700, color:'rgba(255,255,255,0.8)' }}>
+              Santuario
+            </span>
+            <span style={{ fontSize:13, color:'rgba(255,255,255,0.9)' }}>›</span>
+          </div>
+        </motion.button>
+      )}
     </div>
   )
 }

@@ -14,6 +14,7 @@ import { ToastProvider } from './components/ToastProvider'
 import { CoachAwarenessProvider } from './contexts/CoachAwarenessContext'
 import AppErrorBoundary from './components/AppErrorBoundary'
 import { GlobalMenuProvider } from './contexts/GlobalMenuContext'
+import MisRecetas from './pages/MisRecetas'
 
 // Public
 import Landing from './pages/Landing'
@@ -141,6 +142,7 @@ export default function App() {
                   <Route path="/workout"    element={<WorkoutView />} />
                   <Route path="/sleep"      element={<Sleep />} />
                   <Route path="/mood"       element={<Mood />} />
+                  <Route path="/mis-recetas" element={<MisRecetas />} />
                   {/* FIX Limpieza: /sanctuary redirige a /mood */}
                   <Route path="/sanctuary"  element={<Navigate to="/mood" replace />} />
                   <Route path="/espejo"     element={<EspejoMetabolico />} />

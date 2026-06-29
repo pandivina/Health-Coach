@@ -156,7 +156,12 @@ export default function FoodSearch({ onSelect, placeholder='Buscar alimento...' 
   const [showAddModal, setShowAddModal] = useState(false)
   const [addPrefill,   setAddPrefill]   = useState(null)
   const [toast,        setToast]        = useState(null)
-  const debounceRef = useRef(null)
+  const [showRecents,  setShowRecents]  = useState(false)
+
+  // Recientes desde localStorage
+  const recents = (() => {
+    try { return JSON.parse(localStorage.getItem('pandi_food_recents') || '[]').slice(0, 8) } catch { return [] }
+  })()
 
   const search = useCallback(async (q, brand='') => {
     if (!q?.trim()) { setResults([]); setBrands([]); return }
@@ -187,6 +192,12 @@ export default function FoodSearch({ onSelect, placeholder='Buscar alimento...' 
       const id = food.id.replace('community_','')
       fetch(`${import.meta.env.VITE_API_URL}/api/fs/community/${id}/use`, { method:'POST' }).catch(()=>{})
     }
+    // Guardar en recientes
+    try {
+      const prev = JSON.parse(localStorage.getItem('pandi_food_recents') || '[]')
+      const next = [food, ...prev.filter(f => f.id !== food.id)].slice(0, 12)
+      localStorage.setItem('pandi_food_recents', JSON.stringify(next))
+    } catch {}
     onSelect?.(food)
   }
 
@@ -356,11 +367,94 @@ export default function FoodSearch({ onSelect, placeholder='Buscar alimento...' 
         </div>
       )}
 
-      {/* Estado vacío */}
+      {/* Estado vacío — recientes + categorías */}
       {!query && (
-        <p style={{ textAlign:'center', fontSize:13, color:theme.textMuted, margin:'8px 0' }}>
-          Busca en 🇪🇸 España · 🌍 FatSecret · 👥 Comunidad
-        </p>
+        <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
+
+          {/* Recientes — botón colapsable */}
+          {recents.length > 0 && (
+            <div>
+              <button onClick={() => setShowRecents(r => !r)}
+                style={{ width:'100%', display:'flex', alignItems:'center', gap:8,
+                  padding:'11px 14px', borderRadius:14, border:`1px solid ${theme.border}`,
+                  background: theme.surface, cursor:'pointer' }}>
+                <Clock size={15} style={{ color: theme.textMuted }} />
+                <span style={{ flex:1, textAlign:'left', fontSize:13, fontWeight:700, color: theme.text }}>
+                  Recientes
+                </span>
+                <ChevronDown size={15} style={{ color: theme.textMuted,
+                  transform: showRecents ? 'rotate(180deg)' : 'rotate(0)',
+                  transition:'transform 0.2s' }} />
+              </button>
+
+              <AnimatePresence>
+                {showRecents && (
+                  <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
+                    style={{ marginTop:6, display:'flex', flexDirection:'column', gap:4 }}>
+                    {recents.map(food => (
+                      <motion.div key={food.id} whileTap={{ scale:0.98 }}
+                        onClick={() => handleSelect(food)}
+                        style={{ display:'flex', alignItems:'center', gap:10, padding:'10px 12px',
+                          borderRadius:12, background:'white', border:`1px solid ${theme.border}`,
+                          cursor:'pointer' }}>
+                        <SourceBadge source={food.source} />
+                        <div style={{ flex:1, minWidth:0 }}>
+                          <p style={{ fontSize:13, fontWeight:700, color:theme.text, margin:0,
+                            overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                            {food.name}
+                          </p>
+                          <p style={{ fontSize:11, color:theme.primary, fontWeight:600, margin:'2px 0 0' }}>
+                            {food.calories != null ? `${Math.round(food.calories)} kcal` : '—'} ·
+                            P:{food.protein ?? '?'}g · C:{food.carbs ?? '?'}g · G:{food.fat ?? '?'}g /100g
+                          </p>
+                        </div>
+                        <ChevronRight size={14} style={{ color:theme.textMuted }} />
+                      </motion.div>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          )}
+
+          {/* Categorías */}
+          <div>
+            <p style={{ fontSize:11, fontWeight:700, color:theme.textMuted, margin:'0 0 8px',
+              textTransform:'uppercase', letterSpacing:'.06em' }}>Explorar por categoría</p>
+            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
+              {[
+                { key:'desayunos',    emoji:'🥣', label:'Desayunos',     count:12 },
+                { key:'carnes',       emoji:'🥩', label:'Carnes',        count:15 },
+                { key:'pescados',     emoji:'🐟', label:'Pescados',      count:13 },
+                { key:'huevos',       emoji:'🥚', label:'Huevos',        count:4  },
+                { key:'lacteos',      emoji:'🥛', label:'Lácteos',       count:11 },
+                { key:'cereales',     emoji:'🍚', label:'Cereales',      count:12 },
+                { key:'legumbres',    emoji:'🫘', label:'Legumbres',     count:6  },
+                { key:'verduras',     emoji:'🥦', label:'Verduras',      count:21 },
+                { key:'frutas',       emoji:'🍎', label:'Frutas',        count:15 },
+                { key:'frutos_secos', emoji:'🌰', label:'Frutos secos',  count:7  },
+                { key:'platos',       emoji:'🍲', label:'Platos típicos',count:6  },
+                { key:'snacks',       emoji:'🍪', label:'Snacks',        count:8  },
+              ].map(cat => (
+                <motion.button key={cat.key} whileTap={{ scale:0.97 }}
+                  onClick={() => setQuery(cat.label)}
+                  style={{ display:'flex', alignItems:'center', gap:10, padding:'12px 14px',
+                    borderRadius:14, border:`1px solid ${theme.border}`,
+                    background:'white', cursor:'pointer', textAlign:'left' }}>
+                  <span style={{ fontSize:22 }}>{cat.emoji}</span>
+                  <div>
+                    <p style={{ fontSize:13, fontWeight:700, color:theme.text, margin:0 }}>{cat.label}</p>
+                    <p style={{ fontSize:11, color:theme.textMuted, margin:0 }}>{cat.count} alimentos</p>
+                  </div>
+                </motion.button>
+              ))}
+            </div>
+          </div>
+
+          <p style={{ textAlign:'center', fontSize:12, color:theme.textMuted, margin:'4px 0 0' }}>
+            Busca en 🇪🇸 España · 🌍 FatSecret · 👥 Comunidad
+          </p>
+        </div>
       )}
 
       {/* Modal añadir a comunidad */}

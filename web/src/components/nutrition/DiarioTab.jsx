@@ -400,6 +400,7 @@ function FoodRow({ food, theme, onSelect, source }) {
 // ─── MODAL BIBLIOTECA ─────────────────────────────────────────────────────────
 
 function FoodModal({ mealType, userId, theme, onAdd, onClose }) {
+  const { profile } = useStore()
   const [tab,          setTab]          = useState('search')
   const [query,        setQuery]        = useState('')
   const [offResults,   setOffResults]   = useState([])
@@ -409,6 +410,7 @@ function FoodModal({ mealType, userId, theme, onAdd, onClose }) {
   const [selected,     setSelected]     = useState(null)
   const [showScanner,  setShowScanner]  = useState(false)
   const [activeCategory, setActiveCategory] = useState(null)
+  const [showRecent,     setShowRecent]     = useState(false)
   const debounceRef = useRef(null)
   const inputRef    = useRef(null)
 
@@ -649,47 +651,63 @@ function FoodModal({ mealType, userId, theme, onAdd, onClose }) {
                   </div>
                 )}
 
-                {/* Recientes */}
+                {/* Recientes — colapsado por defecto */}
                 {query.length < 2 && recent.length > 0 && (
                   <div>
-                    <div className="flex items-center gap-2 mb-2">
+                    <button onClick={() => setShowRecent(r => !r)}
+                      className="w-full flex items-center gap-2 py-2"
+                      style={{ background:'none', border:'none', cursor:'pointer', padding:0 }}>
                       <Clock size={13} style={{ color: theme.textMuted }} />
-                      <p className="text-xs font-bold uppercase tracking-wide"
-                        style={{ color: theme.textMuted }}>Recientes</p>
-                    </div>
-                    <div className="space-y-1.5">
-                      {recent.map(food => (
-                        <FoodRow key={`history-${food.food_name}`} food={food} theme={theme}
-                          source="history" onSelect={() => selectFood(food, 'history')} />
-                      ))}
-                    </div>
+                      <p className="text-xs font-bold uppercase tracking-wide flex-1 text-left"
+                        style={{ color: theme.textMuted, margin:0 }}>Recientes</p>
+                      <span style={{ fontSize:11, color: theme.textMuted }}>
+                        {showRecent ? '▲' : '▼'}
+                      </span>
+                    </button>
+                    <AnimatePresence>
+                      {showRecent && (
+                        <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }}
+                          exit={{ opacity:0 }} className="space-y-1.5 mt-2">
+                          {recent.map(food => (
+                            <FoodRow key={`history-${food.food_name}`} food={food} theme={theme}
+                              source="history" onSelect={() => selectFood(food, 'history')} />
+                          ))}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </div>
                 )}
 
-                {/* Categorías */}
+                {/* Mis Recetas desbloqueables + Categorías */}
                 {query.length < 2 && (
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-wide mb-3"
-                      style={{ color: theme.textMuted }}>
-                      Explorar por categoría
-                    </p>
-                    <div className="grid grid-cols-2 gap-2">
-                      {FOOD_CATEGORIES.map(cat => (
-                        <button key={cat.id} onClick={() => setActiveCategory(cat.id)}
-                          className="flex items-center gap-3 p-3 rounded-2xl text-left
-                            transition-all active:scale-95"
-                          style={{ background: theme.surface, border:`1px solid ${theme.border}` }}>
-                          <span style={{ fontSize:24 }}>{cat.emoji}</span>
-                          <div>
-                            <p className="text-sm font-semibold" style={{ color: theme.text }}>
-                              {cat.label}
-                            </p>
-                            <p className="text-xs" style={{ color: theme.textMuted }}>
-                              {SPANISH_FOODS.filter(f => f.category === cat.id).length} alimentos
-                            </p>
-                          </div>
-                        </button>
-                      ))}
+                  <div className="space-y-4">
+                    <RecipeUnlockBanner compact
+                      userId={userId}
+                      userXP={profile?.xp || 0}
+                      userLevel={profile?.level || 1} />
+                    <div>
+                      <p className="text-xs font-bold uppercase tracking-wide mb-3"
+                        style={{ color: theme.textMuted }}>
+                        Explorar por categoría
+                      </p>
+                      <div className="grid grid-cols-2 gap-2">
+                        {FOOD_CATEGORIES.map(cat => (
+                          <button key={cat.id} onClick={() => setActiveCategory(cat.id)}
+                            className="flex items-center gap-3 p-3 rounded-2xl text-left
+                              transition-all active:scale-95"
+                            style={{ background: theme.surface, border:`1px solid ${theme.border}` }}>
+                            <span style={{ fontSize:24 }}>{cat.emoji}</span>
+                            <div>
+                              <p className="text-sm font-semibold" style={{ color: theme.text }}>
+                                {cat.label}
+                              </p>
+                              <p className="text-xs" style={{ color: theme.textMuted }}>
+                                {SPANISH_FOODS.filter(f => f.category === cat.id).length} alimentos
+                              </p>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 )}
@@ -846,13 +864,6 @@ export default function DiarioTab({ showAddModal, onCloseAddModal, onAnalyze, on
   return (
     <>
       <div className="space-y-4">
-
-        {/* ── RECETAS DESBLOQUEABLES ── */}
-        <RecipeUnlockBanner
-          userId={user?.id}
-          userXP={profile?.xp || 0}
-          userLevel={profile?.level || 1}
-        />
 
         <CalorieTrendWidget userId={user?.id} theme={theme} calorieGoal={goals.calories} />
 

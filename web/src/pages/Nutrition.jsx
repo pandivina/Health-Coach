@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { BookOpen, ShoppingBag, ChefHat, Camera, Barcode, Plus } from 'lucide-react'
+import { BookOpen, ShoppingBag, ChefHat, Camera, Barcode, Plus, ChevronRight } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useTheme } from '../contexts/ThemeProvider'
 import { useTour } from '../hooks/useTour'
@@ -83,9 +83,9 @@ export default function Nutrition() {
         </div>
       </div>
 
-      {/* Acciones rápidas — solo en Diario */}
+      {/* Acciones rápidas + Mis Recetas — solo en Diario */}
       {tab === 'diario' && (
-        <div className="px-4 mb-4">
+        <div className="px-4 mb-4" style={{ display:'flex', flexDirection:'column', gap:8 }}>
           <div className="grid grid-cols-3 gap-2" data-tour="nutrition-add">
             {ACTIONS.map(({ icon: Icon, label, action, color }) => (
               <motion.button key={label} whileTap={{ scale:0.95 }} onClick={action}
@@ -101,6 +101,23 @@ export default function Nutrition() {
               </motion.button>
             ))}
           </div>
+
+          {/* Mis Recetas — botón ancho completo */}
+          <motion.button whileTap={{ scale:0.98 }} onClick={() => setTab('recetas')}
+            style={{ width:'100%', display:'flex', alignItems:'center', gap:12,
+              padding:'13px 16px', borderRadius:16,
+              background: theme.surface, border:`1px solid ${theme.border}`,
+              cursor:'pointer' }}>
+            <div style={{ width:36, height:36, borderRadius:12,
+              background: theme.primary + '18',
+              display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+              <ChefHat size={18} style={{ color: theme.primary }} />
+            </div>
+            <span style={{ fontSize:14, fontWeight:700, color: theme.text, flex:1, textAlign:'left' }}>
+              Mis Recetas
+            </span>
+            <ChevronRight size={16} style={{ color: theme.textMuted }} />
+          </motion.button>
         </div>
       )}
 

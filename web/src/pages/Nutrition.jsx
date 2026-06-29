@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { BookOpen, ShoppingBag, ChefHat, Camera, Barcode, Plus, ChevronRight } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useTheme } from '../contexts/ThemeProvider'
 import { useTour } from '../hooks/useTour'
@@ -22,6 +23,7 @@ const TABS = [
 
 export default function Nutrition() {
   const { theme } = useTheme()
+  const navigate  = useNavigate()
   const [tab,             setTab]             = useState('diario')
   const [showAddModal,    setShowAddModal]    = useState(false)
   const [nutritionSummary, setNutritionSummary] = useState({
@@ -103,7 +105,7 @@ export default function Nutrition() {
           </div>
 
           {/* Mis Recetas — botón ancho completo */}
-          <motion.button whileTap={{ scale:0.98 }} onClick={() => setTab('recetas')}
+          <motion.button whileTap={{ scale:0.98 }} onClick={e => { e.stopPropagation(); navigate('/mis-recetas') }}
             style={{ width:'100%', display:'flex', alignItems:'center', gap:12,
               padding:'13px 16px', borderRadius:16,
               background: theme.surface, border:`1px solid ${theme.border}`,

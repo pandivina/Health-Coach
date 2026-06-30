@@ -9,11 +9,11 @@ import { api } from '../lib/api'
 // CONSTANTES EDITABLES — ajusta posición y tamaño del orbe aquí
 // ─────────────────────────────────────────────────────────────────────────────
 const ORB_CONFIG = {
-  bottom:     '12%',   // distancia desde el fondo de la pantalla
-  size:       '72%',   // ancho del orbe relativo al contenedor
+  bottom:     '32%',   // distancia desde el fondo de la pantalla
+  size:       '100%',   // ancho del orbe relativo al contenedor
   maxWidth:   340,     // px máximo
-  btnBottom:  '52%',   // posición del botón invisible sobre el orbe
-  btnSize:    80,      // px del área táctil del botón
+  btnBottom:  '60%',   // posición del botón invisible sobre el orbe
+  btnSize:    75,      // px del área táctil del botón
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -969,7 +969,7 @@ export default function Onboarding() {
             {/* Aura */}
             <motion.div
               animate={{ scale:[1,1.15,1], opacity:[0.3,0.6,0.3] }}
-              transition={{ duration:3, repeat:Infinity }}
+              transition={{ duration:6, repeat:Infinity }}
               style={{ position:'absolute', width:280, height:280, borderRadius:'50%',
                 background:'radial-gradient(circle, rgba(201,169,110,0.4), transparent 70%)',
                 filter:'blur(30px)' }} />
@@ -981,7 +981,7 @@ export default function Onboarding() {
                 position:'relative', zIndex:2 }}
               onError={e => e.target.style.display='none'} />
 
-            <GlassCard style={{ padding:'24px', marginTop:24, textAlign:'center', width:'100%', maxWidth:360 }}>
+            <GlassCard style={{ padding:'30px', marginTop:24, textAlign:'center', width:'100%', maxWidth:360 }}>
               <p style={{ fontSize:22, fontWeight:900, color:'white', margin:'0 0 6px' }}>
                 ¡Ha nacido!
               </p>

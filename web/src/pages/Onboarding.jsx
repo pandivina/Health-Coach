@@ -9,8 +9,8 @@ import { api } from '../lib/api'
 // CONSTANTES EDITABLES — ajusta posición y tamaño del orbe aquí
 // ─────────────────────────────────────────────────────────────────────────────
 const ORB_CONFIG = {
-  bottom:     '35%',   // distancia desde el fondo de la pantalla
-  size:       '100%',   // ancho del orbe relativo al contenedor
+  bottom:     '12%',   // distancia desde el fondo de la pantalla
+  size:       '72%',   // ancho del orbe relativo al contenedor
   maxWidth:   340,     // px máximo
   btnBottom:  '52%',   // posición del botón invisible sobre el orbe
   btnSize:    80,      // px del área táctil del botón
@@ -448,10 +448,10 @@ export default function Onboarding() {
   function startIntro() {
     handleFirstInteraction()
     audio.playButton()
-    setPhase(0)
-    setTimeout(() => setPhase(1), 800)
-    setTimeout(() => setPhase(2), 5000)
-    setTimeout(() => setPhase(3), 9000)
+    setPhase(0)                                    // puerta cerrada
+    setTimeout(() => setPhase(1), 600)             // puerta sigue
+    setTimeout(() => { setPhase(2); audio.playApertura() }, 2500)  // transición a nubes
+    setTimeout(() => setPhase(3), 4500)            // nombre
   }
 
   function proceedFromName() {
@@ -722,14 +722,16 @@ export default function Onboarding() {
             style={{ position:'fixed', inset:0, zIndex:10 }}>
             {/* Puerta cerrada → nubes */}
             <AnimatePresence mode="wait">
-              {phase <= 2 ? (
+              {phase <= 1 ? (
                 <motion.img key="door" src="/panda/onboarding_door_closed.png"
                   initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
+                  transition={{ duration:0.8 }}
                   style={{ width:'100%', height:'100%', objectFit:'cover' }}
                   onError={e => e.target.style.display='none'} />
               ) : (
                 <motion.img key="clouds" src="/panda/onboarding_clouds.png"
                   initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
+                  transition={{ duration:1.2 }}
                   style={{ width:'100%', height:'100%', objectFit:'cover' }}
                   onError={e => e.target.style.display='none'} />
               )}

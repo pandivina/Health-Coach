@@ -9,11 +9,11 @@ import { api } from '../lib/api'
 // CONSTANTES EDITABLES — ajusta posición y tamaño del orbe aquí
 // ─────────────────────────────────────────────────────────────────────────────
 const ORB_CONFIG = {
-  bottom:     '37%',   // distancia desde el fondo de la pantalla
-  size:       '100%',   // ancho del orbe relativo al contenedor
+  bottom:     '12%',   // distancia desde el fondo de la pantalla
+  size:       '72%',   // ancho del orbe relativo al contenedor
   maxWidth:   340,     // px máximo
-  btnBottom:  '48%',   // posición del botón invisible sobre el orbe
-  btnSize:    75,      // px del área táctil del botón
+  btnBottom:  '52%',   // posición del botón invisible sobre el orbe
+  btnSize:    80,      // px del área táctil del botón
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -865,12 +865,12 @@ export default function Onboarding() {
                 <motion.div key={`q-${qStep}`}
                   initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
                   style={{
-                    position:'absolute', top:0, left:0, right:0, zIndex:4,
-                    padding:'calc(env(safe-area-inset-top,0px) + 20px) 20px 16px',
+                    position:'absolute', bottom:0, left:0, right:0, zIndex:4,
+                    padding:'0 16px calc(env(safe-area-inset-bottom,0px) + 16px)',
                   }}>
 
-                  {/* Progreso */}
-                  <div style={{ display:'flex', gap:4, marginBottom:16 }}>
+                  {/* Progreso — arriba del panel */}
+                  <div style={{ display:'flex', gap:4, marginBottom:10 }}>
                     {QUESTIONS.map((_,i) => (
                       <motion.div key={i}
                         animate={{ background: i <= qStep ? energyColor : 'rgba(255,255,255,0.2)' }}

@@ -9,7 +9,7 @@ import { api } from '../lib/api'
 // CONSTANTES EDITABLES — ajusta posición y tamaño del orbe aquí
 // ─────────────────────────────────────────────────────────────────────────────
 const ORB_CONFIG = {
-  bottom:     '50%',   // distancia desde el fondo de la pantalla
+  bottom:     '35%',   // distancia desde el fondo de la pantalla
   size:       '72%',   // ancho del orbe relativo al contenedor
   maxWidth:   340,     // px máximo
   btnBottom:  '64%',   // posición del botón invisible sobre el orbe

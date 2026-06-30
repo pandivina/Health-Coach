@@ -354,6 +354,10 @@ export default function Onboarding() {
     primary_focus:'', coach_strictness:'', user_persona:'',
     // Bloque C — protocolo de seguridad
     smoker:'', allergies:[], dislikes:[],
+    // Fase 1 — gancho
+    goal_main:'', lifestyle:'',
+    // Fase 14 — personalidad coach
+    coach_persona:'',
   })
   const set    = (k, v) => setForm(f => ({...f, [k]:v}))
   const toggle = (k, v) => setForm(f => {
@@ -362,10 +366,12 @@ export default function Onboarding() {
   })
 
   // Fase protocolo post-nacimiento
-  const [protoBlock,  setProtoBlock]  = useState(0) // 0=inactivo, 1=A, 2=B, 3=C
+  const [protoBlock,  setProtoBlock]  = useState(0)
   const [tooltip,     setTooltip]     = useState(null)
 
-  const showProtocol = phase === 13
+  const showGancho      = phase === -1  // Fase 1 nueva — antes del orbe
+  const showProtocol    = phase === 13
+  const showPersonality = phase === 14  // Fase 3 nueva — personalidad del coach
 
   const [orbActivated, setOrbActivated] = useState(false)
   const [orbOpened,    setOrbOpened]    = useState(false)
@@ -373,22 +379,30 @@ export default function Onboarding() {
   const [smoke,        setSmoke]        = useState(false)
   const [fillLevel,    setFillLevel]    = useState(0)
 
-  const showBlur   = phase <= 3
+  const showBlur   = phase >= 0 && phase <= 3
   const showOpen   = phase === 1 || (phase === 2 && !openFading)
   const showClouds = phase >= 4
   const showOrb    = phase >= 4 && phase <= 10
   const showAwaken = phase === 11
   const showBorn   = phase === 12
 
+  // Arrancar en fase gancho (-1), luego ir a intro (0)
   useEffect(() => {
+    setPhase(-1)
+  }, [])
+
+  function startIntro() {
+    // Tras el gancho, arrancar la intro animada normal
+    handleFirstInteraction()
+    audio.playButton()
+    setPhase(0)
     const t1 = setTimeout(() => setPhase(1), 800)
     const t2 = setTimeout(() => setPhase(2), 5000)
     const t3 = setTimeout(() => {
       setOpenFading(true)
       setTimeout(() => { setOpenFading(false); setPhase(3) }, 1200)
     }, 9000)
-    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3) }
-  }, [])
+  }
 
   function handleFirstInteraction() {
     if (!started) { setStarted(true); audio.startAmbient() }
@@ -470,7 +484,7 @@ export default function Onboarding() {
     if (protoBlock < 3) {
       setProtoBlock(b => b + 1)
     } else {
-      finish()
+      setPhase(14) // → personalidad del coach
     }
   }
 
@@ -486,10 +500,11 @@ export default function Onboarding() {
         name:             form.name,
         onboarding_done:  true,
         motivation_why:   form.intention    || null,
-        primary_focus:    form.primary_focus|| null,
+        primary_focus:    form.primary_focus|| form.goal_main || null,
         coach_strictness: strictnessMap[form.coach_strictness] ?? 0.5,
         energy_style:     form.energy_style || null,
         work_schedule:    form.work_schedule|| null,
+        coach_persona:    form.coach_persona|| null,
       }).eq('id', userId)
 
       await supabase.from('health_profiles').upsert({
@@ -630,7 +645,7 @@ export default function Onboarding() {
             ))}
 
             <motion.div
-              initial={{ scale:0.7, y:40 }}
+              initial={{ scale:0.7 }} style={{ translateY:40 }}
               animate={{ scale:1, y:0 }}
               transition={{ duration:1.4, type:'spring', damping:18 }}
               style={{ position:'absolute', inset:0,
@@ -653,7 +668,7 @@ export default function Onboarding() {
                   <>
                     {[...Array(8)].map((_, i) => (
                       <motion.div key={`smoke-${i}`}
-                        initial={{ opacity:0.7, scale:0.3, x:(Math.random()-0.5)*40, y:0 }}
+                        initial={{ opacity:0.7, scale:0.3, x:(Math.random()-0.5)*40 }}
                         animate={{ opacity:0, scale:2+Math.random(), x:(Math.random()-0.5)*80, y:-60-Math.random()*60 }}
                         exit={{ opacity:0 }}
                         transition={{ duration:1.2+Math.random()*0.8, delay:i*0.08, ease:'easeOut' }}
@@ -756,7 +771,7 @@ export default function Onboarding() {
                 {/* Texto pregunta */}
                 <AnimatePresence mode="wait">
                   <motion.div key={`qt-${qStep}`}
-                    initial={{ opacity:0, y:6 }} animate={{ opacity:1, y:0 }}
+                    initial={{ opacity:0 }} animate={{ opacity:1, translateY:0 }} style={{ translateY:6 }}
                     exit={{ opacity:0, y:-6 }} transition={{ duration:0.3 }}
                     style={{ marginBottom:8, textAlign:'center' }}>
                     <p style={{ fontSize:14, fontWeight:900, color:'#1A2332',
@@ -772,7 +787,7 @@ export default function Onboarding() {
                 {/* Opciones */}
                 <AnimatePresence mode="wait">
                   <motion.div key={`qs-${qStep}`}
-                    initial={{ opacity:0, y:8 }} animate={{ opacity:1, y:0 }}
+                    initial={{ opacity:0 }} animate={{ opacity:1, translateY:0 }} style={{ translateY:8 }}
                     exit={{ opacity:0 }} transition={{ duration:0.25 }}>
                     <OptionCarousel
                       options={currentQ.options}
@@ -863,7 +878,7 @@ export default function Onboarding() {
             </motion.div>
 
             <motion.div
-              initial={{ opacity:0, y:20 }} animate={{ opacity:1, y:0 }}
+              initial={{ opacity:0 }} animate={{ opacity:1, translateY:0 }} style={{ translateY:20 }}
               transition={{ delay:0.8 }}
               style={{
                 position:'fixed', bottom:48, left:0, right:0,
@@ -903,7 +918,7 @@ export default function Onboarding() {
       <AnimatePresence>
         {showBorn && (
           <motion.div key="born"
-            initial={{ opacity:0, scale:0.7, y:30 }}
+            initial={{ opacity:0, scale:0.7 }} style={{ translateY:30 }}
             animate={{ opacity:1, scale:1, y:0 }}
             transition={{ type:'spring', damping:14, delay:0.2 }}
             style={{ position:'fixed', inset:0, zIndex:15,
@@ -981,7 +996,7 @@ export default function Onboarding() {
       <AnimatePresence>
         {phase === 3 && (
           <motion.div key="name"
-            initial={{ opacity:0, y:20 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0 }}
+            initial={{ opacity:0 }} animate={{ opacity:1, translateY:0 }} exit={{ opacity:0 }} style={{ translateY:20 }}
             transition={{ duration:0.8 }}
             style={{ position:'absolute', inset:0, zIndex:20,
               display:'flex', flexDirection:'column',
@@ -1037,7 +1052,7 @@ export default function Onboarding() {
       <AnimatePresence>
         {phase === 4 && !orbActivated && (
           <motion.div
-            initial={{ opacity:0, y:10 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0 }}
+            initial={{ opacity:0 }} animate={{ opacity:1, translateY:0 }} exit={{ opacity:0 }} style={{ translateY:10 }}
             transition={{ duration:0.8, delay:1 }}
             style={{
               position:'fixed', bottom:80, left:0, right:0, zIndex:20,
@@ -1066,7 +1081,7 @@ export default function Onboarding() {
               alignItems:'center', justifyContent:'flex-end',
               padding:'0 28px 56px' }}>
             <motion.div
-              initial={{ opacity:0, y:20 }} animate={{ opacity:1, y:0 }}
+              initial={{ opacity:0 }} animate={{ opacity:1, translateY:0 }} style={{ translateY:20 }}
               transition={{ delay:1 }}
               style={{ textAlign:'center', maxWidth:300 }}>
               <p style={{ fontSize:10, color:'rgba(255,255,255,0.55)',
@@ -1385,7 +1400,282 @@ export default function Onboarding() {
       </AnimatePresence>
 
 
-      {Object.keys(imgErrs).length > 0 && (
+      {/* ── FASE -1: GANCHO — objetivo + estilo de vida ── */}
+      <AnimatePresence>
+        {showGancho && (
+          <motion.div key="gancho"
+            initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
+            style={{ position:'fixed', inset:0, zIndex:40,
+              background:'linear-gradient(160deg, #0f1729 0%, #1a2340 50%, #0d1f35 100%)',
+              display:'flex', flexDirection:'column',
+              alignItems:'center', justifyContent:'center',
+              padding:'40px 24px' }}>
+
+            {/* Fondo estrellas */}
+            {[...Array(12)].map((_, i) => (
+              <motion.div key={i}
+                animate={{ opacity:[0, 0.7, 0], scale:[0,1,0] }}
+                transition={{ duration:3+i*0.3, repeat:Infinity, delay:i*0.4 }}
+                style={{ position:'absolute',
+                  top:`${5+i*8}%`, left:`${4+i*9}%`,
+                  width:2+i%3, height:2+i%3, borderRadius:'50%',
+                  background: i%3===0 ? '#FFD97D' : i%3===1 ? '#A78BFA' : '#2EC4B6',
+                  pointerEvents:'none' }} />
+            ))}
+
+            <div style={{ position:'relative', zIndex:2, width:'100%', maxWidth:400,
+              display:'flex', flexDirection:'column', gap:32, alignItems:'center' }}>
+
+              {/* Logo / intro */}
+              <div style={{ textAlign:'center' }}>
+                <motion.p
+                  animate={{ opacity:[0.6,1,0.6] }} transition={{ duration:3, repeat:Infinity }}
+                  style={{ fontSize:11, fontWeight:700, color:'rgba(255,255,255,0.5)',
+                    textTransform:'uppercase', letterSpacing:'.15em', margin:'0 0 12px' }}>
+                  Bienvenido a
+                </motion.p>
+                <h1 style={{ fontSize:32, fontWeight:900, color:'white', margin:'0 0 8px',
+                  textShadow:'0 0 40px rgba(46,196,182,0.6)' }}>
+                  Pandi Health Coach
+                </h1>
+                <p style={{ fontSize:14, color:'rgba(255,255,255,0.5)', margin:0 }}>
+                  Dos preguntas antes de despertar a Pandi.
+                </p>
+              </div>
+
+              {/* Objetivo principal */}
+              <div style={{ width:'100%', display:'flex', flexDirection:'column', gap:10 }}>
+                <p style={{ fontSize:13, fontWeight:700, color:'rgba(255,255,255,0.8)',
+                  margin:0, textAlign:'center' }}>
+                  ¿Qué quieres conseguir?
+                </p>
+                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
+                  {[
+                    { v:'health',    emoji:'🏥', label:'Mejorar mi salud' },
+                    { v:'energy',    emoji:'⚡', label:'Tener más energía' },
+                    { v:'body',      emoji:'💪', label:'Cambiar mi cuerpo' },
+                    { v:'mind',      emoji:'🧘', label:'Calma mental' },
+                    { v:'habits',    emoji:'🌱', label:'Crear hábitos' },
+                    { v:'weight',    emoji:'⚖️', label:'Controlar el peso' },
+                  ].map(o => (
+                    <motion.button key={o.v} whileTap={{ scale:0.95 }}
+                      onClick={() => set('goal_main', o.v)}
+                      style={{
+                        padding:'12px 10px', borderRadius:16,
+                        border:`1.5px solid ${form.goal_main===o.v ? 'rgba(46,196,182,0.8)' : 'rgba(255,255,255,0.12)'}`,
+                        background: form.goal_main===o.v ? 'rgba(46,196,182,0.2)' : 'rgba(255,255,255,0.06)',
+                        backdropFilter:'blur(12px)',
+                        color: form.goal_main===o.v ? '#2EC4B6' : 'rgba(255,255,255,0.6)',
+                        fontSize:12, fontWeight: form.goal_main===o.v ? 700 : 500,
+                        cursor:'pointer', display:'flex', alignItems:'center', gap:8,
+                        transition:'all 0.2s',
+                      }}>
+                      <span style={{ fontSize:18 }}>{o.emoji}</span>
+                      {o.label}
+                    </motion.button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Estilo de vida */}
+              <div style={{ width:'100%', display:'flex', flexDirection:'column', gap:10 }}>
+                <p style={{ fontSize:13, fontWeight:700, color:'rgba(255,255,255,0.8)',
+                  margin:0, textAlign:'center' }}>
+                  ¿Cómo es tu vida?
+                </p>
+                <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+                  {[
+                    { v:'busy',       emoji:'🌪️', label:'Muy ocupado/a — poco tiempo para mí' },
+                    { v:'balanced',   emoji:'⚖️', label:'Bastante equilibrado/a' },
+                    { v:'sedentary',  emoji:'🛋️', label:'Sedentario/a — quiero cambiar' },
+                    { v:'active',     emoji:'🏃', label:'Activo/a — quiero optimizar' },
+                  ].map(o => (
+                    <motion.button key={o.v} whileTap={{ scale:0.95 }}
+                      onClick={() => set('lifestyle', o.v)}
+                      style={{
+                        padding:'12px 16px', borderRadius:16,
+                        border:`1.5px solid ${form.lifestyle===o.v ? 'rgba(167,139,250,0.8)' : 'rgba(255,255,255,0.12)'}`,
+                        background: form.lifestyle===o.v ? 'rgba(167,139,250,0.2)' : 'rgba(255,255,255,0.06)',
+                        backdropFilter:'blur(12px)',
+                        color: form.lifestyle===o.v ? '#A78BFA' : 'rgba(255,255,255,0.6)',
+                        fontSize:13, fontWeight: form.lifestyle===o.v ? 700 : 500,
+                        cursor:'pointer', display:'flex', alignItems:'center', gap:10,
+                        transition:'all 0.2s', textAlign:'left',
+                      }}>
+                      <span style={{ fontSize:18 }}>{o.emoji}</span>
+                      {o.label}
+                    </motion.button>
+                  ))}
+                </div>
+              </div>
+
+              {/* CTA */}
+              <motion.button
+                whileTap={{ scale:0.97 }}
+                onClick={startIntro}
+                disabled={!form.goal_main || !form.lifestyle}
+                style={{
+                  width:'100%', padding:'15px', borderRadius:18,
+                  border:'1px solid rgba(255,255,255,0.25)',
+                  background: form.goal_main && form.lifestyle
+                    ? 'rgba(46,196,182,0.3)'
+                    : 'rgba(255,255,255,0.06)',
+                  backdropFilter:'blur(20px)',
+                  color: form.goal_main && form.lifestyle ? 'white' : 'rgba(255,255,255,0.3)',
+                  fontSize:15, fontWeight:700, cursor:'pointer',
+                  boxShadow: form.goal_main && form.lifestyle
+                    ? '0 4px 24px rgba(46,196,182,0.3)' : 'none',
+                  transition:'all 0.3s',
+                }}>
+                Despertar a Pandi ✨
+              </motion.button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── FASE 14: PERSONALIDAD DEL COACH ── */}
+      <AnimatePresence>
+        {showPersonality && (
+          <motion.div key="personality"
+            initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
+            style={{ position:'fixed', inset:0, zIndex:40,
+              background:'linear-gradient(160deg, #0f1729 0%, #1a2340 50%, #0d1f35 100%)',
+              display:'flex', flexDirection:'column', overflow:'hidden' }}>
+
+            <div style={{ position:'absolute', inset:0,
+              backgroundImage:"url('/panda/onboarding_clouds.png')",
+              backgroundSize:'cover', backgroundPosition:'top center',
+              opacity:0.2, pointerEvents:'none' }} />
+
+            <div style={{ position:'relative', zIndex:2, flex:1,
+              display:'flex', flexDirection:'column', justifyContent:'center',
+              padding:'40px 24px', gap:28 }}>
+
+              {/* Pandi + burbuja */}
+              <div style={{ display:'flex', alignItems:'center', gap:14 }}>
+                <img src="/panda/panda_base.png" alt="Pandi"
+                  style={{ width:80, height:80, objectFit:'contain', flexShrink:0 }}
+                  onError={e => { e.target.style.display='none' }} />
+                <div style={{
+                  background:'rgba(255,255,255,0.10)',
+                  backdropFilter:'blur(16px)', WebkitBackdropFilter:'blur(16px)',
+                  border:'1px solid rgba(255,255,255,0.18)',
+                  borderRadius:'0 18px 18px 18px', padding:'14px 16px', flex:1 }}>
+                  <p style={{ fontSize:14, color:'white', lineHeight:1.6, margin:0, fontStyle:'italic' }}>
+                    "Ya sé quién eres. Ahora dime cómo quieres que sea yo."
+                  </p>
+                </div>
+              </div>
+
+              <div>
+                <p style={{ fontSize:20, fontWeight:900, color:'white',
+                  margin:'0 0 6px', textAlign:'center' }}>
+                  Elige el estilo de tu coach
+                </p>
+                <p style={{ fontSize:13, color:'rgba(255,255,255,0.5)',
+                  margin:0, textAlign:'center' }}>
+                  Puedes cambiarlo después en ajustes
+                </p>
+              </div>
+
+              {/* Cards de personalidad */}
+              <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
+                {[
+                  {
+                    v: 'athlete',
+                    emoji: '🔥',
+                    title: 'Atleta / Modo Dios',
+                    desc: 'Directo, exigente y sin excusas. Te empuja cuando más lo necesitas. No acepta "mañana".',
+                    color: '#F97316',
+                    glow: 'rgba(249,115,22,0.3)',
+                  },
+                  {
+                    v: 'balanced',
+                    emoji: '⚖️',
+                    title: 'Equilibrado',
+                    desc: 'Motivación con sentido común. Celebra tus logros y te ayuda a levantarte sin dramatismos.',
+                    color: '#2EC4B6',
+                    glow: 'rgba(46,196,182,0.3)',
+                  },
+                  {
+                    v: 'compassionate',
+                    emoji: '🤍',
+                    title: 'Comprensivo',
+                    desc: 'Escucha antes de hablar. Sin presiones, sin juicios. Tu ritmo es el único ritmo que importa.',
+                    color: '#A78BFA',
+                    glow: 'rgba(167,139,250,0.3)',
+                  },
+                ].map(p => {
+                  const active = form.coach_persona === p.v
+                  return (
+                    <motion.button key={p.v} whileTap={{ scale:0.97 }}
+                      onClick={() => set('coach_persona', p.v)}
+                      style={{
+                        padding:'18px 16px', borderRadius:20,
+                        border:`1.5px solid ${active ? p.color : 'rgba(255,255,255,0.12)'}`,
+                        background: active ? `rgba(${p.color.replace('#','').match(/.{2}/g).map(h=>parseInt(h,16)).join(',')},0.15)` : 'rgba(255,255,255,0.06)',
+                        backdropFilter:'blur(16px)', WebkitBackdropFilter:'blur(16px)',
+                        cursor:'pointer', textAlign:'left',
+                        boxShadow: active ? `0 4px 24px ${p.glow}` : 'none',
+                        transition:'all 0.25s',
+                        display:'flex', alignItems:'flex-start', gap:14,
+                      }}>
+                      <span style={{ fontSize:28, flexShrink:0 }}>{p.emoji}</span>
+                      <div>
+                        <p style={{ fontSize:15, fontWeight:800,
+                          color: active ? p.color : 'white', margin:'0 0 4px' }}>
+                          {p.title}
+                        </p>
+                        <p style={{ fontSize:12, color:'rgba(255,255,255,0.55)',
+                          lineHeight:1.5, margin:0 }}>
+                          {p.desc}
+                        </p>
+                      </div>
+                      {active && (
+                        <div style={{ marginLeft:'auto', flexShrink:0,
+                          width:22, height:22, borderRadius:'50%',
+                          background: p.color, display:'flex',
+                          alignItems:'center', justifyContent:'center' }}>
+                          <span style={{ fontSize:12, color:'white' }}>✓</span>
+                        </div>
+                      )}
+                    </motion.button>
+                  )
+                })}
+              </div>
+
+              {/* CTA */}
+              <motion.button
+                whileTap={{ scale:0.97 }}
+                onClick={finish}
+                disabled={!form.coach_persona || loading}
+                style={{
+                  width:'100%', padding:'15px', borderRadius:18,
+                  border:'1px solid rgba(255,255,255,0.25)',
+                  background: form.coach_persona
+                    ? 'rgba(255,255,255,0.18)'
+                    : 'rgba(255,255,255,0.06)',
+                  backdropFilter:'blur(20px)',
+                  color: form.coach_persona ? 'white' : 'rgba(255,255,255,0.3)',
+                  fontSize:15, fontWeight:700, cursor:'pointer',
+                  transition:'all 0.3s',
+                }}>
+                {loading ? 'Activando Santuario…' : '🐾 Comenzar con Pandi'}
+              </motion.button>
+
+              <button onClick={finish}
+                style={{ background:'none', border:'none', cursor:'pointer',
+                  color:'rgba(255,255,255,0.25)', fontSize:12, fontWeight:600,
+                  textAlign:'center' }}>
+                Saltar por ahora
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+
         <div style={{ position:'fixed', top:8, left:8, zIndex:100,
           background:'rgba(0,0,0,0.75)', borderRadius:8, padding:'5px 10px',
           fontSize:10, color:'#ff6b6b' }}>

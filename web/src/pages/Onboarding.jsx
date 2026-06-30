@@ -357,6 +357,32 @@ function hexToRgb(hex) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// PRELOAD IMÁGENES
+// ─────────────────────────────────────────────────────────────────────────────
+const PRELOAD_IMAGES = [
+  '/panda/onboarding_door_closed.png',
+  '/panda/onboarding_clouds.png',
+  '/panda/orb_frame_0.png',
+  '/panda/orb_door_opening.png',
+  '/panda/orb_door_open_1.png',
+  '/panda/orb_door_open_2.png',
+  '/panda/orb_door_open_3.png',
+  '/panda/orb_door_open_4.png',
+  '/panda/orb_door_open_5.png',
+  '/panda/orb_door_open_6.png',
+  '/panda/panda_orb_baby.png',
+  '/panda/pandi_new_born_cloud.png',
+  '/panda/panda_base.png',
+  '/panda/coach_explain_1.png',
+  '/panda/panda_thinking.png',
+  '/panda/encourage_1.png',
+]
+
+function preloadImages(urls) {
+  urls.forEach(src => { const img = new Image(); img.src = src })
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // MAIN COMPONENT
 // ─────────────────────────────────────────────────────────────────────────────
 export default function Onboarding() {
@@ -408,6 +434,11 @@ export default function Onboarding() {
   // ── COLORES POR PREGUNTA ─────────────────────────────────────────────────
   const Q_COLORS = ['#64B5F6','#81C784','#FFB74D','#CE93D8','#F48FB1','#FFD54F']
   const energyColor = Q_COLORS[qStep] || '#2EC4B6'
+
+  // ── PRELOAD ──────────────────────────────────────────────────────────────
+  useEffect(() => {
+    preloadImages(PRELOAD_IMAGES)
+  }, [])
 
   // ── HANDLERS ────────────────────────────────────────────────────────────
   function handleFirstInteraction() {

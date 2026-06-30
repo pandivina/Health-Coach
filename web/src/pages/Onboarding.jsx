@@ -9,11 +9,11 @@ import { api } from '../lib/api'
 // CONSTANTES EDITABLES — ajusta posición y tamaño del orbe aquí
 // ─────────────────────────────────────────────────────────────────────────────
 const ORB_CONFIG = {
-  bottom:     '35%',   // distancia desde el fondo de la pantalla
-  size:       '110%',   // ancho del orbe relativo al contenedor
+  bottom:     '12%',   // distancia desde el fondo de la pantalla
+  size:       '72%',   // ancho del orbe relativo al contenedor
   maxWidth:   340,     // px máximo
-  btnBottom:  '60%',   // posición del botón invisible sobre el orbe
-  btnSize:    75,      // px del área táctil del botón
+  btnBottom:  '52%',   // posición del botón invisible sobre el orbe
+  btnSize:    80,      // px del área táctil del botón
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -364,6 +364,7 @@ const PRELOAD_IMAGES = [
   '/panda/onboarding_clouds.png',
   '/panda/orb_frame_0.png',
   '/panda/orb_door_opening.png',
+  '/panda/orb_door_open.png',
   '/panda/orb_door_open_1.png',
   '/panda/orb_door_open_2.png',
   '/panda/orb_door_open_3.png',
@@ -394,13 +395,12 @@ export default function Onboarding() {
   const [imgErrs,    setImgErrs]    = useState({})
   const [feedback,   setFeedback]   = useState(null)
 
-  // Orbe
-  const [orbActivated,  setOrbActivated]  = useState(false)
-  const [orbOpening,    setOrbOpening]    = useState(false)  // mostrando orb_door_opening.png
-  const [orbOpen,       setOrbOpen]       = useState(false)  // mostrando orb_door_open_X
-  const [orbClosing,    setOrbClosing]    = useState(false)
-  const [smoke,         setSmoke]         = useState(false)
-  const [fillLevel,     setFillLevel]     = useState(0)      // 0-6
+  // Orbe — estados separados y claros
+  const [orbState, setOrbState] = useState('closed')
+  // closed → opening → open_base → open_1..6 → closing → closed
+  const [fillLevel,  setFillLevel]  = useState(0)  // 0=orb_door_open.png, 1-6=orb_door_open_N.png
+  const [smoke,      setSmoke]      = useState(false)
+  const [showOrbMsg, setShowOrbMsg] = useState(false)
 
   // Protocolo
   const [protoBlock,    setProtoBlock]    = useState(1)
@@ -448,43 +448,51 @@ export default function Onboarding() {
   function startIntro() {
     handleFirstInteraction()
     audio.playButton()
-    setPhase(0)                                    // puerta cerrada
-    setTimeout(() => setPhase(1), 600)             // puerta sigue
-    setTimeout(() => { setPhase(2); audio.playApertura() }, 2500)  // transición a nubes
-    setTimeout(() => setPhase(3), 4500)            // nombre
+    setPhase(3)  // nombre sobre puerta cerrada directamente
   }
 
   function proceedFromName() {
     handleFirstInteraction()
     if (!form.name.trim()) return
     audio.playButton()
-    setPhase(4)
-    setQStep(0)
-  }
-
-  function activateOrb() {
-    if (orbActivated) return
-    handleFirstInteraction()
-    try { navigator.vibrate?.([40,30,60]) } catch {}
-    audio.playButton()
-    setOrbActivated(true)
-    // Destello
+    // Flash blanco suave → nubes → orbe
     setFlash(true)
     setTimeout(() => {
       setFlash(false)
-      audio.playDestello()
-    }, 100)
-    // Smoke
+      audio.playApertura()
+      setPhase(4)
+      setQStep(0)
+      setFillLevel(0)
+      setOrbState('closed')
+    }, 600)
+  }
+
+  function activateOrb() {
+    if (orbState !== 'closed') return
+    handleFirstInteraction()
+    try { navigator.vibrate?.([40,30,60]) } catch {}
+
+    // 1. Sonido botón + destello
+    audio.playButton()
+    setFlash(true)
+    setTimeout(() => { setFlash(false); audio.playDestello() }, 80)
+
+    // 2. Humo
     setSmoke(true)
     setTimeout(() => setSmoke(false), 2000)
-    // Apertura
+
+    // 3. orb_door_opening.png
     setTimeout(() => {
-      setOrbOpening(true)
+      setOrbState('opening')
       audio.playApertura()
-    }, 600)
+    }, 500)
+
+    // 4. orb_door_open.png (base vacío) + mensaje flotante
     setTimeout(() => {
-      setOrbOpening(false)
-      setOrbOpen(true)
+      setOrbState('open')
+      setFillLevel(0)
+      setShowOrbMsg(true)
+      setTimeout(() => setShowOrbMsg(false), 3000)
     }, 2200)
   }
 
@@ -498,28 +506,25 @@ export default function Onboarding() {
     handleFirstInteraction()
     const currentQ = QUESTIONS[qStep]
     if (!form[currentQ.key]) return
+
     audio.playLiquidUp()
     const newFill = fillLevel + 1
-    setFillLevel(newFill)
-    // Mostrar feedback brevemente
+    setFillLevel(newFill)  // sustituye el frame directamente
+
     setFeedback(currentQ.feedback)
     setTimeout(() => setFeedback(null), 1800)
 
     if (qStep < QUESTIONS.length - 1) {
-      setTimeout(() => setQStep(q => q+1), 400)
+      setTimeout(() => setQStep(q => q+1), 300)
     } else {
       // Completado — cerrar orbe
       setTimeout(() => {
-        setOrbOpen(false)
-        setOrbClosing(true)
+        setOrbState('closing')
         audio.playLock()
         setTimeout(() => {
-          setOrbClosing(false)
-          setOrbActivated(false)
-          // Destello potente
+          setOrbState('closed')
           setFlash(true)
           audio.playDestello()
-          audio.playApertura()
           audio.playBrillo()
           setTimeout(() => { setFlash(false); setPhase(11) }, 800)
         }, 1200)
@@ -593,13 +598,13 @@ export default function Onboarding() {
     }
   }
 
-  // ── ORBE — frame actual ──────────────────────────────────────────────────
-  const orbFrame = (() => {
-    if (orbOpening)         return '/panda/orb_door_opening.png'
-    if (orbOpen)            return `/panda/orb_door_open_${Math.min(fillLevel + 1, 6)}.png`
-    if (orbClosing)         return '/panda/orb_frame_0.png'
-    if (orbActivated)       return '/panda/orb_frame_0.png'
-    return '/panda/orb_frame_0.png'
+  // ── ORBE — src de imagen según estado ───────────────────────────────────
+  const orbSrc = (() => {
+    if (orbState === 'opening') return '/panda/orb_door_opening.png'
+    if (orbState === 'open')    return fillLevel === 0
+                                  ? '/panda/orb_door_open.png'
+                                  : `/panda/orb_door_open_${Math.min(fillLevel, 6)}.png`
+    return '/panda/orb_frame_0.png'  // closed o closing
   })()
 
   // ── RENDER ───────────────────────────────────────────────────────────────
@@ -745,51 +750,63 @@ export default function Onboarding() {
       </AnimatePresence>
 
       {/* ══════════════════════════════════════════════════════════════════
-          FASE 3: NOMBRE
+          FASE 3: NOMBRE — sobre onboarding_door_closed.png
       ══════════════════════════════════════════════════════════════════ */}
       <AnimatePresence>
         {phase === 3 && (
           <motion.div key="name-phase"
             initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
-            style={{ position:'fixed', inset:0, zIndex:20,
+            style={{ position:'fixed', inset:0, zIndex:20 }}>
+
+            {/* Fondo — puerta cerrada */}
+            <img src="/panda/onboarding_door_closed.png" alt=""
+              style={{ position:'absolute', inset:0, width:'100%', height:'100%',
+                objectFit:'cover', zIndex:0 }}
+              onError={e => e.target.style.display='none'} />
+            <div style={{ position:'absolute', inset:0, zIndex:1,
+              background:'linear-gradient(to bottom, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.5) 100%)' }} />
+
+            {/* Card nombre */}
+            <div style={{ position:'absolute', inset:0, zIndex:2,
               display:'flex', flexDirection:'column',
               alignItems:'center', justifyContent:'flex-end',
-              paddingBottom:'20%', padding:'0 24px 20%' }}>
+              padding:'0 24px calc(env(safe-area-inset-bottom,0px) + 40px)' }}>
 
-            <GlassCard style={{ width:'100%', maxWidth:400, padding:'28px 24px' }}>
-              <p style={{ fontSize:11, fontWeight:700, color:'rgba(255,255,255,0.5)',
-                textTransform:'uppercase', letterSpacing:'.1em', margin:'0 0 8px', textAlign:'center' }}>
-                Antes de comenzar
-              </p>
-              <p style={{ fontSize:20, fontWeight:900, color:'white',
-                margin:'0 0 6px', textAlign:'center' }}>
-                ¿Cómo te llamas?
-              </p>
-              <p style={{ fontSize:13, color:'rgba(255,255,255,0.5)',
-                margin:'0 0 20px', textAlign:'center' }}>
-                Pandi aprenderá a conocerte.
-              </p>
-              <input
-                value={form.name}
-                onChange={e => set('name', e.target.value)}
-                onKeyDown={e => e.key==='Enter' && proceedFromName()}
-                placeholder="Tu nombre..."
-                autoFocus
-                style={{
-                  width:'100%', padding:'14px 18px', borderRadius:16,
-                  border:'1px solid rgba(255,255,255,0.2)',
-                  background:'rgba(255,255,255,0.1)',
-                  backdropFilter:'blur(12px)',
-                  color:'white', fontSize:16, fontWeight:600,
-                  outline:'none', boxSizing:'border-box',
-                  boxShadow:'inset 0 2px 8px rgba(0,0,0,0.2)',
-                  marginBottom:14,
-                }}
-              />
-              <NeuButton onClick={proceedFromName} disabled={!form.name.trim()}>
-                Continuar →
-              </NeuButton>
-            </GlassCard>
+              <GlassCard style={{ width:'100%', maxWidth:400, padding:'28px 24px' }}>
+                <p style={{ fontSize:11, fontWeight:700, color:'rgba(255,255,255,0.5)',
+                  textTransform:'uppercase', letterSpacing:'.1em', margin:'0 0 8px', textAlign:'center' }}>
+                  Antes de comenzar
+                </p>
+                <p style={{ fontSize:22, fontWeight:900, color:'white',
+                  margin:'0 0 6px', textAlign:'center' }}>
+                  ¿Cómo te llamas?
+                </p>
+                <p style={{ fontSize:13, color:'rgba(255,255,255,0.5)',
+                  margin:'0 0 20px', textAlign:'center' }}>
+                  Pandi aprenderá a conocerte.
+                </p>
+                <input
+                  value={form.name}
+                  onChange={e => set('name', e.target.value)}
+                  onKeyDown={e => e.key==='Enter' && proceedFromName()}
+                  placeholder="Tu nombre..."
+                  autoFocus
+                  style={{
+                    width:'100%', padding:'14px 18px', borderRadius:16,
+                    border:'1px solid rgba(255,255,255,0.2)',
+                    background:'rgba(255,255,255,0.1)',
+                    backdropFilter:'blur(12px)',
+                    color:'white', fontSize:16, fontWeight:600,
+                    outline:'none', boxSizing:'border-box',
+                    boxShadow:'inset 0 2px 8px rgba(0,0,0,0.2)',
+                    marginBottom:14,
+                  }}
+                />
+                <NeuButton onClick={proceedFromName} disabled={!form.name.trim()}>
+                  Continuar →
+                </NeuButton>
+              </GlassCard>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -833,18 +850,32 @@ export default function Onboarding() {
                 ))}
               </AnimatePresence>
 
-              {/* Frame del orbe */}
-              <AnimatePresence mode="wait">
-                <motion.img key={orbFrame}
-                  src={orbFrame}
-                  initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
-                  transition={{ duration:0.4 }}
-                  style={{ width:'100%', height:'auto', objectFit:'contain', display:'block' }}
-                  onError={e => { setImgErrs(p=>({...p,[orbFrame]:1})); e.target.style.display='none' }} />
+              {/* Frame del orbe — swap directo sin fade para simular llenado */}
+              <img
+                src={orbSrc}
+                alt="Orbe"
+                style={{ width:'100%', height:'auto', objectFit:'contain', display:'block' }}
+                onError={e => { setImgErrs(p=>({...p,[orbSrc]:1})); e.target.style.display='none' }}
+              />
+
+              {/* Mensaje flotante encima del orbe */}
+              <AnimatePresence>
+                {showOrbMsg && (
+                  <motion.div
+                    initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
+                    style={{ position:'absolute', top:-60, left:'50%',
+                      transform:'translateX(-50%)', whiteSpace:'nowrap', zIndex:10 }}>
+                    <GlassCard style={{ padding:'10px 18px' }}>
+                      <p style={{ fontSize:13, fontWeight:700, color:'white', margin:0 }}>
+                        ✨ Vamos a darle vida a tu compañero
+                      </p>
+                    </GlassCard>
+                  </motion.div>
+                )}
               </AnimatePresence>
 
-              {/* Botón invisible sobre el orbe — ajusta ORB_CONFIG.btnBottom */}
-              {!orbActivated && (
+              {/* Botón invisible sobre el orbe */}
+              {orbState === 'closed' && (
                 <div onClick={activateOrb}
                   style={{
                     position:'absolute',
@@ -853,15 +884,14 @@ export default function Onboarding() {
                     width: ORB_CONFIG.btnSize,
                     height: ORB_CONFIG.btnSize,
                     borderRadius:'50%', cursor:'pointer', zIndex:10,
-                    // Descomenta para ver el botón mientras ajustas:
-                    // background:'rgba(255,0,0,0.3)',
+                    // background:'rgba(255,0,0,0.3)', // descomenta para ver
                   }} />
               )}
             </div>
 
             {/* Panel de pregunta */}
             <AnimatePresence mode="wait">
-              {orbOpen && (
+              {orbState === 'open' && (
                 <motion.div key={`q-${qStep}`}
                   initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
                   style={{
@@ -934,7 +964,7 @@ export default function Onboarding() {
               )}
 
               {/* Estado inicial — instrucción pulsar orbe */}
-              {!orbActivated && !orbOpen && (
+              {orbState === 'closed' && !smoke && (
                 <motion.div key="tap-hint"
                   initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
                   style={{ position:'absolute', bottom:'8%', left:0, right:0,
@@ -969,7 +999,7 @@ export default function Onboarding() {
             {/* Aura */}
             <motion.div
               animate={{ scale:[1,1.15,1], opacity:[0.3,0.6,0.3] }}
-              transition={{ duration:6, repeat:Infinity }}
+              transition={{ duration:3, repeat:Infinity }}
               style={{ position:'absolute', width:280, height:280, borderRadius:'50%',
                 background:'radial-gradient(circle, rgba(201,169,110,0.4), transparent 70%)',
                 filter:'blur(30px)' }} />
@@ -981,7 +1011,7 @@ export default function Onboarding() {
                 position:'relative', zIndex:2 }}
               onError={e => e.target.style.display='none'} />
 
-            <GlassCard style={{ padding:'30px', marginTop:24, textAlign:'center', width:'100%', maxWidth:360 }}>
+            <GlassCard style={{ padding:'24px', marginTop:24, textAlign:'center', width:'100%', maxWidth:360 }}>
               <p style={{ fontSize:22, fontWeight:900, color:'white', margin:'0 0 6px' }}>
                 ¡Ha nacido!
               </p>

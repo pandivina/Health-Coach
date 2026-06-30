@@ -12,8 +12,8 @@ const ORB_CONFIG = {
   bottom:     '37%',   // distancia desde el fondo de la pantalla
   size:       '100%',   // ancho del orbe relativo al contenedor
   maxWidth:   340,     // px máximo
-  btnBottom:  '52%',   // posición del botón invisible sobre el orbe
-  btnSize:    80,      // px del área táctil del botón
+  btnBottom:  '48%',   // posición del botón invisible sobre el orbe
+  btnSize:    75,      // px del área táctil del botón
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

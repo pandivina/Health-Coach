@@ -9,10 +9,10 @@ import { api } from '../lib/api'
 // CONSTANTES EDITABLES — ajusta posición y tamaño del orbe aquí
 // ─────────────────────────────────────────────────────────────────────────────
 const ORB_CONFIG = {
-  bottom:     '31%',   // distancia desde el fondo de la pantalla
-  size:       '100%',   // ancho del orbe relativo al contenedor
+  bottom:     '12%',   // distancia desde el fondo de la pantalla
+  size:       '72%',   // ancho del orbe relativo al contenedor
   maxWidth:   340,     // px máximo
-  btnBottom:  '48%',   // posición del botón invisible sobre el orbe
+  btnBottom:  '52%',   // posición del botón invisible sobre el orbe
   btnSize:    80,      // px del área táctil del botón
 }
 
@@ -596,7 +596,7 @@ export default function Onboarding() {
   // ── ORBE — frame actual ──────────────────────────────────────────────────
   const orbFrame = (() => {
     if (orbOpening)         return '/panda/orb_door_opening.png'
-    if (orbOpen)            return `/panda/orb_door_open_${fillLevel + 1}.png`
+    if (orbOpen)            return `/panda/orb_door_open_${Math.min(fillLevel + 1, 6)}.png`
     if (orbClosing)         return '/panda/orb_frame_0.png'
     if (orbActivated)       return '/panda/orb_frame_0.png'
     return '/panda/orb_frame_0.png'

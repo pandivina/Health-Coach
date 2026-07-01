@@ -135,8 +135,8 @@ router.post('/welcome', requireAuth, async (req, res) => {
 
     // Obtener datos del usuario
     const [profileRes, healthRes] = await Promise.all([
-      supabaseAdmin.from('user_profiles').select('name').eq('id', userId).single(),
-      supabaseAdmin.from('health_profiles').select('goal, target_calories').eq('user_id', userId).single(),
+      supabaseAdmin.from('user_profiles').select('name').eq('id', userId).maybeSingle(),
+      supabaseAdmin.from('health_profiles').select('goal, target_calories').eq('user_id', userId).maybeSingle(),
     ])
 
     const name = profileRes.data?.name || 'Campeón'
@@ -166,7 +166,8 @@ router.post('/welcome', requireAuth, async (req, res) => {
 })
 
 // POST /api/email/test — para probar desde Postman o Railway
-router.post('/test', async (req, res) => {
+// POST /api/email/test — solo para testing autenticado
+router.post('/test', requireAuth, async (req, res) => {
   try {
     const { to } = req.body
     if (!to) return res.status(400).json({ error: 'Missing to' })

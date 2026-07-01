@@ -9,11 +9,11 @@ import { api } from '../lib/api'
 // CONSTANTES EDITABLES — ajusta posición y tamaño del orbe aquí
 // ─────────────────────────────────────────────────────────────────────────────
 const ORB_CONFIG = {
-  bottom:     '36%',   // distancia desde el fondo de la pantalla
+  bottom:     '12%',   // distancia desde el fondo de la pantalla
   size:       '72%',   // ancho del orbe relativo al contenedor
   maxWidth:   340,     // px máximo
-  btnBottom:  '38%',   // posición del botón invisible sobre el orbe
-  btnSize:    65,      // px del área táctil del botón
+  btnBottom:  '52%',   // posición del botón invisible sobre el orbe
+  btnSize:    80,      // px del área táctil del botón
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -841,12 +841,61 @@ export default function Onboarding() {
             <div style={{ position:'absolute', inset:0, zIndex:1,
               background:'linear-gradient(to bottom, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.05) 40%, rgba(0,0,0,0.6) 100%)' }} />
 
-            {/* ORBE */}
+            {/* Mensaje motivador — sobre nubes, donde irá el orbe */}
+            <AnimatePresence>
+              {showIntroMsg && (
+                <motion.div
+                  initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
+                  transition={{ duration:0.8 }}
+                  style={{ position:'absolute', inset:0, zIndex:10,
+                    backdropFilter:'blur(18px)', WebkitBackdropFilter:'blur(18px)',
+                    background:'rgba(10,15,30,0.65)',
+                    display:'flex', flexDirection:'column',
+                    alignItems:'center', justifyContent:'center',
+                    padding:'40px 32px' }}>
+                  <motion.div
+                    initial={{ opacity:0 }} animate={{ opacity:1 }}
+                    transition={{ delay:0.5, duration:1 }}
+                    style={{ display:'flex', flexDirection:'column', gap:28,
+                      alignItems:'center', maxWidth:380 }}>
+                    <div style={{ width:48, height:2, borderRadius:1,
+                      background:'rgba(255,255,255,0.3)' }} />
+                    <p style={{ fontSize:16, color:'rgba(255,255,255,0.9)',
+                      lineHeight:1.9, textAlign:'center', margin:0, fontStyle:'italic',
+                      textShadow:'0 2px 16px rgba(0,0,0,0.6)' }}>
+                      "Para que Pandi pueda caminar a tu lado, primero debemos mapear el terreno. La precisión de este coach depende de la honestidad de tus respuestas. Entreguemos juntos los datos que despertarán a tu guía."
+                    </p>
+                    <div style={{ width:48, height:2, borderRadius:1,
+                      background:'rgba(255,255,255,0.3)' }} />
+                    <motion.button
+                      initial={{ opacity:0 }} animate={{ opacity:1 }}
+                      transition={{ delay:1.4, duration:0.6 }}
+                      whileTap={{ scale:0.97 }}
+                      onClick={dismissIntroMsg}
+                      style={{
+                        padding:'14px 44px', borderRadius:18,
+                        border:'1px solid rgba(255,255,255,0.25)',
+                        background:'rgba(255,255,255,0.1)',
+                        backdropFilter:'blur(12px)',
+                        color:'white', fontSize:15, fontWeight:700,
+                        cursor:'pointer',
+                        boxShadow:'0 4px 24px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.15)',
+                      }}>
+                      Continuar →
+                    </motion.button>
+                  </motion.div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* ORBE — oculto mientras showIntroMsg */}
             <div style={{ position:'absolute', zIndex:3,
               bottom: ORB_CONFIG.bottom,
               left:'50%', transform:'translateX(-50%)',
               width: ORB_CONFIG.size,
-              maxWidth: ORB_CONFIG.maxWidth }}>
+              maxWidth: ORB_CONFIG.maxWidth,
+              opacity: showIntroMsg ? 0 : 1,
+              transition:'opacity 0.5s' }}>
 
               {/* Smoke effect */}
               <AnimatePresence>
@@ -975,53 +1024,6 @@ export default function Onboarding() {
                   </AnimatePresence>
                 </motion.div>
               )}
-
-              {/* Estado inicial — instrucción pulsar orbe */}
-              {/* Mensaje motivador — blur intenso antes del orbe */}
-              <AnimatePresence>
-                {showIntroMsg && (
-                  <motion.div
-                    initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
-                    transition={{ duration:0.8 }}
-                    style={{ position:'absolute', inset:0, zIndex:20,
-                      backdropFilter:'blur(20px)', WebkitBackdropFilter:'blur(20px)',
-                      background:'rgba(10,15,30,0.75)',
-                      display:'flex', flexDirection:'column',
-                      alignItems:'center', justifyContent:'center',
-                      padding:'40px 28px' }}>
-                    <motion.div
-                      initial={{ opacity:0 }} animate={{ opacity:1 }}
-                      transition={{ delay:0.4, duration:1 }}
-                      style={{ display:'flex', flexDirection:'column', gap:24, alignItems:'center' }}>
-                      <div style={{ width:48, height:2, borderRadius:1,
-                        background:'rgba(255,255,255,0.3)' }} />
-                      <p style={{ fontSize:16, color:'rgba(255,255,255,0.9)',
-                        lineHeight:1.8, textAlign:'center', margin:0, fontStyle:'italic',
-                        textShadow:'0 2px 12px rgba(0,0,0,0.5)' }}>
-                        "Para que Pandi pueda caminar a tu lado, primero debemos mapear el terreno. La precisión de este coach depende de la honestidad de tus respuestas. Entreguemos juntos los datos que despertarán a tu guía."
-                      </p>
-                      <div style={{ width:48, height:2, borderRadius:1,
-                        background:'rgba(255,255,255,0.3)' }} />
-                      <motion.button
-                        initial={{ opacity:0 }} animate={{ opacity:1 }}
-                        transition={{ delay:1.2, duration:0.6 }}
-                        whileTap={{ scale:0.97 }}
-                        onClick={dismissIntroMsg}
-                        style={{
-                          padding:'14px 36px', borderRadius:18,
-                          border:'1px solid rgba(255,255,255,0.3)',
-                          background:'rgba(255,255,255,0.12)',
-                          backdropFilter:'blur(12px)',
-                          color:'white', fontSize:15, fontWeight:700,
-                          cursor:'pointer',
-                          boxShadow:'0 4px 24px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.2)',
-                        }}>
-                        Continuar →
-                      </motion.button>
-                    </motion.div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
 
               {/* Hint — toca el orbe */}
               {orbState === 'closed' && !smoke && !showIntroMsg && (

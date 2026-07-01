@@ -9,10 +9,10 @@ import { api } from '../lib/api'
 // CONSTANTES EDITABLES — ajusta posición y tamaño del orbe aquí
 // ─────────────────────────────────────────────────────────────────────────────
 const ORB_CONFIG = {
-  bottom:     '35%',   // distancia desde el fondo de la pantalla
+  bottom:     '36%',   // distancia desde el fondo de la pantalla
   size:       '72%',   // ancho del orbe relativo al contenedor
   maxWidth:   340,     // px máximo
-  btnBottom:  '37%',   // posición del botón invisible sobre el orbe
+  btnBottom:  '38%',   // posición del botón invisible sobre el orbe
   btnSize:    65,      // px del área táctil del botón
 }
 
@@ -629,7 +629,7 @@ export default function Onboarding() {
       <AnimatePresence>
         {flash && (
           <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
-            transition={{ duration:0.3 }}
+            transition={{ duration:0.5 }}
             style={{ position:'fixed', inset:0, zIndex:100,
               background:'rgba(255,255,255,0.92)',
               pointerEvents:'none' }} />

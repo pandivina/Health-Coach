@@ -157,6 +157,7 @@ export default function FoodSearch({ onSelect, placeholder='Buscar alimento...' 
   const [addPrefill,   setAddPrefill]   = useState(null)
   const [toast,        setToast]        = useState(null)
   const [showRecents,  setShowRecents]  = useState(false)
+  const [searchSource, setSearchSource] = useState('all') // all | local | fatsecret | community
 
   // Recientes desde localStorage
   const recents = (() => {
@@ -167,14 +168,15 @@ export default function FoodSearch({ onSelect, placeholder='Buscar alimento...' 
     if (!q?.trim()) { setResults([]); setBrands([]); return }
     setLoading(true)
     try {
-      const url = `${import.meta.env.VITE_API_URL}/api/fs/search?q=${encodeURIComponent(q)}&max=50${brand ? `&brand=${encodeURIComponent(brand)}` : ''}`
+      const sourceParam = searchSource !== 'all' ? `&source=${searchSource}` : ''
+      const url = `${import.meta.env.VITE_API_URL}/api/fs/search?q=${encodeURIComponent(q)}&max=50${brand ? `&brand=${encodeURIComponent(brand)}` : ''}${sourceParam}`
       const data = await fetch(url).then(r => r.json())
       setResults(data.foods || [])
       setBrands(data.brands || [])
       setSources(data.sources || { community:0, local:0, fatsecret:0 })
     } catch { setResults([]) }
     finally { setLoading(false) }
-  }, [])
+  }, [searchSource])
 
   useEffect(() => {
     clearTimeout(debounceRef.current)
@@ -204,14 +206,36 @@ export default function FoodSearch({ onSelect, placeholder='Buscar alimento...' 
   function showToast(msg) { setToast(msg); setTimeout(() => setToast(null), 3000) }
 
   const SOURCE_FILTERS = [
-    { id:'all',       label:`Todos (${results.length})` },
-    { id:'community', label:`👥 ${sources.community}` },
-    { id:'local',     label:`🇪🇸 ${sources.local}` },
-    { id:'fatsecret', label:`🌍 ${sources.fatsecret}` },
+    { id:'all',           label:`Todos (${results.length})` },
+    { id:'community',     label:`👥 ${sources.community}` },
+    { id:'local',         label:`🇪🇸 ${sources.local}` },
+    { id:'openfoodfacts', label:`🌐 ${sources.openfoodfacts||0}` },
+    { id:'fatsecret',     label:`🌍 ${sources.fatsecret}` },
   ]
 
   return (
     <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+
+      {/* Selector de biblioteca */}
+      <div style={{ display:'flex', gap:6 }}>
+        {[
+          { id:'all',           emoji:'🔍', label:'Todo' },
+          { id:'local',         emoji:'🇪🇸', label:'España' },
+          { id:'community',     emoji:'👥', label:'Comunidad' },
+          { id:'openfoodfacts', emoji:'🌐', label:'OFF' },
+          { id:'fatsecret',     emoji:'🌍', label:'FatSecret' },
+        ].map(s => (
+          <button key={s.id} onClick={() => { setSearchSource(s.id); setResults([]); setBrands([]) }}
+            style={{ flex:1, padding:'7px 4px', borderRadius:12, border:'none',
+              cursor:'pointer', fontSize:10, fontWeight:700, transition:'all 0.2s',
+              background: searchSource===s.id ? theme.primary : theme.surface,
+              color: searchSource===s.id ? 'white' : theme.textMuted,
+              boxShadow: searchSource===s.id ? `0 2px 8px ${theme.primary}44` : 'none' }}>
+            <div style={{ fontSize:14, marginBottom:2 }}>{s.emoji}</div>
+            {s.label}
+          </button>
+        ))}
+      </div>
 
       {/* Buscador */}
       <div style={{ position:'relative' }}>

@@ -151,18 +151,25 @@ const LOCAL_ES = [
 }))
 
 function searchLocal(q) {
-  return LOCAL_ES.filter(f => f.name.toLowerCase().includes(q.toLowerCase())).slice(0,15)
+  const terms = q.toLowerCase().split(' ').filter(Boolean)
+  return LOCAL_ES.filter(f => {
+    const name = f.name.toLowerCase()
+    return terms.every(t => name.includes(t)) || name.includes(q.toLowerCase())
+  }).slice(0,15)
 }
 
 // ─── OPEN FOOD FACTS ─────────────────────────────────────────────────────────
 async function searchOpenFoodFacts(q, max=20) {
   try {
-    const url = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(q)}&search_simple=1&action=process&json=1&page_size=${max}&lc=es&cc=es`
+    const url = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(q)}&search_simple=0&action=process&json=1&page_size=${max}&lc=es&cc=es&sort_by=unique_scans_n`
     const res  = await fetch(url, { headers:{ 'User-Agent':'PandiHealthCoach/1.0' } })
     if (!res.ok) return []
     const data = await res.json()
     return (data.products || [])
-      .filter(p => p.product_name_es || p.product_name)
+      .filter(p => {
+        const name = (p.product_name_es || p.product_name || '').toLowerCase()
+        return name && q.toLowerCase().split(' ').some(word => name.includes(word))
+      })
       .map(p => {
         const n  = p.nutriments || {}
         const cal= n['energy-kcal_100g'] || n['energy-kcal'] || null
@@ -197,23 +204,45 @@ router.get('/search', async (req, res) => {
     console.log('[FS] search:', q, source !== 'all' ? `(fuente: ${source})` : '', brand ? `(marca: ${brand})` : '')
 
     const useLocal     = source === 'all' || source === 'local'
-    const useFS        = source === 'all' || source === 'fatsecret'
     const useCommunity = source === 'all' || source === 'community'
-    const useOFF       = source === 'all' || source === 'openfoodfacts'
+    const useFS        = source === 'fatsecret' || source === 'all'
+    const useOFF       = source === 'openfoodfacts' || source === 'all'
 
-    const [localR, fsR, communityR, offR] = await Promise.allSettled([
+    // En modo "all", primero buscamos local + comunidad
+    // Solo llamamos a FS/OFF si hay pocos resultados locales
+    let local     = []
+    let community = []
 
-      // 1. Local ES
-      useLocal
-        ? Promise.resolve(searchLocal(q))
-        : Promise.resolve([]),
+    if (useLocal)     local     = searchLocal(q)
+    if (useCommunity) {
+      try {
+        const db = getDB()
+        let qb = db.from('community_foods')
+          .select('id,name,brand,calories,protein_g,carbs_g,fat_g,fiber_g,uses_count,verified')
+          .ilike('name', `%${q}%`)
+          .order('uses_count', { ascending:false })
+          .limit(10)
+        if (brand) qb = qb.ilike('brand', `%${brand}%`)
+        const { data } = await qb
+        community = (data||[]).map(f => ({
+          id:`community_${f.id}`, name:f.name, brand:f.brand, source:'community',
+          calories:f.calories, protein:f.protein_g, carbs:f.carbs_g, fat:f.fat_g, fiber:f.fiber_g,
+          verified:f.verified, uses:f.uses_count,
+          nutriScore: calcNutriScore({ calories:f.calories||0, protein:f.protein_g||0, carbs:f.carbs_g||0, fat:f.fat_g||0, fiber:f.fiber_g||0 }),
+        }))
+      } catch {}
+    }
 
-      // 2. FatSecret
-      useFS
+    const localTotal = local.length + community.length
+    // En modo "all", solo llamar a fuentes externas si hay menos de 5 resultados locales
+    const callExternal = source !== 'all' || localTotal < 5
+
+    const [fsR, offR] = await Promise.allSettled([
+      useFS && callExternal
         ? fsCall('foods.search', {
             search_expression: q.trim(),
             page_number: String(page),
-            max_results:  String(Math.min(parseInt(max)||20, 50)),
+            max_results: String(Math.min(parseInt(max)||20, 50)),
             language:'es', region:'ES',
           }).then(data => {
             const foods = data.foods?.food || []
@@ -231,40 +260,14 @@ router.get('/search', async (req, res) => {
           }).catch(() => [])
         : Promise.resolve([]),
 
-      // 3. Comunidad
-      useCommunity
-        ? (async () => {
-            try {
-              const db    = getDB()
-              let query = db.from('community_foods')
-                .select('id,name,brand,calories,protein_g,carbs_g,fat_g,fiber_g,uses_count,verified')
-                .ilike('name', `%${q}%`)
-                .order('uses_count', { ascending:false })
-                .limit(10)
-              if (brand) query = query.ilike('brand', `%${brand}%`)
-              const { data } = await query
-              return (data||[]).map(f => ({
-                id:`community_${f.id}`, name:f.name, brand:f.brand, source:'community',
-                calories:f.calories, protein:f.protein_g, carbs:f.carbs_g, fat:f.fat_g, fiber:f.fiber_g,
-                verified:f.verified, uses:f.uses_count,
-                nutriScore: calcNutriScore({ calories:f.calories||0, protein:f.protein_g||0, carbs:f.carbs_g||0, fat:f.fat_g||0, fiber:f.fiber_g||0 }),
-              }))
-            } catch { return [] }
-          })()
-        : Promise.resolve([]),
-
-      // 4. Open Food Facts
-      useOFF
+      useOFF && callExternal
         ? searchOpenFoodFacts(q, Math.min(parseInt(max)||20, 30))
         : Promise.resolve([]),
     ])
 
-    let local        = localR.status==='fulfilled'     ? localR.value     : []
-    let fatsecret    = fsR.status==='fulfilled'         ? fsR.value        : []
-    let community    = communityR.status==='fulfilled'  ? communityR.value : []
-    let openfoodfacts= offR.status==='fulfilled'        ? offR.value       : []
+    let fatsecret     = fsR.status==='fulfilled'  ? fsR.value  : []
+    let openfoodfacts = offR.status==='fulfilled' ? offR.value : []
 
-    // Filtrar por marca si se especifica
     if (brand) {
       const b = brand.toLowerCase()
       fatsecret     = fatsecret.filter(f => f.brand?.toLowerCase().includes(b))

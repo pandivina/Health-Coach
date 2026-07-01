@@ -9,11 +9,11 @@ import { api } from '../lib/api'
 // CONSTANTES EDITABLES — ajusta posición y tamaño del orbe aquí
 // ─────────────────────────────────────────────────────────────────────────────
 const ORB_CONFIG = {
-  bottom:     '36%',   // distancia desde el fondo de la pantalla
+  bottom:     '12%',   // distancia desde el fondo de la pantalla
   size:       '72%',   // ancho del orbe relativo al contenedor
   maxWidth:   340,     // px máximo
-  btnBottom:  '38%',   // posición del botón invisible sobre el orbe
-  btnSize:    65,      // px del área táctil del botón
+  btnBottom:  '52%',   // posición del botón invisible sobre el orbe
+  btnSize:    80,      // px del área táctil del botón
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -387,13 +387,14 @@ function preloadImages(urls) {
 // MAIN COMPONENT
 // ─────────────────────────────────────────────────────────────────────────────
 export default function Onboarding() {
-  const [phase,      setPhase]      = useState(-1)  // -1=gancho, 0-2=intro, 3=nombre, 4-9=orbe, 10=cierre orbe, 11=despertar, 12=nacido, 13=protocolo, 14=personalidad
-  const [flash,      setFlash]      = useState(false)
-  const [qStep,      setQStep]      = useState(0)
-  const [loading,    setLoading]    = useState(false)
-  const [started,    setStarted]    = useState(false)
-  const [imgErrs,    setImgErrs]    = useState({})
-  const [feedback,   setFeedback]   = useState(null)
+  const [phase,        setPhase]        = useState(-1)
+  const [flash,        setFlash]        = useState(false)
+  const [qStep,        setQStep]        = useState(0)
+  const [loading,      setLoading]      = useState(false)
+  const [started,      setStarted]      = useState(false)
+  const [imgErrs,      setImgErrs]      = useState({})
+  const [feedback,     setFeedback]     = useState(null)
+  const [showIntroMsg, setShowIntroMsg] = useState(false) // mensaje motivador antes del orbe
 
   // Orbe — estados separados y claros
   const [orbState, setOrbState] = useState('closed')
@@ -455,7 +456,7 @@ export default function Onboarding() {
     handleFirstInteraction()
     if (!form.name.trim()) return
     audio.playButton()
-    // Flash blanco suave → nubes → orbe
+    // Flash blanco suave → nubes → mensaje motivador
     setFlash(true)
     setTimeout(() => {
       setFlash(false)
@@ -464,7 +465,19 @@ export default function Onboarding() {
       setQStep(0)
       setFillLevel(0)
       setOrbState('closed')
-    }, 600)
+      // Mostrar mensaje motivador con blur
+      setShowIntroMsg(true)
+    }, 700)
+  }
+
+  function dismissIntroMsg() {
+    audio.playButton()
+    setShowIntroMsg(false)
+    // Pulso de luz al aparecer el orbe
+    setTimeout(() => {
+      setFlash(true)
+      setTimeout(() => setFlash(false), 400)
+    }, 200)
   }
 
   function activateOrb() {
@@ -612,13 +625,13 @@ export default function Onboarding() {
     <div style={{ position:'fixed', inset:0, overflow:'hidden',
       fontFamily:'-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' }}>
 
-      {/* ── FLASH ── */}
+      {/* ── FLASH BLANCO SUAVE ── */}
       <AnimatePresence>
         {flash && (
           <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
-            transition={{ duration:0.15 }}
+            transition={{ duration:0.3 }}
             style={{ position:'fixed', inset:0, zIndex:100,
-              background:'radial-gradient(circle, rgba(255,255,255,0.95) 0%, rgba(201,169,110,0.8) 40%, transparent 70%)',
+              background:'rgba(255,255,255,0.92)',
               pointerEvents:'none' }} />
         )}
       </AnimatePresence>
@@ -964,7 +977,54 @@ export default function Onboarding() {
               )}
 
               {/* Estado inicial — instrucción pulsar orbe */}
-              {orbState === 'closed' && !smoke && (
+              {/* Mensaje motivador — blur intenso antes del orbe */}
+              <AnimatePresence>
+                {showIntroMsg && (
+                  <motion.div
+                    initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
+                    transition={{ duration:0.8 }}
+                    style={{ position:'absolute', inset:0, zIndex:20,
+                      backdropFilter:'blur(20px)', WebkitBackdropFilter:'blur(20px)',
+                      background:'rgba(10,15,30,0.75)',
+                      display:'flex', flexDirection:'column',
+                      alignItems:'center', justifyContent:'center',
+                      padding:'40px 28px' }}>
+                    <motion.div
+                      initial={{ opacity:0 }} animate={{ opacity:1 }}
+                      transition={{ delay:0.4, duration:1 }}
+                      style={{ display:'flex', flexDirection:'column', gap:24, alignItems:'center' }}>
+                      <div style={{ width:48, height:2, borderRadius:1,
+                        background:'rgba(255,255,255,0.3)' }} />
+                      <p style={{ fontSize:16, color:'rgba(255,255,255,0.9)',
+                        lineHeight:1.8, textAlign:'center', margin:0, fontStyle:'italic',
+                        textShadow:'0 2px 12px rgba(0,0,0,0.5)' }}>
+                        "Para que Pandi pueda caminar a tu lado, primero debemos mapear el terreno. La precisión de este coach depende de la honestidad de tus respuestas. Entreguemos juntos los datos que despertarán a tu guía."
+                      </p>
+                      <div style={{ width:48, height:2, borderRadius:1,
+                        background:'rgba(255,255,255,0.3)' }} />
+                      <motion.button
+                        initial={{ opacity:0 }} animate={{ opacity:1 }}
+                        transition={{ delay:1.2, duration:0.6 }}
+                        whileTap={{ scale:0.97 }}
+                        onClick={dismissIntroMsg}
+                        style={{
+                          padding:'14px 36px', borderRadius:18,
+                          border:'1px solid rgba(255,255,255,0.3)',
+                          background:'rgba(255,255,255,0.12)',
+                          backdropFilter:'blur(12px)',
+                          color:'white', fontSize:15, fontWeight:700,
+                          cursor:'pointer',
+                          boxShadow:'0 4px 24px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.2)',
+                        }}>
+                        Continuar →
+                      </motion.button>
+                    </motion.div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* Hint — toca el orbe */}
+              {orbState === 'closed' && !smoke && !showIntroMsg && (
                 <motion.div key="tap-hint"
                   initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
                   style={{ position:'absolute', bottom:'8%', left:0, right:0,
@@ -1027,7 +1087,7 @@ export default function Onboarding() {
       </AnimatePresence>
 
       {/* ══════════════════════════════════════════════════════════════════
-          FASE 12: NACIDO — pandi_new_born_cloud.png
+          FASE 12: NACIDO — pandi_new_born_cloud.png + texto motivador
       ══════════════════════════════════════════════════════════════════ */}
       <AnimatePresence>
         {phase === 12 && (
@@ -1038,28 +1098,40 @@ export default function Onboarding() {
               display:'flex', flexDirection:'column',
               alignItems:'center', justifyContent:'center', padding:'40px 24px' }}>
 
-            <motion.img src="/panda/pandi_new_born_cloud.png" alt="Pandi flotando"
-              animate={{ translateY:[0,-12,0] }}
-              transition={{ duration:3, repeat:Infinity, ease:'easeInOut' }}
-              style={{ width:'80%', maxWidth:320, objectFit:'contain', marginBottom:24 }}
+            {/* Aura suave */}
+            <motion.div
+              animate={{ scale:[1,1.1,1], opacity:[0.2,0.4,0.2] }}
+              transition={{ duration:4, repeat:Infinity }}
+              style={{ position:'absolute', width:300, height:300, borderRadius:'50%',
+                background:'radial-gradient(circle, rgba(255,255,255,0.15), transparent 70%)',
+                filter:'blur(40px)', pointerEvents:'none' }} />
+
+            <motion.img src="/panda/pandi_new_born_cloud.png" alt="Pandi"
+              animate={{ translateY:[0,-14,0] }}
+              transition={{ duration:3.5, repeat:Infinity, ease:'easeInOut' }}
+              style={{ width:'80%', maxWidth:320, objectFit:'contain',
+                marginBottom:28, position:'relative', zIndex:2 }}
               onError={e => e.target.style.display='none'} />
 
-            <GlassCard style={{ padding:'24px', textAlign:'center', width:'100%', maxWidth:360 }}>
-              <p style={{ fontSize:11, fontWeight:700, color:'rgba(255,255,255,0.4)',
-                textTransform:'uppercase', letterSpacing:'.1em', margin:'0 0 10px' }}>
-                Protocolo de Cuidado
+            <GlassCard style={{ padding:'28px 24px', textAlign:'center',
+              width:'100%', maxWidth:380, position:'relative', zIndex:2 }}>
+              <p style={{ fontSize:13, fontWeight:700, color:'rgba(255,255,255,0.4)',
+                textTransform:'uppercase', letterSpacing:'.1em', margin:'0 0 12px' }}>
+                Tu compañero ha despertado
               </p>
-              <p style={{ fontSize:20, fontWeight:900, color:'white', margin:'0 0 8px' }}>
-                Ahora déjame conocerte mejor
+              <p style={{ fontSize:20, fontWeight:900, color:'white',
+                margin:'0 0 12px', lineHeight:1.3 }}>
+                {form.name.split(' ')[0]}, el camino empieza ahora.
               </p>
-              <p style={{ fontSize:13, color:'rgba(255,255,255,0.55)', margin:'0 0 20px', lineHeight:1.6 }}>
-                Unas preguntas rápidas para que Pandi sepa exactamente cómo cuidarte.
+              <p style={{ fontSize:14, color:'rgba(255,255,255,0.6)',
+                lineHeight:1.7, margin:'0 0 24px' }}>
+                Pandi ya conoce tu cuerpo y tus hábitos. Ahora necesita saber cómo hablar contigo para acompañarte cada día de la forma que más te ayude.
               </p>
-              <NeuButton onClick={startProtocol}>
-                Empezar a crecer juntos 🌱
+              <NeuButton onClick={startProtocol} color="#A78BFA">
+                Darle personalidad a Pandi →
               </NeuButton>
               <button onClick={finish}
-                style={{ marginTop:12, background:'none', border:'none', cursor:'pointer',
+                style={{ marginTop:10, background:'none', border:'none', cursor:'pointer',
                   color:'rgba(255,255,255,0.25)', fontSize:12, fontWeight:600, width:'100%' }}>
                 Saltar por ahora
               </button>

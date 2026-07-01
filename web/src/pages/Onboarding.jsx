@@ -9,11 +9,11 @@ import { api } from '../lib/api'
 // CONSTANTES EDITABLES — ajusta posición y tamaño del orbe aquí
 // ─────────────────────────────────────────────────────────────────────────────
 const ORB_CONFIG = {
-  bottom:     '35%',   // distancia desde el fondo de la pantalla
+  bottom:     '12%',   // distancia desde el fondo de la pantalla
   size:       '72%',   // ancho del orbe relativo al contenedor
   maxWidth:   340,     // px máximo
-  btnBottom:  '37%',   // posición del botón invisible sobre el orbe
-  btnSize:    65,      // px del área táctil del botón
+  btnBottom:  '52%',   // posición del botón invisible sobre el orbe
+  btnSize:    80,      // px del área táctil del botón
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -849,7 +849,7 @@ export default function Onboarding() {
                   transition={{ duration:0.8 }}
                   style={{ position:'absolute', inset:0, zIndex:10,
                     backdropFilter:'blur(18px)', WebkitBackdropFilter:'blur(18px)',
-                    background:'rgba(10,15,30,0.65)',
+                    background:'rgba(10,15,30,0.35)',
                     display:'flex', flexDirection:'column',
                     alignItems:'center', justifyContent:'center',
                     padding:'40px 32px' }}>
@@ -861,12 +861,9 @@ export default function Onboarding() {
                     <div style={{ width:48, height:2, borderRadius:1,
                       background:'rgba(255,255,255,0.3)' }} />
                     <p style={{ fontSize:16, color:'rgba(255,255,255,0.9)',
-                      lineHeight:1.9, textAlign:'center', margin:0, fontStyle:'inter',
+                      lineHeight:1.9, textAlign:'center', margin:0, fontStyle:'italic',
                       textShadow:'0 2px 16px rgba(0,0,0,0.6)' }}>
-                      "No estamos aquí para medirte, estamos aquí para diseñarte. 
-                      Cada dato que entregas es un hilo de oro que define quién serás mañana. 
-                      Comencemos la cristalización. 
-                      ¿Estás listo para tomar el control?"
+                      "Para que Pandi pueda caminar a tu lado, primero debemos mapear el terreno. La precisión de este coach depende de la honestidad de tus respuestas. Entreguemos juntos los datos que despertarán a tu guía."
                     </p>
                     <div style={{ width:48, height:2, borderRadius:1,
                       background:'rgba(255,255,255,0.3)' }} />

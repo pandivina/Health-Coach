@@ -16,7 +16,7 @@ router.post('/create-checkout', requireAuth, async (req, res) => {
       .from('subscriptions')
       .select('stripe_customer_id')
       .eq('user_id', userId)
-      .single()
+      .maybeSingle()
 
     let customerId = sub?.stripe_customer_id
 
@@ -48,8 +48,8 @@ router.post('/create-checkout', requireAuth, async (req, res) => {
       cancel_url: `${process.env.CORS_ORIGIN}/premium?canceled=true`,
       subscription_data: {
         trial_period_days: 7,
-        metadata: { supabase_user_id: userId },
       },
+      metadata: { supabase_user_id: userId },
       locale: 'es',
     })
 
@@ -68,7 +68,7 @@ router.post('/portal', requireAuth, async (req, res) => {
       .from('subscriptions')
       .select('stripe_customer_id')
       .eq('user_id', userId)
-      .single()
+      .maybeSingle()
 
     if (!sub?.stripe_customer_id) {
       return res.status(400).json({ error: 'No subscription found' })
@@ -115,11 +115,19 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
     switch (event.type) {
       case 'checkout.session.completed': {
         const session = event.data.object
-        const userId = session.subscription_data?.metadata?.supabase_user_id
-          || session.metadata?.supabase_user_id
+        // Leer metadata del nivel raíz de la sesión
+        let userId = session.metadata?.supabase_user_id
+        // Fallback: buscar en la suscripción
+        if (!userId && session.subscription) {
+          const subscription = await stripe.subscriptions.retrieve(session.subscription)
+          userId = subscription.metadata?.supabase_user_id
+        }
         if (!userId) break
 
-        const subscription = await stripe.subscriptions.retrieve(session.subscription)
+        const subscription = session.subscription
+          ? await stripe.subscriptions.retrieve(session.subscription)
+          : null
+        if (!subscription) break
 
         await supabaseAdmin.from('subscriptions').upsert({
           user_id: userId,

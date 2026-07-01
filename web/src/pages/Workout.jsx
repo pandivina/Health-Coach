@@ -163,9 +163,10 @@ export default function Workout() {
       {/* 5 — Contenido dinámico */}
       <AnimatePresence mode="wait">
         <motion.div key={tab}
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -8 }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1, translateY: 0 }}
+          exit={{ opacity: 0 }}
+          style={{ translateY: 8 }}
           transition={{ duration: 0.18 }}>
           {tab === 'dashboard' && <WorkoutDashboard onStartSession={setActiveSession} hideQuickStart />}
           {tab === 'favorites' && <FavoriteRoutinesList onStartSession={setActiveSession} />}

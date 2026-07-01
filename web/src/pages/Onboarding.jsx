@@ -1074,10 +1074,7 @@ export default function Onboarding() {
               style={{ position:'absolute', width:280, height:280, borderRadius:'50%',
                 background:'radial-gradient(circle, rgba(201,169,110,0.4), transparent 70%)',
                 filter:'blur(30px)' }} />
-
-            <motion.img src="/panda/panda_orb_baby.png" alt="Pandi nace"
-              animate={{ scale:[0.9,1,0.9] }}
-              transition={{ duration:3, repeat:Infinity, ease:'easeInOut' }}
+<motion.img src="/panda/panda_orb_baby.png" alt="Pandi nace"
               style={{ width:'70%', maxWidth:280, objectFit:'contain',
                 position:'relative', zIndex:2 }}
               onError={e => e.target.style.display='none'} />

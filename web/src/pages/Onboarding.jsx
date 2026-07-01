@@ -9,11 +9,11 @@ import { api } from '../lib/api'
 // CONSTANTES EDITABLES — ajusta posición y tamaño del orbe aquí
 // ─────────────────────────────────────────────────────────────────────────────
 const ORB_CONFIG = {
-  bottom:     '12%',   // distancia desde el fondo de la pantalla
+  bottom:     '36%',   // distancia desde el fondo de la pantalla
   size:       '72%',   // ancho del orbe relativo al contenedor
   maxWidth:   340,     // px máximo
-  btnBottom:  '52%',   // posición del botón invisible sobre el orbe
-  btnSize:    80,      // px del área táctil del botón
+  btnBottom:  '44%',   // posición del botón invisible sobre el orbe
+  btnSize:    65,      // px del área táctil del botón
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

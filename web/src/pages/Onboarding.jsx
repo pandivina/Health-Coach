@@ -9,11 +9,11 @@ import { api } from '../lib/api'
 // CONSTANTES EDITABLES — ajusta posición y tamaño del orbe aquí
 // ─────────────────────────────────────────────────────────────────────────────
 const ORB_CONFIG = {
-  bottom:     '36%',   // distancia desde el fondo de la pantalla
+  bottom:     '12%',   // distancia desde el fondo de la pantalla
   size:       '72%',   // ancho del orbe relativo al contenedor
   maxWidth:   340,     // px máximo
-  btnBottom:  '38%',   // posición del botón invisible sobre el orbe
-  btnSize:    65,      // px del área táctil del botón
+  btnBottom:  '52%',   // posición del botón invisible sobre el orbe
+  btnSize:    80,      // px del área táctil del botón
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -281,7 +281,7 @@ function OptionCarousel({ options, value, onChange, energyColor }) {
   return (
     <div style={{
       display:'flex', flexDirection:'column', gap:6,
-      maxHeight:'28vh', overflowY:'auto',
+      maxHeight:'22vh', overflowY:'auto',
       WebkitOverflowScrolling:'touch', paddingRight:4,
     }}>
       {options.map(o => {
@@ -289,7 +289,7 @@ function OptionCarousel({ options, value, onChange, energyColor }) {
         return (
           <motion.button key={o.v} whileTap={{ scale:0.97 }} onClick={() => onChange(o.v)}
             style={{
-              width:'100%', padding:'11px 16px', borderRadius:16, flexShrink:0,
+              width:'100%', padding:'8px 12px', borderRadius:14, flexShrink:0,
               display:'flex', alignItems:'center', gap:12,
               border:`1.5px solid ${active ? energyColor : 'rgba(255,255,255,0.12)'}`,
               background: active
@@ -399,7 +399,6 @@ export default function Onboarding() {
   // Orbe — estados separados y claros
   const [orbState, setOrbState] = useState('closed')
   // closed → opening → open_base → open_1..6 → closing → closed
-  const [showQuestions, setShowQuestions] = useState(false)
   const [fillLevel,  setFillLevel]  = useState(0)  // 0=orb_door_open.png, 1-6=orb_door_open_N.png
   const [smoke,      setSmoke]      = useState(false)
   const [showOrbMsg, setShowOrbMsg] = useState(false)
@@ -465,7 +464,7 @@ export default function Onboarding() {
       setPhase(4)
       setQStep(0)
       setFillLevel(0)
-      set('closed')
+      setOrbState('closed')
       // Mostrar mensaje motivador con blur
       setShowIntroMsg(true)
     }, 700)
@@ -497,17 +496,16 @@ export default function Onboarding() {
 
     // 3. orb_door_opening.png
     setTimeout(() => {
-      set('opening')
+      setOrbState('opening')
       audio.playApertura()
     }, 500)
 
     // 4. orb_door_open.png (base vacío) + mensaje flotante
     setTimeout(() => {
       setOrbState('open')
-    setFillLevel(0)
-    setShowOrbMsg(true)
-    setTimeout(() => setShowOrbMsg(false), 3000)
-    setTimeout(() => setShowQuestions(true), 4000)  // ajusta este número
+      setFillLevel(0)
+      setShowOrbMsg(true)
+      setTimeout(() => setShowOrbMsg(false), 3000)
     }, 2200)
   }
 
@@ -631,7 +629,7 @@ export default function Onboarding() {
       <AnimatePresence>
         {flash && (
           <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
-            transition={{ duration:0.5 }}
+            transition={{ duration:0.3 }}
             style={{ position:'fixed', inset:0, zIndex:100,
               background:'rgba(255,255,255,0.92)',
               pointerEvents:'none' }} />
@@ -863,12 +861,9 @@ export default function Onboarding() {
                     <div style={{ width:48, height:2, borderRadius:1,
                       background:'rgba(255,255,255,0.3)' }} />
                     <p style={{ fontSize:16, color:'rgba(255,255,255,0.9)',
-                      lineHeight:1.9, textAlign:'center', margin:0, fontStyle:'Inter',
+                      lineHeight:1.9, textAlign:'center', margin:0, fontStyle:'italic',
                       textShadow:'0 2px 16px rgba(0,0,0,0.6)' }}>
-                      "No estamos aquí para medirte, estamos aquí para diseñarte. 
-                      Cada dato que entregas es un hilo de oro que define quién serás mañana. 
-                      Comencemos la cristalización. 
-                      ¿Estás listo para tomar el control?"
+                      "Para que Pandi pueda caminar a tu lado, primero debemos mapear el terreno. La precisión de este coach depende de la honestidad de tus respuestas. Entreguemos juntos los datos que despertarán a tu guía."
                     </p>
                     <div style={{ width:48, height:2, borderRadius:1,
                       background:'rgba(255,255,255,0.3)' }} />
@@ -906,7 +901,7 @@ export default function Onboarding() {
               <AnimatePresence>
                 {smoke && [...Array(6)].map((_,i) => (
                   <motion.div key={i}
-                    initial={{ opacity:0.6, scale:1, x:(Math.random()-0.5)*40 }}
+                    initial={{ opacity:0.6, scale:0.3, x:(Math.random()-0.5)*40 }}
                     animate={{ opacity:0, scale:2.5, translateY:-80 }}
                     exit={{ opacity:0 }}
                     transition={{ duration:1.8+i*0.2, ease:'easeOut' }}
@@ -958,7 +953,7 @@ export default function Onboarding() {
 
             {/* Panel de pregunta */}
             <AnimatePresence mode="wait">
-              {orbState === 'open' && showQuestions && (
+              {orbState === 'open' && (
                 <motion.div key={`q-${qStep}`}
                   initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
                   style={{
@@ -975,17 +970,17 @@ export default function Onboarding() {
                     ))}
                   </div>
 
-                  <GlassCard style={{ padding:'20px' }}>
-                    <p style={{ fontSize:11, fontWeight:700, color:'rgba(255,255,255,0.5)',
-                      textTransform:'uppercase', letterSpacing:'.08em', margin:'0 0 6px' }}>
+                  <GlassCard style={{ padding:'10px 12px' }}>
+                    <p style={{ fontSize:10, fontWeight:700, color:'rgba(255,255,255,0.5)',
+                      textTransform:'uppercase', letterSpacing:'.08em', margin:'0 0 3px' }}>
                       Pregunta {qStep+1} de {QUESTIONS.length}
                     </p>
-                    <p style={{ fontSize:17, fontWeight:900, color:'white',
-                      margin:'0 0 4px', lineHeight:1.3 }}>
+                    <p style={{ fontSize:14, fontWeight:900, color:'white',
+                      margin:'0 0 2px', lineHeight:1.2 }}>
                       {QUESTIONS[qStep].bold}
                     </p>
-                    <p style={{ fontSize:12, color:'rgba(255,255,255,0.55)',
-                      margin:'0 0 14px', fontStyle:'italic' }}>
+                    <p style={{ fontSize:11, color:'rgba(255,255,255,0.55)',
+                      margin:'0 0 8px', fontStyle:'italic' }}>
                       {QUESTIONS[qStep].sub}
                     </p>
 
@@ -1000,14 +995,14 @@ export default function Onboarding() {
                       onClick={nextQuestion}
                       disabled={!form[QUESTIONS[qStep].key]}
                       style={{
-                        width:'100%', marginTop:14, padding:'13px', borderRadius:16,
+                        width:'100%', marginTop:8, padding:'10px', borderRadius:14,
                         border:`1px solid ${form[QUESTIONS[qStep].key] ? energyColor+'60' : 'rgba(255,255,255,0.1)'}`,
                         background: form[QUESTIONS[qStep].key]
                           ? `rgba(${hexToRgb(energyColor)},0.25)`
                           : 'rgba(255,255,255,0.05)',
                         backdropFilter:'blur(12px)',
                         color: form[QUESTIONS[qStep].key] ? energyColor : 'rgba(255,255,255,0.3)',
-                        fontSize:14, fontWeight:700, cursor:'pointer',
+                        fontSize:13, fontWeight:700, cursor:'pointer',
                         boxShadow: form[QUESTIONS[qStep].key]
                           ? `0 4px 20px rgba(${hexToRgb(energyColor)},0.3), inset 0 1px 0 rgba(255,255,255,0.15)`
                           : 'none',

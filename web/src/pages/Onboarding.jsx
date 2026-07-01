@@ -482,7 +482,7 @@ export default function Onboarding() {
   }
 
   function activateOrb() {
-    if ( !== 'closed') return
+    if (orbState !== 'closed') return
     handleFirstInteraction()
     try { navigator.vibrate?.([40,30,60]) } catch {}
 

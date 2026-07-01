@@ -276,7 +276,6 @@ function AddRecetaModal({ onClose, onSaved }) {
 
           <motion.button whileTap={{ scale:0.97 }} onClick={handleSave} disabled={saving}
             style={{ width:'100%', padding:'14px', borderRadius:16, border:'none', cursor:'pointer',
-              fontWeight:800, fontSize:15, color:'white',
               background: saving ? '#F3F4F6' : `linear-gradient(135deg, ${theme.primary}, ${theme.primary}cc)`,
               color: saving ? '#9CA3AF' : 'white' }}>
             {saving ? 'Guardando...' : '✅ Guardar receta'}

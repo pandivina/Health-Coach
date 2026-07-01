@@ -4,13 +4,11 @@ const Anthropic = require('@anthropic-ai/sdk');
 const { requireAuth, requirePremium, supabaseAdmin } = require('../middleware/auth');
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-// POST /api/labs/analyze — subir analítica (texto o imagen) y analizar con IA
 router.post('/analyze', requireAuth, requirePremium, async (req, res) => {
   try {
     const { rawText, imageBase64, mediaType, reportDate, title } = req.body;
     const userId = req.user.id;
 
-    // Crear el informe
     const { data: report, error: rErr } = await supabaseAdmin.from('lab_reports').insert({
       user_id: userId,
       report_date: reportDate || new Date().toISOString().split('T')[0],
@@ -20,15 +18,13 @@ router.post('/analyze', requireAuth, requirePremium, async (req, res) => {
     }).select().single();
     if (rErr) throw rErr;
 
-    // Obtener perfil del usuario
     const { data: profile } = await supabaseAdmin
-      .from('health_profiles').select('sex,birth_date,goal').eq('user_id', userId).single();
+      .from('health_profiles').select('sex,birth_date,goal').eq('user_id', userId).maybeSingle();
 
     const age = profile?.birth_date
       ? Math.floor((new Date() - new Date(profile.birth_date)) / (365.25 * 24 * 3600 * 1000))
       : null;
 
-    // Preparar contenido para Claude
     const userContent = []
     if (imageBase64 && mediaType) {
       userContent.push({ type: 'image', source: { type: 'base64', media_type: mediaType, data: imageBase64 } })
@@ -59,7 +55,7 @@ Sin texto extra, solo JSON.`
     })
 
     const response = await anthropic.messages.create({
-      model: process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-5',
+      model: process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-6',
       max_tokens: 2000,
       messages: [{ role: 'user', content: userContent }],
     });
@@ -67,20 +63,14 @@ Sin texto extra, solo JSON.`
     const raw = response.content[0].text.trim().replace(/```json|```/g, '').trim();
     const result = JSON.parse(raw);
 
-    // Actualizar informe con interpretación
     await supabaseAdmin.from('lab_reports').update({
       ai_interpretation: result.interpretation,
       ai_recommendations: result.recommendations,
       status: 'analyzed',
     }).eq('id', report.id);
 
-    // Guardar marcadores
     if (result.markers?.length) {
-      const markers = result.markers.map(m => ({
-        ...m,
-        report_id: report.id,
-        user_id: userId,
-      }));
+      const markers = result.markers.map(m => ({ ...m, report_id: report.id, user_id: userId }));
       await supabaseAdmin.from('lab_markers').insert(markers);
     }
 
@@ -91,7 +81,6 @@ Sin texto extra, solo JSON.`
   }
 });
 
-// GET /api/labs/reports
 router.get('/reports', requireAuth, async (req, res) => {
   try {
     const { data, error } = await supabaseAdmin.from('lab_reports')
@@ -103,7 +92,6 @@ router.get('/reports', requireAuth, async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// DELETE /api/labs/reports/:id
 router.delete('/reports/:id', requireAuth, async (req, res) => {
   try {
     await supabaseAdmin.from('lab_reports').delete()

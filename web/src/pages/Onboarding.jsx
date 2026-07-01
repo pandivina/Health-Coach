@@ -9,11 +9,11 @@ import { api } from '../lib/api'
 // CONSTANTES EDITABLES — ajusta posición y tamaño del orbe aquí
 // ─────────────────────────────────────────────────────────────────────────────
 const ORB_CONFIG = {
-  bottom:     '35%',   // distancia desde el fondo de la pantalla
+  bottom:     '12%',   // distancia desde el fondo de la pantalla
   size:       '72%',   // ancho del orbe relativo al contenedor
   maxWidth:   340,     // px máximo
-  btnBottom:  '45%',   // posición del botón invisible sobre el orbe
-  btnSize:    65,      // px del área táctil del botón
+  btnBottom:  '52%',   // posición del botón invisible sobre el orbe
+  btnSize:    80,      // px del área táctil del botón
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -280,8 +280,8 @@ function NeuButton({ children, onClick, disabled, color='#2EC4B6', style={} }) {
 function OptionCarousel({ options, value, onChange, energyColor }) {
   return (
     <div style={{
-      display:'flex', flexDirection:'column', gap:6,
-      maxHeight:'22vh', overflowY:'auto',
+      display:'flex', flexDirection:'column', gap:4,
+      maxHeight:'18vh', overflowY:'auto',
       WebkitOverflowScrolling:'touch', paddingRight:4,
     }}>
       {options.map(o => {
@@ -289,8 +289,8 @@ function OptionCarousel({ options, value, onChange, energyColor }) {
         return (
           <motion.button key={o.v} whileTap={{ scale:0.97 }} onClick={() => onChange(o.v)}
             style={{
-              width:'100%', padding:'8px 12px', borderRadius:14, flexShrink:0,
-              display:'flex', alignItems:'center', gap:12,
+              width:'100%', padding:'6px 10px', borderRadius:12, flexShrink:0,
+              display:'flex', alignItems:'center', gap:10,
               border:`1.5px solid ${active ? energyColor : 'rgba(255,255,255,0.12)'}`,
               background: active
                 ? `rgba(${hexToRgb(energyColor)},0.18)`
@@ -299,9 +299,9 @@ function OptionCarousel({ options, value, onChange, energyColor }) {
               cursor:'pointer', textAlign:'left', transition:'all 0.2s',
               boxShadow: active ? `0 2px 16px rgba(${hexToRgb(energyColor)},0.25), inset 0 1px 0 rgba(255,255,255,0.15)` : 'none',
             }}>
-            <span style={{ fontSize:20, flexShrink:0 }}>{o.emoji}</span>
+            <span style={{ fontSize:16, flexShrink:0 }}>{o.emoji}</span>
             <span style={{
-              fontSize:13, flex:1, lineHeight:1.4,
+              fontSize:12, flex:1, lineHeight:1.3,
               fontWeight: active ? 700 : 400,
               color: active ? energyColor : 'rgba(255,255,255,0.75)',
             }}>

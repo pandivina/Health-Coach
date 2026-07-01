@@ -33,8 +33,8 @@ export const useStore = create((set, get) => ({
   fetchProfile: async (userId) => {
     try {
       const [profileRes, healthRes] = await Promise.allSettled([
-        supabase.from('user_profiles').select('*').eq('id', userId).single(),
-        supabase.from('health_profiles').select('*').eq('user_id', userId).single(),
+        supabase.from('user_profiles').select('*').eq('id', userId).maybeSingle(),
+        supabase.from('health_profiles').select('*').eq('user_id', userId).maybeSingle(),
       ])
 
       // Detectar sesión expirada

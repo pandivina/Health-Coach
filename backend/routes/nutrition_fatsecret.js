@@ -154,81 +154,134 @@ function searchLocal(q) {
   return LOCAL_ES.filter(f => f.name.toLowerCase().includes(q.toLowerCase())).slice(0,15)
 }
 
+// ─── OPEN FOOD FACTS ─────────────────────────────────────────────────────────
+async function searchOpenFoodFacts(q, max=20) {
+  try {
+    const url = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(q)}&search_simple=1&action=process&json=1&page_size=${max}&lc=es&cc=es`
+    const res  = await fetch(url, { headers:{ 'User-Agent':'PandiHealthCoach/1.0' } })
+    if (!res.ok) return []
+    const data = await res.json()
+    return (data.products || [])
+      .filter(p => p.product_name_es || p.product_name)
+      .map(p => {
+        const n  = p.nutriments || {}
+        const cal= n['energy-kcal_100g'] || n['energy-kcal'] || null
+        const pro= n.proteins_100g       || null
+        const car= n.carbohydrates_100g  || null
+        const fat= n.fat_100g            || null
+        const fib= n.fiber_100g          || null
+        return {
+          id:         `off_${p.id || p.code}`,
+          name:       p.product_name_es || p.product_name || 'Sin nombre',
+          brand:      p.brands          || null,
+          source:     'openfoodfacts',
+          calories:   cal   != null ? Math.round(cal)         : null,
+          protein:    pro   != null ? Math.round(pro*10)/10   : null,
+          carbs:      car   != null ? Math.round(car*10)/10   : null,
+          fat:        fat   != null ? Math.round(fat*10)/10   : null,
+          fiber:      fib   != null ? Math.round(fib*10)/10   : null,
+          image:      p.image_small_url  || null,
+          nutriScore: cal != null
+            ? calcNutriScore({ calories:cal||0, protein:pro||0, carbs:car||0, fat:fat||0, fiber:fib||0 })
+            : null,
+        }
+      })
+  } catch { return [] }
+}
+
 // ─── GET /api/fs/search ───────────────────────────────────────────────────────
 router.get('/search', async (req, res) => {
   try {
-    const { q, page=0, max=20, brand } = req.query
+    const { q, page=0, max=20, brand, source='all' } = req.query
     if (!q?.trim()) return res.status(400).json({ error:'q requerido' })
-    console.log('[FS] search:', q, brand ? `(marca: ${brand})` : '')
+    console.log('[FS] search:', q, source !== 'all' ? `(fuente: ${source})` : '', brand ? `(marca: ${brand})` : '')
 
-    const [localR, fsR, communityR] = await Promise.allSettled([
+    const useLocal     = source === 'all' || source === 'local'
+    const useFS        = source === 'all' || source === 'fatsecret'
+    const useCommunity = source === 'all' || source === 'community'
+    const useOFF       = source === 'all' || source === 'openfoodfacts'
+
+    const [localR, fsR, communityR, offR] = await Promise.allSettled([
 
       // 1. Local ES
-      Promise.resolve(searchLocal(q)),
+      useLocal
+        ? Promise.resolve(searchLocal(q))
+        : Promise.resolve([]),
 
       // 2. FatSecret
-      fsCall('foods.search', {
-        search_expression: q.trim(),
-        page_number: String(page),
-        max_results:  String(Math.min(parseInt(max)||20, 50)),
-        language:'es', region:'ES',
-      }).then(data => {
-        const foods = data.foods?.food || []
-        return (Array.isArray(foods) ? foods : [foods]).map(f => {
-          const macros = parseMacros(f.food_description)
-          return {
-            id: `fs_${f.food_id}`, name: f.food_name,
-            brand: f.brand_name || null, source:'fatsecret',
-            ...macros,
-            nutriScore: macros.calories !== null
-              ? calcNutriScore({ calories:macros.calories||0, protein:macros.protein||0, carbs:macros.carbs||0, fat:macros.fat||0 })
-              : null,
-          }
-        })
-      }).catch(() => []),
+      useFS
+        ? fsCall('foods.search', {
+            search_expression: q.trim(),
+            page_number: String(page),
+            max_results:  String(Math.min(parseInt(max)||20, 50)),
+            language:'es', region:'ES',
+          }).then(data => {
+            const foods = data.foods?.food || []
+            return (Array.isArray(foods) ? foods : [foods]).map(f => {
+              const macros = parseMacros(f.food_description)
+              return {
+                id: `fs_${f.food_id}`, name: f.food_name,
+                brand: f.brand_name || null, source:'fatsecret',
+                ...macros,
+                nutriScore: macros.calories !== null
+                  ? calcNutriScore({ calories:macros.calories||0, protein:macros.protein||0, carbs:macros.carbs||0, fat:macros.fat||0 })
+                  : null,
+              }
+            })
+          }).catch(() => [])
+        : Promise.resolve([]),
 
       // 3. Comunidad
-      (async () => {
-        try {
-          const db    = getDB()
-          let query = db.from('community_foods')
-            .select('id,name,brand,calories,protein_g,carbs_g,fat_g,fiber_g,uses_count,verified')
-            .ilike('name', `%${q}%`)
-            .order('uses_count', { ascending:false })
-            .limit(10)
-          if (brand) query = query.ilike('brand', `%${brand}%`)
-          const { data } = await query
-          return (data||[]).map(f => ({
-            id:`community_${f.id}`, name:f.name, brand:f.brand, source:'community',
-            calories:f.calories, protein:f.protein_g, carbs:f.carbs_g, fat:f.fat_g, fiber:f.fiber_g,
-            verified:f.verified, uses:f.uses_count,
-            nutriScore: calcNutriScore({ calories:f.calories||0, protein:f.protein_g||0, carbs:f.carbs_g||0, fat:f.fat_g||0, fiber:f.fiber_g||0 }),
-          }))
-        } catch { return [] }
-      })(),
+      useCommunity
+        ? (async () => {
+            try {
+              const db    = getDB()
+              let query = db.from('community_foods')
+                .select('id,name,brand,calories,protein_g,carbs_g,fat_g,fiber_g,uses_count,verified')
+                .ilike('name', `%${q}%`)
+                .order('uses_count', { ascending:false })
+                .limit(10)
+              if (brand) query = query.ilike('brand', `%${brand}%`)
+              const { data } = await query
+              return (data||[]).map(f => ({
+                id:`community_${f.id}`, name:f.name, brand:f.brand, source:'community',
+                calories:f.calories, protein:f.protein_g, carbs:f.carbs_g, fat:f.fat_g, fiber:f.fiber_g,
+                verified:f.verified, uses:f.uses_count,
+                nutriScore: calcNutriScore({ calories:f.calories||0, protein:f.protein_g||0, carbs:f.carbs_g||0, fat:f.fat_g||0, fiber:f.fiber_g||0 }),
+              }))
+            } catch { return [] }
+          })()
+        : Promise.resolve([]),
+
+      // 4. Open Food Facts
+      useOFF
+        ? searchOpenFoodFacts(q, Math.min(parseInt(max)||20, 30))
+        : Promise.resolve([]),
     ])
 
-    let local     = localR.status==='fulfilled'     ? localR.value     : []
-    let fatsecret = fsR.status==='fulfilled'         ? fsR.value        : []
-    let community = communityR.status==='fulfilled'  ? communityR.value : []
+    let local        = localR.status==='fulfilled'     ? localR.value     : []
+    let fatsecret    = fsR.status==='fulfilled'         ? fsR.value        : []
+    let community    = communityR.status==='fulfilled'  ? communityR.value : []
+    let openfoodfacts= offR.status==='fulfilled'        ? offR.value       : []
 
     // Filtrar por marca si se especifica
     if (brand) {
       const b = brand.toLowerCase()
-      fatsecret = fatsecret.filter(f => f.brand?.toLowerCase().includes(b))
-      local     = local.filter(f => f.brand?.toLowerCase().includes(b))
+      fatsecret     = fatsecret.filter(f => f.brand?.toLowerCase().includes(b))
+      local         = local.filter(f => f.brand?.toLowerCase().includes(b))
+      openfoodfacts = openfoodfacts.filter(f => f.brand?.toLowerCase().includes(b))
     }
 
-    // Extraer marcas únicas para el filtro del frontend
-    const allFoods = [...community, ...local, ...fatsecret]
+    // Orden: comunidad → local → OFF → fatsecret
+    const allFoods = [...community, ...local, ...openfoodfacts, ...fatsecret]
     const brands   = [...new Set(allFoods.map(f => f.brand).filter(Boolean))].sort()
 
-    console.log(`[FS] ${community.length} comunidad + ${local.length} local + ${fatsecret.length} fatsecret`)
+    console.log(`[FS] ${community.length} comunidad + ${local.length} local + ${openfoodfacts.length} OFF + ${fatsecret.length} fatsecret`)
 
     res.json({
       foods:   allFoods,
       brands,
-      sources: { community:community.length, local:local.length, fatsecret:fatsecret.length },
+      sources: { community:community.length, local:local.length, fatsecret:fatsecret.length, openfoodfacts:openfoodfacts.length },
       total:   allFoods.length,
       page:    parseInt(page),
     })

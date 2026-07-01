@@ -103,9 +103,10 @@ function BubbleInner({ step, currentStep, steps, targetRect, petEmoji, userInfo,
     <motion.div
       ref={bubbleRef}
       style={wrapperStyle}
-      initial={{ opacity: 0, scale: 0.88, y: 12 }}
-      animate={{ opacity: pos ? 1 : 0, scale: 1, y: 0 }}
-      exit={{ opacity: 0, scale: 0.88, y: -8 }}
+      initial={{ opacity: 0, scale: 0.88 }}
+      animate={{ opacity: pos ? 1 : 0, scale: 1, translateY: 0 }}
+      exit={{ opacity: 0, scale: 0.88 }}
+      style={{ translateY: 12 }}
       transition={{ type: 'spring', stiffness: 380, damping: 28 }}
     >
       <div style={{

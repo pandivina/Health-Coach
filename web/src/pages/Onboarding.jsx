@@ -9,11 +9,11 @@ import { api } from '../lib/api'
 // CONSTANTES EDITABLES — ajusta posición y tamaño del orbe aquí
 // ─────────────────────────────────────────────────────────────────────────────
 const ORB_CONFIG = {
-  bottom:     '35%',   // distancia desde el fondo de la pantalla
+  bottom:     '12%',   // distancia desde el fondo de la pantalla
   size:       '72%',   // ancho del orbe relativo al contenedor
   maxWidth:   340,     // px máximo
-  btnBottom:  '44%',   // posición del botón invisible sobre el orbe
-  btnSize:    65,      // px del área táctil del botón
+  btnBottom:  '52%',   // posición del botón invisible sobre el orbe
+  btnSize:    80,      // px del área táctil del botón
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1053,8 +1053,17 @@ export default function Onboarding() {
         {phase === 11 && (
           <motion.div key="awaken"
             initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
-            style={{ position:'fixed', inset:0, zIndex:20,
-              background:'radial-gradient(circle at 50% 60%, #1a2340 0%, #0a0f1e 100%)',
+            style={{ position:'fixed', inset:0, zIndex:20 }}>
+
+            {/* Fondo santuario */}
+            <img src="/panda/onboarding_clouds.png" alt=""
+              style={{ position:'absolute', inset:0, width:'100%', height:'100%',
+                objectFit:'cover', zIndex:0 }}
+              onError={e => e.target.style.display='none'} />
+            <div style={{ position:'absolute', inset:0, zIndex:1,
+              background:'linear-gradient(to bottom, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.45) 100%)' }} />
+
+            <div style={{ position:'absolute', inset:0, zIndex:2,
               display:'flex', flexDirection:'column',
               alignItems:'center', justifyContent:'center', padding:'40px 24px' }}>
 
@@ -1084,6 +1093,7 @@ export default function Onboarding() {
                 Despertar a Pandi 🐾
               </NeuButton>
             </GlassCard>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

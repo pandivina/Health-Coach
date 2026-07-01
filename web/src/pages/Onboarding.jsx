@@ -399,6 +399,7 @@ export default function Onboarding() {
   // Orbe — estados separados y claros
   const [orbState, setOrbState] = useState('closed')
   // closed → opening → open_base → open_1..6 → closing → closed
+  const [showQuestions, setShowQuestions] = useState(false)
   const [fillLevel,  setFillLevel]  = useState(0)  // 0=orb_door_open.png, 1-6=orb_door_open_N.png
   const [smoke,      setSmoke]      = useState(false)
   const [showOrbMsg, setShowOrbMsg] = useState(false)
@@ -464,7 +465,7 @@ export default function Onboarding() {
       setPhase(4)
       setQStep(0)
       setFillLevel(0)
-      setOrbState('closed')
+      set('closed')
       // Mostrar mensaje motivador con blur
       setShowIntroMsg(true)
     }, 700)
@@ -481,7 +482,7 @@ export default function Onboarding() {
   }
 
   function activateOrb() {
-    if (orbState !== 'closed') return
+    if ( !== 'closed') return
     handleFirstInteraction()
     try { navigator.vibrate?.([40,30,60]) } catch {}
 
@@ -496,16 +497,17 @@ export default function Onboarding() {
 
     // 3. orb_door_opening.png
     setTimeout(() => {
-      setOrbState('opening')
+      set('opening')
       audio.playApertura()
     }, 500)
 
     // 4. orb_door_open.png (base vacío) + mensaje flotante
     setTimeout(() => {
       setOrbState('open')
-      setFillLevel(0)
-      setShowOrbMsg(true)
-      setTimeout(() => setShowOrbMsg(false), 3000)
+    setFillLevel(0)
+    setShowOrbMsg(true)
+    setTimeout(() => setShowOrbMsg(false), 3000)
+    setTimeout(() => setShowQuestions(true), 4000)  // ajusta este número
     }, 2200)
   }
 
@@ -904,7 +906,7 @@ export default function Onboarding() {
               <AnimatePresence>
                 {smoke && [...Array(6)].map((_,i) => (
                   <motion.div key={i}
-                    initial={{ opacity:0.6, scale:0.3, x:(Math.random()-0.5)*40 }}
+                    initial={{ opacity:0.6, scale:1, x:(Math.random()-0.5)*40 }}
                     animate={{ opacity:0, scale:2.5, translateY:-80 }}
                     exit={{ opacity:0 }}
                     transition={{ duration:1.8+i*0.2, ease:'easeOut' }}
@@ -956,7 +958,7 @@ export default function Onboarding() {
 
             {/* Panel de pregunta */}
             <AnimatePresence mode="wait">
-              {orbState === 'open' && (
+              {orbState === 'open' && showQuestions && (
                 <motion.div key={`q-${qStep}`}
                   initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
                   style={{

@@ -1,51 +1,43 @@
-import { AchievementToastProvider } from './components/AchievementPopup'
-import Achievements from './pages/Achievements'
-import Calendar from './pages/Calendar'
-import { useEffect } from 'react'
+import { lazy, Suspense, useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { supabase } from './lib/supabase'
 import { useStore } from './store/useStore'
 import Layout from './components/Layout'
 import CookieBanner from './components/legal/CookieBanner'
-import { PrivacyPolicy, TermsOfUse, MedicalDisclaimerPage } from './pages/Legal'
 import UpdateBanner from './components/UpdateBanner'
-import WorkoutView from './pages/WorkoutView'
 import { ToastProvider } from './components/ToastProvider'
+import { AchievementToastProvider } from './components/AchievementPopup'
 import { CoachAwarenessProvider } from './contexts/CoachAwarenessContext'
 import AppErrorBoundary from './components/AppErrorBoundary'
 import { GlobalMenuProvider } from './contexts/GlobalMenuContext'
-import MisRecetas from './pages/MisRecetas'
 
-// Public
+// ─── EAGER: rutas críticas del arranque ───────────────────────────────────────
 import Landing from './pages/Landing'
 import Auth from './pages/Auth'
-import Onboarding from './pages/Onboarding'
-
-// Core
 import Home from './pages/Home'
-import Coach from './pages/Coach'
-import DailyReport from './pages/DailyReport'
-import Profile from './pages/Profile'
-import Premium from './pages/Premium'
-import Appearance from './pages/Appearance'
-import Pet from './pages/Pet'
 
-// Nutrition
-import Nutrition from './pages/Nutrition'
-
-// Fitness
-import Workout from './pages/Workout'
-
-// Wellness
-import Sleep from './pages/Sleep'
-import Mood from './pages/Mood'
-// FIX Limpieza: Sanctuary eliminado — redirige a /mood
-import EspejoMetabolico from './pages/EspejoMetabolico'
-import Hydration from './pages/Hydration'
-import Smoking from './pages/Smoking'
-
-// Health tracking
-import HealthTracking from './pages/HealthTracking'
+// ─── LAZY: todo lo demás se carga al navegar ──────────────────────────────────
+const Onboarding       = lazy(() => import('./pages/Onboarding'))
+const Coach            = lazy(() => import('./pages/Coach'))
+const DailyReport      = lazy(() => import('./pages/DailyReport'))
+const Profile          = lazy(() => import('./pages/Profile'))
+const Premium          = lazy(() => import('./pages/Premium'))
+const Appearance       = lazy(() => import('./pages/Appearance'))
+const Pet              = lazy(() => import('./pages/Pet'))
+const Nutrition        = lazy(() => import('./pages/Nutrition'))
+const WorkoutView      = lazy(() => import('./pages/WorkoutView'))
+const Sleep            = lazy(() => import('./pages/Sleep'))
+const Mood             = lazy(() => import('./pages/Mood'))
+const EspejoMetabolico = lazy(() => import('./pages/EspejoMetabolico'))
+const Hydration        = lazy(() => import('./pages/Hydration'))
+const Smoking          = lazy(() => import('./pages/Smoking'))
+const HealthTracking   = lazy(() => import('./pages/HealthTracking'))
+const Calendar         = lazy(() => import('./pages/Calendar'))
+const Achievements     = lazy(() => import('./pages/Achievements'))
+const MisRecetas       = lazy(() => import('./pages/MisRecetas'))
+const PrivacyPage      = lazy(() => import('./pages/Legal').then(m => ({ default: m.PrivacyPolicy })))
+const TermsPage        = lazy(() => import('./pages/Legal').then(m => ({ default: m.TermsOfUse })))
+const DisclaimerPage   = lazy(() => import('./pages/Legal').then(m => ({ default: m.MedicalDisclaimerPage })))
 
 function LoadingScreen() {
   return (
@@ -82,7 +74,6 @@ export default function App() {
   const { setSession, setUser, fetchProfile, setLoading, setProfile, setHealthProfile } = useStore()
 
   useEffect(() => {
-    // FIX: fetchProfile se llamaba DOS VECES — ahora solo una vez con initCoach encadenado
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session)
       setUser(session?.user ?? null)
@@ -118,41 +109,42 @@ export default function App() {
         <AchievementToastProvider>
           <CoachAwarenessProvider>
             <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-              <Routes>
-                <Route path="/" element={<SmartRoot />} />
-                <Route path="/auth"        element={<Auth />} />
-                <Route path="/onboarding"  element={<Onboarding />} />
-                <Route path="/privacy"     element={<PrivacyPolicy />} />
-                <Route path="/terms"       element={<TermsOfUse />} />
-                <Route path="/disclaimer"  element={<MedicalDisclaimerPage />} />
-                <Route path="/achievements" element={<Achievements />} />
+              <Suspense fallback={<LoadingScreen />}>
+                <Routes>
+                  <Route path="/" element={<SmartRoot />} />
+                  <Route path="/auth"        element={<Auth />} />
+                  <Route path="/onboarding"  element={<Onboarding />} />
+                  <Route path="/privacy"     element={<PrivacyPage />} />
+                  <Route path="/terms"       element={<TermsPage />} />
+                  <Route path="/disclaimer"  element={<DisclaimerPage />} />
 
-                <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
-                  <Route path="/calendar"   element={<Calendar />} />
-                  <Route path="/home"       element={<Home />} />
-                  <Route path="/coach"      element={<Coach />} />
-                  <Route path="/report"     element={<DailyReport />} />
-                  <Route path="/profile"    element={<Profile />} />
-                  <Route path="/premium"    element={<Premium />} />
-                  <Route path="/appearance" element={<Appearance />} />
-                  <Route path="/pet"        element={<Pet />} />
-                  <Route path="/nutrition"  element={<Nutrition />} />
-                  <Route path="/pantry"     element={<Navigate to="/nutrition" replace />} />
-                  <Route path="/recipes"    element={<Navigate to="/nutrition" replace />} />
-                  <Route path="/workout"    element={<WorkoutView />} />
-                  <Route path="/sleep"      element={<Sleep />} />
-                  <Route path="/mood"       element={<Mood />} />
-                  <Route path="/mis-recetas" element={<MisRecetas />} />
-                  {/* FIX Limpieza: /sanctuary redirige a /mood */}
-                  <Route path="/sanctuary"  element={<Navigate to="/mood" replace />} />
-                  <Route path="/espejo"     element={<EspejoMetabolico />} />
-                  <Route path="/hydration"  element={<Hydration />} />
-                  <Route path="/smoking"    element={<Smoking />} />
-                  <Route path="/health"     element={<HealthTracking />} />
-                </Route>
+                  <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+                    <Route path="/calendar"     element={<Calendar />} />
+                    <Route path="/home"         element={<Home />} />
+                    <Route path="/coach"        element={<Coach />} />
+                    <Route path="/report"       element={<DailyReport />} />
+                    <Route path="/profile"      element={<Profile />} />
+                    <Route path="/premium"      element={<Premium />} />
+                    <Route path="/appearance"   element={<Appearance />} />
+                    <Route path="/pet"          element={<Pet />} />
+                    <Route path="/nutrition"    element={<Nutrition />} />
+                    <Route path="/pantry"       element={<Navigate to="/nutrition" replace />} />
+                    <Route path="/recipes"      element={<Navigate to="/nutrition" replace />} />
+                    <Route path="/workout"      element={<WorkoutView />} />
+                    <Route path="/sleep"        element={<Sleep />} />
+                    <Route path="/mood"         element={<Mood />} />
+                    <Route path="/mis-recetas"  element={<MisRecetas />} />
+                    <Route path="/achievements" element={<Achievements />} />
+                    <Route path="/sanctuary"    element={<Navigate to="/mood" replace />} />
+                    <Route path="/espejo"       element={<EspejoMetabolico />} />
+                    <Route path="/hydration"    element={<Hydration />} />
+                    <Route path="/smoking"      element={<Smoking />} />
+                    <Route path="/health"       element={<HealthTracking />} />
+                  </Route>
 
-                <Route path="*" element={<Navigate to="/" replace />} />
-              </Routes>
+                  <Route path="*" element={<Navigate to="/" replace />} />
+                </Routes>
+              </Suspense>
               <CookieBanner />
               <UpdateBanner />
             </BrowserRouter>
